@@ -1,3 +1,11 @@
+2005-03-27  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/server.c: delete OCIServer#version, OCIServer#break, OCIServer#reset.
+	* ext/oci8/stmt.c: OCIStmt#bindByName accepts a symbol as a bind name.
+	* lib/oci8.rb.in: add OCI8::LOB#sync, OCI8::LOB#sync= and OCI8::LOB#flush.
+	* test/test_bind_raw.rb, test/test_bind_time.rb, test/test_clob.rb,
+	  test/test_oradate.rb, test/test_oranumber.rb: use OCI8 high-level API
+	  instead of low-level API.
+
 2005-03-24  KUBO Takehiro  <kubo@jiubao.org>
 	* oci8.rb.in: fix bug on binding Time or Date.
 	* support/*: deleted.

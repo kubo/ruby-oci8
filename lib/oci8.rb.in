@@ -710,6 +710,8 @@ class OCI8
       @svc = svc
       @locator = locator
       @pos = 0
+      @have_open_close = @locator.respond_to?("open")
+      @sync = :sync # :sync, :open or :close.
     end
 
     def available?
@@ -718,6 +720,10 @@ class OCI8
 
     def truncate(len)
       raise "uninitialized LOB" unless available?
+      if @sync == :close
+        @locator.open(@svc) if @have_open_close
+        @sync = :open
+      end
       @locator.trim(@svc, len)
       self
     end
@@ -736,6 +742,10 @@ class OCI8
 
     def write(data)
       raise "uninitialized LOB" unless available?
+      if @sync == :close
+        @locator.open(@svc) if @have_open_close
+        @sync = :open
+      end
       size = @locator.write(@svc, @pos + 1, data)
       @pos += size
       size
@@ -748,6 +758,10 @@ class OCI8
 
     def size=(len)
       raise "uninitialized LOB" unless available?
+      if @sync == :close
+        @locator.open(@svc) if @have_open_close
+        @sync = :open
+      end
       @locator.trim(@svc, len)
       len
     end
@@ -788,9 +802,39 @@ class OCI8
     end
 
     def close
+      if @sync == :open
+        @locator.close(@svc) if @have_open_close
+      end
       @locator.free()
     end
 
+    def sync
+      @sync == :sync
+    end
+
+    def sync=(b)
+      if b
+        if @sync == :open
+          @locator.close(@svc) if @have_open_close
+        end
+        @sync = :sync
+      else
+        if @sync == :sync
+          @sync = :close
+        end
+      end
+    end
+
+    def flush
+      if @have_open_close
+        if @sync == :open
+          @locator.close(@svc) if @have_open_close
+          @sync = :close
+        end
+      else
+        raise NotImplementedError
+      end
+    end
   end
 
   class BLOB < LOB

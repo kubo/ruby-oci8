@@ -403,7 +403,21 @@ static VALUE oci8_bind_by_name(int argc, VALUE *argv, VALUE self)
 
   rb_scan_args(argc, argv, "22", &vplaceholder, &vtype, &vlength, &vmode);
   Get_Handle(self, h); /* 0 */
-  Get_String(vplaceholder, placeholder); /* 1 */
+  if (NIL_P(vplaceholder)) {
+    placeholder.ptr = NULL;
+    placeholder.len = 0;
+  } else if (SYMBOL_P(vplaceholder)) {
+    char *symname = rb_id2name(SYM2ID(vplaceholder));
+    size_t len = strlen(symname);
+    placeholder.ptr = ALLOCA_N(char, len + 1);
+    placeholder.len = len + 1;
+    placeholder.ptr[0] = ':';
+    memcpy(placeholder.ptr + 1, symname, len);
+  } else {
+    Check_Type(vplaceholder, T_STRING);
+    placeholder.ptr = RSTRING(vplaceholder)->ptr;
+    placeholder.len = RSTRING(vplaceholder)->len;
+  }
   check_bind_type(OCI_HTYPE_BIND, h, vtype, vlength, &bh, &dty); /* 2, 3 */
   Get_Int_With_Default(argc, 4, vmode, mode, OCI_DEFAULT); /* 4 */
 

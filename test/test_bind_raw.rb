@@ -13,36 +13,34 @@ class TestBindRaw < Test::Unit::TestCase
   ]
 
   def setup
-    @env, @svc, @stmt = setup_lowapi()
+    @conn = OCI8.new($dbuser, $dbpass, $dbname)
   end
 
   def test_set_raw
-    @stmt.prepare("BEGIN :hex := RAWTOHEX(:raw); END;")
-    raw_in = @stmt.bindByName(":raw", OCI_TYPECODE_RAW, 16)
-    hex_out = @stmt.bindByName(":hex", String, 32)
-    
+    cursor = @conn.parse("BEGIN :hex := RAWTOHEX(:raw); END;")
+    cursor.bind_param(:raw, nil, OCI8::RAW, 16)
+    cursor.bind_param(:hex, nil, String, 32)
+
     CHECK_TARGET.each do |raw, hex|
-      raw_in.set(raw)
-      @stmt.execute(@svc)
-      assert_equal(hex, hex_out.get())
+      cursor[:raw] = raw
+      cursor.exec
+      assert_equal(hex, cursor[:hex])
     end
   end
 
   def test_get_raw
-    @stmt.prepare("BEGIN :raw := HEXTORAW(:hex); END;")
-    hex_in = @stmt.bindByName(":hex", String, 32)
-    raw_out = @stmt.bindByName(":raw", OCI_TYPECODE_RAW, 16)
-    
+    cursor = @conn.parse("BEGIN :raw := HEXTORAW(:hex); END;")
+    cursor.bind_param(:hex, nil, String, 32)
+    cursor.bind_param(:raw, nil, OCI8::RAW, 16)
+
     CHECK_TARGET.each do |raw, hex|
-      hex_in.set(hex)
-      @stmt.execute(@svc)
-      assert_equal(raw, raw_out.get())
+      cursor[:hex] = hex
+      cursor.exec
+      assert_equal(raw, cursor[:raw])
     end
   end
 
   def teardown
-    @stmt.free()
-    @svc.logoff()
-    @env.free()
+    @conn.logoff
   end
 end

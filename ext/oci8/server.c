@@ -84,13 +84,8 @@ void Init_oci8_server(void)
 {
   rb_define_method(cOCIServer, "attach", oci8_server_attach, -1);
   rb_define_method(cOCIServer, "detach", oci8_server_detach, -1);
-  rb_define_method(cOCIServer, "version", oci8_server_version, 0);
 #ifdef HAVE_OCISERVERRELEASE
   rb_define_method(cOCIServer, "release", oci8_server_release, 0);
-#endif
-  rb_define_method(cOCIServer, "break", oci8_break, 0);
-#ifdef HAVE_OCIRESET
-  rb_define_method(cOCIServer, "reset", oci8_reset, 0);
 #endif
 }
 

@@ -41,56 +41,54 @@ class TestOraNumber < Test::Unit::TestCase
   ]
 
   def setup
-    @env, @svc, @stmt = setup_lowapi()
+    @conn = OCI8.new($dbuser, $dbpass, $dbname)
   end
 
   def test_to_s
-    @stmt.prepare("BEGIN :number := TO_NUMBER(:str); END;")
-    number = @stmt.bindByName(":number", OraNumber)
-    str = @stmt.bindByName(":str", String, 40)
+    cursor = @conn.parse("BEGIN :number := TO_NUMBER(:str); END;")
+    cursor.bind_param(:number, OraNumber)
+    cursor.bind_param(:str, nil, String, 40)
     NUMBER_CHECK_TARGET.each do |val|
-      str.set(val)
-      @stmt.execute(@svc)
-      assert_equal(val, number.get.to_s)
+      cursor[:str] = val
+      cursor.exec
+      assert_equal(val, cursor[:number].to_s)
     end
   end
 
   def test_to_i
-    @stmt.prepare("BEGIN :number := TO_NUMBER(:str); END;")
-    number = @stmt.bindByName(":number", OraNumber)
-    str = @stmt.bindByName(":str", String, 40)
+    cursor = @conn.parse("BEGIN :number := TO_NUMBER(:str); END;")
+    cursor.bind_param(:number, OraNumber)
+    cursor.bind_param(:str, nil, String, 40)
     NUMBER_CHECK_TARGET.each do |val|
-      str.set(val)
-      @stmt.execute(@svc)
-      assert_equal(val.to_i, number.get.to_i)
+      cursor[:str] = val
+      cursor.exec
+      assert_equal(val.to_i, cursor[:number].to_i)
     end
   end
 
   def test_to_f
-    @stmt.prepare("BEGIN :number := TO_NUMBER(:str); END;")
-    number = @stmt.bindByName(":number", OraNumber)
-    str = @stmt.bindByName(":str", String, 40)
+    cursor = @conn.parse("BEGIN :number := TO_NUMBER(:str); END;")
+    cursor.bind_param(:number, OraNumber)
+    cursor.bind_param(:str, nil, String, 40)
     NUMBER_CHECK_TARGET.each do |val|
-      str.set(val)
-      @stmt.execute(@svc)
-      assert_equal(val.to_f, number.get.to_f)
+      cursor[:str] = val
+      cursor.exec
+      assert_equal(val.to_f, cursor[:number].to_f)
     end
   end
 
   def test_uminus
-    @stmt.prepare("BEGIN :number := - TO_NUMBER(:str); END;")
-    number = @stmt.bindByName(":number", OraNumber)
-    str = @stmt.bindByName(":str", String, 40)
+    cursor = @conn.parse("BEGIN :number := - TO_NUMBER(:str); END;")
+    cursor.bind_param(:number, OraNumber)
+    cursor.bind_param(:str, nil, String, 40)
     NUMBER_CHECK_TARGET.each do |val|
-      str.set(val)
-      @stmt.execute(@svc)
-      assert_equal(val, (- (number.get)).to_s)
+      cursor[:str] = val
+      cursor.exec
+      assert_equal(val, (- (cursor[:number])).to_s)
     end
   end
 
   def teardown
-    @stmt.free()
-    @svc.logoff()
-    @env.free()
+    @conn.logoff
   end
 end

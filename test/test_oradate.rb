@@ -13,7 +13,7 @@ class TestOraDate < Test::Unit::TestCase
   SECOND_CHECK_TARGET = [0, 15, 30, 45, 59]
 
   def setup
-    @env, @svc, @stmt = setup_lowapi()
+    @conn = OCI8.new($dbuser, $dbpass, $dbname)
   end
 
   def check_oradate(target, year, month, day, hour, minute, second)
@@ -30,170 +30,170 @@ class TestOraDate < Test::Unit::TestCase
   end
 
   def test_set_year
-    @stmt.prepare("BEGIN :year := TO_NUMBER(TO_CHAR(:date, 'SYYYY'), '9999'); END;")
-    date_in = @stmt.bindByName(":date", OraDate)
-    year_out = @stmt.bindByName(":year", Fixnum)
+    cursor = @conn.parse("BEGIN :year := TO_NUMBER(TO_CHAR(:date, 'SYYYY'), '9999'); END;")
+    cursor.bind_param(:date, OraDate)
+    cursor.bind_param(:year, Fixnum)
     date = OraDate.new()
     YEAR_CHECK_TARGET.each do |i|
       # set year
       date.year = i
       # check result via oracle.
-      date_in.set(date)
-      @stmt.execute(@svc)
-      assert_equal(i, year_out.get())
+      cursor[:date] = date
+      cursor.exec
+      assert_equal(i, cursor[:year])
     end
   end
 
   def test_get_year
-    @stmt.prepare("BEGIN :date := TO_DATE(TO_CHAR(:year, '0999'), 'SYYYY'); END;")
-    year_in = @stmt.bindByName(":year", Fixnum)
-    date_out = @stmt.bindByName(":date", OraDate)
+    cursor = @conn.parse("BEGIN :date := TO_DATE(TO_CHAR(:year, '0999'), 'SYYYY'); END;")
+    cursor.bind_param(:year, Fixnum)
+    cursor.bind_param(:date, OraDate)
     YEAR_CHECK_TARGET.each do |i|
       # set date via oracle.
-      year_in.set(i)
-      @stmt.execute(@svc)
+      cursor[:year] = i
+      cursor.exec
       # check OraDate#year
-      assert_equal(i, date_out.get.year)
+      assert_equal(i, cursor[:date].year)
     end
   end
 
   def test_set_month
-    @stmt.prepare("BEGIN :month := TO_NUMBER(TO_CHAR(:date, 'MM'), '99'); END;")
-    date_in = @stmt.bindByName(":date", OraDate)
-    month_out = @stmt.bindByName(":month", Fixnum)
+    cursor = @conn.parse("BEGIN :month := TO_NUMBER(TO_CHAR(:date, 'MM'), '99'); END;")
+    cursor.bind_param(:date, OraDate)
+    cursor.bind_param(:month, Fixnum)
     date = OraDate.new()
     MONTH_CHECK_TARGET.each do |i|
       # set month
       date.month = i
       # check result via oracle.
-      date_in.set(date)
-      @stmt.execute(@svc)
-      assert_equal(i, month_out.get())
+      cursor[:date] = date
+      cursor.exec
+      assert_equal(i, cursor[:month])
     end
   end
 
   def test_get_month
-    @stmt.prepare("BEGIN :date := TO_DATE(TO_CHAR(:month, '99'), 'MM'); END;")
-    month_in = @stmt.bindByName(":month", Fixnum)
-    date_out = @stmt.bindByName(":date", OraDate)
+    cursor = @conn.parse("BEGIN :date := TO_DATE(TO_CHAR(:month, '99'), 'MM'); END;")
+    cursor.bind_param(:month, Fixnum)
+    cursor.bind_param(:date, OraDate)
     MONTH_CHECK_TARGET.each do |i|
       # set date via oracle.
-      month_in.set(i)
-      @stmt.execute(@svc)
+      cursor[:month] = i
+      cursor.exec
       # check OraDate#month
-      assert_equal(i, date_out.get.month)
+      assert_equal(i, cursor[:date].month)
     end
   end
 
   def test_set_day
-    @stmt.prepare("BEGIN :day := TO_NUMBER(TO_CHAR(:date, 'DD'), '99'); END;")
-    date_in = @stmt.bindByName(":date", OraDate)
-    day_out = @stmt.bindByName(":day", Fixnum)
+    cursor = @conn.parse("BEGIN :day := TO_NUMBER(TO_CHAR(:date, 'DD'), '99'); END;")
+    cursor.bind_param(:date, OraDate)
+    cursor.bind_param(:day, Fixnum)
     date = OraDate.new()
     DAY_CHECK_TARGET.each do |i|
       # set day
       date.day = i
       # check result via oracle.
-      date_in.set(date)
-      @stmt.execute(@svc)
-      assert_equal(i, day_out.get())
+      cursor[:date] = date
+      cursor.exec
+      assert_equal(i, cursor[:day])
     end
   end
 
   def test_get_day
-    @stmt.prepare("BEGIN :date := TO_DATE('200101' || TO_CHAR(:day, 'FM00'), 'YYYYMMDD'); END;")
-    day_in = @stmt.bindByName(":day", Fixnum)
-    date_out = @stmt.bindByName(":date", OraDate)
+    cursor = @conn.parse("BEGIN :date := TO_DATE('200101' || TO_CHAR(:day, 'FM00'), 'YYYYMMDD'); END;")
+    cursor.bind_param(:day, Fixnum)
+    cursor.bind_param(:date, OraDate)
     DAY_CHECK_TARGET.each do |i|
       # set date via oracle.
-      day_in.set(i)
-      @stmt.execute(@svc)
+      cursor[:day] = i
+      cursor.exec
       # check OraDate#day
-      assert_equal(i, date_out.get.day)
+      assert_equal(i, cursor[:date].day)
     end
   end
 
   def test_set_hour
-    @stmt.prepare("BEGIN :hour := TO_NUMBER(TO_CHAR(:date, 'HH24'), '99'); END;")
-    date_in = @stmt.bindByName(":date", OraDate)
-    hour_out = @stmt.bindByName(":hour", Fixnum)
+    cursor = @conn.parse("BEGIN :hour := TO_NUMBER(TO_CHAR(:date, 'HH24'), '99'); END;")
+    cursor.bind_param(:date, OraDate)
+    cursor.bind_param(:hour, Fixnum)
     date = OraDate.new()
     HOUR_CHECK_TARGET.each do |i|
       # set hour
       date.hour = i
       # check result via oracle.
-      date_in.set(date)
-      @stmt.execute(@svc)
-      assert_equal(i, hour_out.get())
+      cursor[:date] = date
+      cursor.exec
+      assert_equal(i, cursor[:hour])
     end
   end
 
   def test_get_hour
-    @stmt.prepare("BEGIN :date := TO_DATE(TO_CHAR(:hour, '99'), 'HH24'); END;")
-    hour_in = @stmt.bindByName(":hour", Fixnum)
-    date_out = @stmt.bindByName(":date", OraDate)
+    cursor = @conn.parse("BEGIN :date := TO_DATE(TO_CHAR(:hour, '99'), 'HH24'); END;")
+    cursor.bind_param(:hour, Fixnum)
+    cursor.bind_param(:date, OraDate)
     HOUR_CHECK_TARGET.each do |i|
       # set date via oracle.
-      hour_in.set(i)
-      @stmt.execute(@svc)
+      cursor[:hour] = i
+      cursor.exec
       # check OraDate#hour
-      assert_equal(i, date_out.get.hour)
+      assert_equal(i, cursor[:date].hour)
     end
   end
 
   def test_set_minute
-    @stmt.prepare("BEGIN :minute := TO_NUMBER(TO_CHAR(:date, 'MI'), '99'); END;")
-    date_in = @stmt.bindByName(":date", OraDate)
-    minute_out = @stmt.bindByName(":minute", Fixnum)
+    cursor = @conn.parse("BEGIN :minute := TO_NUMBER(TO_CHAR(:date, 'MI'), '99'); END;")
+    cursor.bind_param(:date, OraDate)
+    cursor.bind_param(:minute, Fixnum)
     date = OraDate.new()
     MINUTE_CHECK_TARGET.each do |i|
       # set minute
       date.minute = i
       # check result via oracle.
-      date_in.set(date)
-      @stmt.execute(@svc)
-      assert_equal(i, minute_out.get())
+      cursor[:date] = date
+      cursor.exec
+      assert_equal(i, cursor[:minute])
     end
   end
 
   def test_get_minute
-    @stmt.prepare("BEGIN :date := TO_DATE(TO_CHAR(:minute, '99'), 'MI'); END;")
-    minute_in = @stmt.bindByName(":minute", Fixnum)
-    date_out = @stmt.bindByName(":date", OraDate)
+    cursor = @conn.parse("BEGIN :date := TO_DATE(TO_CHAR(:minute, '99'), 'MI'); END;")
+    cursor.bind_param(:minute, Fixnum)
+    cursor.bind_param(:date, OraDate)
     MINUTE_CHECK_TARGET.each do |i|
       # set date via oracle.
-      minute_in.set(i)
-      @stmt.execute(@svc)
+      cursor[:minute] = i
+      cursor.exec
       # check OraDate#minute
-      assert_equal(i, date_out.get.minute)
+      assert_equal(i, cursor[:date].minute)
     end
   end
 
   def test_set_second
-    @stmt.prepare("BEGIN :second := TO_NUMBER(TO_CHAR(:date, 'SS'), '99'); END;")
-    date_in = @stmt.bindByName(":date", OraDate)
-    second_out = @stmt.bindByName(":second", Fixnum)
+    cursor = @conn.parse("BEGIN :second := TO_NUMBER(TO_CHAR(:date, 'SS'), '99'); END;")
+    cursor.bind_param(:date, OraDate)
+    cursor.bind_param(:second, Fixnum)
     date = OraDate.new()
     SECOND_CHECK_TARGET.each do |i|
       # set second
       date.second = i
       # check result via oracle.
-      date_in.set(date)
-      @stmt.execute(@svc)
-      assert_equal(i, second_out.get())
+      cursor[:date] = date
+      cursor.exec
+      assert_equal(i, cursor[:second])
     end
   end
 
   def test_get_second
-    @stmt.prepare("BEGIN :date := TO_DATE(TO_CHAR(:second, '99'), 'SS'); END;")
-    second_in = @stmt.bindByName(":second", Fixnum)
-    date_out = @stmt.bindByName(":date", OraDate)
+    cursor = @conn.parse("BEGIN :date := TO_DATE(TO_CHAR(:second, '99'), 'SS'); END;")
+    cursor.bind_param(:second, Fixnum)
+    cursor.bind_param(:date, OraDate)
     SECOND_CHECK_TARGET.each do |i|
       # set date via oracle.
-      second_in.set(i)
-      @stmt.execute(@svc)
+      cursor[:second] = i
+      cursor.exec
       # check OraDate#second
-      assert_equal(i, date_out.get.second)
+      assert_equal(i, cursor[:date].second)
     end
   end
 
@@ -236,8 +236,6 @@ class TestOraDate < Test::Unit::TestCase
   end
 
   def teardown
-    @stmt.free()
-    @svc.logoff()
-    @env.free()
+    @conn.logoff
   end
 end
