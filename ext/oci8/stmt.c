@@ -27,23 +27,28 @@ static void check_bind_type(ub4 type, oci8_handle_t *stmth, VALUE vtype, VALUE v
 
   if (TYPE(vtype) == T_FIXNUM) {
     switch (FIX2INT(vtype)) {
-    case OCI_TYPECODE_VARCHAR:
+    case SQLT_CHR: /* OCI_TYPECODE_VARCHAR */
       bind_type = BIND_STRING;
       *dty = SQLT_CHR;
       if (NIL_P(vlength))
 	rb_raise(rb_eArgError, "the length of String is not specified.");
       value_sz = NUM2INT(vlength);
       break;
-    case OCI_TYPECODE_RAW:
-    case OCI_TYPECODE_UNSIGNED8:
+    case SQLT_LVB: /* OCI_TYPECODE_RAW */
+    case SQLT_BIN: /* OCI_TYPECODE_UNSIGNED8 */
       bind_type = BIND_STRING;
-      *dty = OCI_TYPECODE_UNSIGNED8;
+      *dty = SQLT_BIN;
       if (NIL_P(vlength))
 	rb_raise(rb_eArgError, "the length of String is not specified.");
       value_sz = NUM2INT(vlength);
       break;
-    case OCI_TYPECODE_CLOB:
-    case OCI_TYPECODE_BLOB:
+    case SQLT_DAT:
+      bind_type = BIND_ORA_DATE;
+      *dty = SQLT_DAT;
+      value_sz = sizeof(ora_date_t);
+      break;
+    case SQLT_CLOB: /* OCI_TYPECODE_CLOB */
+    case SQLT_BLOB: /* OCI_TYPECODE_BLOB */
       bind_type = BIND_HANDLE;
       *dty = FIX2INT(vtype);
       value_sz = sizeof(OCILobLocator *);
@@ -56,6 +61,13 @@ static void check_bind_type(ub4 type, oci8_handle_t *stmth, VALUE vtype, VALUE v
       value_sz = sizeof(OCIRowid *);
       if (!rb_obj_is_instance_of(vlength, cOCIRowid))
 	rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIRowid)", rb_class2name(CLASS_OF(vlength)));
+      break;
+    case SQLT_RSET:
+      bind_type = BIND_HANDLE;
+      *dty = SQLT_RSET;
+      value_sz = sizeof(OCIStmt *);
+      if (!rb_obj_is_instance_of(vlength, cOCIStmt))
+	rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIStmt)", rb_class2name(CLASS_OF(vlength)));
       break;
     default:
       rb_raise(rb_eArgError, "Not supported type (%d)", FIX2INT(vtype));
@@ -157,7 +169,7 @@ static VALUE oci8_stmt_prepare(int argc, VALUE *argv, VALUE self)
   }
 
   rv = OCIStmtPrepare(h->hp, h->errhp, s.ptr, s.len, language, mode);
-  if (rv != OCI_SUCCESS) {
+  if (IS_OCI_ERROR(rv)) {
     oci8_raise(h->errhp, rv, h->hp);
   }
   return self;
@@ -509,8 +521,7 @@ static VALUE oci8_stmt_execute(int argc, VALUE *argv, VALUE self)
       rv = OCIStmtExecute(svch->hp, h->hp, h->errhp, iters, 0, NULL, NULL, mode);
     }
   }
-  if (rv != OCI_SUCCESS) {
-
+  if (IS_OCI_ERROR(rv)) {
     oci8_raise(h->errhp, rv, h->hp);
   }
   return self;
@@ -564,7 +575,7 @@ static VALUE oci8_stmt_fetch(int argc, VALUE *argv, VALUE self)
   if (rv == OCI_NO_DATA) {
     return Qnil;
   }
-  if (rv != OCI_SUCCESS) {
+  if (IS_OCI_ERROR(rv)) {
     oci8_raise(h->errhp, rv, h->hp);
   }
   return rb_ivar_get(self, oci8_id_define_array);

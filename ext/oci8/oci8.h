@@ -30,6 +30,8 @@ extern "C" {
 #define rb_cstr_to_dbl(p, ignore) strtod((p), 0)
 #endif
 
+#define IS_OCI_ERROR(v) (((v) != OCI_SUCCESS) && ((v) != OCI_SUCCESS_WITH_INFO))
+
 enum oci8_bind_type {
   BIND_STRING,
   BIND_FIXNUM,

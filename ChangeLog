@@ -1,3 +1,48 @@
+2005-03-23  KUBO Takehiro  <kubo@jiubao.org>
+	* oci8.rb.in, OCI8.rb:
+	delete OCI8.register_type_fixer, OCI8::TypeFixer.
+	add OCI8::BindType::* instead.
+
+2005-03-21  KUBO Takehiro  <kubo@jiubao.org>
+	* oci8.rb.in, OCI8.rb: refactoring OCI8::Cursor#define_a_column
+	* Makefile, ext/oci8/extconf.rb: change version to 0.1.10
+
+2005-03-20  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/stmt.c, lib/oci8.rb.in, lib/DBD/OCI8/OCI8.rb, test/test_dbi.rb:
+	  enable DATE to be bound as a DBI::Date or a DBI::Timestamp.
+
+2005-03-20  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/stmt.c, lib/oci8.rb.in, test/test_oci8.rb:
+	  bind a ref cursor as an OCI8::Cursor.
+          apply a patch at <URL:http://rubyforge.org/tracker/index.php?func=detail&aid=1409&group_id=256&atid=1053>.
+
+2005-01-16  KUBO Takehiro  <kubo@jiubao.org>
+
+	* lib/oci8.rb.in: change default bindtype for NUMBER with
+	  unspecified scale.
+	  (This problem is reported by William Lawson, Dmitry Maksyoma and Andreas Habel)
+	* lib/oci8.rb.in: add OCI8::Cursor.select_number_as=
+	  (for someone who want old bindtype)
+	* lib/oci8.rb.in: add OCI8::Cursor#fetch_hash
+	  (contributed by Jason Sweat)
+	* ext/oci8/oci8.h, ext/oci8/stmt.c: don't raise an error when OCI_SUCCESS_WITH_INFO.
+	  (suggested by Kenji Nishishiro)
+	* ext/ooi8/oraconf.rb: support Oracle Instant Installer.
+	  (suggested by Eustaquio Rangel de Oliveira Jr.)
+	* Makefile, ext/oci8/extconf.rb: change version to 0.1.9
+
+2004-10-30  KUBO Takehiro  <kubo@jiubao.org>
+
+	* pre-distclean.rb: delete a temporary file made by ext/oci8/oraconf.rb.
+	* ext/oci8/oraconf.rb: 1. change object files to an archive file
+	  to work around on Oracle 8.1.7. 2. raise error when OCI.H can't
+	  be found on Windows.
+
+2004-06-21  KUBO Takehiro  <kubo@jiubao.org>
+
+	* Makefile, ext/oci8/extconf.rb: change version to 0.1.8-pre1
+	* lib/DBD/OCI8/OCI8.rb: add DBI::DatabaseHandle#tables. add DBI::StatementHandle#func(:bind_value, ...).
+
 2004-03-07  KUBO Takehiro  <kubo@jiubao.org>
 
 	* ext/oci8/extconf.rb: fix to use setup.rb.

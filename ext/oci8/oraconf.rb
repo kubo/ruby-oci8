@@ -99,6 +99,14 @@ class OraConf
     original_libs = $libs
     begin
       @cc_is_gcc = get_cc_is_gcc_or_not()
+
+      # check Oracle instant client
+      ic_dir = with_config('instant-client')
+      if ic_dir
+        check_instant_client(ic_dir)
+        return
+      end
+
       @oracle_home = get_home(oracle_home)
       @version = get_version()
       @cflags = get_cflags()
@@ -109,10 +117,18 @@ class OraConf
       unless have_func("OCIInitialize", "oci.h")
         ok = false
         case RUBY_PLATFORM
-        when /solaris/
-          if /9../ =~ @version
+        when /solaris/, /hpux/
+          case @version
+          when /^9..$/
             print("retry with postfix 32.\n")
-            @libs = get_libs('32')
+            $libs = original_libs
+            @libs = get_libs('', '32')
+            $libs += " -L#{CONFIG['libdir']} " + @libs
+            ok = true if have_func("OCIInitialize", "oci.h")
+          when /^10..$/
+            print("retry with postfix 32.\n")
+            $libs = original_libs
+            @libs = get_libs('32', '')
             $libs += " -L#{CONFIG['libdir']} " + @libs
             ok = true if have_func("OCIInitialize", "oci.h")
           end
@@ -150,10 +166,15 @@ class OraConf
     sqlplus = get_local_registry('SOFTWARE\\ORACLE', 'EXECUTE_SQL') # Oracle 8 on Windows.
     sqlplus = 'sqlplus' if sqlplus.nil?                        # default
     dev_null = RUBY_PLATFORM =~ /mswin32|mingw32|bccwin32/ ? "nul" : "/dev/null"
+    if RUBY_PLATFORM =~ /cygwin/
+        oracle_home = @oracle_home.sub(%r{/cygdrive/([a-zA-Z])/}, "\\1:")
+    else
+        oracle_home = @oracle_home
+    end
     Logging::open do
-      open("|#{@oracle_home}/bin/#{sqlplus} < #{dev_null}") do |f|
+      open("|#{oracle_home}/bin/#{sqlplus} < #{dev_null}") do |f|
         while line = f.gets
-          if line =~ /([89])\.([012])\.([0-9])/
+          if line =~ /(8|9|10)\.([012])\.([0-9])/
             version = $1 + $2 + $3
             break
           end
@@ -198,6 +219,9 @@ class OraConf
           raise 'Cannot get ORACLE_HOME. Please set the environment valiable ORACLE_HOME.' if oracle_home.nil?
         end
       end
+      if RUBY_PLATFORM =~ /cygwin/
+         oracle_home.sub!(/^([a-zA-Z]):/, "/cygdrive/\\1")
+      end
       oracle_home.gsub(/\\/, '/')
     end
 
@@ -211,6 +235,9 @@ class OraConf
     end
 
     def get_cflags
+      unless File.exist?("#{oci_base_dir}/INCLUDE/OCI.H")
+        raise "'#{oci_base_dir}/INCLUDE/OCI.H' does not exits. Please install 'Oracle Call Interface'."
+      end
       if RUBY_PLATFORM =~ /cygwin/
         " -I#{oci_base_dir}/INCLUDE -D_int64=\"long long\""
       else
@@ -218,12 +245,12 @@ class OraConf
       end
     end
 
-    def get_libs
+    def get_libs(base_dir = oci_base_dir)
       case RUBY_PLATFORM
       when /cygwin/
         open("OCI.def", "w") do |f|
           f.puts("EXPORTS")
-          open("|nm #{oci_base_dir}/LIB/MSVC/OCI.LIB") do |r|
+          open("|nm #{base_dir}/LIB/MSVC/OCI.LIB") do |r|
             while line = r.gets
               f.puts($') if line =~ / T _/
             end
@@ -238,15 +265,15 @@ class OraConf
       when /bccwin32/
         # replace '/' to '\\' because bcc linker misunderstands
         # 'C:/foo/bar/OCI.LIB' as unknown option.
-        lib = "#{oci_base_dir}/LIB/BORLAND/OCI.LIB"
+        lib = "#{base_dir}/LIB/BORLAND/OCI.LIB"
         return lib.tr('/', '\\') if File.exist?(lib)
         print <<EOS
 
-#{lib} doesn't exist.
+#{lib} does not exist.
 
 Your Oracle may not support Borland C++.
 If you want to run this module, run the following command at your own risk.
-  cd #{oci_base_dir.tr('/', '\\')}\\LIB
+  cd #{base_dir.tr('/', '\\')}\\LIB
   mkdir Borland
   cd Borland
   coff2omf ..\\MSVC\\OCI.LIB OCI.LIB
@@ -254,7 +281,7 @@ If you want to run this module, run the following command at your own risk.
 EOS
         exit 1
       else
-        "#{oci_base_dir}/LIB/MSVC/OCI.LIB"
+        "#{base_dir}/LIB/MSVC/OCI.LIB"
       end
     end
 
@@ -287,17 +314,17 @@ EOS
       end
     end # get_cflags
 
-    def get_libs(postfix = '')
-      print("Running make for $ORACLE_HOME/rdbms/demo/demo_rdbms.mk (build#{postfix}) ...")
+    def get_libs(postfix1 = '', postfix2 = "")
+      print("Running make for $ORACLE_HOME/rdbms/demo/demo_rdbms#{postfix1}.mk (build#{postfix2}) ...")
       STDOUT.flush
 
       make_opt = "CC='echo MARKER' EXE=/dev/null ECHODO=echo ECHO=echo GENCLNTSH='echo genclntsh'"
       if @cc_is_gcc && /solaris/ =~ RUBY_PLATFORM
         # suggested by Brian Candler.
-        make_opt += " KPIC_OPTION= NOKPIC_CCFLAGS#{postfix}="
+        make_opt += " KPIC_OPTION= NOKPIC_CCFLAGS#{postfix2}="
       end
 
-      command = "|make -f #{@oracle_home}/rdbms/demo/demo_rdbms.mk build#{postfix} #{make_opt}"
+      command = "|make -f #{@oracle_home}/rdbms/demo/demo_rdbms#{postfix1}.mk build#{postfix2} #{make_opt}"
       marker = /^\s*MARKER/
       echo = /^\s*echo/
       libs = nil
@@ -319,7 +346,96 @@ EOS
       end
       raise 'Cannot get proper libs.' if libs.nil?
       print("OK\n")
+
+      case RUBY_PLATFORM
+      when /hpux/
+        if @cc_is_gcc
+          # strip +DA2.0W, +DS2.0, -Wl,+s, -Wl,+n
+          libs.gsub!(/\+DA\S+(\s)*/, "")
+          libs.gsub!(/\+DS\S+(\s)*/, "")
+          libs.gsub!(/-Wl,\+[sn](\s)*/, "")
+        end
+        libs.gsub!(/ -Wl,/, " ")
+      end
+
+      # remove object files from libs.
+      objs = []
+      libs.gsub!(/\S+\.o\b/) do |obj|
+        objs << obj
+        ""
+      end
+      # change object files to an archive file to work around.
+      if objs.length > 0
+        Logging::open do
+          puts "change object files to an archive file."
+          command = Config::CONFIG["AR"] + " cru oracle_objs.a " + objs.join(" ")
+          puts command
+          system(command)
+          libs = "oracle_objs.a " + libs
+        end
+      end
       libs
     end # get_libs
+  end
+
+  def check_instant_client(ic_dir)
+    if ic_dir.is_a? String
+      # zip package
+      lib_dir = ic_dir
+      inc_dir = "#{ic_dir}/sdk/include"
+      sysliblist = "#{ic_dir}/sdk/demo/sysliblist"
+    else
+      # rpm package
+      lib_dirs = Dir.glob("/usr/lib/oracle/*/client/lib")
+      if lib_dirs.empty?
+        raise 'Oracle Instant Client not found at /usr/lib/oracle/*/client/lib'
+      end
+      lib_dir = lib_dirs.sort.reverse[0]
+      inc_dir = lib_dir.gsub(%r{^/usr/lib/oracle/(.*)/client/lib}, "/usr/include/oracle/\\1/client")
+      sysliblist = ""
+    end
+
+    @version = "1010"
+    @cflags = " -I#{inc_dir}"
+    if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/ # when Windows
+      unless File.exist?("#{ic_dir}/sdk/lib/msvc/oci.lib")
+        print <<EOS
+---------------------------------------------------
+Could not compile with Oracle Instant Installer.
+#{ic_dir}/sdk/lib/msvc/oci.lib could not be found.
+---------------------------------------------------
+EOS
+        raise 'failed'
+      end
+      @libs = get_libs("#{ic_dir}/sdk")
+      is_unix = false
+    else
+      if Dir.glob("#{lib_dir}/libclntsh.*").empty?
+        print <<EOS
+---------------------------------------------------
+Could not compile with Oracle Instant Installer.
+#{lib_dir}/libclntsh.* could not be found.
+---------------------------------------------------
+EOS
+        raise 'failed'
+      end
+      @libs = " -L#{lib_dir} -lclntsh"
+      @libs = "#{@libs} " + File.read(sysliblist) if File.exist?(sysliblist)
+      is_unix = true
+    end
+    $CFLAGS += @cflags
+    $libs += @libs
+    unless have_func("OCIInitialize", "oci.h")
+      if is_unix
+        print <<EOS
+---------------------------------------------------
+Could not compile with Oracle Instant Installer.
+You may need to set:
+    LD_LIBRARY_PATH=#{lib_dir}
+---------------------------------------------------
+EOS
+      end
+      raise 'failed'
+    end
   end
 end

@@ -49,6 +49,44 @@ EOS
     @dbh.do("DROP TABLE test_table")
   end
 
+  def test_ref_cursor
+    begin
+      @dbh.do("DROP TABLE test_table")
+    rescue DBI::DatabaseError
+      raise if $!.err != 942 # table or view does not exist
+    end
+    sql = <<-EOS
+CREATE TABLE test_table
+  (C CHAR(10) NOT NULL,
+   V VARCHAR2(20),
+   N NUMBER(10, 2),
+   D DATE)
+STORAGE (
+   INITIAL 4k
+   NEXT 4k
+   MINEXTENTS 1
+   MAXEXTENTS UNLIMITED
+   PCTINCREASE 0)
+EOS
+    @dbh.do(sql)
+    sth = @dbh.prepare("INSERT INTO test_table VALUES (?, ?, ?, ?)")
+    1.upto(10) do |i|
+      sth.execute(format("%10d", i * 10), i.to_s, i, nil)
+    end
+    # get a ref cursor
+    plsql = @dbh.execute("BEGIN OPEN ? FOR SELECT * FROM test_table ORDER BY c; END;", DBI::StatementHandle)
+    sth = plsql.func(:bind_value, 1)
+    assert_equal(["C", "V", "N", "D"], sth.column_names)
+    1.upto(10) do |i|
+      rv = sth.fetch
+      assert_equal(format("%10d", i * 10), rv[0])
+      assert_equal(i.to_s, rv[1])
+      assert_equal(i, rv[2])
+    end
+    @dbh.rollback()
+    @dbh.do("DROP TABLE test_table")
+  end
+
   def test_define
     begin
       @dbh.do("DROP TABLE test_table")
@@ -110,6 +148,20 @@ EOS
     assert_nil(sth.fetch)
     sth.finish
     @dbh.execute("DROP TABLE test_table")
+  end
+
+  def test_bind_dbi_data_type
+    inval = DBI::Date.new(2004, 3, 20)
+    sth = @dbh.execute("BEGIN ? := ?; END;", DBI::Date, inval)
+    outval = sth.func(:bind_value, 1)
+    assert_instance_of(DBI::Date, outval)
+    assert_equal(inval.to_time, outval.to_time)
+
+    inval = DBI::Timestamp.new(2004, 3, 20, 18, 26, 33)
+    sth = @dbh.execute("BEGIN ? := ?; END;", DBI::Timestamp, inval)
+    outval = sth.func(:bind_value, 1)
+    assert_instance_of(DBI::Timestamp, outval)
+    assert_equal(inval.to_time, outval.to_time)
   end
 
 end # TestDBI
