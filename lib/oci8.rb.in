@@ -14,15 +14,15 @@ class OCIBreak < OCIException
   end
 end
 
-class OCIDefine
+class OCIDefine # :nodoc:
   # define handle of OCILobLocator needs @env and @svc.
-  def set_handle(env, svc)
+  def set_handle(env, svc) 
     @env = env
     @svc = svc
   end
 end
 
-class OCIBind
+class OCIBind # :nodoc:
   # define handle of OCILobLocator needs @env and @svc.
   def set_handle(env, svc, ctx)
     @env = env
@@ -35,9 +35,8 @@ class OCI8
   @@env = nil
   VERSION = '@@OCI8_MODULE_VERSION@@'
   CLIENT_VERSION = '@@OCI8_CLIENT_VERSION@@'
-  # bind type
+  # :stopdoc:
   RAW = OCI_TYPECODE_RAW
-  # statement type
   STMT_SELECT = OCI_STMT_SELECT
   STMT_UPDATE = OCI_STMT_UPDATE
   STMT_DELETE = OCI_STMT_DELETE
@@ -47,17 +46,52 @@ class OCI8
   STMT_ALTER = OCI_STMT_ALTER
   STMT_BEGIN = OCI_STMT_BEGIN
   STMT_DECLARE = OCI_STMT_DECLARE
+  # :startdoc:
 
-  # ocidfn.h
-  SQLT_CHR = 1     # character string
-  SQLT_DAT = 12    # date in oracle format
-  SQLT_BIN = 23    # binary data
-  SQLT_RDD = 104   # rowid descriptor
-  SQLT_CLOB = 112  # character lob
-  SQLT_BLOB = 113  # binary lob
-  SQLT_RSET = 116  # result set type
+  # sql type (varchar, varchar2)
+  SQLT_CHR = 1
+  # sql type (number, double precision, float, real, numeric, int, integer, smallint)
+  SQLT_NUM = 2
+  # sql type (long)
+  SQLT_LNG = 8
+  # sql type (date)
+  SQLT_DAT = 12
+  # sql type (raw)
+  SQLT_BIN = 23
+  # sql type (long raw)
+  SQLT_LBI = 24
+  # sql type (char)
+  SQLT_AFC = 96
+  # sql type (rowid)
+  SQLT_RDD = 104
+  # sql type (clob)
+  SQLT_CLOB = 112
+  # sql type (blob)
+  SQLT_BLOB = 113
+  # sql type (result set)
+  SQLT_RSET = 116
+  # sql type (timestamp), not supported yet
+  SQLT_TIMESTAMP = 187
+  # sql type (timestamp with time zone), not supported yet
+  SQLT_TIMESTAMP_TZ = 188
+  # sql type (interval year to month), not supported yet
+  SQLT_INTERVAL_YM = 189
+  # sql type (interval day to second), not supported yet
+  SQLT_INTERVAL_DS = 190
+  # sql type (timestamp with local time zone), not supported yet
+  SQLT_TIMESTAMP_LTZ = 232
 
-  module Util
+  # mapping of sql type number to sql type name.
+  SQLT_NAMES = {}
+  constants.each do |name|
+    next if name.index("SQLT_") != 0
+    val = const_get name.intern
+    if val.is_a? Fixnum
+      SQLT_NAMES[val] = name
+    end
+  end
+
+  module Util # :nodoc:
     CTX_EXECFLAG = 0
     CTX_MUTEX = 1
     CTX_THREAD = 2
@@ -236,6 +270,10 @@ class OCI8
       @@number_type = val
     end
 
+    def self.select_number_as
+      @@number_type
+    end
+
     def initialize(env, svc, ctx, stmt = nil)
       @env = env
       @svc = svc
@@ -265,7 +303,7 @@ class OCI8
       if type == String and length.nil?
 	length = 4000
       end
-      b = bind_or_define(pos, nil, type, length, :define)
+      b = bind_or_define(:define, pos, nil, type, length, nil, nil, false)
       @defns[pos].free() unless @defns[pos].nil?
       @defns[pos] = b
       self
@@ -273,7 +311,7 @@ class OCI8
 
     def bind_param(key, val, type = nil, length = nil)
       @binds = {} if @binds.nil?
-      b = bind_or_define(key, val, type, length, :bind)
+      b = bind_or_define(:bind, key, val, type, length, nil, nil, false)
       @binds[key].free() unless @binds[key].nil?
       @binds[key] = b
       self
@@ -375,7 +413,7 @@ class OCI8
 
     private
 
-    def bind_or_define(key, val, type, option, bind_type)
+    def bind_or_define(bind_type, key, val, type, length, precision, scale, strict_check)
       if type.nil?
 	if val.nil?
 	  raise "bind type is not given." if type.nil?
@@ -391,7 +429,13 @@ class OCI8
 
       type_fixer = OCI8::TypeFixer[type]
       if type_fixer
-        type, val, option = type_fixer.fix_type(@env, val, option)
+        type, val, option = type_fixer.fix_type(@env, val, length, precision, scale)
+      else
+        if strict_check
+          raise "unsupported datatype: #{SQLT_NAMES[type] ? SQLT_NAMES[type] : type}"
+        else
+          option = length
+        end
       end
 
       case bind_type
@@ -422,9 +466,8 @@ class OCI8
       1.upto(num_cols) do |i|
         @parms[i - 1] = @stmt.paramGet(i)
       end
-      num_cols
       @defns = Array.new(@parms.size) if @defns.nil?
-      1.upto(@parms.size) do |i|
+      1.upto(num_cols) do |i|
 	@defns[i] = define_a_column(i) if @defns[i].nil?
       end
       num_cols
@@ -434,65 +477,21 @@ class OCI8
       p = @parms[i - 1]
       datatype = do_ocicall(@ctx) { p.attrGet(OCI_ATTR_DATA_TYPE) }
       datasize = do_ocicall(@ctx) { p.attrGet(OCI_ATTR_DATA_SIZE) }
-      scale = do_ocicall(@ctx) { p.attrGet(OCI_ATTR_SCALE) }
       precision = do_ocicall(@ctx) { p.attrGet(OCI_ATTR_PRECISION) }
+      scale = do_ocicall(@ctx) { p.attrGet(OCI_ATTR_SCALE) }
 
-      # change define type according to the datatype.
       case datatype
-      when OCI_TYPECODE_VARCHAR
-	@stmt.defineByPos(i, String, datasize * 3)
-      when OCI_TYPECODE_CHAR
-	@stmt.defineByPos(i, String, datasize * 3)
-      when OCI_TYPECODE_RAW, OCI_TYPECODE_UNSIGNED8
-	@stmt.defineByPos(i, OCI_TYPECODE_RAW, datasize)
-      when OCI_TYPECODE_NUMBER
-        if scale == -127
-          # FLOAT or FLOAT(p)
-          @stmt.defineByPos(i, Float)
-        elsif scale == 0
-          if precision == 0
-            # NUMBER without its scale and precision
-            @stmt.defineByPos(i, @@number_type)
-          elsif precision <= 9
-            # NUMBER(p, 0); p is less than or equals to the precision of Fixnum
-            @stmt.defineByPos(i, Fixnum)
-          else
-            # NUMBER(p, 0); p is greater than the precision of Fixnum
-            @stmt.defineByPos(i, Integer)
-          end
-        else
-          # NUMBER(p, s)
-          if precision < 15 # the precision of double.
-            @stmt.defineByPos(i, Float)
-          else
-            # use BigDecimal instead?
-            @stmt.defineByPos(i, OraNumber)
-	  end
-	end
-      when OCI_TYPECODE_DATE
-	@stmt.defineByPos(i, OCI8::SQLT_DAT)
-	# @stmt.defineByPos(i, Time)
-      when OCI_TYPECODE_BLOB
-	lob = @env.alloc(OCILobLocator)
-	hndl = @stmt.defineByPos(i, OCI_TYPECODE_BLOB, lob)
-        hndl.set_handle(@env, @svc)
-        def hndl.get()
-          val = super()
-	  BLOB.new(@env, @svc, val.clone(@svc)) unless val.nil?
-        end
-        hndl
-      when OCI_TYPECODE_CLOB
-	lob = @env.alloc(OCILobLocator)
-	hndl = @stmt.defineByPos(i, OCI_TYPECODE_CLOB, lob)
-        hndl.set_handle(@env, @svc)
-        def hndl.get()
-          val = super()
-          CLOB.new(@env, @svc, val.clone(@svc)) unless val.nil?
-        end
-        hndl
-      else
-	raise "unsupported datatype: #{OCI_TYPECODE_NAMES[datatype] ? OCI_TYPECODE_NAMES[datatype] : datatype}"
+      when SQLT_CHR, SQLT_AFC
+        # character size may become large while character set conversion.
+        # The length of a half-width kana is one in Shift_JIS, two in EUC-JP,
+        # three in UTF-8.
+        datasize *= 3
+      when SQLT_LNG, SQLT_LBI
+        # use DATA_AT_EXEC later.
+        datasize = 65535 # FIXME
       end
+
+      bind_or_define(:define, i, nil, datatype, datasize, precision, scale, true)
     end # define_a_column
 
     def bind_params(*bindvars)
@@ -646,10 +645,23 @@ class OraDate
   end
 end
 
+
+############################################################
+# bind bind-values
+# define columns explicitly
+############################################################
+
+# bind OraDate
+OCI8.register_type_fixer(OraDate) do |obj|
+  def obj.fix_type(env, val, length, precision, scale)
+    [OCI8::SQLT_DAT, val, nil]
+  end
+end
+
 # bind Time via OraDate
 OCI8.register_type_fixer(Time) do |obj|
-  def obj.fix_type(env, val, option)
-    [OCI8::SQLT_DAT, val, option]
+  def obj.fix_type(env, val, length, precision, scale)
+    [OCI8::SQLT_DAT, val, nil]
   end
   def obj.decorate(b)
     def b.set(val)
@@ -663,8 +675,8 @@ end
 
 # bind Date via OraDate
 OCI8.register_type_fixer(Date) do |obj|
-  def obj.fix_type(env, val, option)
-    [OCI8::SQLT_DAT, val, option]
+  def obj.fix_type(env, val, length, precision, scale)
+    [OCI8::SQLT_DAT, val, nil]
   end
   def obj.decorate(b)
     def b.set(val)
@@ -678,28 +690,28 @@ end
 
 # bind OCIRowid
 OCI8.register_type_fixer(OCIRowid) do |obj|
-  def obj.fix_type(env, val, option)
+  def obj.fix_type(env, val, length, precision, scale)
     [OCI8::SQLT_RDD, nil, val]
   end
 end
 
 # bind String
 OCI8.register_type_fixer(String) do |obj|
-  def obj.fix_type(env, val, option)
-    [OCI8::SQLT_CHR, val, option || (val.nil? ? nil : val.length)]
+  def obj.fix_type(env, val, length, precision, scale)
+    [OCI8::SQLT_CHR, val, length || (val.nil? ? nil : val.length)]
   end
 end
 
 # bind RAW
 OCI8.register_type_fixer(OCI8::RAW) do |obj|
-  def obj.fix_type(env, val, option)
-    [OCI8::SQLT_BIN, val, option || (val.nil? ? nil : val.length)]
+  def obj.fix_type(env, val, length, precision, scale)
+    [OCI8::SQLT_BIN, val, length || (val.nil? ? nil : val.length)]
   end
 end
 
 # bind BLOB
 OCI8.register_type_fixer(OCI8::BLOB) do |obj|
-  def obj.fix_type(env, val, option)
+  def obj.fix_type(env, val, length, precision, scale)
     [OCI8::SQLT_BLOB, nil, val.nil? ? env.alloc(OCILobLocator) : val]
   end
   def obj.decorate(b)
@@ -711,7 +723,7 @@ end
 
 # bind CLOB
 OCI8.register_type_fixer(OCI8::CLOB) do |obj|
-  def obj.fix_type(env, val, option)
+  def obj.fix_type(env, val, length, precision, scale)
     [OCI8::SQLT_CLOB, nil, val.nil? ? env.alloc(OCILobLocator) : val]
   end
   def obj.decorate(b)
@@ -723,7 +735,7 @@ end
 
 # bind Cursor
 OCI8.register_type_fixer(OCI8::Cursor) do |obj|
-  def obj.fix_type(env, val, option)
+  def obj.fix_type(env, val, length, precision, scale)
     raise NotImplementedError unless val.nil?
     [OCI8::SQLT_RSET, nil, env.alloc(OCIStmt)]
   end
@@ -733,6 +745,110 @@ OCI8.register_type_fixer(OCI8::Cursor) do |obj|
     end
     def b.get()
       (val = super()) && OCI8::Cursor.new(@env, @svc, @ctx, val)
+    end
+  end
+end
+
+############################################################
+# define columns implicitly
+############################################################
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# CHAR(1)       SQLT_AFC      1    0    0
+# CHAR(10)      SQLT_AFC     10    0    0
+OCI8::TypeFixer[OCI8::SQLT_AFC] = OCI8::TypeFixer[String]
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# VARCHAR(1)    SQLT_CHR      1    0    0
+# VARCHAR(10)   SQLT_CHR     10    0    0
+# VARCHAR2(1)   SQLT_CHR      1    0    0
+# VARCHAR2(10)  SQLT_CHR     10    0    0
+OCI8::TypeFixer[OCI8::SQLT_CHR] = OCI8::TypeFixer[String]
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# RAW(1)        SQLT_BIN      1    0    0
+# RAW(10)       SQLT_BIN     10    0    0
+OCI8::TypeFixer[OCI8::SQLT_BIN] = OCI8::TypeFixer[OCI8::RAW]
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# LONG          SQLT_LNG      0    0    0
+OCI8::TypeFixer[OCI8::SQLT_LNG] = OCI8::TypeFixer[String]
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# LONG RAW      SQLT_LBI      0    0    0
+OCI8::TypeFixer[OCI8::SQLT_LBI] = OCI8::TypeFixer[OCI8::RAW]
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# CLOB          SQLT_CLOB  4000    0    0
+OCI8::TypeFixer[OCI8::SQLT_CLOB] = OCI8::TypeFixer[OCI8::CLOB]
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# BLOB          SQLT_BLOB  4000    0    0
+OCI8::TypeFixer[OCI8::SQLT_BLOB] = OCI8::TypeFixer[OCI8::BLOB]
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# DATE          SQLT_DAT      7    0    0
+OCI8::TypeFixer[OCI8::SQLT_DAT] = OCI8::TypeFixer[OraDate]
+
+# datatype        type       size prec scale
+# -------------------------------------------------
+# TIMESTAMP     SQLT_TIMESTAMP 11  0    6
+#OCI8::TypeFixer[OCI8::SQLT_TIMESTAMP]  = OCI8::TypeFixer[OraDate]
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# ROWID         SQLT_RDD      4    0    0
+OCI8::TypeFixer[OCI8::SQLT_RDD] = OCI8::TypeFixer[OCIRowid]
+
+# datatype           type     size prec scale
+# -----------------------------------------------------
+# FLOAT            SQLT_NUM     22  126 -127
+# FLOAT(1)         SQLT_NUM     22    1 -127
+# FLOAT(126)       SQLT_NUM     22  126 -127
+# DOUBLE PRECISION SQLT_NUM     22  126 -127
+# REAL             SQLT_NUM     22   63 -127
+# NUMBER           SQLT_NUM     22    0    0
+# NUMBER(1)        SQLT_NUM     22    1    0
+# NUMBER(38)       SQLT_NUM     22   38    0
+# NUMBER(1, 0)     SQLT_NUM     22    1    0
+# NUMBER(38, 0)    SQLT_NUM     22   38    0
+# NUMERIC          SQLT_NUM     22   38    0
+# INT              SQLT_NUM     22   38    0
+# INTEGER          SQLT_NUM     22   38    0
+# SMALLINT         SQLT_NUM     22   38    0
+OCI8.register_type_fixer(OCI8::SQLT_NUM) do |obj|
+  def obj.fix_type(env, val, length, precision, scale)
+    if scale == -127
+      # FLOAT or FLOAT(p)
+      [Float, nil, nil]
+    elsif scale == 0
+      if precision == 0
+        # NUMBER without its scale and precision
+        # default value is Float
+        [OCI8::Cursor.select_number_as, nil, nil]
+      elsif precision <= 9
+        # NUMBER(p, 0); p is less than or equals to the precision of Fixnum
+        [Fixnum, nil, nil]
+      else
+        # NUMBER(p, 0); p is greater than the precision of Fixnum
+        [Integer, nil, nil]
+      end
+    else
+      # NUMBER(p, s)
+      if precision < 15 # the precision of double.
+        [Float, nil, nil]
+      else
+        # use BigDecimal instead?
+        [OraNumber, nil, nil]
+      end
     end
   end
 end

@@ -1,3 +1,7 @@
+2005-03-21  KUBO Takehiro  <kubo@jiubao.org>
+	* oci8.rb.in, OCI8.rb: refactoring OCI8::Cursor#define_a_column
+	* Makefile, ext/oci8/extconf.rb: change version to 0.1.10
+
 2005-03-20  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/stmt.c, lib/oci8.rb.in, lib/DBD/OCI8/OCI8.rb, test/test_dbi.rb:
 	  enable DATE to be bound as a DBI::Date or a DBI::Timestamp.

@@ -7,14 +7,14 @@
 
 require 'oci8'
 
-module DBI
-module DBD
+module DBI # :nodoc:
+module DBD # :nodoc:
 module OCI8
 
 VERSION          = "0.1"
 USED_DBD_VERSION = "0.2"
 
-module Util
+module Util # :nodoc:
 
   ERROR_MAP = {
     1 => DBI::IntegrityError, # unique constraint violated
@@ -43,7 +43,7 @@ module Util
   end
 end
 
-class Driver < DBI::BaseDriver
+class Driver < DBI::BaseDriver # :nodoc:
   include Util
   @@env = nil
 
@@ -124,7 +124,7 @@ class Database < DBI::BaseDatabase
 
   private
 
-  class DummyQuoter
+  class DummyQuoter # :nodoc:
     # dummy to substitute ?-style parameter markers by :1 :2 etc.
     def quote(str)
       str
@@ -209,9 +209,9 @@ end # module DBD
 end # module DBI
 
 OCI8.register_type_fixer(DBI::Date) do |obj|
-  def obj.fix_type(env, val, option)
+  def obj.fix_type(env, val, length, precision, scale)
     # bind as an OraDate
-    [OCI8::SQLT_DAT, val, option]
+    [OCI8::SQLT_DAT, val, nil]
   end
   def obj.decorate(b)
     def b.set(val)
@@ -228,9 +228,9 @@ OCI8.register_type_fixer(DBI::Date) do |obj|
 end
 
 OCI8.register_type_fixer(DBI::Timestamp) do |obj|
-  def obj.fix_type(env, val, option)
+  def obj.fix_type(env, val, length, precision, scale)
     # bind as an OraDate
-    [OCI8::SQLT_DAT, val, option]
+    [OCI8::SQLT_DAT, val, nil]
   end
   def obj.decorate(b)
     def b.set(val)
@@ -247,7 +247,7 @@ OCI8.register_type_fixer(DBI::Timestamp) do |obj|
 end
 
 OCI8.register_type_fixer(DBI::StatementHandle) do |obj|
-  def obj.fix_type(env, val, option)
+  def obj.fix_type(env, val, length, precision, scale)
     raise NotImplementedError unless val.nil?
     [OCI8::SQLT_RSET, nil, env.alloc(OCIStmt)]
   end
