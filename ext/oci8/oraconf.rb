@@ -109,10 +109,18 @@ class OraConf
       unless have_func("OCIInitialize", "oci.h")
         ok = false
         case RUBY_PLATFORM
-        when /solaris/
-          if /9../ =~ @version
+        when /solaris/, /hpux/
+          case @version
+          when /^9..$/
             print("retry with postfix 32.\n")
-            @libs = get_libs('32')
+            $libs = original_libs
+            @libs = get_libs('', '32')
+            $libs += " -L#{CONFIG['libdir']} " + @libs
+            ok = true if have_func("OCIInitialize", "oci.h")
+          when /^10..$/
+            print("retry with postfix 32.\n")
+            $libs = original_libs
+            @libs = get_libs('32', '')
             $libs += " -L#{CONFIG['libdir']} " + @libs
             ok = true if have_func("OCIInitialize", "oci.h")
           end
@@ -150,10 +158,15 @@ class OraConf
     sqlplus = get_local_registry('SOFTWARE\\ORACLE', 'EXECUTE_SQL') # Oracle 8 on Windows.
     sqlplus = 'sqlplus' if sqlplus.nil?                        # default
     dev_null = RUBY_PLATFORM =~ /mswin32|mingw32|bccwin32/ ? "nul" : "/dev/null"
+    if RUBY_PLATFORM =~ /cygwin/
+        oracle_home = @oracle_home.sub(%r{/cygdrive/([a-zA-Z])/}, "\\1:")
+    else
+        oracle_home = @oracle_home
+    end
     Logging::open do
-      open("|#{@oracle_home}/bin/#{sqlplus} < #{dev_null}") do |f|
+      open("|#{oracle_home}/bin/#{sqlplus} < #{dev_null}") do |f|
         while line = f.gets
-          if line =~ /([89])\.([012])\.([0-9])/
+          if line =~ /(8|9|10)\.([012])\.([0-9])/
             version = $1 + $2 + $3
             break
           end
@@ -197,6 +210,9 @@ class OraConf
           end
           raise 'Cannot get ORACLE_HOME. Please set the environment valiable ORACLE_HOME.' if oracle_home.nil?
         end
+      end
+      if RUBY_PLATFORM =~ /cygwin/
+         oracle_home.sub!(/^([a-zA-Z]):/, "/cygdrive/\\1")
       end
       oracle_home.gsub(/\\/, '/')
     end
@@ -287,17 +303,17 @@ EOS
       end
     end # get_cflags
 
-    def get_libs(postfix = '')
-      print("Running make for $ORACLE_HOME/rdbms/demo/demo_rdbms.mk (build#{postfix}) ...")
+    def get_libs(postfix1 = '', postfix2 = "")
+      print("Running make for $ORACLE_HOME/rdbms/demo/demo_rdbms#{postfix1}.mk (build#{postfix2}) ...")
       STDOUT.flush
 
       make_opt = "CC='echo MARKER' EXE=/dev/null ECHODO=echo ECHO=echo GENCLNTSH='echo genclntsh'"
       if @cc_is_gcc && /solaris/ =~ RUBY_PLATFORM
         # suggested by Brian Candler.
-        make_opt += " KPIC_OPTION= NOKPIC_CCFLAGS#{postfix}="
+        make_opt += " KPIC_OPTION= NOKPIC_CCFLAGS#{postfix2}="
       end
 
-      command = "|make -f #{@oracle_home}/rdbms/demo/demo_rdbms.mk build#{postfix} #{make_opt}"
+      command = "|make -f #{@oracle_home}/rdbms/demo/demo_rdbms#{postfix1}.mk build#{postfix2} #{make_opt}"
       marker = /^\s*MARKER/
       echo = /^\s*echo/
       libs = nil
@@ -319,6 +335,18 @@ EOS
       end
       raise 'Cannot get proper libs.' if libs.nil?
       print("OK\n")
+
+      case RUBY_PLATFORM
+      when /hpux/
+        if @cc_is_gcc
+          # strip +DA2.0W, +DS2.0, -Wl,+s, -Wl,+n
+          libs.gsub!(/\+DA\S+(\s)*/, "")
+          libs.gsub!(/\+DS\S+(\s)*/, "")
+          libs.gsub!(/-Wl,\+[sn](\s)*/, "")
+        end
+        libs.gsub!(/ -Wl,/, " ")
+      end
+
       libs
     end # get_libs
   end
