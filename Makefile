@@ -1,4 +1,4 @@
-VERSION = 0.1.8-pre1
+VERSION = 0.1.9
 RUBY = ruby
 
 all: build

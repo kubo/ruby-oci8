@@ -11,6 +11,7 @@
 	  (suggested by Kenji Nishishiro)
 	* ext/ooi8/oraconf.rb: support Oracle Instant Installer.
 	  (suggested by Eustaquio Rangel de Oliveira Jr.)
+	* Makefile, ext/oci8/extconf.rb: change version to 0.1.9
 
 2004-10-30  KUBO Takehiro  <kubo@jiubao.org>
 
