@@ -201,6 +201,14 @@ class OCI8
   class Cursor
 
     include OCI8::Util
+    @@number_type = Float
+
+    def self.select_number_as=(val)
+      if val != Fixnum && val != Integer && val != Float
+        raise rb_eArgError, "must be Fixnum, Integer or Float"
+      end
+      @@number_type = val
+    end
 
     def initialize(env, svc, ctx)
       @env = env
@@ -312,6 +320,18 @@ class OCI8
 	fetch_a_row()
       end
     end # fetch
+
+    def fetch_hash
+      if rs = fetch_a_row()
+        ret = {}
+        @parms.each do |p|
+          ret[p.attrGet(OCI_ATTR_NAME)] = rs.shift
+        end
+        ret
+      else 
+        nil
+      end
+    end # fetch_hash
 
     def close
       @env = nil
@@ -444,19 +464,27 @@ class OCI8
       when OCI_TYPECODE_RAW, OCI_TYPECODE_UNSIGNED8
 	@stmt.defineByPos(i, OCI_TYPECODE_RAW, datasize)
       when OCI_TYPECODE_NUMBER
-	if scale == 0
-	  # Integer
-	  if precision <= 9 # the precision of Fixnum (assuming 31 bit integer)
-	    @stmt.defineByPos(i, Fixnum)
-	  else
-	    @stmt.defineByPos(i, Integer)
-	  end
-	else
-	  # not Integer
-	  if precision < 15 # the precision of double.
-	    @stmt.defineByPos(i, Float)
-	  else
-	    @stmt.defineByPos(i, OraNumber)
+        if scale == -127
+          # FLOAT or FLOAT(p)
+          @stmt.defineByPos(i, Float)
+        elsif scale == 0
+          if precision == 0
+            # NUMBER without its scale and precision
+            @stmt.defineByPos(i, @@number_type)
+          elsif precision <= 9
+            # NUMBER(p, 0); p is less than or equals to the precision of Fixnum
+            @stmt.defineByPos(i, Fixnum)
+          else
+            # NUMBER(p, 0); p is greater than the precision of Fixnum
+            @stmt.defineByPos(i, Integer)
+          end
+        else
+          # NUMBER(p, s)
+          if precision < 15 # the precision of double.
+            @stmt.defineByPos(i, Float)
+          else
+            # use BigDecimal instead?
+            @stmt.defineByPos(i, OraNumber)
 	  end
 	end
       when OCI_TYPECODE_DATE

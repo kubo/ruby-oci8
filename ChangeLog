@@ -1,7 +1,16 @@
 2005-01-16  KUBO Takehiro  <kubo@jiubao.org>
 
+	* lib/oci8.rb.in: change default bindtype for NUMBER with
+	  unspecified scale.
+	  (This problem is reported by William Lawson, Dmitry Maksyoma and Andreas Habel)
+	* lib/oci8.rb.in: add OCI8::Cursor.select_number_as=
+	  (for someone who want old bindtype)
+	* lib/oci8.rb.in: add OCI8::Cursor#fetch_hash
+	  (contributed by Jason Sweat)
 	* ext/oci8/oci8.h, ext/oci8/stmt.c: don't raise an error when OCI_SUCCESS_WITH_INFO.
-	* ext/ooi8/oraconf.rb, README: support Oracle Instant Installer.
+	  (suggested by Kenji Nishishiro)
+	* ext/ooi8/oraconf.rb: support Oracle Instant Installer.
+	  (suggested by Eustaquio Rangel de Oliveira Jr.)
 
 2004-10-30  KUBO Takehiro  <kubo@jiubao.org>
 
