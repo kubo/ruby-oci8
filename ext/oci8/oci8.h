@@ -32,17 +32,6 @@ extern "C" {
 
 #define IS_OCI_ERROR(v) (((v) != OCI_SUCCESS) && ((v) != OCI_SUCCESS_WITH_INFO))
 
-enum oci8_bind_type {
-  BIND_STRING,
-  BIND_FIXNUM,
-  BIND_INTEGER_VIA_ORA_NUMBER,
-  BIND_TIME_VIA_ORA_DATE,
-  BIND_FLOAT,
-  BIND_ORA_DATE,
-  BIND_ORA_NUMBER,
-  BIND_HANDLE
-};
-
 /* OraDate - Internal format of DATE */
 struct ora_date {
   unsigned char century;
@@ -97,6 +86,8 @@ struct oci8_handle {
 };
 typedef struct oci8_handle oci8_handle_t;
 
+typedef struct oci8_bind_type oci8_bind_type_t;
+
 /* OCIBind, OCIDefine */
 struct oci8_bind_handle {
   ub4 type;
@@ -107,7 +98,7 @@ struct oci8_bind_handle {
   size_t size;
   struct oci8_handle **children;
   /* End of common part */
-  enum oci8_bind_type bind_type;
+  oci8_bind_type_t *bind_type;
   sb2 ind;
   ub2 rlen;
   sb4 value_sz; /* sizeof value */
@@ -121,6 +112,14 @@ struct oci8_bind_handle {
   } value;
 };
 typedef struct oci8_bind_handle oci8_bind_handle_t;
+
+struct oci8_bind_type {
+  int bind_object;
+  ub2 dty;
+  sb4 (*get_value_sz)(VALUE vlength);
+  VALUE (*get)(oci8_bind_handle_t *hp);
+  void (*set)(oci8_bind_handle_t *hp, VALUE val);
+};
 
 #define Get_Handle(obj, hp) do { \
   Data_Get_Struct(obj, oci8_handle_t, hp); \
@@ -235,11 +234,8 @@ void Init_oci8_stmt(void);
 
 /* bind.c */
 void Init_oci8_bind(void);
-void oci8_set_value(oci8_bind_handle_t *, VALUE);
-VALUE oci8_get_value(oci8_bind_handle_t *);
-
-/* define.c */
-void Init_oci8_define(void);
+void oci8_bind_type_set(VALUE key, oci8_bind_type_t *bind_type);
+oci8_bind_type_t *oci8_bind_type_get(VALUE key);
 
 /* descriptor.c */
 void Init_oci8_descriptor(void);

@@ -285,7 +285,7 @@ class OCI8
     Float = Object.new
     class << Float
       def fix_type(env, val, length, precision, scale)
-        [::Float, nil, nil]
+        [::Float, val, nil]
       end
     end
 
@@ -293,7 +293,7 @@ class OCI8
     Fixnum = Object.new
     class << Fixnum
       def fix_type(env, val, length, precision, scale)
-        [::Fixnum, nil, nil]
+        [::Fixnum, val, nil]
       end
     end
 
@@ -301,7 +301,7 @@ class OCI8
     Integer = Object.new
     class << Integer
       def fix_type(env, val, length, precision, scale)
-        [::Integer, nil, nil]
+        [::Integer, val, nil]
       end
     end
 
@@ -309,7 +309,7 @@ class OCI8
     OraNumber = Object.new
     class << OraNumber
       def fix_type(env, val, length, precision, scale)
-        [::OraNumber, nil, nil]
+        [::OraNumber, val, nil]
       end
     end
 

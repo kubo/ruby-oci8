@@ -1,3 +1,20 @@
+2005-04-06  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.h, ext/oci8/handle.c: delete enum oci8_bind_type.
+	  add oci8_bind_type_t.
+	* ext/oci8/bind.c: add oci8_bind_type_t structures bind_string, bind_raw,
+	   bind_fixnum, bind_float, bind_oradate, bind_integer, bind_oranumber,
+	   bind_rowid, bind_clob, bind_blob, and bind_stmt.
+	   add oci8_bind_type_set() and oci8_bind_type_get() to get/set 
+	   an oci8_bind_type_t structure.
+	   delete oci8_get_value() and oci8_set_value(), use
+	   (oci8_bind_type_t*)->get()/set() instead.
+	* ext/oci8/stmt.c: change check_bind_type() by using oci8_bind_type_t.
+	  change oci8_define_by_pos(), oci8_bind_by_pos() and oci8_bind_by_name().
+	* ext/oci8/MANIFEST, ext/oci8/depend, ext/oci8/extconf.rb, ext/oci8/oci8.c,
+	  ext/oci8/define.c: delete define.c and Init_define().
+	* lib/oci8.rb.in: change OCI8::BindType::Float, OCI8::BindType::Fixnum,
+	  OCI8::BindType::Integer and OCI8::BindType::OraNumber for in-bind.
+
 2005-04-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: improve Oracle instance client check:
 	   1. add more strict libclntsh.so check.

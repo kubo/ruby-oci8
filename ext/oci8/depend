@@ -7,7 +7,6 @@ env.o: $(srcdir)/env.c $(srcdir)/oci8.h Makefile
 error.o: $(srcdir)/error.c $(srcdir)/oci8.h Makefile
 svcctx.o: $(srcdir)/svcctx.c $(srcdir)/oci8.h Makefile
 stmt.o: $(srcdir)/stmt.c $(srcdir)/oci8.h Makefile
-define.o: $(srcdir)/define.c $(srcdir)/oci8.h Makefile
 bind.o: $(srcdir)/bind.c $(srcdir)/oci8.h Makefile
 descriptor.o: $(srcdir)/descriptor.c $(srcdir)/oci8.h Makefile
 param.o: $(srcdir)/param.c $(srcdir)/oci8.h Makefile

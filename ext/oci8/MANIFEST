@@ -2,7 +2,6 @@ MANIFEST
 attr.c
 bind.c
 const.c
-define.c
 descriptor.c
 env.c
 error.c

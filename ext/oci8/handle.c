@@ -138,7 +138,7 @@ void oci8_handle_mark(oci8_handle_t *h)
   case OCI_HTYPE_DEFINE:
   case OCI_HTYPE_BIND:
     bh = (oci8_bind_handle_t *)h;
-    if (bh->bind_type == BIND_HANDLE)
+    if (bh->bind_type->bind_object)
       rb_gc_mark(bh->value.v);
     break;
   }
