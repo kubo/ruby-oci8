@@ -1,5 +1,8 @@
 2005-03-24  KUBO Takehiro  <kubo@jiubao.org>
 	* oci8.rb.in: fix bug on binding Time or Date.
+	* support/*: deleted.
+	* test/*.rb: use 'test/unit' instead of runit.
+	  ruby 1.6.8 won't be supported by this commit.
 
 2005-03-23  KUBO Takehiro  <kubo@jiubao.org>
 	* oci8.rb.in, OCI8.rb:

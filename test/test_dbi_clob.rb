@@ -1,10 +1,8 @@
 require 'dbi'
-require 'oci8'
-require 'runit/testcase'
-require 'runit/cui/testrunner'
+require 'test/unit'
 require './config'
 
-class TestDbiCLob < RUNIT::TestCase
+class TestDbiCLob < Test::Unit::TestCase
 
   def setup
     @dbh = DBI.connect("dbi:OCI8:#{$dbname}", $dbuser, $dbpass, 'AutoCommit' => false)
@@ -49,8 +47,4 @@ class TestDbiCLob < RUNIT::TestCase
   def teardown
     @dbh.disconnect()
   end
-end
-
-if $0 == __FILE__
-  RUNIT::CUI::TestRunner.run(TestCLob.suite())
 end

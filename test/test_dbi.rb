@@ -1,10 +1,8 @@
 require 'dbi'
-require 'oci8'
-require 'runit/testcase'
-require 'runit/cui/testrunner'
+require 'test/unit'
 require './config'
 
-class TestDBI < RUNIT::TestCase
+class TestDBI < Test::Unit::TestCase
 
   def setup
     @dbh = DBI.connect("dbi:OCI8:#{$dbname}", $dbuser, $dbpass, 'AutoCommit' => false)
@@ -165,7 +163,3 @@ EOS
   end
 
 end # TestDBI
-
-if $0 == __FILE__
-  RUNIT::CUI::TestRunner.run(TestDBI.suite())
-end

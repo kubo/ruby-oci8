@@ -1,10 +1,9 @@
 # Low-level API
 require 'oci8'
-require 'runit/testcase'
-require 'runit/cui/testrunner'
+require 'test/unit'
 require './config'
 
-class TestOraNumber < RUNIT::TestCase
+class TestOraNumber < Test::Unit::TestCase
 
   NUMBER_CHECK_TARGET = [
     "12345678901234567890123456789012345678",
@@ -94,8 +93,4 @@ class TestOraNumber < RUNIT::TestCase
     @svc.logoff()
     @env.free()
   end
-end
-
-if $0 == __FILE__
-  RUNIT::CUI::TestRunner.run(TestOraNumber.suite())
 end

@@ -1,9 +1,8 @@
 require 'oci8'
-require 'runit/testcase'
-require 'runit/cui/testrunner'
+require 'test/unit'
 require './config'
 
-class TestOCI8 < RUNIT::TestCase
+class TestOCI8 < Test::Unit::TestCase
 
   def setup
     @conn = OCI8.new($dbuser, $dbpass, $dbname)
@@ -138,7 +137,3 @@ EOS
   end
 
 end # TestOCI8
-
-if $0 == __FILE__
-  RUNIT::CUI::TestRunner.run(TestOCI8.suite())
-end

@@ -1,10 +1,9 @@
 # Low-level API
 require 'oci8'
-require 'runit/testcase'
-require 'runit/cui/testrunner'
+require 'test/unit'
 require './config'
 
-class TestOraDate < RUNIT::TestCase
+class TestOraDate < Test::Unit::TestCase
 
   YEAR_CHECK_TARGET = [-4712, -1, 1, 1192, 1868, 2002, 9999]
   MONTH_CHECK_TARGET = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
@@ -225,7 +224,7 @@ class TestOraDate < RUNIT::TestCase
 
     year, month, day, hour, minute, second = [1900,1,1,0,0,0]
     dt = OraDate.new(year, month, day, hour, minute, second)
-    assert_exception(RangeError) { dt.to_time }
+    assert_raise(RangeError) { dt.to_time }
   end
 
   def test_to_date
@@ -241,8 +240,4 @@ class TestOraDate < RUNIT::TestCase
     @svc.logoff()
     @env.free()
   end
-end
-
-if $0 == __FILE__
-  RUNIT::CUI::TestRunner.run(TestOraDate.suite())
 end

@@ -1,10 +1,9 @@
 # High-level API
 require 'oci8'
-require 'runit/testcase'
-require 'runit/cui/testrunner'
+require 'test/unit'
 require './config'
 
-class TestBreak < RUNIT::TestCase
+class TestBreak < Test::Unit::TestCase
 
   def report(str)
     printf "%d: %s\n", (Time.now - $start_time), str
@@ -63,8 +62,4 @@ class TestBreak < RUNIT::TestCase
     do_test_ocibreak(conn, expect)
     conn.logoff()
   end
-end
-
-if $0 == __FILE__
-  RUNIT::CUI::TestRunner.run(TestBreak.suite())
 end

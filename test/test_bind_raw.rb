@@ -1,10 +1,9 @@
 # Low-level API
 require 'oci8'
-require 'runit/testcase'
-require 'runit/cui/testrunner'
+require 'test/unit'
 require './config'
 
-class TestBindRaw < RUNIT::TestCase
+class TestBindRaw < Test::Unit::TestCase
   CHECK_TARGET = [
     ["0123456789:;<=>?", "303132333435363738393A3B3C3D3E3F"],
     ["@ABCDEFGHIJKLMNO", "404142434445464748494A4B4C4D4E4F"],
@@ -46,8 +45,4 @@ class TestBindRaw < RUNIT::TestCase
     @svc.logoff()
     @env.free()
   end
-end
-
-if $0 == __FILE__
-  RUNIT::CUI::TestRunner.run(TestBindRaw.suite())
 end

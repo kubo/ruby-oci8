@@ -1,10 +1,9 @@
 # Low-level API
 require 'oci8'
-require 'runit/testcase'
-require 'runit/cui/testrunner'
+require 'test/unit'
 require './config'
 
-class TestBindTime < RUNIT::TestCase
+class TestBindTime < Test::Unit::TestCase
 
   YEAR_CHECK_TARGET = [1971, 1989, 2002, 2037]
   MON_CHECK_TARGET = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
@@ -184,8 +183,4 @@ class TestBindTime < RUNIT::TestCase
     @svc.logoff()
     @env.free()
   end
-end
-
-if $0 == __FILE__
-  RUNIT::CUI::TestRunner.run(TestBindTime.suite())
 end

@@ -1,6 +1,3 @@
-require 'runit/testsuite'
-require 'runit/cui/testrunner'
-
 srcdir = File.dirname(__FILE__)
 
 # Low-level API
@@ -31,11 +28,4 @@ if is_dbi_loaded
   end
 end
 
-suite = RUNIT::TestSuite.new
-ObjectSpace.each_object(Class) { |klass|
-  if klass.ancestors.include?(RUNIT::TestCase)
-    suite.add_test(klass.suite)
-  end
-}
-#RUNIT::CUI::TestRunner.quiet_mode = true
-RUNIT::CUI::TestRunner.run(suite)
+exit Test::Unit::AutoRunner.run($0 != "-e" && $0, nil, ["-v"])

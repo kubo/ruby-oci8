@@ -1,10 +1,9 @@
 # Low-level API
 require 'oci8'
-require 'runit/testcase'
-require 'runit/cui/testrunner'
+require 'test/unit'
 require './config'
 
-class TestCLob < RUNIT::TestCase
+class TestCLob < Test::Unit::TestCase
 
   def setup
     @env, @svc, @stmt = setup_lowapi()
@@ -91,8 +90,4 @@ class TestCLob < RUNIT::TestCase
     @svc.logoff()
     @env.free()
   end
-end
-
-if $0 == __FILE__
-  RUNIT::CUI::TestRunner.run(TestCLob.suite())
 end

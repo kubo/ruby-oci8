@@ -1,10 +1,9 @@
 # Low-level API
 require 'oci8'
-require 'runit/testcase'
-require 'runit/cui/testrunner'
+require 'test/unit'
 require './config'
 
-class TestDescribe < RUNIT::TestCase
+class TestDescribe < Test::Unit::TestCase
 
   def setup
     # initialize oracle as object mode.
@@ -134,8 +133,4 @@ EOS
     @svc.logoff()
     @env.free()
   end
-end
-
-if $0 == __FILE__
-  RUNIT::CUI::TestRunner.run(TestDescribe.suite())
 end
