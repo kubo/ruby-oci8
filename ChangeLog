@@ -3,6 +3,13 @@
 	* support/*: deleted.
 	* test/*.rb: use 'test/unit' instead of runit.
 	  ruby 1.6.8 won't be supported by this commit.
+	* ext/oci8/MANIFEST, ext/oci8/depend, ext/oci8/describe.c(deleted),
+	  ext/oci8/env.c, ext/oci8/extconf.rb, ext/oci8/handle.c,
+	  ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/svcctx.c:
+	  delete OCIDescribe and OCISvcCtx#describeAny. OCIDescribe isn't used by
+	  oci8 high-level API.
+	* test/test_all.rb, test/test_describe.rb(deleted): delete OCIDescribe
+	  test cases.
 
 2005-03-23  KUBO Takehiro  <kubo@jiubao.org>
 	* oci8.rb.in, OCI8.rb:

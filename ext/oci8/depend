@@ -11,7 +11,6 @@ session.o: $(srcdir)/session.c $(srcdir)/oci8.h Makefile
 stmt.o: $(srcdir)/stmt.c $(srcdir)/oci8.h Makefile
 define.o: $(srcdir)/define.c $(srcdir)/oci8.h Makefile
 bind.o: $(srcdir)/bind.c $(srcdir)/oci8.h Makefile
-describe.o: $(srcdir)/describe.c $(srcdir)/oci8.h Makefile
 descriptor.o: $(srcdir)/descriptor.c $(srcdir)/oci8.h Makefile
 param.o: $(srcdir)/param.c $(srcdir)/oci8.h Makefile
 lob.o: $(srcdir)/lob.c $(srcdir)/oci8.h Makefile

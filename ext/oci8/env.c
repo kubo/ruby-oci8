@@ -169,7 +169,6 @@ static VALUE oci8_handle_alloc(VALUE self, VALUE klass)
     {&cOCIStmt,     OCI_HTYPE_STMT,     (alloc_func_t)OCIHandleAlloc},
     {&cOCIServer,   OCI_HTYPE_SERVER,   (alloc_func_t)OCIHandleAlloc},
     {&cOCISession,  OCI_HTYPE_SESSION,  (alloc_func_t)OCIHandleAlloc},
-    {&cOCIDescribe, OCI_HTYPE_DESCRIBE, (alloc_func_t)OCIHandleAlloc},
     {&cOCILobLocator, OCI_DTYPE_LOB,    (alloc_func_t)OCIDescriptorAlloc},
   };
 #define ALLOC_MAP_SIZE (sizeof(alloc_map) / sizeof(alloc_map[0]))

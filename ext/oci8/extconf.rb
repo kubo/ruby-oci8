@@ -20,7 +20,7 @@ end
 
 $objs = ["oci8.o", "handle.o", "const.o", "env.o", "error.o", "svcctx.o",
          "server.o", "session.o", "stmt.o", "define.o", "bind.o",
-         "describe.o", "descriptor.o", "param.o", "lob.o",
+         "descriptor.o", "param.o", "lob.o",
          "oradate.o", "oranumber.o", "attr.o"]
 
 $CFLAGS += oraconf.cflags

@@ -57,7 +57,6 @@ VALUE cOCISvcCtx;
 VALUE cOCIStmt;
 VALUE cOCIDefine;
 VALUE cOCIBind;
-VALUE cOCIDescribe;
 
 VALUE cOCIDescriptor;
 VALUE cOCIParam;
@@ -88,7 +87,6 @@ Init_oci8lib()
   cOCIStmt = rb_define_class("OCIStmt", cOCIHandle);
   cOCIDefine = rb_define_class("OCIDefine", cOCIHandle);
   cOCIBind = rb_define_class("OCIBind", cOCIHandle);
-  cOCIDescribe = rb_define_class("OCIDescribe", cOCIHandle);
 
   /* Descriptor */
   cOCIDescriptor = rb_define_class("OCIDescriptor", rb_cObject);
@@ -120,7 +118,6 @@ Init_oci8lib()
   Init_oci8_stmt();
   Init_oci8_define();
   Init_oci8_bind();
-  Init_oci8_describe();
 
   Init_oci8_descriptor();
   Init_oci8_param();

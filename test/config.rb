@@ -3,7 +3,7 @@
 #     GRANT EXECUTE ON dbms_lock TO ruby;
 $dbuser = "ruby"
 $dbpass = "oci8"
-$dbname = nil
+$dbname = 'winnt-9ir2'
 
 # test_clob.rb
 

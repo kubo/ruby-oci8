@@ -3,7 +3,6 @@ attr.c
 bind.c
 const.c
 define.c
-describe.c
 descriptor.c
 env.c
 error.c

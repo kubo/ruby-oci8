@@ -158,9 +158,6 @@ oci8_handle_t *oci8_make_handle(ub4 type, dvoid *hp, OCIError *errhp, oci8_handl
   case OCI_HTYPE_SESSION:
     obj = Data_Make_Struct(cOCISession, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
     break;
-  case OCI_HTYPE_DESCRIBE:
-    obj = Data_Make_Struct(cOCIDescribe, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
-    break;
   case OCI_DTYPE_LOB:
     obj = Data_Make_Struct(cOCILobLocator, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
 #ifndef OCI8_USE_CALLBACK_LOB_READ

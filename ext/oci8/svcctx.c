@@ -146,34 +146,12 @@ static VALUE oci8_trans_rollback(int argc, VALUE *argv, VALUE self)
   return self;
 }
 
-/* THIS WILL BE DELETED IN FUTURE RELEASE. */
-static VALUE oci8_describe_any(VALUE self, VALUE vdsc, VALUE vname, VALUE vtype)
-{
-  oci8_handle_t *h;
-  oci8_handle_t *dsch;
-  oci8_string_t name;
-  ub1 type;
-  sword rv;
-
-  Get_Handle(self, h); /* 0 */
-  Check_Handle(vdsc, OCIDescribe, dsch); /* 1 */
-  Get_String(vname, name); /* 2 */
-  type = FIX2INT(vtype); /* 3 */
-
-  rv = OCIDescribeAny(h->hp, h->errhp, name.ptr, name.len, OCI_OTYPE_NAME, OCI_DEFAULT, type, dsch->hp);
-  if (rv != OCI_SUCCESS) {
-    oci8_raise(h->errhp, rv, NULL);
-  }
-  return self;
-}
-
 void Init_oci8_svcctx(void)
 {
   rb_define_method(cOCISvcCtx, "logoff", oci8_svcctx_logoff, 0);
   rb_define_method(cOCISvcCtx, "passwordChange", oci8_password_change, -1);
   rb_define_method(cOCISvcCtx, "commit", oci8_trans_commit, -1);
   rb_define_method(cOCISvcCtx, "rollback", oci8_trans_rollback, -1);
-  rb_define_method(cOCISvcCtx, "describeAny", oci8_describe_any, 3); /* delete later. */
   rb_define_method(cOCISvcCtx, "version", oci8_server_version, 0);
 #ifdef HAVE_OCISERVERRELEASE
   rb_define_method(cOCISvcCtx, "release", oci8_server_release, 0);

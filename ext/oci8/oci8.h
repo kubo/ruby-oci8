@@ -175,7 +175,6 @@ extern VALUE cOCISession;
 extern VALUE cOCIStmt;
 extern VALUE cOCIDefine;
 extern VALUE cOCIBind;
-extern VALUE cOCIDescribe;
 
 /* Descriptor */
 extern VALUE cOCIDescriptor;
@@ -251,9 +250,6 @@ VALUE oci8_get_value(oci8_bind_handle_t *);
 
 /* define.c */
 void Init_oci8_define(void);
-
-/* describe.c */
-void Init_oci8_describe(void);
 
 /* descriptor.c */
 void Init_oci8_descriptor(void);
