@@ -101,6 +101,13 @@ class Database < DBI::BaseDatabase
     raise_dbierror(err)
   end
 
+  def tables
+    stmt = execute("SELECT object_name FROM user_objects where object_type in ('TABLE', 'VIEW')")
+    rows = stmt.fetch_all || []
+    stmt.finish
+    rows.collect {|row| row[0]} 
+  end
+
   def [](attr)
     case attr
     when 'AutoCommit'
@@ -190,6 +197,10 @@ class Statement < DBI::BaseStatement
   def __define(pos, type, length = nil)
     @cursor.define(pos, type, length)
     self
+  end
+
+  def __bind_value(param)
+    @cursor[param]
   end
 end
 
