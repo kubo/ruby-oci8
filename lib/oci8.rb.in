@@ -288,7 +288,7 @@ class OCI8
       end
       def decorate(b)
         def b.set(val)
-          super(val && OraDate.new(val.year, val.mon, val.mday, val.hour, val.min, val.sec))
+          super(val && ::OraDate.new(val.year, val.mon, val.mday, val.hour, val.min, val.sec))
         end
         def b.get()
           (val = super()) && val.to_time
@@ -304,7 +304,7 @@ class OCI8
       end
       def decorate(b)
         def b.set(val)
-          super(val && OraDate.new(val.year, val.mon, val.mday))
+          super(val && ::OraDate.new(val.year, val.mon, val.mday))
         end
         def b.get()
           (val = super()) && val.to_date
