@@ -1,0 +1,637 @@
+#   --*- ruby -*--
+# This is based on yoshidam's oracle.rb.
+#
+# sample one liner:
+#  ruby -r oci8 -e 'OCI8.new("scott", "tiger", nil).exec("select * from emp") do |r| puts r.join(","); end'
+#  # select all data from emp and print them as CVS format.
+require 'oci8lib'
+require 'date'
+require 'thread'
+
+class OCIBreak < OCIException
+  def initialize(errstr = "Canceled by user request.")
+    super(errstr)
+  end
+end
+
+class OCIDefine
+  # define handle of OCILobLocator needs @env and @svc.
+  def set_handle(env, svc)
+    @env = env
+    @svc = svc
+  end
+end
+
+class OCI8
+  @@env = nil
+  VERSION = '@@OCI8_MODULE_VERSION@@'
+  CLIENT_VERSION = '@@OCI8_CLIENT_VERSION@@'
+  # bind type
+  RAW = OCI_TYPECODE_RAW
+  # statement type
+  STMT_SELECT = OCI_STMT_SELECT
+  STMT_UPDATE = OCI_STMT_UPDATE
+  STMT_DELETE = OCI_STMT_DELETE
+  STMT_INSERT = OCI_STMT_INSERT
+  STMT_CREATE = OCI_STMT_CREATE
+  STMT_DROP = OCI_STMT_DROP
+  STMT_ALTER = OCI_STMT_ALTER
+  STMT_BEGIN = OCI_STMT_BEGIN
+  STMT_DECLARE = OCI_STMT_DECLARE
+
+  module Util
+    CTX_EXECFLAG = 0
+    CTX_MUTEX = 1
+    CTX_THREAD = 2
+
+    def do_ocicall(ctx)
+      sleep_time = 0.01
+      ctx[CTX_MUTEX].lock
+      ctx[CTX_THREAD] = Thread.current
+      begin
+	yield
+      rescue OCIStillExecuting # non-blocking mode
+	ctx[CTX_MUTEX].unlock
+	sleep(sleep_time)
+	ctx[CTX_MUTEX].lock
+	if ctx[CTX_THREAD].nil?
+	  raise OCIBreak
+	end
+	# expand sleep time to prevent busy loop.
+	sleep_time *= 2 if sleep_time < 0.5
+	retry
+      ensure
+	ctx[CTX_THREAD] = nil
+	ctx[CTX_MUTEX].unlock
+      end
+    end # do_ocicall
+  end
+  include Util
+
+  def initialize(uid, pswd, conn = nil, privilege = nil)
+    if @@env.nil?
+      if OCIEnv.respond_to?("create")
+	@@env = OCIEnv.create()
+      else
+	OCIEnv.initialise()
+	@@env = OCIEnv.init()
+      end
+    end
+
+    case privilege
+    when nil
+      privilege = OCI_DEFAULT
+    when :SYSDBA
+      privilege = OCI_SYSDBA
+    when :SYSOPER
+      privilege = OCI_SYSOPER
+    else
+      raise ArgumentError, "invalid privilege name #{privilege} (expect :SYSDBA, :SYSOPER or nil)"
+    end
+
+    @svc = @@env.alloc(OCISvcCtx)
+    @srv = @@env.alloc(OCIServer)
+    @auth = @@env.alloc(OCISession)
+    @ctx = [0, Mutex.new, nil]
+
+    @auth.attrSet(OCI_ATTR_USERNAME, uid)
+    @auth.attrSet(OCI_ATTR_PASSWORD, pswd)
+    do_ocicall(@ctx) { @srv.attach(conn) }
+    @svc.attrSet(OCI_ATTR_SERVER, @srv)
+    do_ocicall(@ctx) { @auth.begin(@svc, OCI_CRED_RDBMS, privilege) }
+    @svc.attrSet(OCI_ATTR_SESSION, @auth)
+  end # initialize
+
+  def logoff
+    rollback()
+    do_ocicall(@ctx) { @auth.end(@svc) }
+    do_ocicall(@ctx) { @srv.detach() }
+    @svc.free()
+    true
+  end # logoff
+
+  def exec(sql, *bindvars)
+    cursor = OCI8::Cursor.new(@@env, @svc, @ctx)
+    cursor.parse(sql)
+    if cursor.type == OCI_STMT_SELECT && ! block_given?
+      cursor.exec(*bindvars)
+      cursor
+    else
+      begin
+	ret = cursor.exec(*bindvars)
+	case cursor.type
+	when OCI_STMT_SELECT
+	  cursor.fetch { |row| yield(row) }   # for each row
+	  cursor.row_count()
+	when OCI_STMT_BEGIN, OCI_STMT_DECLARE # PL/SQL block
+	  ary = []
+	  cursor.keys.sort.each do |key|
+	    ary << cursor[key]
+	  end
+	  ary
+	else
+	  ret
+	end
+      ensure
+	cursor.close
+      end
+    end
+  end # exec
+
+  def parse(sql)
+    cursor = OCI8::Cursor.new(@@env, @svc, @ctx)
+    cursor.parse(sql)
+    cursor
+  end # parse
+
+  def commit
+    do_ocicall(@ctx) { @svc.commit }
+  end # commit
+
+  def rollback
+    do_ocicall(@ctx) { @svc.rollback }
+  end # rollback
+
+  def autocommit?
+    (@ctx[CTX_EXECFLAG] & OCI_COMMIT_ON_SUCCESS) == OCI_COMMIT_ON_SUCCESS
+  end # autocommit?
+
+  # add alias compatible with 'Oracle7 Module for Ruby'.
+  alias autocommit autocommit?
+
+  def autocommit=(ac)
+    if ac
+      commit()
+      @ctx[CTX_EXECFLAG] |= OCI_COMMIT_ON_SUCCESS
+    else
+      @ctx[CTX_EXECFLAG] &= ~OCI_COMMIT_ON_SUCCESS
+    end
+    ac
+  end # autocommit=
+
+  def non_blocking?
+    @svc.attrGet(OCI_ATTR_NONBLOCKING_MODE)
+  end # non_blocking?
+
+  def non_blocking=(nb)
+    if nb && ! non_blocking?
+      # If the argument and the current status are different,
+      # toggle blocking / non-blocking.
+      @svc.attrSet(OCI_ATTR_NONBLOCKING_MODE, nil)
+    end
+  end # non_blocking=
+
+  def break
+    @ctx[CTX_MUTEX].synchronize do
+      @svc.break()
+      unless @ctx[CTX_THREAD].nil?
+	@ctx[CTX_THREAD].wakeup()
+	@ctx[CTX_THREAD] = nil
+	if @svc.respond_to?("reset")
+	  begin
+	    @svc.reset()
+	  rescue OCIError
+	    raise if $!.code != 1013 # ORA-01013
+	  end
+	end
+      end
+    end
+  end # break
+
+  class Cursor
+
+    include OCI8::Util
+
+    def initialize(env, svc, ctx)
+      @env = env
+      @svc = svc
+      @ctx = ctx
+      @stmt = @env.alloc(OCIStmt)
+      @binds = nil
+      @parms = nil
+      @defns = nil
+      @stmttype = nil
+    end # initialize
+
+    def parse(sql)
+      free_binds()
+      @parms = nil
+      @stmt.prepare(sql)
+      @stmttype = do_ocicall(@ctx) { @stmt.attrGet(OCI_ATTR_STMT_TYPE) }
+    end # parse
+
+    def define(pos, type, length = nil)
+      @defns = [] if @defns.nil?
+      if type == String and length.nil?
+	length = 4000
+      end
+      b = bind_or_define(pos, nil, type, length, :define)
+      @defns[pos].free() unless @defns[pos].nil?
+      @defns[pos] = b
+      self
+    end # define
+
+    def bind_param(key, val, type = nil, length = nil)
+      @binds = {} if @binds.nil?
+      b = bind_or_define(key, val, type, length, :bind)
+      @binds[key].free() unless @binds[key].nil?
+      @binds[key] = b
+      self
+    end # bind_param
+
+    # get bind value
+    def [](key)
+      if @binds.nil? or @binds[key].nil?
+	return nil 
+      end
+      @binds[key].get()
+    end
+
+    # set bind value
+    def []=(key, val)
+      if @binds.nil? or @binds[key].nil?
+	return nil 
+      end
+      @binds[key].set(val)
+    end
+
+    # get bind keys
+    def keys
+      if @binds.nil?
+	[]
+      else
+	@binds.keys
+      end
+    end
+
+    def exec(*bindvars)
+      bind_params(*bindvars)
+      case @stmttype
+      when OCI_STMT_SELECT
+	do_ocicall(@ctx) { @stmt.execute(@svc, 0, OCI_DEFAULT) }
+	num_cols = do_ocicall(@ctx) { @stmt.attrGet(OCI_ATTR_PARAM_COUNT) }
+	@parms = Array.new(num_cols)
+	1.upto(num_cols) do |i|
+	  @parms[i - 1] = @stmt.paramGet(i)
+	end
+	define_columns()
+	num_cols
+      when OCI_STMT_UPDATE, OCI_STMT_DELETE, OCI_STMT_INSERT
+	do_ocicall(@ctx) { @stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG]) }
+	@stmt.attrGet(OCI_ATTR_ROW_COUNT)
+      else
+	do_ocicall(@ctx) { @stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG]) }
+	true
+      end
+    end # exec
+
+    def type
+      @stmttype
+    end
+
+    def row_count
+      @stmt.attrGet(OCI_ATTR_ROW_COUNT)
+    end
+
+    def get_col_names
+      return [] if @parms.nil?
+      @parms.collect do |p|
+	do_ocicall(@ctx) { p.attrGet(OCI_ATTR_NAME) }
+      end
+    end # get_col_names
+
+    # add alias compatible with 'Oracle7 Module for Ruby'.
+    alias getColNames get_col_names
+
+    def fetch
+      if iterator?
+	while ret = fetch_a_row()
+	  yield(ret)
+	end
+      else
+	fetch_a_row()
+      end
+    end # fetch
+
+    def close
+      @env = nil
+      @svc = nil
+      free_defns()
+      free_binds()
+      @stmt.free()
+      @parms = nil
+      @stmttype = nil
+    end # close
+
+    def rowid
+      @stmt.attrGet(OCI_ATTR_ROWID)
+    end
+
+    private
+
+    def bind_or_define(key, val, type, option, bind_type)
+      if type.nil?
+	if val.nil?
+	  raise "bind type is not given." if type.nil?
+	else
+	  type = val.class
+	end
+      end
+
+      # fix type
+      if type == Date
+	fix_type = :date
+	type = OraDate
+      elsif type == Time
+	fix_type = :time
+	type = OraDate
+      elsif type == OCIRowid
+	type = SQLT_RDD
+	option = val
+	val = nil
+      elsif type == String || type == OCI8::RAW
+	option = val.length if option.nil? && !val.nil?
+      elsif type == OCI8::BLOB
+	type = OCI_TYPECODE_BLOB
+	if val.nil?
+	  option = @env.alloc(OCILobLocator)
+	else
+	  option = val
+	  val = nil
+	end
+	fix_type = :blob
+      elsif type == OCI8::CLOB
+	type = OCI_TYPECODE_CLOB
+	if val.nil?
+	  option = @env.alloc(OCILobLocator)
+	else
+	  option = val
+	  val = nil
+	end
+	fix_type = :clob
+      end
+
+      # bind here
+      case bind_type
+      when :bind
+	if key.is_a? Fixnum
+	  b = @stmt.bindByPos(key, type, option)
+	else
+	  b = @stmt.bindByName(key, type, option)
+	end
+      when :define
+	b = @stmt.defineByPos(key, type, option)
+      end
+
+      # change bind handle
+      case fix_type
+      when :date
+	def b.set(val)
+	  val = OraDate.new(val.year, val.mon, val.mday) unless val.nil?
+	  super(val)
+	end
+	def b.get()
+	  val = super()
+	  val.to_date unless val.nil?
+	end
+      when :time
+	def b.set(val)
+	  val = OraDate.new(val.year, val.mon, val.mday, val.hour, val.min, val.sec) unless val.nil?
+	  super(val)
+	end
+	def b.get()
+	  val = super()
+	  val.to_time unless val.nil?
+	end
+      when :blob
+        b.set_handle(@env, @svc)
+	def b.get()
+	  val = super()
+	  BLOB.new(@env, @svc, val.clone(@svc)) unless val.nil?
+	end
+      when :clob
+        b.set_handle(@env, @svc)
+	def b.get()
+	  val = super()
+	  CLOB.new(@env, @svc, val.clone(@svc)) unless val.nil?
+	end
+      end
+
+      b.set(val) unless val.nil?
+      b
+    end # bind_or_define
+
+    def define_columns
+      @defns = Array.new(@parms.size) if @defns.nil?
+      1.upto(@parms.size) do |i|
+	@defns[i] = define_a_column(i) if @defns[i].nil?
+      end
+    end # define_columns
+
+    def define_a_column(i)
+      p = @parms[i - 1]
+      datatype = do_ocicall(@ctx) { p.attrGet(OCI_ATTR_DATA_TYPE) }
+      datasize = do_ocicall(@ctx) { p.attrGet(OCI_ATTR_DATA_SIZE) }
+      scale = do_ocicall(@ctx) { p.attrGet(OCI_ATTR_SCALE) }
+      precision = do_ocicall(@ctx) { p.attrGet(OCI_ATTR_PRECISION) }
+
+      # change define type according to the datatype.
+      case datatype
+      when OCI_TYPECODE_VARCHAR
+	@stmt.defineByPos(i, String, datasize * 3)
+      when OCI_TYPECODE_CHAR
+	@stmt.defineByPos(i, String, datasize * 3)
+      when OCI_TYPECODE_RAW, OCI_TYPECODE_UNSIGNED8
+	@stmt.defineByPos(i, OCI_TYPECODE_RAW, datasize)
+      when OCI_TYPECODE_NUMBER
+	if scale == 0
+	  # Integer
+	  if precision <= 9 # the precision of Fixnum (assuming 31 bit integer)
+	    @stmt.defineByPos(i, Fixnum)
+	  else
+	    @stmt.defineByPos(i, Integer)
+	  end
+	else
+	  # not Integer
+	  if precision < 15 # the precision of double.
+	    @stmt.defineByPos(i, Float)
+	  else
+	    @stmt.defineByPos(i, OraNumber)
+	  end
+	end
+      when OCI_TYPECODE_DATE
+	@stmt.defineByPos(i, OraDate)
+	# @stmt.defineByPos(i, Time)
+      when OCI_TYPECODE_BLOB
+	lob = @env.alloc(OCILobLocator)
+	hndl = @stmt.defineByPos(i, OCI_TYPECODE_BLOB, lob)
+        hndl.set_handle(@env, @svc)
+        def hndl.get()
+          val = super()
+	  BLOB.new(@env, @svc, val.clone(@svc)) unless val.nil?
+        end
+        hndl
+      when OCI_TYPECODE_CLOB
+	lob = @env.alloc(OCILobLocator)
+	hndl = @stmt.defineByPos(i, OCI_TYPECODE_CLOB, lob)
+        hndl.set_handle(@env, @svc)
+        def hndl.get()
+          val = super()
+          CLOB.new(@env, @svc, val.clone(@svc)) unless val.nil?
+        end
+        hndl
+      else
+	raise "unsupported datatype: #{OCI_TYPECODE_NAMES[datatype] ? OCI_TYPECODE_NAMES[datatype] : datatype}"
+      end
+    end # define_a_column
+
+    def bind_params(*bindvars)
+      bindvars.each_with_index do |val, i|
+	if val.is_a? Array
+	  bind_param(i + 1, val[0], val[1], val[2])
+	else
+	  bind_param(i + 1, val)
+	end
+      end
+    end # bind_params
+
+    def fetch_a_row
+      res = do_ocicall(@ctx) { @stmt.fetch() }
+      return nil if res.nil?
+      res.collect do |r| r.get() end
+    end # fetch_a_row
+
+    def free_defns
+      unless @defns.nil?
+	@defns.each do |b|
+	  b.free() unless b.nil?
+	end
+      end
+      @defns = nil
+    end # free_defns
+
+    def free_binds
+      unless @binds.nil?
+	@binds.each_value do |b|
+	  b.free()
+	end
+      end
+      @binds = nil
+    end # free_binds
+  end # OCI8::Cursor
+
+  class LOB
+    attr :pos
+    def initialize(env, svc, locator)
+      raise "invalid argument" unless env.is_a? OCIEnv
+      raise "invalid argument" unless svc.is_a? OCISvcCtx
+      raise "invalid argument" unless locator.is_a? OCILobLocator
+      @env = env
+      @svc = svc
+      @locator = locator
+      @pos = 0
+    end
+
+    def available?
+      @locator.is_initialized?(@env)
+    end
+
+    def truncate(len)
+      raise "uninitialized LOB" unless available?
+      @locator.trim(@svc, len)
+      self
+    end
+
+    def read(size = nil)
+      raise "uninitialized LOB" unless available?
+      rest = @locator.getLength(@svc) - @pos
+      return nil if rest == 0 # eof.
+      if size.nil? or size > rest
+        size = rest # read until EOF.
+      end
+      rv = @locator.read(@svc, @pos + 1, size)
+      @pos += size
+      rv
+    end
+
+    def write(data)
+      raise "uninitialized LOB" unless available?
+      size = @locator.write(@svc, @pos + 1, data)
+      @pos += size
+      size
+    end
+
+    def size
+      raise "uninitialized LOB" unless available?
+      @locator.getLength(@svc)
+    end
+
+    def size=(len)
+      raise "uninitialized LOB" unless available?
+      @locator.trim(@svc, len)
+      len
+    end
+
+    def chunk_size # in bytes.
+      raise "uninitialized LOB" unless available?
+      @locator.getChunkSize(@svc)
+    end
+
+    def eof?
+      raise "uninitialized LOB" unless available?
+      @pos == @locator.getLength(@svc)
+    end
+
+    def tell
+      @pos
+    end
+
+    def seek(pos, whence = IO::SEEK_SET)
+      raise "uninitialized LOB" unless available?
+      length = @locator.getLength(@svc)
+      case whence
+      when IO::SEEK_SET
+        @pos = pos
+      when IO::SEEK_CUR
+        @pos += pos
+      when IO::SEEK_END
+        @pos = length + pos
+      end
+      @pos = length if @pos >= length
+      @pos = 0 if @pos < 0
+      self
+    end
+
+    def rewind
+      @pos = 0
+      self
+    end
+
+    def close
+      @locator.free()
+    end
+
+  end
+
+  class BLOB < LOB
+  end
+
+  class CLOB < LOB
+  end
+
+end # OCI8
+
+class OraDate
+  def to_time
+    begin
+      Time.local(year, month, day, hour, minute, second)
+    rescue ArgumentError
+      msg = format("out of range of Time (expect between 1970-01-01 00:00:00 UTC and 2037-12-31 23:59:59, but %04d-%02d-%02d %02d:%02d:%02d %s)", year, month, day, hour, minute, second, Time.at(0).zone)
+      raise RangeError.new(msg)
+    end
+  end
+
+  def to_date
+    Date.new(year, month, day)
+  end
+end
