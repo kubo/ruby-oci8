@@ -70,7 +70,11 @@ class OCI8
   SQLT_BLOB = 113
   # sql type (result set)
   SQLT_RSET = 116
-  # sql type (timestamp), not supported yet
+  # sql type (timestamp), not supported yet.
+  #
+  # If you want to fetch a timestamp before native timestamp data type
+  # will be supported, fetch data as an OraDate by adding the following
+  # code to your code.
   #   OCI8::BindType::Mapping[OCI8::SQLT_TIMESTAMP] = OCI8::BindType::OraDate
   SQLT_TIMESTAMP = 187
   # sql type (timestamp with time zone), not supported yet

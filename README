@@ -83,3 +83,25 @@ Oracle Instant Installer(Unix and Windows):
 
   * more proper handling of OCI_SUCCESS_WITH_INFO.
   * more proper handling of NUMBER without its scale values.
+  * support Timestamp.
+
+4. On compilation failure
+
+  Please report the following information to kubo@jiubao.org.
+
+  * last 100 lines of 'ext/oci8/mkmf.log'.
+  * the results of the following commands:
+      ruby -r rbconfig -e "p Config::CONFIG['host']"
+      ruby -r rbconfig -e "p Config::CONFIG['CC']"
+      ruby -r rbconfig -e "p Config::CONFIG['CFLAGS']"
+      ruby -r rbconfig -e "p Config::CONFIG['LDSHARED']"
+      ruby -r rbconfig -e "p Config::CONFIG['LDFLAGS']"
+      ruby -r rbconfig -e "p Config::CONFIG['LIBS']"
+      ruby -r rbconfig -e "p Config::CONFIG['GNU_LD']"
+  * if you use gcc:
+      gcc --print-prog-name=ld
+      gcc --print-prog-name=as
+  * on platforms which can use both 32bit/64bit binaries:
+      file $ORACLE_HOME/bin/oracle
+      file `which ruby`
+      echo $LD_LIBRARY_PATH
