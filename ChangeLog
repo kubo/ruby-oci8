@@ -1,3 +1,8 @@
+2005-03-24  KUBO Takehiro  <kubo@jiubao.org>
+	* branch as oci8-0-1.
+	* oci8.rb.in: fix bug on binding Time or Date.
+	* Makefile, ext/oci8/extconf.rb: change version to 0.1.10.1
+
 2005-03-23  KUBO Takehiro  <kubo@jiubao.org>
 	* oci8.rb.in, OCI8.rb:
 	delete OCI8.register_type_fixer, OCI8::TypeFixer.
