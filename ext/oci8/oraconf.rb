@@ -258,7 +258,7 @@ class OraConf
         return lib.tr('/', '\\') if File.exist?(lib)
         print <<EOS
 
-#{lib} doesn't exist.
+#{lib} does not exist.
 
 Your Oracle may not support Borland C++.
 If you want to run this module, run the following command at your own risk.
@@ -347,6 +347,22 @@ EOS
         libs.gsub!(/ -Wl,/, " ")
       end
 
+      # remove object files from libs.
+      objs = []
+      libs.gsub!(/\S+\.o\b/) do |obj|
+        objs << obj
+        ""
+      end
+      # change object files to an archive file to work around.
+      if objs.length > 0
+        Logging::open do
+          puts "change object files to an archive file."
+          command = Config::CONFIG["AR"] + " cru oracle_objs.a " + objs.join(" ")
+          puts command
+          system(command)
+          libs = "oracle_objs.a " + libs
+        end
+      end
       libs
     end # get_libs
   end
