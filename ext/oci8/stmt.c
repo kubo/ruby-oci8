@@ -157,7 +157,7 @@ static VALUE oci8_stmt_prepare(int argc, VALUE *argv, VALUE self)
   }
 
   rv = OCIStmtPrepare(h->hp, h->errhp, s.ptr, s.len, language, mode);
-  if (rv != OCI_SUCCESS) {
+  if (IS_OCI_ERROR(rv)) {
     oci8_raise(h->errhp, rv, h->hp);
   }
   return self;
@@ -509,8 +509,7 @@ static VALUE oci8_stmt_execute(int argc, VALUE *argv, VALUE self)
       rv = OCIStmtExecute(svch->hp, h->hp, h->errhp, iters, 0, NULL, NULL, mode);
     }
   }
-  if (rv != OCI_SUCCESS) {
-
+  if (IS_OCI_ERROR(rv)) {
     oci8_raise(h->errhp, rv, h->hp);
   }
   return self;
@@ -564,7 +563,7 @@ static VALUE oci8_stmt_fetch(int argc, VALUE *argv, VALUE self)
   if (rv == OCI_NO_DATA) {
     return Qnil;
   }
-  if (rv != OCI_SUCCESS) {
+  if (IS_OCI_ERROR(rv)) {
     oci8_raise(h->errhp, rv, h->hp);
   }
   return rb_ivar_get(self, oci8_id_define_array);

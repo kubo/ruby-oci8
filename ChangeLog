@@ -1,3 +1,19 @@
+2005-01-16  KUBO Takehiro  <kubo@jiubao.org>
+
+	* ext/oci8/oci8.h, ext/oci8/stmt.c: don't raise an error when OCI_SUCCESS_WITH_INFO.
+
+2004-10-30  KUBO Takehiro  <kubo@jiubao.org>
+
+	* pre-distclean.rb: delete a temporary file made by ext/oci8/oraconf.rb.
+	* ext/oci8/oraconf.rb: 1. change object files to an archive file
+	  to work around on Oracle 8.1.7. 2. raise error when OCI.H can't
+	  be found on Windows.
+
+2004-06-21  KUBO Takehiro  <kubo@jiubao.org>
+
+	* Makefile, ext/oci8/extconf.rb: change version to 0.1.8-pre1
+	* lib/DBD/OCI8/OCI8.rb: add DBI::DatabaseHandle#tables. add DBI::StatementHandle#func(:bind_value, ...).
+
 2004-03-07  KUBO Takehiro  <kubo@jiubao.org>
 
 	* ext/oci8/extconf.rb: fix to use setup.rb.
