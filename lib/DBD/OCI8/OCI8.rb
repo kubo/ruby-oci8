@@ -207,3 +207,60 @@ end
 end # module OCI8
 end # module DBD
 end # module DBI
+
+OCI8.register_type_fixer(DBI::Date) do |obj|
+  def obj.fix_type(env, val, option)
+    # bind as an OraDate
+    [OCI8::SQLT_DAT, val, option]
+  end
+  def obj.decorate(b)
+    def b.set(val)
+      # convert val to an OraDate,
+      # then set it to the bind handle.
+      super(val && OraDate.new(val.year, val.month, val.day))
+    end
+    def b.get()
+      # get an Oradate from the bind handle,
+      # then convert it to a DBI::Date.
+      (val = super()) && DBI::Date.new(val.year, val.month, val.day)
+    end
+  end
+end
+
+OCI8.register_type_fixer(DBI::Timestamp) do |obj|
+  def obj.fix_type(env, val, option)
+    # bind as an OraDate
+    [OCI8::SQLT_DAT, val, option]
+  end
+  def obj.decorate(b)
+    def b.set(val)
+      # convert val to an OraDate,
+      # then set it to the bind handle.
+      super(val && OraDate.new(val.year, val.month, val.day, val.hour, val.minute, val.second))
+    end
+    def b.get()
+      # get an Oradate from the bind handle,
+      # then convert it to a DBI::Timestamp.
+      (val = super()) && DBI::Timestamp.new(val.year, val.month, val.day, val.hour, val.minute, val.second)
+    end
+  end
+end
+
+OCI8.register_type_fixer(DBI::StatementHandle) do |obj|
+  def obj.fix_type(env, val, option)
+    raise NotImplementedError unless val.nil?
+    [OCI8::SQLT_RSET, nil, env.alloc(OCIStmt)]
+  end
+  def obj.decorate(b)
+    def b.set(val)
+      raise NotImplementedError
+    end
+    def b.get()
+      val = super
+      return val if val.nil?
+      cur = OCI8::Cursor.new(@env, @svc, @ctx, val)
+      stmt = DBI::DBD::OCI8::Statement.new(cur)
+      DBI::StatementHandle.new(stmt, true, false)
+    end
+  end
+end

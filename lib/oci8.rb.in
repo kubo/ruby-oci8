@@ -48,6 +48,15 @@ class OCI8
   STMT_BEGIN = OCI_STMT_BEGIN
   STMT_DECLARE = OCI_STMT_DECLARE
 
+  # ocidfn.h
+  SQLT_CHR = 1     # character string
+  SQLT_DAT = 12    # date in oracle format
+  SQLT_BIN = 23    # binary data
+  SQLT_RDD = 104   # rowid descriptor
+  SQLT_CLOB = 112  # character lob
+  SQLT_BLOB = 113  # binary lob
+  SQLT_RSET = 116  # result set type
+
   module Util
     CTX_EXECFLAG = 0
     CTX_MUTEX = 1
@@ -207,6 +216,14 @@ class OCI8
     end
   end # break
 
+  TypeFixer = {}
+
+  def self.register_type_fixer(type)
+    fixer = Object.new
+    yield fixer
+    TypeFixer[type] = fixer
+  end
+
   class Cursor
 
     include OCI8::Util
@@ -365,55 +382,18 @@ class OCI8
 	else
           if val.class == Class
             type = val
+            val = nil
           else
             type = val.class
           end
 	end
       end
 
-      # fix type
-      if type == Date
-	fix_type = :date
-	type = OraDate
-      elsif type == Time
-	fix_type = :time
-	type = OraDate
-      elsif type == OCIRowid
-	type = SQLT_RDD
-	option = val
-	val = nil
-      elsif type == String || type == OCI8::RAW
-	option = val.length if option.nil? && !val.nil?
-      elsif type == OCI8::BLOB
-	type = OCI_TYPECODE_BLOB
-	if val.nil?
-	  option = @env.alloc(OCILobLocator)
-	else
-	  option = val
-	  val = nil
-	end
-	fix_type = :blob
-      elsif type == OCI8::CLOB
-	type = OCI_TYPECODE_CLOB
-	if val.nil?
-	  option = @env.alloc(OCILobLocator)
-	else
-	  option = val
-	  val = nil
-	end
-	fix_type = :clob
-      elsif type == OCI8::Cursor
-        type = OCIStmt
-        if val.nil? || val == OCI8::Cursor
-          option = @env.alloc(OCIStmt)
-        else
-          option = val.stmt
-        end
-        val = nil
-        fix_type = :stmt
+      type_fixer = OCI8::TypeFixer[type]
+      if type_fixer
+        type, val, option = type_fixer.fix_type(@env, val, option)
       end
 
-      # bind here
       case bind_type
       when :bind
 	if key.is_a? Fixnum
@@ -421,50 +401,17 @@ class OCI8
 	else
 	  b = @stmt.bindByName(key, type, option)
 	end
+        b.set_handle(@env, @svc, @ctx)
       when :define
 	b = @stmt.defineByPos(key, type, option)
+        b.set_handle(@env, @svc)
       end
 
-      # change bind handle
-      case fix_type
-      when :date
-	def b.set(val)
-	  val = OraDate.new(val.year, val.mon, val.mday) unless val.nil?
-	  super(val)
-	end
-	def b.get()
-	  val = super()
-	  val.to_date unless val.nil?
-	end
-      when :time
-	def b.set(val)
-	  val = OraDate.new(val.year, val.mon, val.mday, val.hour, val.min, val.sec) unless val.nil?
-	  super(val)
-	end
-	def b.get()
-	  val = super()
-	  val.to_time unless val.nil?
-	end
-      when :blob
-        b.set_handle(@env, @svc)
-	def b.get()
-	  val = super()
-	  BLOB.new(@env, @svc, val.clone(@svc)) unless val.nil?
-	end
-      when :clob
-        b.set_handle(@env, @svc)
-	def b.get()
-	  val = super()
-	  CLOB.new(@env, @svc, val.clone(@svc)) unless val.nil?
-	end
-      when :stmt
-        b.set_handle(@env, @svc, @ctx)
-        def b.get()
-        val = super()
-          OCI8::Cursor.new(@env, @svc, @ctx, val) unless val.nil?
-        end
+      if type_fixer && type_fixer.respond_to?(:decorate)
+        # decorate the bind handle.
+        type_fixer.decorate(b)
       end
-
+      
       b.set(val) unless val.nil?
       b
     end # bind_or_define
@@ -523,7 +470,7 @@ class OCI8
 	  end
 	end
       when OCI_TYPECODE_DATE
-	@stmt.defineByPos(i, OraDate)
+	@stmt.defineByPos(i, OCI8::SQLT_DAT)
 	# @stmt.defineByPos(i, Time)
       when OCI_TYPECODE_BLOB
 	lob = @env.alloc(OCILobLocator)
@@ -696,5 +643,96 @@ class OraDate
 
   def to_date
     Date.new(year, month, day)
+  end
+end
+
+# bind Time via OraDate
+OCI8.register_type_fixer(Time) do |obj|
+  def obj.fix_type(env, val, option)
+    [OCI8::SQLT_DAT, val, option]
+  end
+  def obj.decorate(b)
+    def b.set(val)
+      super(val && OraDate.new(val.year, val.mon, val.mday, val.hour, val.min, val.sec))
+    end
+    def b.get()
+      (val = super()) && val.to_time
+    end
+  end
+end
+
+# bind Date via OraDate
+OCI8.register_type_fixer(Date) do |obj|
+  def obj.fix_type(env, val, option)
+    [OCI8::SQLT_DAT, val, option]
+  end
+  def obj.decorate(b)
+    def b.set(val)
+      super(val && OraDate.new(val.year, val.mon, val.mday))
+    end
+    def b.get()
+      (val = super()) && val.to_date
+    end
+  end
+end
+
+# bind OCIRowid
+OCI8.register_type_fixer(OCIRowid) do |obj|
+  def obj.fix_type(env, val, option)
+    [OCI8::SQLT_RDD, nil, val]
+  end
+end
+
+# bind String
+OCI8.register_type_fixer(String) do |obj|
+  def obj.fix_type(env, val, option)
+    [OCI8::SQLT_CHR, val, option || (val.nil? ? nil : val.length)]
+  end
+end
+
+# bind RAW
+OCI8.register_type_fixer(OCI8::RAW) do |obj|
+  def obj.fix_type(env, val, option)
+    [OCI8::SQLT_BIN, val, option || (val.nil? ? nil : val.length)]
+  end
+end
+
+# bind BLOB
+OCI8.register_type_fixer(OCI8::BLOB) do |obj|
+  def obj.fix_type(env, val, option)
+    [OCI8::SQLT_BLOB, nil, val.nil? ? env.alloc(OCILobLocator) : val]
+  end
+  def obj.decorate(b)
+    def b.get()
+      (val = super()) && OCI8::BLOB.new(@env, @svc, val.clone(@svc))
+    end
+  end
+end
+
+# bind CLOB
+OCI8.register_type_fixer(OCI8::CLOB) do |obj|
+  def obj.fix_type(env, val, option)
+    [OCI8::SQLT_CLOB, nil, val.nil? ? env.alloc(OCILobLocator) : val]
+  end
+  def obj.decorate(b)
+    def b.get()
+      (val = super()) && OCI8::CLOB.new(@env, @svc, val.clone(@svc))
+    end
+  end
+end
+
+# bind Cursor
+OCI8.register_type_fixer(OCI8::Cursor) do |obj|
+  def obj.fix_type(env, val, option)
+    raise NotImplementedError unless val.nil?
+    [OCI8::SQLT_RSET, nil, env.alloc(OCIStmt)]
+  end
+  def obj.decorate(b)
+    def b.set(val)
+      raise NotImplementedError
+    end
+    def b.get()
+      (val = super()) && OCI8::Cursor.new(@env, @svc, @ctx, val)
+    end
   end
 end

@@ -1,6 +1,11 @@
 2005-03-20  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/stmt.c, lib/oci8.rb.in, lib/DBD/OCI8/OCI8.rb, test/test_dbi.rb:
+	  enable DATE to be bound as a DBI::Date or a DBI::Timestamp.
+
+2005-03-20  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/stmt.c, lib/oci8.rb.in, test/test_oci8.rb:
 	  bind a ref cursor as an OCI8::Cursor.
+          apply a patch at <URL:http://rubyforge.org/tracker/index.php?func=detail&aid=1409&group_id=256&atid=1053>.
 
 2005-01-16  KUBO Takehiro  <kubo@jiubao.org>
 
