@@ -1,0 +1,91 @@
+2004-03-07  KUBO Takehiro  <kubo@jiubao.org>
+
+	* ext/oci8/extconf.rb: fix to use setup.rb.
+	* ext/oci8/oraconf.rb: add support Borland C++ Builder.
+	* lib/oci8.rb.in: support OCI8::CLOB.
+	* test/config.rb: CLOB test file depends on NLS_LANG.
+	* test/test_oci8.rb: fix a test method.
+	* test/test_break.rb: break time depends on OS?...
+	* test/test_dbi_clob.rb: add a new file to test CLOB via DBI.
+
+2003-09-20  KUBO Takehiro  <kubo@jiubao.org>
+
+	* src/handle.c: fix bug of OCI8::BLOB at running GC.
+	* src/stmt.c: accept Bignum as (({type})) of OCI8::Cursor#define.
+	* src/lib/oci8.rb.in: accept OCI8::BLOB as (({type})) of OCI8::Cursor#define.
+	* src/lib/DBD/OCI8/OCI8.rb: add (({define})) function to DBD::OCI8.
+	* src/oranumber.c, src/oci8.h: use rb_cstr_to_dbl instead of strtod for ruby 1.8.
+	* support/runit/cui/testrunner.rb, support/runit/testcase.rb: fix for ruby 1.8.
+	* test/test_dbi.rb: add a test method.
+	* test/test_oci8.rb: fix a test method.
+
+2003-08-03  KUBO Takehiro  <kubo@jiubao.org>
+
+	* Makefile: update version to 0.1.5
+	* MANIFEST: add test/test_oci8.rb
+	* src/lib/oci8.rb.in: implement OCI8::Cursor#define, OraDate#to_time and OraDate#to_date.
+	* test/test_oci8.rb: add new tests of OCI8::Cursor#define.
+	* test/test_oradate.rb: add new tests of OraDate#to_time and OraDate#to_date.
+	* test/test_all.rb: call test_oci8.rb.
+
+2003-07-20  KUBO Takehiro  <kubo@jiubao.org>
+
+	* src/stmt.c: When the error "ORA-01000: maximum open cursors
+	  exceeded" happens, run garbage collect to close unused cursors
+	  and retry automatically.
+
+2003-06-07  KUBO Takehiro  <kubo@jiubao.org>
+
+	* Makefile: update version to 0.1.4
+	* src/lob.c: add OCILobLocator#clone()
+	* src/bind.c, src/stmt.c, src/lib/oci8.rb.in: fix BLOB support.
+	* src/lib/DBD/OCI8/OCI8.rb: set the backtrace of an original exception
+	 to newly created DBI exception.
+	* src/oraconf.rb: retry get_libs with postfix '32' when	compilation
+	 failed with Oracle 9i on Solaris.
+	* src/oradate.c: add OraDate#<=> and include 'Comparable'.
+	 (contributed by Brian Candler)
+	* test/test_oradate.rb: add test cases of OraDate#<=>.
+
+2003-04-27  KUBO Takehiro  <kubo@jiubao.org>
+
+	* Makefile: update version to 0.1.3
+	* doc/api.*.rd, doc/api.*.html: update document.
+	* src/lob.c: add new LOB APIs.
+	* src/lib/oci8.rb.in: add BLOB support.
+	* src/lib/DBD/OCI8/OCI8.rb: add 'NonBlocking' support(suggested by Brian Candler).
+	raise subclass of DBI::DatabaseError, which depends on its error code.
+
+2003-03-08  KUBO Takehiro  <kubo@jiubao.org>
+
+	* Makefile: update version to 0.1.2
+	* src/extconf.rb: use Oraconf#cc_is_gcc.
+	* src/oraconf.rb: support Solaris with gcc.
+	* src/handle.c: suppress warning about uninitialized instance variables.
+	* src/oranumber.c, test/test_oranumber.rb: fix serious bug of 
+	conversion routine from Oracle internal number format to string.
+
+2003-02-01  KUBO Takehiro  <kubo@jiubao.org>
+
+	* Makefile: update version to 0.1.1.
+	* src/oraconf.rb: added. Oracle specific features were moved from
+	src/extconf.rb, src/extunix.rb and src/extwin32.rb
+	* src/extunix.rb, src/extwin32.rb: deleted.
+	* src/extconf.rb: use oraconf.rb.
+	* src/error.c, src/oci8.h: use macro RBOCI_NORETURN not NORETURN.
+	* MANIFEST, Makefile: fix for added and deleted files.
+
+2002-09-12  KUBO Takehiro  <kubo@jiubao.org>
+
+	* Makefile: update version to 0.1.0.
+	* README: support cygwin and mingw32.
+	* test/test_oradate.rb: delete test_now().
+	* src/extconf.rb: support mingw32.
+
+2002-09-12  Hitoshi Endoh <h-endoh@mbf.nifty.com>
+
+	* src/extwin32.rb: support cygwin.
+
+2002-09-12  KUBO Takehiro  <kubo@jiubao.org>
+
+	* ChangeLog: Added.
