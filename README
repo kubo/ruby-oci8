@@ -1,0 +1,69 @@
+This code status is experimental.
+
+How to make
+  Unix:
+    make sure the environment variable ORACLE_HOME is set correctly.
+    run the the following commands.
+
+      make
+
+ Windows:
+   ORACLE_HOME is got from the Windows registry.
+
+   MS Visual C++: (I tested on VC4.0 and VC.NET.)
+     make sure ruby is in PATH and nmake works fine.
+     run the the following commands.
+
+       nmake
+
+   Cygwin or Mingw32:
+     make sure ruby is in PATH.
+     run the the following commands.
+
+       make
+
+   Borland C++ Builder:
+
+     make sure ruby is in PATH and make works fine.
+     run the the following commands.
+
+       make
+
+How to run unit test
+
+  before runing unit test, 
+  1. connect to Oracle as system:
+
+      $ sqlplus system/<password_of_system>
+
+  2. create user ruby:
+
+      SQL> CREATE USER ruby IDENTIFIED BY oci8;
+
+     or
+
+      SQL> CREATE USER ruby IDENTIFIED BY oci8
+         2 DEFAULT TABLESPACE users TEMPORARY TABLESPACE temp;
+
+  3. grant the privilege to connect and execute.
+
+      SQL> GRANT connect, resource TO ruby;
+
+  4. If the Oracle version is 8i or later:
+
+      SQL> CREATE TABLE ruby.test_clob (filename VARCHAR2(40), content CLOB);
+
+  5. connect to Oracle as sys
+
+      $ sqlplus 'sys/<password_of_sys> as sysdba'
+
+  6. grant the privilege for the unittest of blocking-mode.
+
+      SQL> GRANT EXECUTE ON dbms_lock TO ruby;
+
+  7. change test/config.rb as you like
+
+  Then you can run:
+    $ make check
+  or
+    $ nmake check   (If your compiler is MS Visual C++.)

@@ -1,0 +1,4 @@
+This directory includes test cases using RubyUnit.
+
+If RubyUnit is installed in your site, it is used to run test cases.
+If not installed, support files in this package are used.

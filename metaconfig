@@ -1,0 +1,21 @@
+#
+# add test task
+#
+ToplevelInstaller::TASKS.push ['test', 'run test.']
+ToplevelInstaller.module_eval {
+  alias parsearg_test parsearg_no_options
+
+  def exec_test
+    old = Dir.pwd
+    @installer.mkdir_p "#{objdir_root}/test"
+    Dir.chdir "#{objdir_root}/test"
+    @installer.ruby("-I#{srcdir_root}/ext/oci8 -I#{srcdir_root}/lib -I#{srcdir_root}/support -I#{srcdir_root}/test #{srcdir_root}/test/test_all.rb")
+    Dir.chdir old
+  end
+}
+
+
+ConfigTable.add_entry('oracle_version', ['',
+                                         'name',
+                                         'Oracle version name',
+                                         'NONE' ])
