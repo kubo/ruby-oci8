@@ -90,6 +90,12 @@ static void check_bind_type(ub4 type, oci8_handle_t *stmth, VALUE vtype, VALUE v
     bind_type = BIND_ORA_NUMBER;
     *dty = SQLT_NUM;
     value_sz = sizeof(ora_number_t);
+  } else if (vtype == cOCIStmt) {
+    bind_type = BIND_HANDLE;
+    *dty = SQLT_RSET;
+    value_sz = sizeof(OCIStmt *);
+    if (!rb_obj_is_instance_of(vlength, cOCIStmt))
+      rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIStmt)", rb_class2name(CLASS_OF(vlength)));
   } else {
     rb_raise(rb_eArgError, "Not supported type (%s)", rb_class2name(vtype));
   }

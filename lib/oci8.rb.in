@@ -22,6 +22,15 @@ class OCIDefine
   end
 end
 
+class OCIBind
+  # define handle of OCILobLocator needs @env and @svc.
+  def set_handle(env, svc, ctx)
+    @env = env
+    @svc = svc
+    @ctx = ctx
+  end
+end
+
 class OCI8
   @@env = nil
   VERSION = '@@OCI8_MODULE_VERSION@@'
@@ -210,15 +219,21 @@ class OCI8
       @@number_type = val
     end
 
-    def initialize(env, svc, ctx)
+    def initialize(env, svc, ctx, stmt = nil)
       @env = env
       @svc = svc
       @ctx = ctx
-      @stmt = @env.alloc(OCIStmt)
       @binds = nil
       @parms = nil
       @defns = nil
-      @stmttype = nil
+      if stmt.nil?
+        @stmt = @env.alloc(OCIStmt)
+        @stmttype = nil
+      else
+        @stmt = stmt
+        @stmttype = @stmt.attrGet(OCI_ATTR_STMT_TYPE)
+        define_columns()
+      end
     end # initialize
 
     def parse(sql)
@@ -277,13 +292,7 @@ class OCI8
       case @stmttype
       when OCI_STMT_SELECT
 	do_ocicall(@ctx) { @stmt.execute(@svc, 0, OCI_DEFAULT) }
-	num_cols = do_ocicall(@ctx) { @stmt.attrGet(OCI_ATTR_PARAM_COUNT) }
-	@parms = Array.new(num_cols)
-	1.upto(num_cols) do |i|
-	  @parms[i - 1] = @stmt.paramGet(i)
-	end
-	define_columns()
-	num_cols
+        define_columns()
       when OCI_STMT_UPDATE, OCI_STMT_DELETE, OCI_STMT_INSERT
 	do_ocicall(@ctx) { @stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG]) }
 	@stmt.attrGet(OCI_ATTR_ROW_COUNT)
@@ -354,7 +363,11 @@ class OCI8
 	if val.nil?
 	  raise "bind type is not given." if type.nil?
 	else
-	  type = val.class
+          if val.class == Class
+            type = val
+          else
+            type = val.class
+          end
 	end
       end
 
@@ -389,6 +402,15 @@ class OCI8
 	  val = nil
 	end
 	fix_type = :clob
+      elsif type == OCI8::Cursor
+        type = OCIStmt
+        if val.nil? || val == OCI8::Cursor
+          option = @env.alloc(OCIStmt)
+        else
+          option = val.stmt
+        end
+        val = nil
+        fix_type = :stmt
       end
 
       # bind here
@@ -435,6 +457,12 @@ class OCI8
 	  val = super()
 	  CLOB.new(@env, @svc, val.clone(@svc)) unless val.nil?
 	end
+      when :stmt
+        b.set_handle(@env, @svc, @ctx)
+        def b.get()
+        val = super()
+          OCI8::Cursor.new(@env, @svc, @ctx, val) unless val.nil?
+        end
       end
 
       b.set(val) unless val.nil?
@@ -442,10 +470,17 @@ class OCI8
     end # bind_or_define
 
     def define_columns
+      num_cols = @stmt.attrGet(OCI_ATTR_PARAM_COUNT)
+      @parms = Array.new(num_cols)
+      1.upto(num_cols) do |i|
+        @parms[i - 1] = @stmt.paramGet(i)
+      end
+      num_cols
       @defns = Array.new(@parms.size) if @defns.nil?
       1.upto(@parms.size) do |i|
 	@defns[i] = define_a_column(i) if @defns[i].nil?
       end
+      num_cols
     end # define_columns
 
     def define_a_column(i)

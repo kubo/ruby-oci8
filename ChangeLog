@@ -1,3 +1,7 @@
+2005-03-20  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/stmt.c, lib/oci8.rb.in, test/test_oci8.rb:
+	  bind a ref cursor as an OCI8::Cursor.
+
 2005-01-16  KUBO Takehiro  <kubo@jiubao.org>
 
 	* lib/oci8.rb.in: change default bindtype for NUMBER with
