@@ -1,6 +1,7 @@
 2005-01-16  KUBO Takehiro  <kubo@jiubao.org>
 
 	* ext/oci8/oci8.h, ext/oci8/stmt.c: don't raise an error when OCI_SUCCESS_WITH_INFO.
+	* ext/ooi8/oraconf.rb, README: support Oracle Instant Installer.
 
 2004-10-30  KUBO Takehiro  <kubo@jiubao.org>
 

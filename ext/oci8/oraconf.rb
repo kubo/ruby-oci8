@@ -99,6 +99,14 @@ class OraConf
     original_libs = $libs
     begin
       @cc_is_gcc = get_cc_is_gcc_or_not()
+
+      # check Oracle instant client
+      ic_dir = with_config('instant-client')
+      if ic_dir
+        check_instant_client(ic_dir)
+        return
+      end
+
       @oracle_home = get_home(oracle_home)
       @version = get_version()
       @cflags = get_cflags()
@@ -237,12 +245,12 @@ class OraConf
       end
     end
 
-    def get_libs
+    def get_libs(base_dir = oci_base_dir)
       case RUBY_PLATFORM
       when /cygwin/
         open("OCI.def", "w") do |f|
           f.puts("EXPORTS")
-          open("|nm #{oci_base_dir}/LIB/MSVC/OCI.LIB") do |r|
+          open("|nm #{base_dir}/LIB/MSVC/OCI.LIB") do |r|
             while line = r.gets
               f.puts($') if line =~ / T _/
             end
@@ -257,7 +265,7 @@ class OraConf
       when /bccwin32/
         # replace '/' to '\\' because bcc linker misunderstands
         # 'C:/foo/bar/OCI.LIB' as unknown option.
-        lib = "#{oci_base_dir}/LIB/BORLAND/OCI.LIB"
+        lib = "#{base_dir}/LIB/BORLAND/OCI.LIB"
         return lib.tr('/', '\\') if File.exist?(lib)
         print <<EOS
 
@@ -265,7 +273,7 @@ class OraConf
 
 Your Oracle may not support Borland C++.
 If you want to run this module, run the following command at your own risk.
-  cd #{oci_base_dir.tr('/', '\\')}\\LIB
+  cd #{base_dir.tr('/', '\\')}\\LIB
   mkdir Borland
   cd Borland
   coff2omf ..\\MSVC\\OCI.LIB OCI.LIB
@@ -273,7 +281,7 @@ If you want to run this module, run the following command at your own risk.
 EOS
         exit 1
       else
-        "#{oci_base_dir}/LIB/MSVC/OCI.LIB"
+        "#{base_dir}/LIB/MSVC/OCI.LIB"
       end
     end
 
@@ -368,5 +376,66 @@ EOS
       end
       libs
     end # get_libs
+  end
+
+  def check_instant_client(ic_dir)
+    if ic_dir.is_a? String
+      # zip package
+      lib_dir = ic_dir
+      inc_dir = "#{ic_dir}/sdk/include"
+      sysliblist = "#{ic_dir}/sdk/demo/sysliblist"
+    else
+      # rpm package
+      lib_dirs = Dir.glob("/usr/lib/oracle/*/client/lib")
+      if lib_dirs.empty?
+        raise 'Oracle Instant Client not found at /usr/lib/oracle/*/client/lib'
+      end
+      lib_dir = lib_dirs.sort.reverse[0]
+      inc_dir = lib_dir.gsub(%r{^/usr/lib/oracle/(.*)/client/lib}, "/usr/include/oracle/\\1/client")
+      sysliblist = ""
+    end
+
+    @version = "1010"
+    @cflags = " -I#{inc_dir}"
+    if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/ # when Windows
+      unless File.exist?("#{ic_dir}/sdk/lib/msvc/oci.lib")
+        print <<EOS
+---------------------------------------------------
+Could not compile with Oracle Instant Installer.
+#{ic_dir}/sdk/lib/msvc/oci.lib could not be found.
+---------------------------------------------------
+EOS
+        raise 'failed'
+      end
+      @libs = get_libs("#{ic_dir}/sdk")
+      is_unix = false
+    else
+      if Dir.glob("#{lib_dir}/libclntsh.*").empty?
+        print <<EOS
+---------------------------------------------------
+Could not compile with Oracle Instant Installer.
+#{lib_dir}/libclntsh.* could not be found.
+---------------------------------------------------
+EOS
+        raise 'failed'
+      end
+      @libs = " -L#{lib_dir} -lclntsh"
+      @libs = "#{@libs} " + File.read(sysliblist) if File.exist?(sysliblist)
+      is_unix = true
+    end
+    $CFLAGS += @cflags
+    $libs += @libs
+    unless have_func("OCIInitialize", "oci.h")
+      if is_unix
+        print <<EOS
+---------------------------------------------------
+Could not compile with Oracle Instant Installer.
+You may need to set:
+    LD_LIBRARY_PATH=#{lib_dir}
+---------------------------------------------------
+EOS
+      end
+      raise 'failed'
+    end
   end
 end

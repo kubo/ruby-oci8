@@ -1,35 +1,46 @@
-This code status is experimental.
+1. How to make
 
-How to make
-  Unix:
-    make sure the environment variable ORACLE_HOME is set correctly.
+Unix:
+
+  make sure the environment variable ORACLE_HOME is set correctly.
+  run the the following commands.
+
+    make
+
+Windows:
+
+  ORACLE_HOME is got from the Windows registry.
+
+  MS Visual C++: (I tested on VC4.0 and VC.NET.)
+    make sure ruby is in PATH and nmake works fine.
+    run the the following commands.
+
+    nmake
+
+  Cygwin or Mingw32:
+    make sure ruby is in PATH.
     run the the following commands.
 
       make
 
- Windows:
-   ORACLE_HOME is got from the Windows registry.
+  Borland C++ Builder:
 
-   MS Visual C++: (I tested on VC4.0 and VC.NET.)
-     make sure ruby is in PATH and nmake works fine.
-     run the the following commands.
+    make sure ruby is in PATH and make works fine.
+    run the the following commands.
 
-       nmake
+      make
 
-   Cygwin or Mingw32:
-     make sure ruby is in PATH.
-     run the the following commands.
+Oracle Instant Installer(Unix and Windows):
 
-       make
+  linux:
+    ruby setup.rb config -- --with-instant-client
+    make
 
-   Borland C++ Builder:
+  other UNIX or Windows:
+    ruby setup.rb config -- --with-instant-client=/path/to/instantclient10_1
+    make (or nmake)
 
-     make sure ruby is in PATH and make works fine.
-     run the the following commands.
-
-       make
-
-How to run unit test
+2. How to run unit test
 
   before runing unit test, 
   1. connect to Oracle as system:
@@ -67,3 +78,8 @@ How to run unit test
     $ make check
   or
     $ nmake check   (If your compiler is MS Visual C++.)
+
+3. TODO
+
+  * more proper handling of OCI_SUCCESS_WITH_INFO.
+  * more proper handling of NUMBER without its scale values.
