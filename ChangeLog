@@ -1,3 +1,9 @@
+2005-04-03  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: improve Oracle instance client check:
+	   1. add more strict libclntsh.so check.
+	   2. change LD_LIBRARY_PATH message by its platform.
+	   3. add '-Wl,-rpath,#{lib_dir}' to $libs when Linux.
+
 2005-03-27  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/server.c: delete OCIServer#version, OCIServer#break, OCIServer#reset.
 	* ext/oci8/stmt.c: OCIStmt#bindByName accepts a symbol as a bind name.

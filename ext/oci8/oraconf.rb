@@ -390,7 +390,7 @@ EOS
       if lib_dirs.empty?
         raise 'Oracle Instant Client not found at /usr/lib/oracle/*/client/lib'
       end
-      lib_dir = lib_dirs.sort.reverse[0]
+      lib_dir = lib_dirs.sort[-1]
       inc_dir = lib_dir.gsub(%r{^/usr/lib/oracle/(.*)/client/lib}, "/usr/include/oracle/\\1/client")
       sysliblist = ""
     end
@@ -408,30 +408,68 @@ EOS
         raise 'failed'
       end
       @libs = get_libs("#{ic_dir}/sdk")
-      is_unix = false
+      ld_path = nil
     else
-      if Dir.glob("#{lib_dir}/libclntsh.*").empty?
-        print <<EOS
+      # set ld_path and so_ext
+      case RUBY_PLATFORM
+      when /aix/
+        ld_path = 'LIBPATH'
+        so_ext = 'a'
+      when /hppa.*-hpux/
+        if macro_defined?('__LP64__', '')
+          ld_path = 'LD_LIBRARY_PATH'
+        else
+          ld_path = 'SHLIB_PATH'
+        end
+        so_ext = 'sl'
+      when /darwin/
+        ld_path = 'DYLD_LIBRARY_PATH'
+        so_ext = 'dylib'
+      else
+        ld_path = 'LD_LIBRARY_PATH'
+        so_ext = 'so'
+      end
+      # check Oracle client library.
+      unless File.exists?("#{lib_dir}/libclntsh.#{so_ext}")
+        files = Dir.glob("#{lib_dir}/libclntsh.#{so_ext}.*")
+        if files.empty?
+          print <<EOS
 ---------------------------------------------------
 Could not compile with Oracle Instant Installer.
-#{lib_dir}/libclntsh.* could not be found.
+#{lib_dir}/libclntsh.#{so_ext} could not be found.
+Did you install instantclient-basic?
 ---------------------------------------------------
 EOS
+        else
+          file = File.basename(files.sort[-1])
+          print <<EOS
+---------------------------------------------------
+Could not compile with Oracle Instant Installer.
+#{lib_dir}/libclntsh.#{so_ext} could not be found.
+You may need to make a symbolic link.
+   cd #{lib_dir}
+   ln -s #{file} libclntsh.#{so_ext}
+---------------------------------------------------
+EOS
+        end
         raise 'failed'
       end
-      @libs = " -L#{lib_dir} -lclntsh"
-      @libs = "#{@libs} " + File.read(sysliblist) if File.exist?(sysliblist)
-      is_unix = true
+      @libs = " -L#{lib_dir} -lclntsh "
+      @libs += File.read(sysliblist) if File.exist?(sysliblist)
+      case RUBY_PLATFORM
+      when /linux/
+        @libs += " -Wl,-rpath,#{lib_dir}"
+      end
     end
     $CFLAGS += @cflags
     $libs += @libs
     unless have_func("OCIInitialize", "oci.h")
-      if is_unix
+      unless ld_path.nil?
         print <<EOS
 ---------------------------------------------------
 Could not compile with Oracle Instant Installer.
 You may need to set:
-    LD_LIBRARY_PATH=#{lib_dir}
+    #{ld_path}=#{lib_dir}
 ---------------------------------------------------
 EOS
       end
