@@ -3,6 +3,37 @@
 	   1. add more strict libclntsh.so check.
 	   2. change LD_LIBRARY_PATH message by its platform.
 	   3. add '-Wl,-rpath,#{lib_dir}' to $libs when Linux.
+	* ext/oci8/MANIFEST, ext/oci8/depend, ext/oci8/extconf.rb:
+	   delete server.c and session.c.
+	* ext/oci8/attr.c: delete OCISvcCtx#attrGet(OCI_ATTR_NONBLOCKING_MODE),
+	   OCISvcCtx#attrSet(OCI_ATTR_NONBLOCKING_MODE, nil),
+	   OCISvcCtx#attrSet(OCI_ATTR_SERVER, aOCIServer),
+	   OCISvcCtx#attrSet(OCI_ATTR_SESSION, aOCISession).
+	* ext/oci8/const.c: delete constants unused by high-level API.
+	   delete oci8_id_server, oci8_id_session.
+	* ext/oci8/handle.c, ext/oci8/descriptor.c: use ruby1.8 allocation
+	   framework.
+	* ext/oci8/env.c: add OCIEnv.new. delete OCIEnv.initialise(),
+	   OCIEnv.init(), OCIEnv.create(), OCIEnv.terminate(),
+	   OCIEnv#alloc(), OCIEnv#logon().
+	* ext/oci8/oci8.c, ext/oci8/oci8.h: use ruby1.8 allocation
+	   framework. delete OCIServer and OCISession.
+	* ext/oci8/lob.c: add OCILobLocator.new
+	* ext/oci8/stmt.c: add OCIStmt.new
+	* ext/oci8/svcctx.c: add OCISvcCtx.new, OCISvcCtx#non_blocking?,
+	   OCISvcCtx#non_blocking=
+	* ext/oci8/server.c, ext/oci8/session.c: deleted.
+	* lib/oci8.rb.in: use OCIEnv.new and OCISvcCtx.new instead of
+	   OCIEnv.create, OCIEnv#alloc, OCISession#begin, OCIServer#attach.
+	   use OCISvcCtx.logoff instead of OCISession#end, OCIServer#detach,
+	   OCISvcCtx.free. use OCISvcCtx#non_blocking? instead of
+	   OCISvcCtx#attrGet(OCI_ATTR_NONBLOCKING_MODE).
+	   use OCISvcCtx#non_blocking= instead of
+	   OCISvcCtx#attrSet(OCI_ATTR_NONBLOCKING_MODE, nil).
+	   use <OCICLASS>.new(anOCIEnv) instead of
+	   OCIEnv#alloc(<OCIClass>)
+	* lib/DBD/OCI8/OCI8.rb: use OCIStmt.new(env) instead of
+	   env.alloc(OCIStmt).
 
 2005-03-27  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/server.c: delete OCIServer#version, OCIServer#break, OCIServer#reset.

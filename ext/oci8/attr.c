@@ -14,19 +14,13 @@ static VALUE get_string(oci8_handle_t *hp, ub4 attr);
 static VALUE get_rowid(oci8_handle_t *hp, ub4 attr);
 static VALUE get_oranum_as_int(oci8_handle_t *hp, ub4 attr);
 
-static void set_server(oci8_handle_t *hp, ub4 attr, VALUE value);
-static void set_session(oci8_handle_t *hp, ub4 attr, VALUE value);
 static void set_ub4(oci8_handle_t *hp, ub4 attr, VALUE value);
 static void set_ub2(oci8_handle_t *hp, ub4 attr, VALUE value);
 static void set_ub1(oci8_handle_t *hp, ub4 attr, VALUE value);
-static void set_no_arg(oci8_handle_t *hp, ub4 attr, VALUE value);
 static void set_string(oci8_handle_t *hp, ub4 attr, VALUE value);
 
 oci8_attr_t oci8_attr_list[] = {
   /* Attribute Types */
-  ENTRY(NONBLOCKING_MODE,   ATTR_FOR_HNDL, get_boolean, set_no_arg), /* 3 */
-  ENTRY(SERVER,             ATTR_FOR_HNDL, NULL, set_server), /* 6 */
-  ENTRY(SESSION,            ATTR_FOR_HNDL, NULL, set_session), /* 7 */
   ENTRY(ROW_COUNT,          ATTR_FOR_HNDL, get_ub4, NULL), /* 9 */
   ENTRY(PREFETCH_ROWS,      ATTR_FOR_HNDL, NULL, set_ub4), /* 11 */
   ENTRY(PREFETCH_MEMORY,    ATTR_FOR_HNDL, NULL, set_ub4), /* 13 */
@@ -279,28 +273,6 @@ static VALUE get_oranum_as_int(oci8_handle_t *h, ub4 attr) {
   return rb_cstr2inum(buf, 10);
 }
 
-static void set_server(oci8_handle_t *h, ub4 attr, VALUE value)
-{
-  oci8_handle_t *hv;
-  sword rv;
-
-  Check_Handle(value, OCIServer, hv);
-  rv = OCIAttrSet(h->hp, h->type, hv->hp, 0, attr, h->errhp);
-  if (rv != OCI_SUCCESS)
-    oci8_raise(h->errhp, rv, NULL);
-}
-
-static void set_session(oci8_handle_t *h, ub4 attr, VALUE value)
-{
-  oci8_handle_t *hv;
-  sword rv;
-
-  Check_Handle(value, OCISession, hv);
-  rv = OCIAttrSet(h->hp, h->type, hv->hp, 0, attr, h->errhp);
-  if (rv != OCI_SUCCESS)
-    oci8_raise(h->errhp, rv, NULL);
-}
-
 #define DEFINE_SETTER_FUNC_FOR_NUMBER(attrtype) \
 static void set_##attrtype(oci8_handle_t *h, ub4 attr, VALUE value) \
 { \
@@ -316,18 +288,6 @@ static void set_##attrtype(oci8_handle_t *h, ub4 attr, VALUE value) \
 DEFINE_SETTER_FUNC_FOR_NUMBER(ub4)
 DEFINE_SETTER_FUNC_FOR_NUMBER(ub2)
 DEFINE_SETTER_FUNC_FOR_NUMBER(ub1)
-
-static void set_no_arg(oci8_handle_t *h, ub4 attr, VALUE value)
-{
-  sword rv;
-
-  if (!NIL_P(value)) {
-    rb_raise(rb_eArgError, "invalid argument %s (expect nil: this attribute value is ignored, so set nil)", rb_class2name(CLASS_OF(value)));
-  }
-  rv = OCIAttrSet(h->hp, h->type, 0, 0, attr, h->errhp);
-  if (rv != OCI_SUCCESS)
-    oci8_raise(h->errhp, rv, NULL);
-}
 
 static void set_string(oci8_handle_t *h, ub4 attr, VALUE value)
 {
@@ -364,15 +324,6 @@ VALUE oci8_attr_set(VALUE self, VALUE vtype, VALUE value)
     rb_raise(rb_eArgError, "attrSet is not permitted for %s", oci8_attr_list[type].name);
 
   oci8_attr_list[type].set(h, oci8_attr_list[type].attr, value);
-
-  switch (oci8_attr_list[type].attr) {
-  case OCI_ATTR_SERVER:
-    rb_ivar_set(self, oci8_id_server, value);
-    break;
-  case OCI_ATTR_SESSION:
-    rb_ivar_set(self, oci8_id_session, value);
-    break;
-  }
   return self;
 }
 

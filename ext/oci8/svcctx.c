@@ -1,7 +1,7 @@
 /*
   svcctx.c - part of ruby-oci8
 
-  Copyright (C) 2002 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002-2005 KUBO Takehiro <kubo@jiubao.org>
 
 =begin
 == OCISvcCtx
@@ -19,6 +19,100 @@ correspond native OCI datatype: ((|OCISvcCtx|))
 =end
 */
 #include "oci8.h"
+
+enum {T_IMPLICIT, T_EXPLICIT};
+static VALUE sym_SYSDBA;
+static VALUE sym_SYSOPER;
+
+static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
+{
+  VALUE venv;
+  VALUE vusername;
+  VALUE vpassword;
+  VALUE vdbname;
+  VALUE vmode;
+  oci8_handle_t *h;
+  oci8_handle_t *envh;
+  oci8_string_t u, p, d;
+  sword rv;
+
+  rb_scan_args(argc, argv, "41", &venv, &vusername, &vpassword, &vdbname, &vmode);
+
+  Get_Handle(self, h); /* 0 */
+  Check_Handle(venv, OCIEnv, envh); /* 1 */
+  Get_String(vusername, u); /* 2 */
+  Get_String(vpassword, p); /* 3 */
+  Get_String(vdbname, d); /* 4 */
+  if (NIL_P(vmode)) {
+#if defined(HAVE_OCISESSIONGET)
+#error TODO
+#elif defined(HAVE_OCILOGON2)
+#error TODO
+#else
+    rv = OCILogon(envh->hp, envh->errhp, (OCISvcCtx **)&h->hp,
+		  u.ptr, u.len, p.ptr, p.len, d.ptr, d.len);
+    if (rv != OCI_SUCCESS) {
+      oci8_raise(envh->errhp, rv, NULL);
+    }
+#endif
+    h->errhp = envh->errhp;
+    h->u.svcctx.logon_type = T_IMPLICIT;
+  } else {
+    ub4 mode;
+    OCISession *authhp = NULL;
+    OCIServer *srvhp = NULL;
+
+    Check_Type(vmode, T_SYMBOL);
+    if (vmode == sym_SYSDBA) {
+      mode = OCI_SYSDBA;
+    } else if (vmode == sym_SYSOPER) {
+      mode = OCI_SYSOPER;
+    } else {
+      rb_raise(rb_eArgError, "invalid privilege name %s (expect :SYSDBA or :SYSOPER)", rb_id2name(SYM2ID(vmode)));
+    }
+    h->errhp = envh->errhp;
+    /* allocate OCI handles. */
+    rv = OCIHandleAlloc(envh->hp, (void*)&h->hp, OCI_HTYPE_SVCCTX, 0, 0);
+    if (rv != OCI_SUCCESS)
+      oci8_env_raise(envh->hp, rv);
+    rv = OCIHandleAlloc(envh->hp, (void*)&h->u.svcctx.authhp, OCI_HTYPE_SESSION, 0, 0);
+    if (rv != OCI_SUCCESS)
+      oci8_env_raise(envh->hp, rv);
+    authhp = h->u.svcctx.authhp;
+    rv = OCIHandleAlloc(envh->hp, (void*)&h->u.svcctx.srvhp, OCI_HTYPE_SERVER, 0, 0);
+    if (rv != OCI_SUCCESS)
+      oci8_env_raise(envh->hp, rv);
+    srvhp = h->u.svcctx.srvhp;
+
+    /* set username and password to OCISession. */
+    rv = OCIAttrSet(authhp, OCI_HTYPE_SESSION, u.ptr, u.len, OCI_ATTR_USERNAME, h->errhp);
+    if (rv != OCI_SUCCESS)
+      oci8_raise(h->errhp, rv, NULL);
+    rv = OCIAttrSet(authhp, OCI_HTYPE_SESSION, p.ptr, p.len, OCI_ATTR_PASSWORD, h->errhp);
+    if (rv != OCI_SUCCESS)
+      oci8_raise(h->errhp, rv, NULL);
+
+    /* attach to server and set to OCISvcCtx. */
+    rv = OCIServerAttach(srvhp, h->errhp, d.ptr, d.len, OCI_DEFAULT);
+    if (rv != OCI_SUCCESS)
+      oci8_raise(h->errhp, rv, NULL);
+    rv = OCIAttrSet(h->hp, OCI_HTYPE_SVCCTX, srvhp, 0, OCI_ATTR_SERVER, h->errhp);
+    if (rv != OCI_SUCCESS)
+      oci8_raise(h->errhp, rv, NULL);
+
+    /* attach to server and set to OCISvcCtx. */
+    rv = OCISessionBegin(h->hp, h->errhp, authhp, OCI_CRED_RDBMS, mode);
+    if (rv != OCI_SUCCESS)
+      oci8_raise(h->errhp, rv, NULL);
+    rv = OCIAttrSet(h->hp, OCI_HTYPE_SVCCTX, authhp, 0, OCI_ATTR_SESSION, h->errhp);
+    if (rv != OCI_SUCCESS)
+      oci8_raise(h->errhp, rv, NULL);
+    h->u.svcctx.logon_type = T_EXPLICIT;
+  }
+  h->type = OCI_HTYPE_SVCCTX;
+  oci8_link(envh, h);
+  return Qnil;
+}
 
 /*
 =begin
@@ -38,10 +132,22 @@ static VALUE oci8_svcctx_logoff(VALUE self)
   sword rv;
 
   Get_Handle(self, h); /* 0 */
-
-  rv = OCILogoff(h->hp, h->errhp);
-  if (rv != OCI_SUCCESS)
-    oci8_raise(h->errhp, rv, NULL);
+  switch (h->u.svcctx.logon_type) {
+  case T_IMPLICIT:
+    rv = OCILogoff(h->hp, h->errhp);
+    if (rv != OCI_SUCCESS)
+      oci8_raise(h->errhp, rv, NULL);
+    break;
+  case T_EXPLICIT:
+    rv = OCISessionEnd(h->hp, h->errhp, h->u.svcctx.authhp, OCI_DEFAULT);
+    if (rv != OCI_SUCCESS)
+      oci8_raise(h->errhp, rv, NULL);
+    rv = OCIServerDetach(h->u.svcctx.srvhp, h->errhp, OCI_DEFAULT);
+    if (rv != OCI_SUCCESS)
+      oci8_raise(h->errhp, rv, NULL);
+    break;
+  }
+  oci8_handle_free(self);
   return self;
 }
 
@@ -146,12 +252,115 @@ static VALUE oci8_trans_rollback(int argc, VALUE *argv, VALUE self)
   return self;
 }
 
+static VALUE oci8_svcctx_non_blocking_p(VALUE self)
+{
+  oci8_handle_t *h;
+  sb1 non_blocking;
+  sword rv;
+
+  Get_Handle(self, h); /* 0 */
+  if (h->u.svcctx.srvhp == NULL) {
+    rv = OCIAttrGet(h->hp, OCI_HTYPE_SVCCTX, &h->u.svcctx.srvhp, 0, OCI_ATTR_SERVER, h->errhp);
+    if (rv != OCI_SUCCESS)
+      oci8_raise(h->errhp, rv, NULL);
+  }
+  rv = OCIAttrGet(h->u.svcctx.srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, h->errhp);
+  if (rv != OCI_SUCCESS)
+    oci8_raise(h->errhp, rv, NULL);
+  return non_blocking ? Qtrue : Qfalse;
+}
+
+static VALUE oci8_svcctx_set_non_blocking(VALUE self, VALUE val)
+{
+  oci8_handle_t *h;
+  sb1 non_blocking;
+  sword rv;
+
+  Get_Handle(self, h); /* 0 */
+  if (h->u.svcctx.srvhp == NULL) {
+    rv = OCIAttrGet(h->hp, OCI_HTYPE_SVCCTX, &h->u.svcctx.srvhp, 0, OCI_ATTR_SERVER, h->errhp);
+    if (rv != OCI_SUCCESS)
+      oci8_raise(h->errhp, rv, NULL);
+  }
+  rv = OCIAttrGet(h->u.svcctx.srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, h->errhp);
+  if (rv != OCI_SUCCESS)
+    oci8_raise(h->errhp, rv, NULL);
+  if (RTEST(val) && !non_blocking) {
+    /* toggle blocking / non-blocking. */
+    rv = OCIAttrSet(h->u.svcctx.srvhp, OCI_HTYPE_SERVER, 0, 0, OCI_ATTR_NONBLOCKING_MODE, h->errhp);
+    if (rv != OCI_SUCCESS)
+      oci8_raise(h->errhp, rv, NULL);
+  }
+  return val;
+}
+
+static VALUE oci8_server_version(VALUE self)
+{
+  oci8_handle_t *h;
+  OraText buf[1024];
+  sword rv;
+
+  Get_Handle(self, h); /* 0 */
+  rv = OCIServerVersion(h->hp, h->errhp, buf, sizeof(buf), h->type);
+  if (rv != OCI_SUCCESS)
+    oci8_raise(h->errhp, rv, NULL);
+  return rb_str_new2(buf);
+}
+
+#ifdef HAVE_OCISERVERRELEASE
+static VALUE oci8_server_release(VALUE self)
+{
+  oci8_handle_t *h;
+  OraText buf[1024];
+  ub4 version = 0;
+  sword rv;
+
+  Get_Handle(self, h); /* 0 */
+  rv = OCIServerRelease(h->hp, h->errhp, buf, sizeof(buf), h->type, &version);
+  if (rv != OCI_SUCCESS)
+    oci8_raise(h->errhp, rv, NULL);
+  return rb_ary_new3(2, INT2FIX(version), rb_str_new2(buf));
+}
+#endif
+
+static VALUE oci8_break(VALUE self)
+{
+  oci8_handle_t *h;
+  sword rv;
+
+  Get_Handle(self, h); /* 0 */
+  rv = OCIBreak(h->hp, h->errhp);
+  if (rv != OCI_SUCCESS)
+    oci8_raise(h->errhp, rv, NULL);
+  return self;
+}
+
+#ifdef HAVE_OCIRESET
+static VALUE oci8_reset(VALUE self)
+{
+  oci8_handle_t *h;
+  sword rv;
+
+  Get_Handle(self, h); /* 0 */
+  rv = OCIReset(h->hp, h->errhp);
+  if (rv != OCI_SUCCESS)
+    oci8_raise(h->errhp, rv, NULL);
+  return self;
+}
+#endif
+
 void Init_oci8_svcctx(void)
 {
+  sym_SYSDBA = ID2SYM(rb_intern("SYSDBA"));
+  sym_SYSOPER = ID2SYM(rb_intern("SYSOPER"));
+
+  rb_define_method(cOCISvcCtx, "initialize", oci8_svcctx_initialize, -1);
   rb_define_method(cOCISvcCtx, "logoff", oci8_svcctx_logoff, 0);
   rb_define_method(cOCISvcCtx, "passwordChange", oci8_password_change, -1);
   rb_define_method(cOCISvcCtx, "commit", oci8_trans_commit, -1);
   rb_define_method(cOCISvcCtx, "rollback", oci8_trans_rollback, -1);
+  rb_define_method(cOCISvcCtx, "non_blocking?", oci8_svcctx_non_blocking_p, 0);
+  rb_define_method(cOCISvcCtx, "non_blocking=", oci8_svcctx_set_non_blocking, 1);
   rb_define_method(cOCISvcCtx, "version", oci8_server_version, 0);
 #ifdef HAVE_OCISERVERRELEASE
   rb_define_method(cOCISvcCtx, "release", oci8_server_release, 0);
@@ -161,33 +370,3 @@ void Init_oci8_svcctx(void)
   rb_define_method(cOCISvcCtx, "reset", oci8_reset, 0);
 #endif
 }
-
-/*
-=begin
---- OCISvcCtx#version()
-     get server version.
-
-     :return value
-        string of server version. For example
-          Oracle8 Release 8.0.5.0.0 - Production
-          PL/SQL Release 8.0.5.0.0 - Production
-
-     correspond native OCI function: ((|OCIServerVersion|))
-
---- OCISvcCtx#release()
-     get server version number and string
-
-     :return value
-        array of number and string. For example
-
-          version_number, version_str = svc.release()
-          version_number is 0x8005000.
-          version_str is
-            Oracle8 Release 8.0.5.0.0 - Production
-            PL/SQL Release 8.0.5.0.0 - Production
-
-     correspond native OCI function: ((|OCIServerVersion|))
-
-     Oracle 9i or later?
-=end
-*/

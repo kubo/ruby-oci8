@@ -15,7 +15,5 @@ oraconf.rb
 oradate.c
 oranumber.c
 param.c
-server.c
-session.c
 stmt.c
 svcctx.c

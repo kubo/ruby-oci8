@@ -51,8 +51,6 @@
 
 VALUE cOCIHandle;
 VALUE cOCIEnv;
-VALUE cOCIServer;
-VALUE cOCISession;
 VALUE cOCISvcCtx;
 VALUE cOCIStmt;
 VALUE cOCIDefine;
@@ -75,6 +73,16 @@ VALUE eOCISuccessWithInfo;
 VALUE cOraDate;
 VALUE cOraNumber;
 
+VALUE oci8_s_allocate(VALUE klass)
+{
+  oci8_handle_t *h;
+  VALUE obj;
+
+  obj = Data_Make_Struct(klass, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
+  h->self = obj;
+  return obj;
+}
+
 void
 Init_oci8lib()
 {
@@ -82,8 +90,6 @@ Init_oci8lib()
   cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
   cOCIEnv = rb_define_class("OCIEnv", cOCIHandle);
   cOCISvcCtx = rb_define_class("OCISvcCtx", cOCIHandle);
-  cOCIServer = rb_define_class("OCIServer", cOCIHandle);
-  cOCISession = rb_define_class("OCISession", cOCIHandle);
   cOCIStmt = rb_define_class("OCIStmt", cOCIHandle);
   cOCIDefine = rb_define_class("OCIDefine", cOCIHandle);
   cOCIBind = rb_define_class("OCIBind", cOCIHandle);
@@ -108,13 +114,15 @@ Init_oci8lib()
   cOraDate = rb_define_class("OraDate", rb_cObject);
   cOraNumber = rb_define_class("OraNumber", rb_cObject);
 
+  /* register allocators */
+  rb_define_alloc_func(cOCIHandle, oci8_s_allocate);
+  rb_define_alloc_func(cOCIDescriptor, oci8_s_allocate);
+
   Init_oci8_const();
   Init_oci8_handle();
   Init_oci8_env();
   Init_oci8_error();
   Init_oci8_svcctx();
-  Init_oci8_server();
-  Init_oci8_session();
   Init_oci8_stmt();
   Init_oci8_define();
   Init_oci8_bind();

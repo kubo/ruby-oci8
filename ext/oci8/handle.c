@@ -11,6 +11,28 @@ See ((<Class Hierarchy>)).
 */
 #include "oci8.h"
 
+VALUE oci8_handle_do_initialize(VALUE self, VALUE venv, ub4 type)
+{
+  sword rv;
+  oci8_handle_t *envh;
+  oci8_handle_t *h;
+
+  Get_Handle(self, h);
+  Check_Handle(venv, OCIEnv, envh); /* 1 */
+  rv = OCIHandleAlloc(envh->hp, &h->hp, type, 0, NULL);
+  if (rv != OCI_SUCCESS)
+    oci8_env_raise(envh->hp, rv);
+  h->type = type;
+  h->errhp = envh->errhp;
+  oci8_link(envh, h);
+  return Qnil;
+}
+
+static VALUE oci8_handle_initialize(VALUE self)
+{
+  rb_raise(rb_eNameError, "private method `new' called for %s:Class", rb_class2name(self));
+}
+
 static void oci8_handle_do_free(oci8_handle_t *h)
 {
   int i;
@@ -25,6 +47,12 @@ static void oci8_handle_do_free(oci8_handle_t *h)
   /* unlink from parent */
   oci8_unlink(h);
   /* do free */
+  if (h->type == OCI_HTYPE_SVCCTX) {
+    if (h->u.svcctx.authhp)
+      OCIHandleFree(h->u.svcctx.authhp, OCI_HTYPE_SESSION);
+    if (h->u.svcctx.srvhp)
+      OCIHandleFree(h->u.svcctx.srvhp, OCI_HTYPE_SERVER);
+  }
   if (h->type >= OCI_DTYPE_FIRST)
     OCIDescriptorFree(h->hp, h->type);
   else
@@ -80,10 +108,10 @@ VALUE oci8_handle_free(VALUE self)
 
 void  Init_oci8_handle(void)
 {
+  rb_define_method(cOCIHandle, "initialize", oci8_handle_initialize, 0);
   rb_define_method(cOCIHandle, "free", oci8_handle_free, 0);
   rb_define_method(cOCIHandle, "attrSet", oci8_attr_set, 2);
   rb_define_method(cOCIHandle, "attrGet", oci8_attr_get, 1);
-  rb_define_singleton_method(cOCIHandle, "new", oci8_s_new, 0);
 }
 
 void oci8_handle_cleanup(oci8_handle_t *h)
@@ -92,27 +120,12 @@ void oci8_handle_cleanup(oci8_handle_t *h)
   free(h);
 }
 
-VALUE oci8_s_new(VALUE self)
-{
-  rb_raise(rb_eNameError, "private method `new' called for %s:Class", rb_class2name(self));
-}
-
-
-static void oci8_handle_mark(oci8_handle_t *h)
+void oci8_handle_mark(oci8_handle_t *h)
 {
   oci8_bind_handle_t *bh;
   int i;
 
   switch (h->type) {
-  case OCI_HTYPE_SVCCTX:
-    for (i = 0;i < h->size;i++) {
-      if (h->children[i] != NULL) {
-	if (h->children[i]->type == OCI_HTYPE_SERVER || h->children[i]->type == OCI_HTYPE_SESSION) {
-	  rb_gc_mark(h->children[i]->self);
-	}
-      }
-    }
-    break;
   case OCI_HTYPE_STMT:
     for (i = 0;i < h->size;i++) {
       if (h->children[i] != NULL) {
@@ -141,23 +154,6 @@ oci8_handle_t *oci8_make_handle(ub4 type, dvoid *hp, OCIError *errhp, oci8_handl
   oci8_bind_handle_t *bh;
 
   switch (type) {
-  case OCI_HTYPE_ENV:
-    obj = Data_Make_Struct(cOCIEnv, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
-    break;
-  case OCI_HTYPE_SVCCTX:
-    obj = Data_Make_Struct(cOCISvcCtx, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
-    break;
-  case OCI_HTYPE_STMT:
-    obj = Data_Make_Struct(cOCIStmt, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
-    rb_ivar_set(obj, oci8_id_define_array, Qnil);
-    rb_ivar_set(obj, oci8_id_bind_array, Qnil);
-    break;
-  case OCI_HTYPE_SERVER:
-    obj = Data_Make_Struct(cOCIServer, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
-    break;
-  case OCI_HTYPE_SESSION:
-    obj = Data_Make_Struct(cOCISession, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
-    break;
   case OCI_DTYPE_LOB:
     obj = Data_Make_Struct(cOCILobLocator, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
 #ifndef OCI8_USE_CALLBACK_LOB_READ

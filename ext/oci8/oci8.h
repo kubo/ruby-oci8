@@ -69,7 +69,7 @@ struct ora_vnumber {
 };
 typedef struct ora_vnumber ora_vnumber_t;
 
-/* OCIEnv, OCISvcCtx, OCIServer, OCISession, OCIStmt, OCIDescribe, OCIParam */
+/* OCIEnv, OCISvcCtx, OCIStmt, OCIDescribe, OCIParam */
 struct oci8_handle {
   ub4 type;
   dvoid *hp;
@@ -80,6 +80,11 @@ struct oci8_handle {
   struct oci8_handle **children;
   /* End of common part */
   union {
+    struct {
+      int logon_type;
+      OCISession *authhp;
+      OCIServer *srvhp;
+    } svcctx;
     struct {
       char is_implicit:1;
     } param;
@@ -170,8 +175,6 @@ typedef struct oci8_attr oci8_attr_t;
 extern VALUE cOCIHandle;
 extern VALUE cOCIEnv;
 extern VALUE cOCISvcCtx;
-extern VALUE cOCIServer;
-extern VALUE cOCISession;
 extern VALUE cOCIStmt;
 extern VALUE cOCIDefine;
 extern VALUE cOCIBind;
@@ -204,15 +207,14 @@ extern ID oci8_id_bind_array;
 extern ID oci8_id_message;
 extern ID oci8_id_new;
 extern ID oci8_id_parse_error_offset;
-extern ID oci8_id_server;
-extern ID oci8_id_session;
 extern ID oci8_id_sql;
 
 /* handle.c */
 void  Init_oci8_handle(void);
+VALUE oci8_handle_do_initialize(VALUE self, VALUE venv, ub4 type);
 VALUE oci8_handle_free(VALUE self);
+void oci8_handle_mark(oci8_handle_t *);
 void oci8_handle_cleanup(oci8_handle_t *);
-VALUE oci8_s_new(VALUE self);
 oci8_handle_t *oci8_make_handle(ub4 type, dvoid *hp, OCIError *errhp, oci8_handle_t *chp, sb4 value_sz);
 void oci8_link(oci8_handle_t *parent, oci8_handle_t *child);
 void oci8_unlink(oci8_handle_t *self);
@@ -228,18 +230,6 @@ RBOCI_NORETURN(void oci8_env_raise(OCIEnv *, sword status));
 /* svcctx.c */
 void Init_oci8_svcctx(void);
 
-/* server.c */
-void Init_oci8_server(void);
-VALUE oci8_server_version(VALUE self);
-#ifdef HAVE_OCISERVERRELEASE
-VALUE oci8_server_release(VALUE self);
-#endif
-VALUE oci8_break(VALUE self);
-VALUE oci8_reset(VALUE self);
-
-/* session.c */
-void Init_oci8_session(void);
-
 /* stmt.c */
 void Init_oci8_stmt(void);
 
@@ -253,6 +243,7 @@ void Init_oci8_define(void);
 
 /* descriptor.c */
 void Init_oci8_descriptor(void);
+VALUE oci8_descriptor_do_initialize(VALUE self, VALUE venv, ub4 type);
 VALUE oci8_param_get(VALUE self, VALUE pos);
 
 /* param.c */

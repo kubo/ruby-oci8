@@ -127,43 +127,16 @@ class OCI8
 
   def initialize(uid, pswd, conn = nil, privilege = nil)
     if @@env.nil?
-      if OCIEnv.respond_to?("create")
-	@@env = OCIEnv.create()
-      else
-	OCIEnv.initialise()
-	@@env = OCIEnv.init()
-      end
+      @@env = OCIEnv.new
     end
-
-    case privilege
-    when nil
-      privilege = OCI_DEFAULT
-    when :SYSDBA
-      privilege = OCI_SYSDBA
-    when :SYSOPER
-      privilege = OCI_SYSOPER
-    else
-      raise ArgumentError, "invalid privilege name #{privilege} (expect :SYSDBA, :SYSOPER or nil)"
-    end
-
-    @svc = @@env.alloc(OCISvcCtx)
-    @srv = @@env.alloc(OCIServer)
-    @auth = @@env.alloc(OCISession)
     @ctx = [0, Mutex.new, nil]
-
-    @auth.attrSet(OCI_ATTR_USERNAME, uid)
-    @auth.attrSet(OCI_ATTR_PASSWORD, pswd)
-    do_ocicall(@ctx) { @srv.attach(conn) }
-    @svc.attrSet(OCI_ATTR_SERVER, @srv)
-    do_ocicall(@ctx) { @auth.begin(@svc, OCI_CRED_RDBMS, privilege) }
-    @svc.attrSet(OCI_ATTR_SESSION, @auth)
+    @svc = nil
+    do_ocicall(@ctx) { @svc = OCISvcCtx.new(@@env, uid, pswd, conn, privilege) }
   end # initialize
 
   def logoff
     rollback()
-    do_ocicall(@ctx) { @auth.end(@svc) }
-    do_ocicall(@ctx) { @srv.detach() }
-    @svc.free()
+    @svc.logoff()
     true
   end # logoff
 
@@ -227,15 +200,11 @@ class OCI8
   end # autocommit=
 
   def non_blocking?
-    @svc.attrGet(OCI_ATTR_NONBLOCKING_MODE)
+    @svc.non_blocking?
   end # non_blocking?
 
   def non_blocking=(nb)
-    if nb && ! non_blocking?
-      # If the argument and the current status are different,
-      # toggle blocking / non-blocking.
-      @svc.attrSet(OCI_ATTR_NONBLOCKING_MODE, nil)
-    end
+    @svc.non_blocking = nb
   end # non_blocking=
 
   def break
@@ -387,7 +356,7 @@ class OCI8
     BLOB = Object.new
     class << BLOB
       def fix_type(env, val, length, precision, scale)
-        [OCI8::SQLT_BLOB, nil, val.nil? ? env.alloc(OCILobLocator) : val]
+        [OCI8::SQLT_BLOB, nil, val.nil? ? OCILobLocator.new(env) : val]
       end
       def decorate(b)
         def b.get()
@@ -400,7 +369,7 @@ class OCI8
     CLOB = Object.new
     class << CLOB
       def fix_type(env, val, length, precision, scale)
-        [OCI8::SQLT_CLOB, nil, val.nil? ? env.alloc(OCILobLocator) : val]
+        [OCI8::SQLT_CLOB, nil, val.nil? ? OCILobLocator.new(env) : val]
       end
       def decorate(b)
         def b.get()
@@ -414,7 +383,7 @@ class OCI8
     class << Cursor
       def fix_type(env, val, length, precision, scale)
         raise NotImplementedError unless val.nil?
-        [OCI8::SQLT_RSET, nil, env.alloc(OCIStmt)]
+        [OCI8::SQLT_RSET, nil, OCIStmt.new(env)]
       end
       def decorate(b)
         def b.set(val)
@@ -453,7 +422,7 @@ class OCI8
       @parms = nil
       @defns = nil
       if stmt.nil?
-        @stmt = @env.alloc(OCIStmt)
+        @stmt = OCIStmt.new(@env)
         @stmttype = nil
       else
         @stmt = stmt

@@ -1,5 +1,17 @@
 #include "oci8.h"
 
+static VALUE oci8_lob_initialize(VALUE self, VALUE venv)
+{
+  oci8_handle_t *h;
+
+  Get_Handle(self, h);
+  oci8_descriptor_do_initialize(self, venv, OCI_DTYPE_LOB);
+#ifndef OCI8_USE_CALLBACK_LOB_READ
+  h->u.lob_locator.char_width = 1;
+#endif
+  return Qnil;
+}
+
 #ifndef OCI8_USE_CALLBACK_LOB_READ
 static VALUE oci8_lob_set_char_width(VALUE self, VALUE vsize)
 {
@@ -257,6 +269,7 @@ static VALUE oci8_lob_close(VALUE self, VALUE vsvc)
 
 void Init_oci8_lob(void)
 {
+  rb_define_method(cOCILobLocator, "initialize", oci8_lob_initialize, 1);
 #ifndef OCI8_USE_CALLBACK_LOB_READ
   rb_define_method(cOCILobLocator, "char_width=", oci8_lob_set_char_width, 1);
 #endif

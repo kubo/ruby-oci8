@@ -13,8 +13,6 @@ ID oci8_id_bind_array;
 ID oci8_id_message;
 ID oci8_id_new;
 ID oci8_id_parse_error_offset;
-ID oci8_id_server;
-ID oci8_id_session;
 ID oci8_id_sql;
 
 struct oci8_names {
@@ -60,18 +58,9 @@ void  Init_oci8_const(void)
   oci8_id_message = rb_intern("message");
   oci8_id_new = rb_intern("new");
   oci8_id_parse_error_offset = rb_intern("parse_error_offset");
-  oci8_id_server = rb_intern("server");
-  oci8_id_session = rb_intern("session");
   oci8_id_sql = rb_intern("sql");
 
   rb_define_global_const("OCI_DEFAULT", INT2FIX(OCI_DEFAULT));
-  rb_define_global_const("OCI_OBJECT", INT2FIX(OCI_OBJECT));
-  rb_define_global_const("OCI_CRED_RDBMS", INT2FIX(OCI_CRED_RDBMS));
-  rb_define_global_const("OCI_CRED_EXT", INT2FIX(OCI_CRED_EXT));
-  rb_define_global_const("OCI_MIGRATE", INT2FIX(OCI_MIGRATE));
-  rb_define_global_const("OCI_SYSDBA", INT2FIX(OCI_SYSDBA));
-  rb_define_global_const("OCI_SYSOPER", INT2FIX(OCI_SYSOPER));
-  rb_define_global_const("OCI_PRELIM_AUTH", INT2FIX(OCI_PRELIM_AUTH));
 
   /* OCIStmt#prepare */
   rb_define_global_const("OCI_NTV_SYNTAX", INT2FIX(OCI_NTV_SYNTAX));

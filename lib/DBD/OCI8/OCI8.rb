@@ -249,7 +249,7 @@ module BindType
   class << DBIStatementHandle
     def fix_type(env, val, length, precision, scale)
       raise NotImplementedError unless val.nil?
-      [::OCI8::SQLT_RSET, nil, env.alloc(OCIStmt)]
+      [::OCI8::SQLT_RSET, nil, OCIStmt.new(env)]
     end
     def decorate(b)
       def b.set(val)

@@ -110,6 +110,11 @@ static void check_bind_type(ub4 type, oci8_handle_t *stmth, VALUE vtype, VALUE v
   *bhp = bh;
 }
 
+static VALUE oci8_stmt_initialize(VALUE self, VALUE venv)
+{
+  return oci8_handle_do_initialize(self, venv, OCI_HTYPE_STMT);
+}
+
 /*
 =begin
 --- OCIStmt#prepare(stmt [, language [, mode]])
@@ -613,6 +618,7 @@ implemented in param.c
 
 void Init_oci8_stmt(void)
 {
+  rb_define_method(cOCIStmt, "initialize", oci8_stmt_initialize, 1);
   rb_define_method(cOCIStmt, "prepare", oci8_stmt_prepare, -1);
   rb_define_method(cOCIStmt, "defineByPos", oci8_define_by_pos, -1);
   rb_define_method(cOCIStmt, "bindByPos", oci8_bind_by_pos, -1);
