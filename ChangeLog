@@ -1,3 +1,18 @@
+2005-04-10  KUBO Takehiro  <kubo@jiubao.org>
+	* README: change the document format for rdoc.
+	* ext/oci8/bind.c, ext/oci8/descriptor.c, ext/oci8/env.c,
+	   ext/oci8/error.c, ext/oci8/const.c, ext/oci8/handle.c
+	   ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/stmt.c:
+	   change bind_type_t structure. bind_* variables in binc.c
+	   become OCI8::BindType::* which are subclasses of OCIBind.
+	   add envh member to oci8_handle_t and oci8_bind_handle_t.
+	   add OCIRowid#initialize.
+	   delete macros to compile on ruby 1.6.
+	* lib/oci8.rb.in: add comments for rdoc.
+	   change OCI8::BindType::*.
+	* lib/DBD/OCI8/OCI8.rb
+	   change DBI::DBD::OCI8::BindType::*.
+	
 2005-04-06  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.h, ext/oci8/handle.c: delete enum oci8_bind_type.
 	  add oci8_bind_type_t.

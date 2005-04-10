@@ -35,6 +35,7 @@ static VALUE oci8_handle_initialize(VALUE self)
 
 static void oci8_handle_do_free(oci8_handle_t *h)
 {
+  oci8_bind_handle_t *bh;
   int i;
   if (h->type == 0) {
     return;
@@ -47,11 +48,19 @@ static void oci8_handle_do_free(oci8_handle_t *h)
   /* unlink from parent */
   oci8_unlink(h);
   /* do free */
-  if (h->type == OCI_HTYPE_SVCCTX) {
+  switch (h->type) {
+  case OCI_HTYPE_SVCCTX:
     if (h->u.svcctx.authhp)
       OCIHandleFree(h->u.svcctx.authhp, OCI_HTYPE_SESSION);
     if (h->u.svcctx.srvhp)
       OCIHandleFree(h->u.svcctx.srvhp, OCI_HTYPE_SERVER);
+    break;
+  case OCI_HTYPE_BIND:
+  case OCI_HTYPE_DEFINE:
+    bh = (void*)h;
+    if (bh->bind_type->free != NULL)
+      bh->bind_type->free(bh);
+    break;
   }
   if (h->type >= OCI_DTYPE_FIRST)
     OCIDescriptorFree(h->hp, h->type);
@@ -138,8 +147,7 @@ void oci8_handle_mark(oci8_handle_t *h)
   case OCI_HTYPE_DEFINE:
   case OCI_HTYPE_BIND:
     bh = (oci8_bind_handle_t *)h;
-    if (bh->bind_type->bind_object)
-      rb_gc_mark(bh->value.v);
+    rb_gc_mark(bh->obj);
     break;
   }
   if (h->parent != NULL) {
@@ -151,7 +159,6 @@ oci8_handle_t *oci8_make_handle(ub4 type, dvoid *hp, OCIError *errhp, oci8_handl
 {
   VALUE obj;
   oci8_handle_t *h;
-  oci8_bind_handle_t *bh;
 
   switch (type) {
   case OCI_DTYPE_LOB:
@@ -166,24 +173,6 @@ oci8_handle_t *oci8_make_handle(ub4 type, dvoid *hp, OCIError *errhp, oci8_handl
   case OCI_DTYPE_PARAM:
     obj = Data_Make_Struct(cOCIParam, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
     h->u.param.is_implicit = 0;
-    break;
-  case OCI_HTYPE_BIND:
-    bh = xmalloc(sizeof(oci8_bind_handle_t) - sizeof(bh->value) + value_sz);
-    obj = Data_Wrap_Struct(cOCIBind, oci8_handle_mark, oci8_handle_cleanup, bh);
-    bh->bind_type = 0;
-    bh->ind = -1;
-    bh->rlen = value_sz;
-    bh->value_sz = value_sz;
-    h = (oci8_handle_t *)bh;
-    break;
-  case OCI_HTYPE_DEFINE:
-    bh = xmalloc(sizeof(oci8_bind_handle_t) - sizeof(bh->value) + value_sz);
-    obj = Data_Wrap_Struct(cOCIDefine, oci8_handle_mark, oci8_handle_cleanup, bh);
-    bh->bind_type = 0;
-    bh->ind = -1;
-    bh->rlen = value_sz;
-    bh->value_sz = value_sz;
-    h = (oci8_handle_t *)bh;
     break;
   default:
     rb_bug("unsupported type %d in oci8_make_handle()", type);
@@ -210,6 +199,7 @@ void oci8_link(oci8_handle_t *parent, oci8_handle_t *child)
     return;
   oci8_unlink(child);
   child->parent = parent;
+  child->envh = parent->envh;
 
   for (i = 0;i < parent->size;i++) {
     if (parent->children[i] == NULL) {

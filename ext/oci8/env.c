@@ -47,7 +47,8 @@ static VALUE oci8_env_initialize(VALUE self)
   rv = OCIHandleAlloc(h->hp, (dvoid *)&h->errhp, OCI_HTYPE_ERROR, 0, NULL);
   if (rv != OCI_SUCCESS)
     oci8_env_raise(h->hp, rv);
-  return h->self;
+  h->envh = h;
+  return Qnil;
 }
 
 void Init_oci8_env(void)

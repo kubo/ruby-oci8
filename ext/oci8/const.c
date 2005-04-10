@@ -8,8 +8,6 @@
 #include "oci8.h"
 
 ID oci8_id_code;
-ID oci8_id_define_array;
-ID oci8_id_bind_array;
 ID oci8_id_message;
 ID oci8_id_new;
 ID oci8_id_parse_error_offset;
@@ -53,8 +51,6 @@ void  Init_oci8_const(void)
   int i;
 
   oci8_id_code = rb_intern("code");
-  oci8_id_define_array = rb_intern("define_array");
-  oci8_id_bind_array = rb_intern("bind_array");
   oci8_id_message = rb_intern("message");
   oci8_id_new = rb_intern("new");
   oci8_id_parse_error_offset = rb_intern("parse_error_offset");

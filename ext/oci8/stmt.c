@@ -2,7 +2,7 @@
   stmt.c - part of ruby-oci8
            implement the methods of OCIStmt.
 
-  Copyright (C) 2002 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002-2005 KUBO Takehiro <kubo@jiubao.org>
 
 =begin
 == OCIStmt
@@ -19,22 +19,17 @@ correspond native OCI datatype: ((|OCIStmt|))
 */
 #include "oci8.h"
 
-static void check_bind_type(ub4 type, oci8_handle_t *stmth, VALUE vtype, VALUE vlength, oci8_bind_handle_t **bhp)
+static oci8_bind_handle_t *make_bind_handle(ub4 type, oci8_handle_t *stmth, VALUE obj)
 {
-  oci8_bind_type_t *bind_type = oci8_bind_type_get(vtype);
-  sb4 value_sz;
-
-  if (bind_type != NULL) {
-    value_sz = bind_type->get_value_sz(vlength);
-    *bhp = (oci8_bind_handle_t *)oci8_make_handle(type, NULL, NULL, stmth, value_sz);
-    (*bhp)->bind_type = bind_type;
+  if (rb_obj_is_kind_of(obj, cOCIBind) && CLASS_OF(obj) != cOCIBind) {
+    oci8_bind_handle_t *bh = DATA_PTR(obj);
+    bh->type = type;
+    bh->errhp = stmth->errhp;
+    oci8_link(stmth, (oci8_handle_t*)bh);
+    return bh;
   } else {
     /* error */
-    if (FIXNUM_P(vtype)) {
-      rb_raise(rb_eArgError, "Not supported type (%d)", FIX2INT(vtype));
-    } else {
-      rb_raise(rb_eArgError, "Not supported type (%s)", rb_class2name(vtype));
-    }
+    rb_raise(rb_eArgError, "Not supported object %s (expect a subclass of OCIBind)", rb_class2name(obj));
   }
 }
 
@@ -69,7 +64,6 @@ static VALUE oci8_stmt_prepare(int argc, VALUE *argv, VALUE self)
   ub4 language;
   ub4 mode;
   sword rv;
-  VALUE ary;
   int i;
 
   rb_scan_args(argc, argv, "12", &vsql, &vlanguage, &vmode);
@@ -82,23 +76,12 @@ static VALUE oci8_stmt_prepare(int argc, VALUE *argv, VALUE self)
    * statement's define and bind handles. 
    * But ruby's object don't know it. So free these handles in advance.
    */
-  /* free define handles */
-  ary = rb_ivar_get(self, oci8_id_define_array);
-  if (ary != Qnil) {
-    for (i = 0;i < RARRAY(ary)->len;i++) {
-      if (RARRAY(ary)->ptr[i] != Qnil)
-	oci8_handle_free(RARRAY(ary)->ptr[i]);
+  for (i = 0;i < h->size;i++) {
+    if (h->children[i] != NULL) {
+      if (h->children[i]->type == OCI_HTYPE_BIND || h->children[i]->type == OCI_HTYPE_DEFINE) {
+	oci8_handle_free(h->children[i]->self);
+      }
     }
-    rb_ivar_set(self, oci8_id_define_array, Qnil);
-  }
-  /* free bind handles */
-  ary = rb_ivar_get(self, oci8_id_bind_array);
-  if (ary != Qnil) {
-    for (i = 0;i < RARRAY(ary)->len;i++) {
-      if (RARRAY(ary)->ptr[i] != Qnil)
-	oci8_handle_free(RARRAY(ary)->ptr[i]);
-    }
-    rb_ivar_set(self, oci8_id_bind_array, Qnil);
   }
 
   rv = OCIStmtPrepare(h->hp, h->errhp, s.ptr, s.len, language, mode);
@@ -135,203 +118,38 @@ static VALUE oci8_stmt_prepare(int argc, VALUE *argv, VALUE self)
      correspond native OCI function: ((|OCIDefineByPos|))
 =end
  */
-static VALUE oci8_define_by_pos(int argc, VALUE *argv, VALUE self)
+static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
 {
-  VALUE vposition;
-  VALUE vtype;
-  VALUE vlength;
-  VALUE vmode;
   oci8_handle_t *h;
   ub4 position;
   oci8_bind_handle_t *bh;
-  ub4 mode;
-  dvoid *indp;
-  ub2 *rlenp;
-  dvoid *valuep;
   OCIDefine *dfnhp = NULL;
   sword status;
-  VALUE ary;
-  VALUE obj;
 
-  rb_scan_args(argc, argv, "22", &vposition, &vtype, &vlength, &vmode);
   Get_Handle(self, h); /* 0 */
   position = NUM2INT(vposition); /* 1 */
-  check_bind_type(OCI_HTYPE_DEFINE, h, vtype, vlength, &bh); /* 2, 3 */
-  Get_Int_With_Default(argc, 4, vmode, mode, OCI_DEFAULT); /* 4 */
+  bh = make_bind_handle(OCI_HTYPE_DEFINE, h, vbindobj); /* 2 */
 
-  if (mode & OCI_DYNAMIC_FETCH) {
-    indp = NULL;
-    rlenp = NULL;
-  } else {
-    indp = &(bh->ind);
-    rlenp = &(bh->rlen);
-  }
-  if (bh->bind_type->bind_object) {
-    oci8_handle_t *h;
-    Get_Handle(vlength, h); /* 3 */
-    bh->value.v = vlength;
-    valuep = &(h->hp);
-  } else {
-    valuep = &(bh->value);
-  }
-  status = OCIDefineByPos(h->hp, &dfnhp, h->errhp, position, valuep, bh->value_sz, bh->bind_type->dty, indp, rlenp, 0, mode);
+  status = OCIDefineByPos(h->hp, &dfnhp, h->errhp, position, bh->valuep, bh->value_sz, bh->bind_type->dty, &bh->ind, &bh->rlen, 0, OCI_DEFAULT);
   if (status != OCI_SUCCESS) {
     oci8_unlink((oci8_handle_t *)bh);
     bh->type = 0;
     oci8_raise(h->errhp, status, h->hp);
   }
-  bh->type = OCI_HTYPE_DEFINE;
   bh->hp = dfnhp;
-  bh->errhp = h->errhp;
-  obj = bh->self;
-  ary = rb_ivar_get(self, oci8_id_define_array);
-  if (ary == Qnil) {
-    ary = rb_ary_new();
-    rb_ivar_set(self, oci8_id_define_array, ary);
-  }
-  rb_ary_store(ary, position - 1, obj);
-  return obj;
+  return bh->self;
 }
 
-/*
-=begin
---- OCIStmt#bindByPos(position, type [, length [, mode]])
-     define the datatype of the bind variable by posision.
-
-     :position
-        the position of the bind variable.
-     :type
-        the type of the bind variable.
-        ((|String|)), ((|Fixnum|)), ((|Integer|)), ((|Float|)), ((|Time|)),
-        ((<OraDate>)), ((<OraNumber>)), or ((|OCI_TYPECODE_RAW|))
-     :length
-        When the 2nd argument is 
-        * ((|String|)) or ((|OCI_TYPECODE_RAW|)),
-          the max length of fetched data.
-        * otherwise,
-          its value is ignored.
-     :mode
-        ((|OCI_DEFAULT|)), or ((|OCI_DATA_AT_EXEC|)). But now available value is 
-        ((|OCI_DEFAULT|)) only. Default value is ((|OCI_DEFAULT|))
-     :return value
-        newly created ((<bind handle|OCIBind>))
-
-     correspond native OCI function: ((|OCIBindByPos|))
-=end
- */
-static VALUE oci8_bind_by_pos(int argc, VALUE *argv, VALUE self)
+static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
 {
-  VALUE vposition;
-  VALUE vtype;
-  VALUE vlength;
-  VALUE vmode;
-  oci8_handle_t *h;
-  ub4 position;
-  oci8_bind_handle_t *bh;
-  ub4 mode;
-  dvoid *indp;
-  ub2 *rlenp;
-  dvoid *valuep;
-  OCIBind *bindhp = NULL;
-  sword status;
-  VALUE ary;
-  VALUE obj;
-
-  rb_scan_args(argc, argv, "22", &vposition, &vtype, &vlength, &vmode);
-  Get_Handle(self, h); /* 0 */
-  position = NUM2INT(vposition); /* 1 */
-  check_bind_type(OCI_HTYPE_BIND, h, vtype, vlength, &bh); /* 2, 3 */
-  Get_Int_With_Default(argc, 4, vmode, mode, OCI_DEFAULT); /* 4 */
-
-  if (mode & OCI_DATA_AT_EXEC) {
-    indp = NULL;
-    rlenp = NULL;
-  } else {
-    indp = &(bh->ind);
-    rlenp = &(bh->rlen);
-  }
-  if (bh->bind_type->bind_object) {
-    oci8_handle_t *h;
-    Get_Handle(vlength, h); /* 3 */
-    bh->value.v = vlength;
-    valuep = &(h->hp);
-  } else {
-    valuep = &(bh->value);
-  }
-  status = OCIBindByPos(h->hp, &bindhp, h->errhp, position, valuep, bh->value_sz, bh->bind_type->dty, indp, rlenp, 0, 0, 0, mode);
-  if (status != OCI_SUCCESS) {
-    oci8_unlink((oci8_handle_t *)bh);
-    bh->type = 0;
-    oci8_raise(h->errhp, status, h->hp);
-  }
-  bh->type = OCI_HTYPE_BIND;
-  bh->hp = bindhp;
-  bh->errhp = h->errhp;
-  obj = bh->self;
-  ary = rb_ivar_get(self, oci8_id_bind_array);
-  if (ary == Qnil) {
-    ary = rb_ary_new();
-    rb_ivar_set(self, oci8_id_bind_array, ary);
-  }
-  rb_ary_push(ary, obj);
-  return obj;
-}
-
-/*
-=begin
---- OCIStmt#bindByName(name, type [, length [, mode]])
-     define the datatype of the bind variable by name.
-
-     :name
-        the name of the bind variable including colon.
-     :type
-        the type of the bind variable.
-        ((|String|)), ((|Fixnum|)), ((|Integer|)), ((|Float|)), ((|Time|)),
-        ((<OraDate>)), ((<OraNumber>)), or ((|OCI_TYPECODE_RAW|))
-     :length
-        When the 2nd argument is 
-        * ((|String|)) or ((|OCI_TYPECODE_RAW|)),
-          the max length of fetched data.
-        * otherwise,
-          its value is ignored.
-     :mode
-        ((|OCI_DEFAULT|)), or ((|OCI_DATA_AT_EXEC|)). But now available value is 
-        ((|OCI_DEFAULT|)) only. Default value is ((|OCI_DEFAULT|))
-     :return value
-        newly created ((<bind handle|OCIBind>))
-
-     for example
-       stmt = env.alloc(OCIStmt)
-       stmt.prepare("SELECT * FROM EMP
-                      WHERE ename = :ENAME
-                        AND sal > :SAL
-                        AND hiredate >= :HIREDATE")
-       b_ename = stmt.bindByName(":ENAME", String, 10)
-       b_sal = stmt.bindByName(":SAL", Fixnum)
-       b_hiredate = stmt.bindByName(":HIREDATE", OraDate)
-
-     correspond native OCI function: ((|OCIBindByName|))
-=end
- */
-static VALUE oci8_bind_by_name(int argc, VALUE *argv, VALUE self)
-{
-  VALUE vplaceholder;
-  VALUE vtype;
-  VALUE vlength;
-  VALUE vmode;
   oci8_handle_t *h;
   oci8_string_t placeholder;
+  ub4 position = 0;
   oci8_bind_handle_t *bh;
-  ub4 mode;
-  dvoid *indp;
-  ub2 *rlenp;
-  dvoid *valuep;
   OCIBind *bindhp = NULL;
   sword status;
-  VALUE ary;
-  VALUE obj;
+  int bind_by_pos = 0;
 
-  rb_scan_args(argc, argv, "22", &vplaceholder, &vtype, &vlength, &vmode);
   Get_Handle(self, h); /* 0 */
   if (NIL_P(vplaceholder)) {
     placeholder.ptr = NULL;
@@ -343,46 +161,28 @@ static VALUE oci8_bind_by_name(int argc, VALUE *argv, VALUE self)
     placeholder.len = len + 1;
     placeholder.ptr[0] = ':';
     memcpy(placeholder.ptr + 1, symname, len);
+  } else if (FIXNUM_P(vplaceholder)) {
+    bind_by_pos = 1;
+    position = NUM2INT(vplaceholder);
   } else {
     Check_Type(vplaceholder, T_STRING);
     placeholder.ptr = RSTRING(vplaceholder)->ptr;
     placeholder.len = RSTRING(vplaceholder)->len;
   }
-  check_bind_type(OCI_HTYPE_BIND, h, vtype, vlength, &bh); /* 2, 3 */
-  Get_Int_With_Default(argc, 4, vmode, mode, OCI_DEFAULT); /* 4 */
+  bh = make_bind_handle(OCI_HTYPE_BIND, h, vbindobj); /* 2 */
 
-  if (mode & OCI_DATA_AT_EXEC) {
-    indp = NULL;
-    rlenp = NULL;
+  if (bind_by_pos) {
+    status = OCIBindByPos(h->hp, &bindhp, h->errhp, position, bh->valuep, bh->value_sz, bh->bind_type->dty, &bh->ind, &bh->rlen, 0, 0, 0, OCI_DEFAULT);
   } else {
-    indp = &(bh->ind);
-    rlenp = &(bh->rlen);
+    status = OCIBindByName(h->hp, &bindhp, h->errhp, placeholder.ptr, placeholder.len, bh->valuep, bh->value_sz, bh->bind_type->dty, &bh->ind, &bh->rlen, 0, 0, 0, OCI_DEFAULT);
   }
-  if (bh->bind_type->bind_object) {
-    oci8_handle_t *h;
-    Get_Handle(vlength, h); /* 3 */
-    bh->value.v = vlength;
-    valuep = &(h->hp);
-  } else {
-    valuep = &(bh->value);
-  }
-  status = OCIBindByName(h->hp, &bindhp, h->errhp, placeholder.ptr, placeholder.len, valuep, bh->value_sz, bh->bind_type->dty, indp, rlenp, 0, 0, 0, mode);
   if (status != OCI_SUCCESS) {
     oci8_unlink((oci8_handle_t *)bh);
     bh->type = 0;
     oci8_raise(h->errhp, status, h->hp);
   }
-  bh->type = OCI_HTYPE_BIND;
   bh->hp = bindhp;
-  bh->errhp = h->errhp;
-  obj = bh->self;
-  ary = rb_ivar_get(self, oci8_id_bind_array);
-  if (ary == Qnil) {
-    ary = rb_ary_new();
-    rb_ivar_set(self, oci8_id_bind_array, ary);
-  }
-  rb_ary_push(ary, obj);
-  return obj;
+  return bh->self;
 }
 
 /*
@@ -522,7 +322,7 @@ static VALUE oci8_stmt_fetch(int argc, VALUE *argv, VALUE self)
   if (IS_OCI_ERROR(rv)) {
     oci8_raise(h->errhp, rv, h->hp);
   }
-  return rb_ivar_get(self, oci8_id_define_array);
+  return Qtrue;
 }  
 
 /*
@@ -545,9 +345,8 @@ void Init_oci8_stmt(void)
 {
   rb_define_method(cOCIStmt, "initialize", oci8_stmt_initialize, 1);
   rb_define_method(cOCIStmt, "prepare", oci8_stmt_prepare, -1);
-  rb_define_method(cOCIStmt, "defineByPos", oci8_define_by_pos, -1);
-  rb_define_method(cOCIStmt, "bindByPos", oci8_bind_by_pos, -1);
-  rb_define_method(cOCIStmt, "bindByName", oci8_bind_by_name, -1);
+  rb_define_method(cOCIStmt, "defineByPos", oci8_define_by_pos, 2);
+  rb_define_method(cOCIStmt, "bind", oci8_bind, 2);
   rb_define_method(cOCIStmt, "execute", oci8_stmt_execute, -1);
   rb_define_method(cOCIStmt, "fetch", oci8_stmt_fetch, -1);
   rb_define_method(cOCIStmt, "paramGet", oci8_param_get, 1);

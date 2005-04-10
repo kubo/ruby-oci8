@@ -204,64 +204,51 @@ class Statement < DBI::BaseStatement
   end
 end
 
-module BindType
-  DBIDate = Object.new
-  class << DBIDate
-    def fix_type(env, val, length, precision, scale)
-      # bind as an OraDate
-      [::OCI8::SQLT_DAT, val, nil]
+module BindType # :nodoc:
+  class DBIDate < ::OCI8::BindType::OraDate
+    def set(val)
+      # convert val to an OraDate,
+      # then set it to the bind handle.
+      super(val && OraDate.new(val.year, val.month, val.day))
     end
-    def decorate(b)
-      def b.set(val)
-        # convert val to an OraDate,
-        # then set it to the bind handle.
-        super(val && OraDate.new(val.year, val.month, val.day))
-      end
-      def b.get()
-        # get an Oradate from the bind handle,
-        # then convert it to a DBI::Date.
-        (val = super()) && DBI::Date.new(val.year, val.month, val.day)
-      end
+    def get()
+      # get an Oradate from the bind handle,
+      # then convert it to a DBI::Date.
+      val = super()
+      return nil if val.nil?
+      DBI::Date.new(val.year, val.month, val.day)
     end
   end
 
-  DBITimestamp = Object.new
-  class << DBITimestamp
-    def fix_type(env, val, length, precision, scale)
-      # bind as an OraDate
-      [::OCI8::SQLT_DAT, val, nil]
+  class DBITimestamp < ::OCI8::BindType::OraDate
+    def set(val)
+      # convert val to an OraDate,
+      # then set it to the bind handle.
+      super(val && OraDate.new(val.year, val.month, val.day, val.hour, val.minute, val.second))
     end
-    def decorate(b)
-      def b.set(val)
-        # convert val to an OraDate,
-        # then set it to the bind handle.
-        super(val && OraDate.new(val.year, val.month, val.day, val.hour, val.minute, val.second))
-      end
-      def b.get()
-        # get an Oradate from the bind handle,
-        # then convert it to a DBI::Timestamp.
-        (val = super()) && DBI::Timestamp.new(val.year, val.month, val.day, val.hour, val.minute, val.second)
-      end
+    def get()
+      # get an Oradate from the bind handle,
+      # then convert it to a DBI::Timestamp.
+      val = super()
+      return nil if val.nil?
+      DBI::Timestamp.new(val.year, val.month, val.day, val.hour, val.minute, val.second)
     end
   end
 
-  DBIStatementHandle = Object.new
-  class << DBIStatementHandle
-    def fix_type(env, val, length, precision, scale)
-      raise NotImplementedError unless val.nil?
-      [::OCI8::SQLT_RSET, nil, OCIStmt.new(env)]
+  class DBIStatementHandle < ::OCI8::BindType::Cursor
+    def set(val)
+      if val.is_a? DBI::StatementHandle
+        # get OCI8::Cursor
+        val = val.instance_eval do @handle end
+        val = val.instance_eval do @cursor end
+      end
+      super(val)
     end
-    def decorate(b)
-      def b.set(val)
-      raise NotImplementedError
-      end
-      def b.get()
-        val = super
-        return val if val.nil?
-        cur = ::OCI8::Cursor.new(@env, @svc, @ctx, val)
-        stmt = DBI::DBD::OCI8::Statement.new(cur)
-        DBI::StatementHandle.new(stmt, true, false)
-      end
+    def get()
+      val = super
+      return nil if val.nil?
+      stmt = DBI::DBD::OCI8::Statement.new(val)
+      DBI::StatementHandle.new(stmt, true, false)
     end
   end
 end # BindType

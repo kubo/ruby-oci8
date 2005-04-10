@@ -49,18 +49,20 @@
 #include <signal.h>
 #endif
 
+/* Handle */
 VALUE cOCIHandle;
 VALUE cOCIEnv;
 VALUE cOCISvcCtx;
 VALUE cOCIStmt;
-VALUE cOCIDefine;
 VALUE cOCIBind;
 
+/* Descriptor */
 VALUE cOCIDescriptor;
 VALUE cOCIParam;
 VALUE cOCILobLocator;
 VALUE cOCIRowid;
 
+/* Exception */
 VALUE eOCIException;
 VALUE eOCINoData;
 VALUE eOCIError;
@@ -70,8 +72,13 @@ VALUE eOCIStillExecuting;
 VALUE eOCIContinue;
 VALUE eOCISuccessWithInfo;
 
+/* oracle specific type */
 VALUE cOraDate;
 VALUE cOraNumber;
+
+/* OCI8 class */
+VALUE cOCI8;
+VALUE mOCI8BindType;
 
 VALUE oci8_s_allocate(VALUE klass)
 {
@@ -91,7 +98,6 @@ Init_oci8lib()
   cOCIEnv = rb_define_class("OCIEnv", cOCIHandle);
   cOCISvcCtx = rb_define_class("OCISvcCtx", cOCIHandle);
   cOCIStmt = rb_define_class("OCIStmt", cOCIHandle);
-  cOCIDefine = rb_define_class("OCIDefine", cOCIHandle);
   cOCIBind = rb_define_class("OCIBind", cOCIHandle);
 
   /* Descriptor */
@@ -113,6 +119,10 @@ Init_oci8lib()
   /* oracle specific type */
   cOraDate = rb_define_class("OraDate", rb_cObject);
   cOraNumber = rb_define_class("OraNumber", rb_cObject);
+
+  /* OCI8 class */
+  cOCI8 = rb_define_class("OCI8", rb_cObject);
+  mOCI8BindType = rb_define_module_under(cOCI8, "BindType");
 
   /* register allocators */
   rb_define_alloc_func(cOCIHandle, oci8_s_allocate);

@@ -21,15 +21,6 @@ extern "C" {
 #endif
 #include "extconf.h"
 
-#ifdef StringValue
-/* ruby 1.8 or later */
-#define RBOCI_NORETURN(x) NORETURN(x)
-#else
-/* ruby 1.6 */
-#define RBOCI_NORETURN(x) x NORETURN
-#define rb_cstr_to_dbl(p, ignore) strtod((p), 0)
-#endif
-
 #define IS_OCI_ERROR(v) (((v) != OCI_SUCCESS) && ((v) != OCI_SUCCESS_WITH_INFO))
 
 /* OraDate - Internal format of DATE */
@@ -62,6 +53,7 @@ typedef struct ora_vnumber ora_vnumber_t;
 struct oci8_handle {
   ub4 type;
   dvoid *hp;
+  struct oci8_handle *envh;
   OCIError *errhp;
   VALUE self;
   struct oci8_handle *parent;
@@ -92,6 +84,7 @@ typedef struct oci8_bind_type oci8_bind_type_t;
 struct oci8_bind_handle {
   ub4 type;
   dvoid *hp;
+  struct oci8_handle *envh;
   OCIError *errhp;
   VALUE self;
   struct oci8_handle *parent;
@@ -99,26 +92,27 @@ struct oci8_bind_handle {
   struct oci8_handle **children;
   /* End of common part */
   oci8_bind_type_t *bind_type;
-  sb2 ind;
+  void *valuep;
+  sb4 value_sz;
   ub2 rlen;
-  sb4 value_sz; /* sizeof value */
+  sb2 ind;
+  VALUE obj;
   union {
-    char str[1];
     sword sw;
     double dbl;
     ora_date_t od;
     ora_number_t on;
-    VALUE v;
+    void *hp;
   } value;
 };
 typedef struct oci8_bind_handle oci8_bind_handle_t;
 
 struct oci8_bind_type {
-  int bind_object;
+  VALUE (*get)(oci8_bind_handle_t *bh);
+  void (*set)(oci8_bind_handle_t *bh, VALUE val);
+  void (*init)(oci8_bind_handle_t *bh, VALUE env, VALUE *val, VALUE length, VALUE prec, VALUE scale);
+  void (*free)(oci8_bind_handle_t *bh);
   ub2 dty;
-  sb4 (*get_value_sz)(VALUE vlength);
-  VALUE (*get)(oci8_bind_handle_t *hp);
-  void (*set)(oci8_bind_handle_t *hp, VALUE val);
 };
 
 #define Get_Handle(obj, hp) do { \
@@ -130,6 +124,12 @@ struct oci8_bind_type {
     rb_raise(rb_eTypeError, "invalid argument %s (expect " #name ")", rb_class2name(CLASS_OF(obj))); \
   } \
   Data_Get_Struct(obj, oci8_handle_t, hp); \
+} while (0)
+
+#define Check_Object(obj, name) do {\
+  if (!rb_obj_is_instance_of(obj, c##name)) { \
+    rb_raise(rb_eTypeError, "invalid argument %s (expect " #name ")", rb_class2name(CLASS_OF(obj))); \
+  } \
 } while (0)
 
 struct oci8_string {
@@ -175,7 +175,6 @@ extern VALUE cOCIHandle;
 extern VALUE cOCIEnv;
 extern VALUE cOCISvcCtx;
 extern VALUE cOCIStmt;
-extern VALUE cOCIDefine;
 extern VALUE cOCIBind;
 
 /* Descriptor */
@@ -198,11 +197,13 @@ extern VALUE eOCISuccessWithInfo;
 extern VALUE cOraDate;
 extern VALUE cOraNumber;
 
+/* OCI8 class */
+extern VALUE cOCI8;
+extern VALUE mOCI8BindType;
+
 /* const.c */
 void  Init_oci8_const(void);
 extern ID oci8_id_code;
-extern ID oci8_id_define_array;
-extern ID oci8_id_bind_array;
 extern ID oci8_id_message;
 extern ID oci8_id_new;
 extern ID oci8_id_parse_error_offset;
@@ -215,6 +216,7 @@ VALUE oci8_handle_free(VALUE self);
 void oci8_handle_mark(oci8_handle_t *);
 void oci8_handle_cleanup(oci8_handle_t *);
 oci8_handle_t *oci8_make_handle(ub4 type, dvoid *hp, OCIError *errhp, oci8_handle_t *chp, sb4 value_sz);
+VALUE oci8_make_rowid(OCIEnv *envhp, OCIError *errhp);
 void oci8_link(oci8_handle_t *parent, oci8_handle_t *child);
 void oci8_unlink(oci8_handle_t *self);
 
@@ -223,8 +225,8 @@ void Init_oci8_env(void);
 
 /* error.c */
 void Init_oci8_error(void);
-RBOCI_NORETURN(void oci8_raise(OCIError *, sword status, OCIStmt *));
-RBOCI_NORETURN(void oci8_env_raise(OCIEnv *, sword status));
+NORETURN(void oci8_raise(OCIError *, sword status, OCIStmt *));
+NORETURN(void oci8_env_raise(OCIEnv *, sword status));
 
 /* svcctx.c */
 void Init_oci8_svcctx(void);
@@ -234,8 +236,6 @@ void Init_oci8_stmt(void);
 
 /* bind.c */
 void Init_oci8_bind(void);
-void oci8_bind_type_set(VALUE key, oci8_bind_type_t *bind_type);
-oci8_bind_type_t *oci8_bind_type_get(VALUE key);
 
 /* descriptor.c */
 void Init_oci8_descriptor(void);

@@ -9,7 +9,7 @@
 */
 #include "oci8.h"
 
-RBOCI_NORETURN(static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp));
+NORETURN(static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp));
 
 static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp)
 {

@@ -47,9 +47,19 @@ VALUE oci8_descriptor_do_initialize(VALUE self, VALUE venv, ub4 type)
 =end
 */
 
+static VALUE oci8_rowid_initialize(VALUE self, VALUE venv)
+{
+  oci8_handle_t *h;
+
+  Get_Handle(self, h);
+  oci8_descriptor_do_initialize(self, venv, OCI_DTYPE_ROWID);
+  return Qnil;
+}
+
 void Init_oci8_descriptor(void)
 {
   rb_define_method(cOCIDescriptor, "attrGet", oci8_attr_get, 1);
   rb_define_method(cOCIDescriptor, "attrSet", oci8_attr_set, 2);
   rb_define_method(cOCIDescriptor, "free", oci8_handle_free, 0);
+  rb_define_method(cOCIRowid, "initialize", oci8_rowid_initialize, 1);
 }

@@ -14,14 +14,6 @@ class OCIBreak < OCIException
   end
 end
 
-class OCIDefine # :nodoc:
-  # define handle of OCILobLocator needs @env and @svc.
-  def set_handle(env, svc) 
-    @env = env
-    @svc = svc
-  end
-end
-
 class OCIBind # :nodoc:
   # define handle of OCILobLocator needs @env and @svc.
   def set_handle(env, svc, ctx)
@@ -31,6 +23,7 @@ class OCIBind # :nodoc:
   end
 end
 
+# The database connection class.
 class OCI8
   @@env = nil
   VERSION = '@@OCI8_MODULE_VERSION@@'
@@ -125,63 +118,164 @@ class OCI8
   end
   include Util
 
-  def initialize(uid, pswd, conn = nil, privilege = nil)
+  # Connects to Oracle by +userid+ and +password+. +dbname+ is the connect
+  # string of Net8. If you need DBA privilege, please set privilege
+  # as :SYSDBA or :SYSOPER.
+  #
+  # example:
+  #   # sqlplus scott/tiger@orcl.world
+  #   conn = OCI8.new("scott", "tiger", "orcl.world")
+  #
+  # example:
+  #   # sqlplus 'sys/change_on_install as sysdba'
+  #   conn = OCI8.new("sys", "change_on_install", nil, :SYSDBA)
+  def initialize(uid, pswd, dbname = nil, privilege = nil)
     if @@env.nil?
       @@env = OCIEnv.new
     end
     @ctx = [0, Mutex.new, nil]
     @svc = nil
-    do_ocicall(@ctx) { @svc = OCISvcCtx.new(@@env, uid, pswd, conn, privilege) }
+    do_ocicall(@ctx) { @svc = OCISvcCtx.new(@@env, uid, pswd, dbname, privilege) }
   end # initialize
 
+  # Disconnects from Oracle. Uncommitted transaction will be
+  # rollbacked.
+  #
+  # example:
+  #   conn = OCI8.new("scott", "tiger")
+  #   ... do something ...
+  #   conn.logoff
   def logoff
     rollback()
     @svc.logoff()
     true
   end # logoff
 
+  # Executes the sql statement. The type of return value depends on
+  # the type of sql statement: select; insert, update and delete;
+  # create, alter and drop; and PL/SQL.
+  # 
+  # When bindvars are specified, they are bound as bind variables
+  # before execution.
+  # 
+  # In case of select statement with no block, it returns the
+  # instance of OCI8::Cursor.
+  # 
+  # example:
+  #   conn = OCI8.new('scott', 'tiger')
+  #   cursor = conn.exec('SELECT * FROM emp')
+  #   while r = cursor.fetch()
+  #     puts r.join(',')
+  #   end
+  #   cursor.close
+  #   conn.logoff
+  #
+  # In case of select statement with a block, it acts as iterator and
+  # returns the processed row counts. Fetched data is passed to the
+  # block as array. NULL value becomes nil in ruby.
+  #
+  # example:
+  #   conn = OCI8.new('scott', 'tiger')
+  #   num_rows = conn.exec('SELECT * FROM emp') do |r|
+  #     puts r.join(',')
+  #   end
+  #   puts num_rows.to_s + ' rows were processed.'
+  #   conn.logoff
+  #
+  # In case of insert, update or delete statement, it returns the
+  # number of processed rows.
+  # 
+  # example:
+  #   conn = OCI8.new('scott', 'tiger')
+  #   num_rows = conn.exec('UPDATE emp SET sal = sal * 1.1')
+  #   puts num_rows.to_s + ' rows were updated.'
+  #   conn.logoff
+  #
+  # In case of create, alter or drop statement, it returns true.
+  #
+  # example:
+  #   conn = OCI8.new('scott', 'tiger')
+  #   conn.exec('CREATE TABLE test (col1 CHAR(6))')
+  #   conn.logoff
+  #
+  # In case of PL/SQL statement, it returns the array of bind
+  # variables.
+  #
+  # example:
+  #   conn = OCI8.new('scott', 'tiger')
+  #   conn.exec("BEGIN :str := TO_CHAR(:num, 'FM0999'); END;", 'ABCD', 123)
+  #   # => ["0123", 123]
+  #   conn.logoff
+  #
+  # Above example uses two bind variables which names are :str
+  # and :num. These initial values are "the string whose width
+  # is 4 and whose value is 'ABCD'" and "the number whose value is
+  # 123". This method returns the array of these bind variables,
+  # which may modified by PL/SQL statement. The order of array is
+  # same with that of bind variables.
   def exec(sql, *bindvars)
-    cursor = OCI8::Cursor.new(@@env, @svc, @ctx)
-    cursor.parse(sql)
-    if cursor.type == OCI_STMT_SELECT && ! block_given?
-      cursor.exec(*bindvars)
-      cursor
-    else
-      begin
-	ret = cursor.exec(*bindvars)
-	case cursor.type
-	when OCI_STMT_SELECT
-	  cursor.fetch { |row| yield(row) }   # for each row
-	  cursor.row_count()
-	when OCI_STMT_BEGIN, OCI_STMT_DECLARE # PL/SQL block
-	  ary = []
-	  cursor.keys.sort.each do |key|
-	    ary << cursor[key]
-	  end
-	  ary
-	else
-	  ret
-	end
-      ensure
-	cursor.close
+    begin
+      cursor = OCI8::Cursor.new(@@env, @svc, @ctx)
+      cursor.parse(sql)
+      ret = cursor.exec(*bindvars)
+      case cursor.type
+      when OCI_STMT_SELECT
+        cursor.exec(*bindvars)
+        if block_given?
+          cursor.fetch { |row| yield(row) }   # for each row
+          cursor.row_count()
+        else
+          ret = cursor
+          cursor = nil # unset cursor to skip cursor.close in ensure block
+          ret
+        end
+      when OCI_STMT_BEGIN, OCI_STMT_DECLARE # PL/SQL block
+        ary = []
+        cursor.keys.sort.each do |key|
+          ary << cursor[key]
+        end
+        ary
+      else
+        ret
       end
+    ensure
+      cursor.nil? || cursor.close
     end
   end # exec
 
+  # Creates cursor, prepare to execute SQL statement and return the
+  # instance of OCI8::Cursor.
   def parse(sql)
     cursor = OCI8::Cursor.new(@@env, @svc, @ctx)
     cursor.parse(sql)
     cursor
   end # parse
 
+  # Commits the transaction.
+  #
+  # example:
+  #   conn = OCI8.new("scott", "tiger")
+  #   conn.exec("UPDATE emp SET sal = sal * 1.1") # yahoo
+  #   conn.commit
+  #   conn.logoff
   def commit
     do_ocicall(@ctx) { @svc.commit }
   end # commit
 
+  # Rollbacks the transaction.
+  # 
+  # example:
+  #   conn = OCI8.new("scott", "tiger")
+  #   conn.exec("UPDATE emp SET sal = sal * 0.9") # boos
+  #   conn.rollback
+  #   conn.logoff
   def rollback
     do_ocicall(@ctx) { @svc.rollback }
   end # rollback
 
+  # Returns the state of the autocommit mode. The default value is
+  # false. If true, the transaction is committed automatically
+  # whenever executing insert/update/delete statements.
   def autocommit?
     (@ctx[CTX_EXECFLAG] & OCI_COMMIT_ON_SUCCESS) == OCI_COMMIT_ON_SUCCESS
   end # autocommit?
@@ -189,6 +283,14 @@ class OCI8
   # add alias compatible with 'Oracle7 Module for Ruby'.
   alias autocommit autocommit?
 
+  # Changes the status of the autocommit mode. Acceptable values are
+  # true and false.
+  #
+  # example:
+  #   conn = OCI8.new("scott", "tiger")
+  #   conn.autocommit = true
+  #   ... do something ...
+  #   conn.logoff
   def autocommit=(ac)
     if ac
       commit()
@@ -199,14 +301,20 @@ class OCI8
     ac
   end # autocommit=
 
+  # Returns the status of blocking/non-blocking mode. The default
+  # value is false 
   def non_blocking?
     @svc.non_blocking?
   end # non_blocking?
 
+  # Changes the status of blocking/non-blocking mode. Acceptable
+  # values are true and false.
   def non_blocking=(nb)
     @svc.non_blocking = nb
   end # non_blocking=
 
+  # Cancels the OCI call performing in other thread. To use this, the
+  # connection status must be non-blocking mode.
   def break
     @ctx[CTX_MUTEX].synchronize do
       @svc.break()
@@ -225,193 +333,161 @@ class OCI8
   end # break
 
   module BindType
-    # get/set String
-    String = Object.new
-    class << String
-      def fix_type(env, val, length, precision, scale)
-        [OCI8::SQLT_CHR, val, length || (val.nil? ? nil : val.length)]
-      end
-    end
-
-    # get/set RAW
-    RAW = Object.new
-    class << RAW
-      def fix_type(env, val, length, precision, scale)
-        [OCI8::SQLT_BIN, val, length || (val.nil? ? nil : val.length)]
-      end
-    end
-
-    # get/set OraDate
-    OraDate = Object.new
-    class << OraDate
-      def fix_type(env, val, length, precision, scale)
-        [OCI8::SQLT_DAT, val, nil]
-      end
-    end
+    Mapping = {}
 
     # get/set Time
-    Time = Object.new
-    class << Time
-      def fix_type(env, val, length, precision, scale)
-        [OCI8::SQLT_DAT, val, nil]
+    class Time < OCI8::BindType::OraDate
+      def set(val)
+        super(val && ::OraDate.new(val.year, val.mon, val.mday, val.hour, val.min, val.sec))
       end
-      def decorate(b)
-        def b.set(val)
-          super(val && ::OraDate.new(val.year, val.mon, val.mday, val.hour, val.min, val.sec))
-        end
-        def b.get()
-          (val = super()) && val.to_time
-        end
+      def get()
+        (val = super()) && val.to_time
       end
     end
 
     # get/set Date
-    Date = Object.new
-    class << Date
-      def fix_type(env, val, length, precision, scale)
-        [OCI8::SQLT_DAT, val, nil]
+    class Date < OCI8::BindType::OraDate
+      def set(val)
+        super(val && ::OraDate.new(val.year, val.mon, val.mday))
       end
-      def decorate(b)
-        def b.set(val)
-          super(val && ::OraDate.new(val.year, val.mon, val.mday))
-        end
-        def b.get()
-          (val = super()) && val.to_date
-        end
-      end
-    end
-
-    # get/set Float
-    Float = Object.new
-    class << Float
-      def fix_type(env, val, length, precision, scale)
-        [::Float, val, nil]
-      end
-    end
-
-    # get/set Fixnum
-    Fixnum = Object.new
-    class << Fixnum
-      def fix_type(env, val, length, precision, scale)
-        [::Fixnum, val, nil]
-      end
-    end
-
-    # get/set Integer
-    Integer = Object.new
-    class << Integer
-      def fix_type(env, val, length, precision, scale)
-        [::Integer, val, nil]
-      end
-    end
-
-    # get/set OraNumber
-    OraNumber = Object.new
-    class << OraNumber
-      def fix_type(env, val, length, precision, scale)
-        [::OraNumber, val, nil]
+      def get()
+        (val = super()) && val.to_date
       end
     end
 
     # get/set Number (for OCI8::SQLT_NUM)
-    Number = Object.new
-    class << Number
-      def fix_type(env, val, length, precision, scale)
+    class Number
+      def self.factory(env, val, length, precision, scale) # :nodoc:
         if scale == -127
-          # FLOAT or FLOAT(p)
-          [::Float, nil, nil]
+          if precision == 0
+            # NUMBER declared without its scale and precision. (Oracle 9.2.0.3 or above)
+            bind_type = OCI8::Cursor.instance_eval do ::OCI8::Cursor.bind_default_number end
+          else
+            # FLOAT or FLOAT(p)
+            bind_type = OCI8::BindType::Float
+          end
         elsif scale == 0
           if precision == 0
-            # NUMBER without its scale and precision
-            # default value is Float
-            [::OCI8::Cursor.select_number_as, nil, nil]
+            # NUMBER whose scale and precision is unknown
+            # or
+            # NUMBER declared without its scale and precision. (Oracle 9.2.0.2 or below)
+            bind_type = OCI8::Cursor.instance_eval do ::OCI8::Cursor.bind_unknown_number end
           elsif precision <= 9
             # NUMBER(p, 0); p is less than or equals to the precision of Fixnum
-            [::Fixnum, nil, nil]
+            bind_type = OCI8::BindType::Fixnum
           else
             # NUMBER(p, 0); p is greater than the precision of Fixnum
-            [::Integer, nil, nil]
+            bind_type = OCI8::BindType::Integer
           end
         else
           # NUMBER(p, s)
           if precision < 15 # the precision of double.
-            [::Float, nil, nil]
+            bind_type = OCI8::BindType::Float
           else
             # use BigDecimal instead?
-            [::OraNumber, nil, nil]
+            bind_type = OCI8::BindType::OraNumber
           end
         end
-      end
-    end
-
-    # get/set OCIRowid
-    OCIRowid = Object.new
-    class << OCIRowid
-      def fix_type(env, val, length, precision, scale)
-        [OCI8::SQLT_RDD, nil, val]
+        bind_type.new(env, val, length, precision, scale)
       end
     end
 
     # get/set BLOB
-    BLOB = Object.new
-    class << BLOB
-      def fix_type(env, val, length, precision, scale)
-        [OCI8::SQLT_BLOB, nil, val.nil? ? OCILobLocator.new(env) : val]
-      end
-      def decorate(b)
-        def b.get()
-          (val = super()) && OCI8::BLOB.new(@env, @svc, val.clone(@svc))
-        end
+    class BLOB
+      alias orig_get get
+      private :orig_get
+      def get
+        (val = orig_get()) && OCI8::BLOB.new(@env, @svc, val.clone(@svc))
       end
     end
 
     # get/set CLOB
-    CLOB = Object.new
-    class << CLOB
-      def fix_type(env, val, length, precision, scale)
-        [OCI8::SQLT_CLOB, nil, val.nil? ? OCILobLocator.new(env) : val]
-      end
-      def decorate(b)
-        def b.get()
-          (val = super()) && OCI8::CLOB.new(@env, @svc, val.clone(@svc))
-        end
+    class CLOB
+      alias orig_get get
+      private :orig_get
+      def get
+        (val = orig_get()) && OCI8::CLOB.new(@env, @svc, val.clone(@svc))
       end
     end
 
     # get Cursor
-    Cursor = Object.new
-    class << Cursor
-      def fix_type(env, val, length, precision, scale)
-        raise NotImplementedError unless val.nil?
-        [OCI8::SQLT_RSET, nil, OCIStmt.new(env)]
+    class Cursor
+      alias orig_set set
+      private :orig_set
+      def set(val)
+        case val
+        when OCIStmt
+          stmt = val
+        when OCI8::Cursor
+          stmt = val.instance_eval do @stmt end
+        else
+          raise ArgumentError
+        end
+        orig_set(stmt)
       end
-      def decorate(b)
-        def b.set(val)
-          raise NotImplementedError
-        end
-        def b.get()
-          (val = super()) && OCI8::Cursor.new(@env, @svc, @ctx, val)
-        end
+      alias orig_get get
+      private :orig_get
+      def get()
+        (val = orig_get()) && OCI8::Cursor.new(@env, @svc, @ctx, val)
       end
     end
-
-    Mapping = {}
   end # BindType
 
+  # The instance of this class corresponds to cursor in the term of
+  # Oracle, which corresponds to java.sql.Statement of JDBC and statement
+  # handle $sth of Perl/DBI.
+  #
+  # Don't create the instance by calling 'new' method. Please create it by
+  # calling OCI8#exec or OCI8#parse.
   class Cursor
 
     include OCI8::Util
-    @@number_type = Float
+    # number column declared without its scale and precision. (Oracle 9.2.0.3 or above)
+    @@bind_default_number = OCI8::BindType::Float
+    # number value whose scale and precision is unknown
+    # or
+    # number column declared without its scale and precision. (Oracle 9.2.0.2 or below)
+    @@bind_unknown_number = OCI8::BindType::Float
 
-    def self.select_number_as=(val)
-      if val != Fixnum && val != Integer && val != Float
-        raise rb_eArgError, "must be Fixnum, Integer or Float"
-      end
-      @@number_type = val
+    def self.bind_default_number
+      @@bind_default_number
     end
 
-    def self.select_number_as
-      @@number_type
+    def self.bind_default_number=(val)
+      @@bind_default_number = val
+    end
+
+    def self.bind_unknown_number
+      @@bind_unknown_number
+    end
+
+    def self.bind_unknown_number=(val)
+      @@bind_unknown_number = val
+    end
+
+    # obsolete.
+    def self.select_number_as=(val) # :nodoc:
+      if val == Fixnum
+        @@bind_unknown_number = OCI8::BindType::Fixnum
+      elsif val == Integer
+        @@bind_unknown_number = OCI8::BindType::Integer
+      elsif val == Float
+        @@bind_unknown_number = OCI8::BindType::Float
+      else
+        raise rb_eArgError, "must be Fixnum, Integer or Float"
+      end
+    end
+
+    # obsolete.
+    def self.select_number_as # :nodoc:
+      case @@bind_unknown_number
+      when OCI8::BindType::Fixnum
+        return Fixnum
+      when OCI8::BindType::Integer
+        return Integer
+      when OCI8::BindType::Float
+        return Float
+      end
     end
 
     def initialize(env, svc, ctx, stmt = nil)
@@ -438,17 +514,67 @@ class OCI8
       @stmttype = do_ocicall(@ctx) { @stmt.attrGet(OCI_ATTR_STMT_TYPE) }
     end # parse
 
+    # explicitly indicate the date type of fetched value. run this
+    # method within parse and exec. pos starts from 1. lentgh is used
+    # when type is String.
+    # 
+    # example:
+    #   cursor = conn.parse("SELECT ename, hiredate FROM emp")
+    #  cursor.define(1, String, 20) # fetch the first column as String.
+    #  cursor.define(2, Time)       # fetch the second column as Time.
+    #  cursor.exec()
     def define(pos, type, length = nil)
       @defns = [] if @defns.nil?
       if type == String and length.nil?
 	length = 4000
       end
       b = bind_or_define(:define, pos, nil, type, length, nil, nil, false)
-      @defns[pos].free() unless @defns[pos].nil?
-      @defns[pos] = b
+      @defns[pos - 1].nil? or @defns[pos - 1].free()
+      @defns[pos - 1] = b
       self
     end # define
 
+    # Binds variables explicitly.
+    # 
+    # When key is number, it binds by position, which starts from 1.
+    # When key is string, it binds by the name of placeholder.
+    #
+    # example:
+    #   cursor = conn.parse("SELECT * FROM emp WHERE ename = :ename")
+    #   cursor.bind_param(1, 'SMITH') # bind by position
+    #     ...or...
+    #   cursor.bind_param(':ename', 'SMITH') # bind by name
+    #
+    # To bind as number, Fixnum and Float are available, but Bignum is
+    # not supported. If its initial value is NULL, please set nil to 
+    # +type+ and Fixnum or Float to +val+.
+    #
+    # example:
+    #   cursor.bind_param(1, 1234) # bind as Fixnum, Initial value is 1234.
+    #   cursor.bind_param(1, 1234.0) # bind as Float, Initial value is 1234.0.
+    #   cursor.bind_param(1, nil, Fixnum) # bind as Fixnum, Initial value is NULL.
+    #   cursor.bind_param(1, nil, Float) # bind as Float, Initial value is NULL.
+    #
+    # In case of binding a string, set the string itself to
+    # +val+. When the bind variable is used as output, set the
+    # string whose length is enough to store or set the length.
+    #
+    # example:
+    #   cursor = conn.parse("BEGIN :out := :in || '_OUT'; END;")
+    #   cursor.bind_param(':in', 'DATA') # bind as String with width 4.
+    #   cursor.bind_param(':out', nil, String, 7) # bind as String with width 7.
+    #   cursor.exec()
+    #   p cursor[':out'] # => 'DATA_OU'
+    #   # Though the length of :out is 8 bytes in PL/SQL block, it is
+    #   # bound as 7 bytes. So result is cut off at 7 byte.
+    #
+    # In case of binding a string as RAW, set OCI::RAW to +type+.
+    #
+    # example:
+    #   cursor = conn.parse("INSERT INTO raw_table(raw_column) VALUE (:1)")
+    #   cursor.bind_param(1, 'RAW_STRING', OCI8::RAW)
+    #   cursor.exec()
+    #   cursor.close()
     def bind_param(key, val, type = nil, length = nil)
       @binds = {} if @binds.nil?
       b = bind_or_define(:bind, key, val, type, length, nil, nil, false)
@@ -457,7 +583,39 @@ class OCI8
       self
     end # bind_param
 
-    # get bind value
+    # Gets the value of the bind variable.
+    #
+    # In case of binding explicitly, use same key with that of
+    # OCI8::Cursor#bind_param. A placeholder can be bound by 
+    # name or position. If you bind by name, use that name. If you bind
+    # by position, use the position.
+    #
+    # example:
+    #   cursor = conn.parse("BEGIN :out := 'BAR'; END;")
+    #   cursor.bind_param(':out', 'FOO') # bind by name
+    #   p cursor[':out'] # => 'FOO'
+    #   p cursor[1] # => nil
+    #   cursor.exec()
+    #   p cursor[':out'] # => 'BAR'
+    #   p cursor[1] # => nil
+    #
+    # example:
+    #   cursor = conn.parse("BEGIN :out := 'BAR'; END;")
+    #   cursor.bind_param(1, 'FOO') # bind by position
+    #   p cursor[':out'] # => nil
+    #   p cursor[1] # => 'FOO'
+    #   cursor.exec()
+    #   p cursor[':out'] # => nil
+    #   p cursor[1] # => 'BAR'
+    #
+    # In case of binding by OCI8#exec or OCI8::Cursor#exec,
+    # get the value by position, which starts from 1.
+    #
+    # example:
+    #   cursor = conn.exec("BEGIN :out := 'BAR'; END;", 'FOO')
+    #   # 1st bind variable is bound as String with width 3. Its initial value is 'FOO'
+    #   # After execute, the value become 'BAR'.
+    #   p cursor[1] # => 'BAR'
     def [](key)
       if @binds.nil? or @binds[key].nil?
 	return nil 
@@ -465,7 +623,25 @@ class OCI8
       @binds[key].get()
     end
 
-    # set bind value
+    # Sets the value to the bind variable. The way to specify the
+    # +key+ is same with OCI8::Cursor#[]. This is available
+    # to replace the value and execute many times.
+    #
+    # example1:
+    #   cursor = conn.parse("INSERT INTO test(col1) VALUES(:1)")
+    #   cursor.bind_params(1, nil, String, 3)
+    #   ['FOO', 'BAR', 'BAZ'].each do |key|
+    #     cursor[1] = key
+    #     cursor.exec
+    #   end
+    #   cursor.close()
+    #
+    # example2:
+    #   ['FOO', 'BAR', 'BAZ'].each do |key|
+    #     conn.exec("INSERT INTO test(col1) VALUES(:1)", key)
+    #   end
+    #
+    # Both example's results are same. But the former will use less resources.
     def []=(key, val)
       if @binds.nil? or @binds[key].nil?
 	return nil 
@@ -473,7 +649,7 @@ class OCI8
       @binds[key].set(val)
     end
 
-    # get bind keys
+    # Returns the keys of bind variables as array.
     def keys
       if @binds.nil?
 	[]
@@ -482,6 +658,20 @@ class OCI8
       end
     end
 
+    # Executes the SQL statement assigned the cursor. The type of
+    # return value depends on the type of sql statement: select;
+    # insert, update and delete; create, alter, drop and PL/SQL.
+    #
+    # In case of select statement, it returns the number of the
+    # select-list.
+    #
+    # In case of insert, update or delete statement, it returns the
+    # number of processed rows.
+    #
+    # In case of create, alter, drop and PL/SQL statement, it returns
+    # true. In contrast with OCI8#exec, it returns true even
+    # though PL/SQL. Use OCI8::Cursor#[] explicitly to get bind
+    # variables.
     def exec(*bindvars)
       bind_params(*bindvars)
       case @stmttype
@@ -497,14 +687,29 @@ class OCI8
       end
     end # exec
 
+    # gets the type of SQL statement. Its value is one of the follows.
+    # * OCI8::STMT_SELECT
+    # * OCI8::STMT_UPDATE
+    # * OCI8::STMT_DELETE
+    # * OCI8::STMT_INSERT
+    # * OCI8::STMT_CREATE
+    # * OCI8::STMT_DROP
+    # * OCI8::STMT_ALTER
+    # * OCI8::STMT_BEGIN
+    # * OCI8::STMT_DECLARE
+    # For PL/SQL statement, it returns OCI8::STMT_BEGIN or
+    # OCI8::STMT_DECLARE.
     def type
       @stmttype
     end
 
+    # Returns the number of processed rows.
     def row_count
       @stmt.attrGet(OCI_ATTR_ROW_COUNT)
     end
 
+    # Gets the names of select-list as array. Please use this
+    # method after exec.
     def get_col_names
       return [] if @parms.nil?
       @parms.collect do |p|
@@ -515,6 +720,17 @@ class OCI8
     # add alias compatible with 'Oracle7 Module for Ruby'.
     alias getColNames get_col_names
 
+    # Gets fetched data as array. This is available for select
+    # statement only.
+    #
+    # example:
+    #   conn = OCI8.new('scott', 'tiger')
+    #   cursor = conn.exec('SELECT * FROM emp')
+    #   while r = cursor.fetch()
+    #     puts r.join(',')
+    #   end
+    #   cursor.close
+    #   conn.logoff
     def fetch
       if iterator?
 	while ret = fetch_a_row()
@@ -537,6 +753,7 @@ class OCI8
       end
     end # fetch_hash
 
+    # close the cursor.
     def close
       @env = nil
       @svc = nil
@@ -547,6 +764,9 @@ class OCI8
       @stmttype = nil
     end # close
 
+    # get the rowid of the last processed row.
+    # This value is available as bind data.
+    # On the other hand it isn't available for other purpose.
     def rowid
       @stmt.attrGet(OCI_ATTR_ROWID)
     end
@@ -567,36 +787,23 @@ class OCI8
 	end
       end
 
-      binder = OCI8::BindType::Mapping[type]
-      if binder
-        type, val, option = binder.fix_type(@env, val, length, precision, scale)
+      bindclass = OCI8::BindType::Mapping[type]
+      if bindclass.nil?
+        raise "unsupported datatype: #{SQLT_NAMES[type] ? SQLT_NAMES[type] : type}"
+      end
+      if bindclass.respond_to?(:factory)
+        bindobj = bindclass.factory(@env, val, length, precision, scale)
       else
-        if strict_check
-          raise "unsupported datatype: #{SQLT_NAMES[type] ? SQLT_NAMES[type] : type}"
-        else
-          option = length
-        end
+        bindobj = bindclass.new(@env, val, length, precision, scale)
       end
 
       case bind_type
       when :bind
-	if key.is_a? Fixnum
-	  b = @stmt.bindByPos(key, type, option)
-	else
-	  b = @stmt.bindByName(key, type, option)
-	end
-        b.set_handle(@env, @svc, @ctx)
+        b = @stmt.bind(key, bindobj)
       when :define
-	b = @stmt.defineByPos(key, type, option)
-        b.set_handle(@env, @svc)
+	b = @stmt.defineByPos(key, bindobj)
       end
-
-      if binder && binder.respond_to?(:decorate)
-        # decorate the bind handle.
-        binder.decorate(b)
-      end
-
-      b.set(val) unless val.nil?
+      b.set_handle(@env, @svc, @ctx)
       b
     end # bind_or_define
 
@@ -608,7 +815,7 @@ class OCI8
       end
       @defns = Array.new(@parms.size) if @defns.nil?
       1.upto(num_cols) do |i|
-	@defns[i] = define_a_column(i) if @defns[i].nil?
+	@defns[i - 1] = define_a_column(i) if @defns[i - 1].nil?
       end
       num_cols
     end # define_columns
@@ -647,7 +854,7 @@ class OCI8
     def fetch_a_row
       res = do_ocicall(@ctx) { @stmt.fetch() }
       return nil if res.nil?
-      res.collect do |r| r.get() end
+      @defns.collect do |r| r.get() end
     end # fetch_a_row
 
     def free_defns
@@ -671,7 +878,7 @@ class OCI8
 
   class LOB
     attr :pos
-    def initialize(env, svc, locator)
+    def initialize(env, svc, locator) # :nodoc:
       raise "invalid argument" unless env.is_a? OCIEnv
       raise "invalid argument" unless svc.is_a? OCISvcCtx
       raise "invalid argument" unless locator.is_a? OCILobLocator
@@ -806,15 +1013,24 @@ class OCI8
     end
   end
 
+  # This is a lob locator to read/write binary data to/from BLOB column.
+  # This instance is automatically generated by select statement.
   class BLOB < LOB
   end
 
+  # This is a lob locator to read/write character data to/from CLOB column.
+  # This instance is automatically generated by select statement.
   class CLOB < LOB
   end
 
   # bind or explicitly define
   BindType::Mapping[::String]       = BindType::String
   BindType::Mapping[::OCI8::RAW]    = BindType::RAW
+  BindType::Mapping[::OraNumber]    = BindType::OraNumber
+  BindType::Mapping[::Fixnum]       = BindType::Fixnum
+  BindType::Mapping[::Float]        = BindType::Float
+  BindType::Mapping[::Integer]      = BindType::Integer
+  BindType::Mapping[::Bignum]       = BindType::Integer
   BindType::Mapping[::OraDate]      = BindType::OraDate
   BindType::Mapping[::Time]         = BindType::Time
   BindType::Mapping[::Date]         = BindType::Date
