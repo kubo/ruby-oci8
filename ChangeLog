@@ -1,3 +1,8 @@
+2005-04-14  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: fix for Cygwin with Oracle instant client.
+	   add Oraconf#lp64, which is true when long and pointer are 64 bits.
+	   improve error message.
+
 2005-04-10  KUBO Takehiro  <kubo@jiubao.org>
 	* README: change the document format for rdoc.
 	* ext/oci8/bind.c, ext/oci8/descriptor.c, ext/oci8/env.c,
@@ -12,7 +17,7 @@
 	   change OCI8::BindType::*.
 	* lib/DBD/OCI8/OCI8.rb
 	   change DBI::DBD::OCI8::BindType::*.
-	
+
 2005-04-06  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.h, ext/oci8/handle.c: delete enum oci8_bind_type.
 	  add oci8_bind_type_t.

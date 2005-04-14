@@ -97,8 +97,10 @@ class OraConf
     original_CFLAGS = $CFLAGS
     original_defs = $defs
     original_libs = $libs
+    ic_dir = nil
     begin
       @cc_is_gcc = get_cc_is_gcc_or_not()
+      @lp64 = check_lp64()
 
       # check Oracle instant client
       ic_dir = with_config('instant-client')
@@ -135,6 +137,43 @@ class OraConf
         end
         raise 'cannot compile OCI' unless ok
       end
+    rescue
+      print <<EOS
+--------------- common error message --------------
+If you use Oracle instant client, try
+  ruby setup.rb config -- --with-instant-client#{/linux/ !~ RUBY_PLATFORM ? '=/path/to/instantclient10_1' : ''}
+
+The latest version of oraconf.rb may solve the problem.
+  http://rubyforge.org/cgi-bin/viewcvs.cgi/ruby-oci8/ext/oci8/oraconf.rb?cvsroot=ruby-oci8&only_with_tag=MAIN
+
+If it could not be solved, send the following information to kubo@jiubao.org.
+
+* error messages except 'common error message'.
+* last 100 lines of 'ext/oci8/mkmf.log'.
+* results of the following commands:
+    ruby -r rbconfig -e "p Config::CONFIG['host']"
+    ruby -r rbconfig -e "p Config::CONFIG['CC']"
+    ruby -r rbconfig -e "p Config::CONFIG['CFLAGS']"
+    ruby -r rbconfig -e "p Config::CONFIG['LDSHARED']"
+    ruby -r rbconfig -e "p Config::CONFIG['LDFLAGS']"
+    ruby -r rbconfig -e "p Config::CONFIG['LIBS']"
+    ruby -r rbconfig -e "p Config::CONFIG['GNU_LD']"
+* if you use gcc:
+    gcc --print-prog-name=ld
+    gcc --print-prog-name=as
+* on platforms which can use both 32bit/64bit binaries:
+    file $ORACLE_HOME/bin/oracle
+    file `which ruby`
+    echo $LD_LIBRARY_PATH
+    echo $LIBPATH      # AIX
+    echo $SHLIB_PATH   # HP-UX
+------------------ error message ------------------
+#{$!.to_str}
+---------------------------------------------------
+EOS
+      exc = RuntimeError.new
+      exc.set_backtrace($!.backtrace)
+      raise exc
     ensure
       $CFLAGS = original_CFLAGS
       $defs = original_defs
@@ -148,9 +187,21 @@ class OraConf
     # bcc defines __GNUC__. why??
     return false if RUBY_PLATFORM =~ /bccwin32/
 
-    printf "checking for gcc... "
+    print "checking for gcc... "
     STDOUT.flush
     if macro_defined?("__GNUC__", "")
+      print "yes\n"
+      return true
+    else
+      print "no\n"
+      return false
+    end
+  end # cc_is_gcc
+
+  def check_lp64
+    print "checking for LP64... "
+    STDOUT.flush
+    if macro_defined?("__LP64__", "") || macro_defined?("_LP64", "")
       print "yes\n"
       return true
     else
@@ -267,8 +318,7 @@ class OraConf
         # 'C:/foo/bar/OCI.LIB' as unknown option.
         lib = "#{base_dir}/LIB/BORLAND/OCI.LIB"
         return lib.tr('/', '\\') if File.exist?(lib)
-        print <<EOS
-
+        raise <<EOS
 #{lib} does not exist.
 
 Your Oracle may not support Borland C++.
@@ -277,7 +327,6 @@ If you want to run this module, run the following command at your own risk.
   mkdir Borland
   cd Borland
   coff2omf ..\\MSVC\\OCI.LIB OCI.LIB
-
 EOS
         exit 1
       else
@@ -399,14 +448,13 @@ EOS
     @cflags = " -I#{inc_dir}"
     if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/ # when Windows
       unless File.exist?("#{ic_dir}/sdk/lib/msvc/oci.lib")
-        print <<EOS
----------------------------------------------------
-Could not compile with Oracle Instant Installer.
+        raise <<EOS
+Could not compile with Oracle instant client.
 #{ic_dir}/sdk/lib/msvc/oci.lib could not be found.
----------------------------------------------------
 EOS
         raise 'failed'
       end
+      @cflags += " -D_int64=\"long long\"" if RUBY_PLATFORM =~ /cygwin/
       @libs = get_libs("#{ic_dir}/sdk")
       ld_path = nil
     else
@@ -416,7 +464,7 @@ EOS
         ld_path = 'LIBPATH'
         so_ext = 'a'
       when /hppa.*-hpux/
-        if macro_defined?('__LP64__', '')
+        if @lp64
           ld_path = 'LD_LIBRARY_PATH'
         else
           ld_path = 'SHLIB_PATH'
@@ -433,23 +481,19 @@ EOS
       unless File.exists?("#{lib_dir}/libclntsh.#{so_ext}")
         files = Dir.glob("#{lib_dir}/libclntsh.#{so_ext}.*")
         if files.empty?
-          print <<EOS
----------------------------------------------------
-Could not compile with Oracle Instant Installer.
-#{lib_dir}/libclntsh.#{so_ext} could not be found.
+          raise <<EOS
+Could not compile with Oracle instant client.
+'#{lib_dir}/libclntsh.#{so_ext}' could not be found.
 Did you install instantclient-basic?
----------------------------------------------------
 EOS
         else
           file = File.basename(files.sort[-1])
-          print <<EOS
----------------------------------------------------
-Could not compile with Oracle Instant Installer.
+          raise <<EOS
+Could not compile with Oracle instant client.
 #{lib_dir}/libclntsh.#{so_ext} could not be found.
 You may need to make a symbolic link.
    cd #{lib_dir}
    ln -s #{file} libclntsh.#{so_ext}
----------------------------------------------------
 EOS
         end
         raise 'failed'
@@ -465,12 +509,10 @@ EOS
     $libs += @libs
     unless have_func("OCIInitialize", "oci.h")
       unless ld_path.nil?
-        print <<EOS
----------------------------------------------------
-Could not compile with Oracle Instant Installer.
+        raise <<EOS
+Could not compile with Oracle instant client.
 You may need to set:
     #{ld_path}=#{lib_dir}
----------------------------------------------------
 EOS
       end
       raise 'failed'
