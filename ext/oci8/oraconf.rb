@@ -96,7 +96,6 @@ class OraConf
   def initialize(oracle_home = nil)
     original_CFLAGS = $CFLAGS
     original_defs = $defs
-    original_libs = $libs
     ic_dir = nil
     begin
       @cc_is_gcc = get_cc_is_gcc_or_not()
@@ -115,28 +114,34 @@ class OraConf
       @libs = get_libs()
 
       $CFLAGS += ' ' + @cflags
-      $libs += " -L#{CONFIG['libdir']} " + @libs
-      unless have_func("OCIInitialize", "oci.h")
-        ok = false
-        case RUBY_PLATFORM
-        when /solaris/, /hpux/
-          case @version
-          when /^9..$/
-            print("retry with postfix 32.\n")
-            $libs = original_libs
-            @libs = get_libs('', '32')
-            $libs += " -L#{CONFIG['libdir']} " + @libs
-            ok = true if have_func("OCIInitialize", "oci.h")
-          when /^10..$/
-            print("retry with postfix 32.\n")
-            $libs = original_libs
-            @libs = get_libs('32', '')
-            $libs += " -L#{CONFIG['libdir']} " + @libs
-            ok = true if have_func("OCIInitialize", "oci.h")
-          end
+      return if try_link_oci()
+
+      oracle_64bit = File.exist?(@oracle_home + '/lib32')
+      if oracle_64bit && !@lp64
+        # use demo_rdbms.mk for 32bit application.
+        case @version
+        when /^9..$/
+          print("retry with postfix 32.\n")
+          @libs = get_libs('', '32')
+          return if try_link_oci()
+        when /^10..$/
+          print("retry with postfix 32.\n")
+          @libs = get_libs('32', '')
+          return if try_link_oci()
         end
-        raise 'cannot compile OCI' unless ok
       end
+
+      if @version.to_i >= 900
+        if oracle_64bit && !@lp64
+          @libs = "-L#{@oracle_home}/lib32 -lclntsh"
+        else
+          @libs = "-L#{@oracle_home}/lib -lclntsh"
+        end
+        print('simplest libs as a last resort.\n')
+        return if try_link_oci()
+      end
+
+      raise 'cannot compile OCI'
     rescue
       print <<EOS
 --------------- common error message --------------
@@ -177,11 +182,20 @@ EOS
     ensure
       $CFLAGS = original_CFLAGS
       $defs = original_defs
-      $libs = original_libs
     end
   end
 
   private
+
+  def try_link_oci
+    original_libs = $libs
+    begin
+      $libs += " -L#{CONFIG['libdir']} " + @libs
+      have_func("OCIInitialize", "oci.h")
+    ensure
+      $libs = original_libs
+    end
+  end
 
   def get_cc_is_gcc_or_not
     # bcc defines __GNUC__. why??

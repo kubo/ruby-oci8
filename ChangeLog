@@ -1,3 +1,7 @@
+2005-05-24  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: use "-L#{@oracle_home}/lib(32) -lclntsh" as
+	   a last resort.
+
 2005-04-14  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: fix for Cygwin with Oracle instant client.
 	   add Oraconf#lp64, which is true when long and pointer are 64 bits.
