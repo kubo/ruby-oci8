@@ -228,13 +228,16 @@ EOS
     print("Get the version of Oracle from SQL*Plus... ")
     STDOUT.flush
     version = nil
-    sqlplus = get_local_registry('SOFTWARE\\ORACLE', 'EXECUTE_SQL') # Oracle 8 on Windows.
-    sqlplus = 'sqlplus' if sqlplus.nil?                        # default
     dev_null = RUBY_PLATFORM =~ /mswin32|mingw32|bccwin32/ ? "nul" : "/dev/null"
     if RUBY_PLATFORM =~ /cygwin/
         oracle_home = @oracle_home.sub(%r{/cygdrive/([a-zA-Z])/}, "\\1:")
     else
         oracle_home = @oracle_home
+    end
+    if File.exists?("#{oracle_home}/bin/plus80.exe")
+      sqlplus = "plus80.exe"
+    else
+      sqlplus = "sqlplus"
     end
     Logging::open do
       open("|#{oracle_home}/bin/#{sqlplus} < #{dev_null}") do |f|
@@ -255,18 +258,17 @@ EOS
 
   if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/ # when Windows
 
-    def check_home_key(key)
-      oracle_home = get_local_registry("SOFTWARE\\ORACLE#{key}", 'ORACLE_HOME')
-      return nil if oracle_home.nil?
+    def is_valid_home?(oracle_home)
+      return false if oracle_home.nil?
       sqlplus = "#{oracle_home}/bin/sqlplus.exe"
       print("checking for ORACLE_HOME(#{oracle_home})... ")
       STDOUT.flush
       if File.exist?(sqlplus)
         puts("yes")
-        oracle_home
+        true
       else
         puts("no")
-        nil
+        false
       end
     end
 
@@ -275,17 +277,50 @@ EOS
         oracle_home = ENV['ORACLE_HOME']
       end
       if oracle_home.nil?
-        oracle_home = check_home_key('')
-        if oracle_home.nil?
-          0.upto 9 do |num|
-            oracle_home = check_home_key("\\HOME#{num.to_i}")
-            break if oracle_home
+        struct = Struct.new("OracleHome", :name, :path)
+        oracle_homes = []
+        last_home = get_local_registry("SOFTWARE\\ORACLE\\ALL_HOMES", 'LAST_HOME')
+        0.upto last_home.to_i do |id|
+          name = get_local_registry("SOFTWARE\\ORACLE\\ALL_HOMES\\ID#{id}", 'NAME')
+          path = get_local_registry("SOFTWARE\\ORACLE\\ALL_HOMES\\ID#{id}", 'PATH')
+          path.chomp!("\\")
+          oracle_homes << struct.new(name, path) if is_valid_home?(path)
+        end
+        raise 'Cannot get ORACLE_HOME. Please set the environment valiable ORACLE_HOME.' if oracle_homes.empty?
+        if oracle_homes.length == 1
+          oracle_home = oracle_homes[0].path
+        else
+          default_path = ''
+          ENV['PATH'].split(';').each do |path|
+	    path.chomp!("\\")
+            if File.exists?("#{path}/OCI.DLL")
+              default_path = path
+              break
+            end
           end
-          raise 'Cannot get ORACLE_HOME. Please set the environment valiable ORACLE_HOME.' if oracle_home.nil?
+          puts "---------------------------------------------------"
+          puts "Multiple Oracle Homes are found."
+          printf "   %-15s : %s\n", "[NAME]", "[PATH]"
+          oracle_homes.each do |home|
+            if default_path.downcase == "#{home.path.downcase}\\bin"
+              oracle_home = home
+            end
+            printf "   %-15s : %s\n", home.name, home.path
+          end
+          if oracle_home.nil?
+            puts "default oracle home is not found."
+            puts "---------------------------------------------------"
+            raise 'Cannot get ORACLE_HOME. Please set the environment valiable ORACLE_HOME.'
+          else
+            printf "use %s\n", oracle_home.name
+	    puts "run ohsel.exe to use another oracle home."
+            puts "---------------------------------------------------"
+            oracle_home = oracle_home.path
+          end
         end
       end
       if RUBY_PLATFORM =~ /cygwin/
-         oracle_home.sub!(/^([a-zA-Z]):/, "/cygdrive/\\1")
+        oracle_home = oracle_home.sub(/^([a-zA-Z]):/, "/cygdrive/\\1")
       end
       oracle_home.gsub(/\\/, '/')
     end
