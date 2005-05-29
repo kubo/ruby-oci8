@@ -1,3 +1,14 @@
+2005-05-29  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8.rb.in: add OCI8::BindType::Mapping[:number_unknown_prec]
+	  and OCI8::BindType::Mapping[:number_no_prec_setting].
+	* ext/oci8/oraconf.rb: copy from oraconf.rb of ruby-oci8 0.2.
+	* ext/oci8/lob.c: delete OCILobLocator#getChunkSize on Oracle 8.0.
+	  use OCILobAssign() instead of OCILobLocatorAssign() on Oracle 8.0.
+	* ext/oci8/extconf.rb: add have_func("OCILobGetChunkSize") and
+	  have_func("OCILobLocatorAssign") for Oracle 8.0.
+	* Makefile, ext/oci8/extconf.rb: change version to 0.1.11
+	* README: add '5. How to customize fetched datatypes.'
+
 2005-03-24  KUBO Takehiro  <kubo@jiubao.org>
 	* branch as oci8-0-1.
 	* oci8.rb.in: fix bug on binding Time or Date.

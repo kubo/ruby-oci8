@@ -1,7 +1,7 @@
 require 'mkmf'
 require File.dirname(__FILE__) + '/oraconf'
 
-RUBY_OCI8_VERSION = '0.1.10.1'
+RUBY_OCI8_VERSION = '0.1.11'
 
 oraconf = OraConf.new()
 
@@ -50,6 +50,9 @@ have_func("OCILobOpen")
 #   8.0.5  - NG
 #   9.0.1  - OK
 have_func("OCILobClose")
+
+have_func("OCILobGetChunkSize")
+have_func("OCILobLocatorAssign")
 
 $defs.push("-DHAVE_OCIRESET") unless /80./ =~ oraconf.version
 

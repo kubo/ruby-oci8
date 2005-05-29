@@ -316,7 +316,7 @@ class OCI8
     Float = Object.new
     class << Float
       def fix_type(env, val, length, precision, scale)
-        [::Float, nil, nil]
+        [::Float, val, nil]
       end
     end
 
@@ -324,7 +324,7 @@ class OCI8
     Fixnum = Object.new
     class << Fixnum
       def fix_type(env, val, length, precision, scale)
-        [::Fixnum, nil, nil]
+        [::Fixnum, val, nil]
       end
     end
 
@@ -332,7 +332,7 @@ class OCI8
     Integer = Object.new
     class << Integer
       def fix_type(env, val, length, precision, scale)
-        [::Integer, nil, nil]
+        [::Integer, val, nil]
       end
     end
 
@@ -340,7 +340,7 @@ class OCI8
     OraNumber = Object.new
     class << OraNumber
       def fix_type(env, val, length, precision, scale)
-        [::OraNumber, nil, nil]
+        [::OraNumber, val, nil]
       end
     end
 
@@ -349,27 +349,33 @@ class OCI8
     class << Number
       def fix_type(env, val, length, precision, scale)
         if scale == -127
-          # FLOAT or FLOAT(p)
-          [::Float, nil, nil]
+          if precision == 0
+            # NUMBER declared without its scale and precision. (Oracle 9.2.0.3 or above)
+            ::OCI8::BindType::Mapping[:number_no_prec_setting].fix_type(env, val, length, precision, scale)
+          else
+            # FLOAT or FLOAT(p)
+            [::Float, val, nil]
+          end
         elsif scale == 0
           if precision == 0
-            # NUMBER without its scale and precision
-            # default value is Float
-            [::OCI8::Cursor.select_number_as, nil, nil]
+            # NUMBER whose scale and precision is unknown
+            # or
+            # NUMBER declared without its scale and precision. (Oracle 9.2.0.2 or below)
+            ::OCI8::BindType::Mapping[:number_unknown_prec].fix_type(env, val, length, precision, scale)
           elsif precision <= 9
             # NUMBER(p, 0); p is less than or equals to the precision of Fixnum
-            [::Fixnum, nil, nil]
+            [::Fixnum, val, nil]
           else
             # NUMBER(p, 0); p is greater than the precision of Fixnum
-            [::Integer, nil, nil]
+            [::Integer, val, nil]
           end
         else
           # NUMBER(p, s)
           if precision < 15 # the precision of double.
-            [::Float, nil, nil]
+            [::Float, val, nil]
           else
             # use BigDecimal instead?
-            [::OraNumber, nil, nil]
+            [::OraNumber, val, nil]
           end
         end
       end
@@ -432,17 +438,24 @@ class OCI8
   class Cursor
 
     include OCI8::Util
-    @@number_type = Float
 
-    def self.select_number_as=(val)
-      if val != Fixnum && val != Integer && val != Float
-        raise rb_eArgError, "must be Fixnum, Integer or Float"
+    # for backward compatibility
+    def self.select_number_as=(val) # :nodoc:
+      if val == ::Fixnum
+        bind_type = ::OCI8::BindType::Fixnum
+      elsif val == ::Integer
+        bind_type = ::OCI8::BindType::Integer
+      elsif val == ::Float
+        bind_type = ::OCI8::BindType::Float
+      else
+        raise ArgumentError, "must be Fixnum, Integer or Float"
       end
-      @@number_type = val
+      ::OCI8::BindType::Mapping[:number_unknown_prec] = bind_type
     end
 
-    def self.select_number_as
-      @@number_type
+    # for backward compatibility
+    def self.select_number_as # :nodoc:
+      ::OCI8::BindType::Mapping[:number_unknown_prec].fix_type(nil, nil, nil, nil, nil)[0]
     end
 
     def initialize(env, svc, ctx, stmt = nil)
@@ -869,7 +882,9 @@ class OCI8
   # FLOAT(126)       SQLT_NUM     22  126 -127
   # DOUBLE PRECISION SQLT_NUM     22  126 -127
   # REAL             SQLT_NUM     22   63 -127
-  # NUMBER           SQLT_NUM     22    0    0
+  # calculated value SQLT_NUM     22    0    0
+  # NUMBER           SQLT_NUM     22    0    0 (Oracle 9.2.0.2 or below)
+  # NUMBER           SQLT_NUM     22    0 -127 (Oracle 9.2.0.3 or above)
   # NUMBER(1)        SQLT_NUM     22    1    0
   # NUMBER(38)       SQLT_NUM     22   38    0
   # NUMBER(1, 0)     SQLT_NUM     22    1    0
@@ -879,6 +894,22 @@ class OCI8
   # INTEGER          SQLT_NUM     22   38    0
   # SMALLINT         SQLT_NUM     22   38    0
   BindType::Mapping[OCI8::SQLT_NUM] = BindType::Number
+
+  # This parameter specify the ruby datatype for
+  # calculated number values whose precision is unknown in advance.
+  #   select col1 * 1.1 from tab1;
+  # For Oracle 9.2.0.2 or below, this is also used for NUMBER
+  # datatypes that have no explicit setting of their precision
+  # and scale.
+  BindType::Mapping[:number_unknown_prec] = BindType::Float
+
+  # This parameter specify the ruby datatype for NUMBER datatypes
+  # that have no explicit setting of their precision and scale.
+  #   create table tab1 (col1 number);
+  #   select col1 from tab1;
+  # note: This is available only on Oracle 9.2.0.3 or above.
+  # see:  Oracle 9.2.0.x Patch Set Notes.
+  BindType::Mapping[:number_no_prec_setting] = BindType::Float
 end # OCI8
 
 class OraDate

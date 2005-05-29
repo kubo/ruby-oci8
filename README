@@ -1,17 +1,17 @@
 1. How to make
 
-Unix:
+Unix (not Oracle Instant Client):
 
   make sure the environment variable ORACLE_HOME is set correctly.
   run the the following commands.
 
     make
 
-Windows:
+Windows (not Oracle Instant Client):
 
   ORACLE_HOME is got from the Windows registry.
 
-  MS Visual C++: (I tested on VC4.0 and VC.NET.)
+  MS Visual C++:
     make sure ruby is in PATH and nmake works fine.
     run the the following commands.
 
@@ -30,7 +30,7 @@ Windows:
 
       make
 
-Oracle Instant Installer(Unix and Windows):
+Oracle Instant Client(Unix and Windows):
 
   linux:
     ruby setup.rb config -- --with-instant-client
@@ -82,7 +82,6 @@ Oracle Instant Installer(Unix and Windows):
 3. TODO
 
   * more proper handling of OCI_SUCCESS_WITH_INFO.
-  * more proper handling of NUMBER without its scale values.
   * support Timestamp.
 
 4. On compilation failure
@@ -105,3 +104,38 @@ Oracle Instant Installer(Unix and Windows):
       file $ORACLE_HOME/bin/oracle
       file `which ruby`
       echo $LD_LIBRARY_PATH
+
+5. How to customize fetched datatypes.
+
+  OCI8::BindType::Mapping is available to change the mapping of Oracle
+  datatypes and ruby datatypes.
+
+  Calculated number values whose precision is unknown and NUMBER
+  datatypes that have no explicit setting of their precision and scale
+  are selected as Float by default.
+  On Oracle 9.2.0.2 or below:
+    OCI8::BindType::Mapping[:number_unknown_prec] changes both behaviors.
+    OCI8::BindType::Mapping[:number_no_prec_setting] changes none.
+  On Oracle 9.2.0.3 or above:
+    OCI8::BindType::Mapping[:number_unknown_prec] changes the former.
+    OCI8::BindType::Mapping[:number_no_prec_setting] changes the latter.
+  Available setting values are OCI8::BindType::Fixnum, OCI8::BindType::Integer
+  and OCI8::BindType::Float.
+
+    create table tab1 (col1 number);
+    select col1 from tab1; # col1: NUMBER datatype without precision and scale.
+    select col1 * 1.1 as cal1 from tab1; # cal1: calculated value.
+
+  To select col1 as Fixnum:
+    On Oracle 9.2.0.2 or below:
+      OCI8::BindType::Mapping[:number_unknown_prec] = OCI8::BindType::Fixnum
+    On Oracle 9.2.0.3 or above:
+      OCI8::BindType::Mapping[:number_no_prec_setting] = OCI8::BindType::Fixnum
+
+  If you hate the side-effect of setting OCI8::BindType::Mapping, I
+  recommend you to define the datatype by explicitly:
+    cur = con.parse('select col1 from tab1')
+    cur.define(1, Fixnum)
+
+  There are other undocumented features but it will be formally
+  supported on ruby-oci8 0.2.x.

@@ -56,6 +56,7 @@ static VALUE oci8_lob_get_length(VALUE self, VALUE vsvc)
   return INT2FIX(len);
 }
 
+#ifdef HAVE_OCILOBGETCHUNKSIZE
 static VALUE oci8_lob_get_chunk_size(VALUE self, VALUE vsvc)
 {
   oci8_handle_t *h;
@@ -71,6 +72,7 @@ static VALUE oci8_lob_get_chunk_size(VALUE self, VALUE vsvc)
     oci8_raise(h->errhp, rv, NULL);
   return INT2FIX(len);
 }
+#endif
 
 #ifdef OCI8_USE_CALLBACK_LOB_READ
 static sb4 oci8_callback_lob_read(dvoid *ctxp, CONST dvoid *bufp, ub4 len, ub1 piece)
@@ -211,7 +213,13 @@ static VALUE oci8_lob_clone(VALUE self, VALUE vsvc)
   if (rv != OCI_SUCCESS) {
     oci8_env_raise(envh->hp, rv);
   }
+#ifdef HAVE_OCILOBLOCATORASSIGN
+  /* Oracle 8.1 or upper */
   rv = OCILobLocatorAssign(svch->hp, h->errhp, h->hp, &hp);
+#else
+  /* Oracle 8.0 */
+  rv = OCILobAssign(envh->hp, h->errhp, h->hp, &hp);
+#endif
   if (rv != OCI_SUCCESS) {
     oci8_raise(h->errhp, rv, NULL);
   }
@@ -262,7 +270,9 @@ void Init_oci8_lob(void)
 #endif
   rb_define_method(cOCILobLocator, "is_initialized?", oci8_lob_is_initialized_p, 1);
   rb_define_method(cOCILobLocator, "getLength", oci8_lob_get_length, 1);
+#ifdef HAVE_OCILOBGETCHUNKSIZE
   rb_define_method(cOCILobLocator, "getChunkSize", oci8_lob_get_chunk_size, 1);
+#endif
   rb_define_method(cOCILobLocator, "read", oci8_lob_read, -1);
   rb_define_method(cOCILobLocator, "write", oci8_lob_write, -1);
   rb_define_method(cOCILobLocator, "trim", oci8_lob_trim, 2);
