@@ -229,18 +229,13 @@ EOS
     STDOUT.flush
     version = nil
     dev_null = RUBY_PLATFORM =~ /mswin32|mingw32|bccwin32/ ? "nul" : "/dev/null"
-    if RUBY_PLATFORM =~ /cygwin/
-        oracle_home = @oracle_home.sub(%r{/cygdrive/([a-zA-Z])/}, "\\1:")
-    else
-        oracle_home = @oracle_home
-    end
-    if File.exists?("#{oracle_home}/bin/plus80.exe")
+    if File.exists?("#{@oracle_home}/bin/plus80.exe")
       sqlplus = "plus80.exe"
     else
       sqlplus = "sqlplus"
     end
     Logging::open do
-      open("|#{oracle_home}/bin/#{sqlplus} < #{dev_null}") do |f|
+      open("|#{@oracle_home}/bin/#{sqlplus} < #{dev_null}") do |f|
         while line = f.gets
           if line =~ /(8|9|10)\.([012])\.([0-9])/
             version = $1 + $2 + $3
@@ -555,8 +550,7 @@ EOS
       end
     end
     $CFLAGS += @cflags
-    $libs += @libs
-    unless have_func("OCIInitialize", "oci.h")
+    unless try_link_oci()
       unless ld_path.nil?
         raise <<EOS
 Could not compile with Oracle instant client.

@@ -1,3 +1,6 @@
+2005-05-31  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: fix for cygwin. fix for oracle instant client.
+
 2005-05-29  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: change the detection logic for Multiple
 	  Oracle Homes on Windows.
