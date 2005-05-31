@@ -286,8 +286,15 @@ EOS
           oracle_home = oracle_homes[0].path
         else
           default_path = ''
-          ENV['PATH'].split(';').each do |path|
-	    path.chomp!("\\")
+          if RUBY_PLATFORM =~ /cygwin/
+             path_sep = ':'
+             dir_sep = '/'
+          else
+             path_sep = ';'
+             dir_sep = '\\'
+          end
+          ENV['PATH'].split(path_sep).each do |path|
+	    path.chomp!(dir_sep)
             if File.exists?("#{path}/OCI.DLL")
               default_path = path
               break
@@ -297,7 +304,12 @@ EOS
           puts "Multiple Oracle Homes are found."
           printf "   %-15s : %s\n", "[NAME]", "[PATH]"
           oracle_homes.each do |home|
-            if default_path.downcase == "#{home.path.downcase}\\bin"
+            if RUBY_PLATFORM =~ /cygwin/
+              path = `cygpath -u '#{home.path}'`.chomp!
+            else
+              path = home.path
+            end
+            if default_path.downcase == "#{path.downcase}#{dir_sep}bin"
               oracle_home = home
             end
             printf "   %-15s : %s\n", home.name, home.path

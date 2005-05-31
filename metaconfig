@@ -1,9 +1,12 @@
-#
-# add test task
-#
+# --*- ruby -*--
+require 'base64'
+require 'zlib'
+
 ToplevelInstaller::TASKS.push ['test', 'run test.']
+ToplevelInstaller::TASKS.push ['distbin', 'make binary package.']
 ToplevelInstaller.module_eval {
   alias parsearg_test parsearg_no_options
+  alias parsearg_distbin parsearg_no_options
 
   def exec_test
     old = Dir.pwd
@@ -11,6 +14,124 @@ ToplevelInstaller.module_eval {
     Dir.chdir "#{objdir_root}/test"
     @installer.ruby("-I#{srcdir_root}/ext/oci8 -I#{srcdir_root}/lib -I#{srcdir_root}/support -I#{srcdir_root}/test #{srcdir_root}/test/test_all.rb")
     Dir.chdir old
+  end
+
+  def get_zcontent(file)
+    File.open(file, 'rb') do |f|
+      Base64.encode64(Zlib::Deflate::deflate(f.read))
+    end
+  end
+
+  def exec_distbin
+    File.open("ruby-oci8-#{RUBY_PLATFORM}.rb", 'w') do |f|
+      f.write <<-EOT
+# ruby-oci8 binary installer for #{RUBY_PLATFORM}
+require 'rbconfig'
+require 'base64'
+require 'ftools'
+require 'zlib'
+
+def msg_error(msg)
+  puts "ERROR: "
+  puts msg
+  exit 1
+end
+
+def msg_ok(msg)
+  puts msg
+end
+
+def msg_ask(msg)
+  puts msg
+  $stdout.print "Enter Yes/No: "
+  $stdout.flush
+  ret = gets().chomp.downcase
+  if ret == 'y' || ret == 'ye' || ret == 'yes'
+     return
+  else
+     exit 1
+  end
+end
+
+if '#{RUBY_PLATFORM}' != RUBY_PLATFORM
+  msg_ask "This package is for #{RUBY_PLATFORM}\\ninstall anyway?"
+end
+
+class Installer
+  @@log = ""
+  def initialize(install_files)
+    @files = []
+    install_files.each do |file, content|
+      basename = File.basename(file)
+      dirname = File.dirname(file)
+      if dirname == '.'
+        dirname = ''
+      else
+        dirname = '/' + dirname 
+      end
+      case basename
+      when /\.so$/
+        dirname = "\#{Config::CONFIG['sitearchdir']}\#{dirname}"
+      else
+        dirname = "\#{Config::CONFIG['sitelibdir']}\#{dirname}"
+      end
+      @files << [basename, dirname, content]
+    end
+    @files.sort! do |x, y| x[0] <=> y[0] end
+  end
+
+  def confirm
+    msg = ""
+    @files.each do |f|
+      basename, dirname, content = f
+      msg << "Copy \#{basename} to \#{dirname}\\n"
+    end
+    msg << "OK?\\n"
+    msg_ask(msg)
+  end
+
+  def install
+    @@log = ""
+    @files.each do |f|
+      basename, dirname, content = f
+      @@log << "Copying \#{basename} to \#{dirname} ... "
+      if not FileTest.directory?(dirname)
+        File.makedirs(dirname)
+      end
+      File.open("\#{dirname}/\#{basename}", "wb") do |f|
+        f.write(Zlib::Inflate::inflate(Base64.decode64(content)))
+      end
+      @@log << "done\\n"
+    end
+    @@log << "OK\\n"
+    msg_ok(@@log)
+  end
+
+  def self.log
+    @@log
+  end
+end
+
+install_files = {}
+
+install_files['oci8lib.so'] = <<-EOS
+#{get_zcontent('ext/oci8/oci8lib.so')}EOS
+
+install_files['oci8.rb'] = <<-EOS
+#{get_zcontent('lib/oci8.rb')}EOS
+
+install_files['DBD/OCI8/OCI8.rb'] = <<-EOS
+#{get_zcontent('lib/DBD/OCI8/OCI8.rb')}EOS
+
+begin
+  installer = Installer.new(install_files)
+  installer.confirm
+  installer.install
+rescue
+  msg_error(Installer.log + "\\n" + $!.to_s)
+end
+EOT
+    end
   end
 }
 
