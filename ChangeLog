@@ -1,3 +1,7 @@
+2005-05-31  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: fix for cygwin. fix for oracle instant client.
+	* metaconfig: add distbin task.
+
 2005-05-29  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8.rb.in: add OCI8::BindType::Mapping[:number_unknown_prec]
 	  and OCI8::BindType::Mapping[:number_no_prec_setting].
