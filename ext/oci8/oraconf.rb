@@ -215,7 +215,7 @@ EOS
   def check_lp64
     print "checking for LP64... "
     STDOUT.flush
-    if macro_defined?("__LP64__", "") || macro_defined?("_LP64", "")
+    if macro_defined?("__LP64__", "") || macro_defined?("_LP64", "") || macro_defined?("__64BIT__", "")
       print "yes\n"
       return true
     else
