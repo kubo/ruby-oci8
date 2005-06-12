@@ -1,3 +1,6 @@
+2005-06-12  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: rewrie OraConf#check_lp64().
+
 2005-06-08  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: test __64BIT__ to check whether lp64. (for AIX 64bit)
 

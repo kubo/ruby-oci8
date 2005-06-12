@@ -215,14 +215,14 @@ EOS
   def check_lp64
     print "checking for LP64... "
     STDOUT.flush
-    if macro_defined?("__LP64__", "") || macro_defined?("_LP64", "") || macro_defined?("__64BIT__", "")
-      print "yes\n"
-      return true
+    if try_run("int main() { return sizeof(long) == 8 ? 0 : 1; }")
+      puts "yes"
+      true
     else
-      print "no\n"
-      return false
+      puts "no"
+      false
     end
-  end # cc_is_gcc
+  end # check_lp64
 
   def get_version
     print("Get the version of Oracle from SQL*Plus... ")
