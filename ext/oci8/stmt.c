@@ -29,13 +29,13 @@ static oci8_bind_handle_t *make_bind_handle(ub4 type, oci8_handle_t *stmth, VALU
     return bh;
   } else {
     /* error */
-    rb_raise(rb_eArgError, "Not supported object %s (expect a subclass of OCIBind)", rb_class2name(obj));
+    rb_raise(rb_eArgError, "Not supported object %s (expect a subclass of %s)", rb_class2name(obj), rb_class2name(cOCIBind));
   }
 }
 
-static VALUE oci8_stmt_initialize(VALUE self, VALUE venv)
+static VALUE oci8_stmt_initialize(VALUE self)
 {
-  return oci8_handle_do_initialize(self, venv, OCI_HTYPE_STMT);
+  return oci8_handle_do_initialize(self, OCI_HTYPE_STMT);
 }
 
 /*
@@ -343,7 +343,7 @@ implemented in param.c
 
 void Init_oci8_stmt(void)
 {
-  rb_define_method(cOCIStmt, "initialize", oci8_stmt_initialize, 1);
+  rb_define_method(cOCIStmt, "initialize", oci8_stmt_initialize, 0);
   rb_define_method(cOCIStmt, "prepare", oci8_stmt_prepare, -1);
   rb_define_method(cOCIStmt, "defineByPos", oci8_define_by_pos, 2);
   rb_define_method(cOCIStmt, "bind", oci8_bind, 2);

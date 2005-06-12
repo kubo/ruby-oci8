@@ -1,5 +1,13 @@
 2005-06-12  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: rewrie OraConf#check_lp64().
+	* ext/oci8/bind.c, ext/oci8/descriptor.c, ext/oci8/env.c,
+	  ext/oci8/handle.c, ext/oci8/lob.c, ext/oci8/oci8.h,
+	  ext/oci8/stmt.c, ext/oci8/svcctx.c, lib/oci8.rb.in:
+	   delete an OCIEnv instance from each instance method's argument.
+	   get it from the internal global variable in C.
+	* ext/oci8/oci8.c, lib/DBD/OCI8/OCI8.rb: change the OCIBind class name
+	   to OCI8::BindType::Base.
+	* lib/oci8.rb.in: fix typo rb_eArgError to ArgumentError.
 
 2005-06-08  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: test __64BIT__ to check whether lp64. (for AIX 64bit)

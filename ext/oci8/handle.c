@@ -11,14 +11,14 @@ See ((<Class Hierarchy>)).
 */
 #include "oci8.h"
 
-VALUE oci8_handle_do_initialize(VALUE self, VALUE venv, ub4 type)
+VALUE oci8_handle_do_initialize(VALUE self, ub4 type)
 {
   sword rv;
   oci8_handle_t *envh;
   oci8_handle_t *h;
 
   Get_Handle(self, h);
-  Check_Handle(venv, OCIEnv, envh); /* 1 */
+  Check_Handle(oci8_env, OCIEnv, envh); /* 1 */
   rv = OCIHandleAlloc(envh->hp, &h->hp, type, 0, NULL);
   if (rv != OCI_SUCCESS)
     oci8_env_raise(envh->hp, rv);

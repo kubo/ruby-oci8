@@ -15,6 +15,8 @@ correspond native OCI datatype: ((|OCIEnv|))
 */
 #include "oci8.h"
 
+VALUE oci8_env;
+
 static dvoid *rb_oci8_maloc(dvoid *ctxp, size_t size)
 {
   return ruby_xmalloc(size);
@@ -57,4 +59,6 @@ void Init_oci8_env(void)
   OCIInitialize(OCI_OBJECT, NULL, rb_oci8_maloc, rb_oci8_raloc, rb_oci8_mfree);
 #endif
   rb_define_method(cOCIEnv, "initialize", oci8_env_initialize, 0);
+  oci8_env = rb_funcall(cOCIEnv, oci8_id_new, 0);
+  rb_global_variable(&oci8_env);
 }

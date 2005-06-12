@@ -14,18 +14,8 @@ class OCIBreak < OCIException
   end
 end
 
-class OCIBind # :nodoc:
-  # define handle of OCILobLocator needs @env and @svc.
-  def set_handle(env, svc, ctx)
-    @env = env
-    @svc = svc
-    @ctx = ctx
-  end
-end
-
 # The database connection class.
 class OCI8
-  @@env = nil
   VERSION = '@@OCI8_MODULE_VERSION@@'
   CLIENT_VERSION = '@@OCI8_CLIENT_VERSION@@'
   # :stopdoc:
@@ -130,12 +120,9 @@ class OCI8
   #   # sqlplus 'sys/change_on_install as sysdba'
   #   conn = OCI8.new("sys", "change_on_install", nil, :SYSDBA)
   def initialize(uid, pswd, dbname = nil, privilege = nil)
-    if @@env.nil?
-      @@env = OCIEnv.new
-    end
     @ctx = [0, Mutex.new, nil]
     @svc = nil
-    do_ocicall(@ctx) { @svc = OCISvcCtx.new(@@env, uid, pswd, dbname, privilege) }
+    do_ocicall(@ctx) { @svc = OCISvcCtx.new(uid, pswd, dbname, privilege) }
   end # initialize
 
   # Disconnects from Oracle. Uncommitted transaction will be
@@ -215,7 +202,7 @@ class OCI8
   # same with that of bind variables.
   def exec(sql, *bindvars)
     begin
-      cursor = OCI8::Cursor.new(@@env, @svc, @ctx)
+      cursor = OCI8::Cursor.new(@svc, @ctx)
       cursor.parse(sql)
       ret = cursor.exec(*bindvars)
       case cursor.type
@@ -246,7 +233,7 @@ class OCI8
   # Creates cursor, prepare to execute SQL statement and return the
   # instance of OCI8::Cursor.
   def parse(sql)
-    cursor = OCI8::Cursor.new(@@env, @svc, @ctx)
+    cursor = OCI8::Cursor.new(@svc, @ctx)
     cursor.parse(sql)
     cursor
   end # parse
@@ -335,6 +322,13 @@ class OCI8
   module BindType
     Mapping = {}
 
+    class Base # :nodoc:
+      def set_handle(svc, ctx)
+        @svc = svc
+        @ctx = ctx
+      end
+    end
+
     # get/set Time
     class Time < OCI8::BindType::OraDate
       def set(val)
@@ -357,7 +351,7 @@ class OCI8
 
     # get/set Number (for OCI8::SQLT_NUM)
     class Number
-      def self.factory(env, val, length, precision, scale) # :nodoc:
+      def self.factory(val, length, precision, scale) # :nodoc:
         if scale == -127
           if precision == 0
             # NUMBER declared without its scale and precision. (Oracle 9.2.0.3 or above)
@@ -388,7 +382,7 @@ class OCI8
             bind_type = OCI8::BindType::OraNumber
           end
         end
-        bind_type.new(env, val, length, precision, scale)
+        bind_type.new(val, length, precision, scale)
       end
     end
 
@@ -397,7 +391,7 @@ class OCI8
       alias orig_get get
       private :orig_get
       def get
-        (val = orig_get()) && OCI8::BLOB.new(@env, @svc, val.clone(@svc))
+        (val = orig_get()) && OCI8::BLOB.new(@svc, val.clone(@svc))
       end
     end
 
@@ -406,7 +400,7 @@ class OCI8
       alias orig_get get
       private :orig_get
       def get
-        (val = orig_get()) && OCI8::CLOB.new(@env, @svc, val.clone(@svc))
+        (val = orig_get()) && OCI8::CLOB.new(@svc, val.clone(@svc))
       end
     end
 
@@ -428,7 +422,7 @@ class OCI8
       alias orig_get get
       private :orig_get
       def get()
-        (val = orig_get()) && OCI8::Cursor.new(@env, @svc, @ctx, val)
+        (val = orig_get()) && OCI8::Cursor.new(@svc, @ctx, val)
       end
     end
   end # BindType
@@ -474,7 +468,7 @@ class OCI8
       elsif val == Float
         @@bind_unknown_number = OCI8::BindType::Float
       else
-        raise rb_eArgError, "must be Fixnum, Integer or Float"
+        raise ArgumentError, "must be Fixnum, Integer or Float"
       end
     end
 
@@ -490,15 +484,14 @@ class OCI8
       end
     end
 
-    def initialize(env, svc, ctx, stmt = nil)
-      @env = env
+    def initialize(svc, ctx, stmt = nil)
       @svc = svc
       @ctx = ctx
       @binds = nil
       @parms = nil
       @defns = nil
       if stmt.nil?
-        @stmt = OCIStmt.new(@env)
+        @stmt = OCIStmt.new()
         @stmttype = nil
       else
         @stmt = stmt
@@ -755,7 +748,6 @@ class OCI8
 
     # close the cursor.
     def close
-      @env = nil
       @svc = nil
       free_defns()
       free_binds()
@@ -792,9 +784,9 @@ class OCI8
         raise "unsupported datatype: #{SQLT_NAMES[type] ? SQLT_NAMES[type] : type}"
       end
       if bindclass.respond_to?(:factory)
-        bindobj = bindclass.factory(@env, val, length, precision, scale)
+        bindobj = bindclass.factory(val, length, precision, scale)
       else
-        bindobj = bindclass.new(@env, val, length, precision, scale)
+        bindobj = bindclass.new(val, length, precision, scale)
       end
 
       case bind_type
@@ -803,7 +795,7 @@ class OCI8
       when :define
 	b = @stmt.defineByPos(key, bindobj)
       end
-      b.set_handle(@env, @svc, @ctx)
+      b.set_handle(@svc, @ctx)
       b
     end # bind_or_define
 
@@ -878,11 +870,9 @@ class OCI8
 
   class LOB
     attr :pos
-    def initialize(env, svc, locator) # :nodoc:
-      raise "invalid argument" unless env.is_a? OCIEnv
+    def initialize(svc, locator) # :nodoc:
       raise "invalid argument" unless svc.is_a? OCISvcCtx
       raise "invalid argument" unless locator.is_a? OCILobLocator
-      @env = env
       @svc = svc
       @locator = locator
       @pos = 0
@@ -891,7 +881,7 @@ class OCI8
     end
 
     def available?
-      @locator.is_initialized?(@env)
+      @locator.is_initialized?
     end
 
     def truncate(len)

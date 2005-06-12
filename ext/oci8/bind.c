@@ -35,7 +35,7 @@ static void bind_string_set(oci8_bind_handle_t *bh, VALUE val)
   bh->rlen = RSTRING(val)->len;
 }
 
-static void bind_string_init(oci8_bind_handle_t *bh, VALUE env, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_string_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
   sb4 sz = 0;
 
@@ -94,7 +94,7 @@ static void bind_fixnum_set(oci8_bind_handle_t *bh, VALUE val)
   bh->value.sw = FIX2INT(val);
 }
 
-static void bind_fixnum_init(oci8_bind_handle_t *bh, VALUE env, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_fixnum_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
   bh->valuep = &bh->value.sw;
   bh->value_sz = sizeof(bh->value.sw);
@@ -122,7 +122,7 @@ static void bind_float_set(oci8_bind_handle_t *bh, VALUE val)
   bh->value.dbl = RFLOAT(val)->value;
 }
 
-static void bind_float_init(oci8_bind_handle_t *bh, VALUE env, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_float_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
   bh->valuep = &bh->value.dbl;
   bh->value_sz = sizeof(bh->value.dbl);
@@ -155,7 +155,7 @@ static void bind_oradate_set(oci8_bind_handle_t *bh, VALUE val)
   memcpy(&(bh->value.od), od, sizeof(ora_date_t));
 }
 
-static void bind_oradate_init(oci8_bind_handle_t *bh, VALUE env, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_oradate_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
   bh->valuep = &bh->value.od;
   bh->value_sz = sizeof(bh->value.od);
@@ -190,7 +190,7 @@ static void bind_oranumber_set(oci8_bind_handle_t *bh, VALUE val)
   memcpy(&(bh->value.on), &(ovn->num), sizeof(ora_number_t));
 }
 
-static void bind_oranumber_init(oci8_bind_handle_t *bh, VALUE env, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_oranumber_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
   bh->valuep = &bh->value.on;
   bh->value_sz = sizeof(bh->value.on);
@@ -245,12 +245,12 @@ static void bind_rowid_set(oci8_bind_handle_t *bh, VALUE val)
   bh->value.hp = h->hp;
 }
 
-static void bind_rowid_init(oci8_bind_handle_t *bh, VALUE env, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_rowid_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
   bh->valuep = &bh->value.hp;
   bh->value_sz = sizeof(bh->value.hp);
   if (NIL_P(*val)) {
-    *val = rb_funcall(cOCIRowid, oci8_id_new, 1, env);
+    *val = rb_funcall(cOCIRowid, oci8_id_new, 0);
   }
 }
 
@@ -275,12 +275,12 @@ static void bind_clob_set(oci8_bind_handle_t *bh, VALUE val)
   bh->value.hp = h->hp;
 }
 
-static void bind_lob_init(oci8_bind_handle_t *bh, VALUE env, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_lob_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
   bh->valuep = &bh->value.hp;
   bh->value_sz = sizeof(bh->value.hp);
   if (NIL_P(*val)) {
-    *val = rb_funcall(cOCILobLocator, oci8_id_new, 1, env);
+    *val = rb_funcall(cOCILobLocator, oci8_id_new, 0);
   }
 }
 
@@ -326,12 +326,12 @@ static void bind_stmt_set(oci8_bind_handle_t *bh, VALUE val)
   bh->value.hp = h->hp;
 }
 
-static void bind_stmt_init(oci8_bind_handle_t *bh, VALUE env, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_stmt_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
   bh->valuep = &bh->value.hp;
   bh->value_sz = sizeof(bh->value.hp);
   if (NIL_P(*val)) {
-    *val = rb_funcall(cOCIStmt, oci8_id_new, 1, env);
+    *val = rb_funcall(cOCIStmt, oci8_id_new, 0);
   }
 }
 
@@ -411,11 +411,11 @@ VALUE oci8_bind_s_allocate(VALUE klass)
   return obj;
 }
 
-VALUE oci8_bind_initialize(VALUE self, VALUE env, VALUE val, VALUE length, VALUE prec, VALUE scale)
+VALUE oci8_bind_initialize(VALUE self, VALUE val, VALUE length, VALUE prec, VALUE scale)
 {
   oci8_bind_handle_t *bh = DATA_PTR(self);
 
-  bh->bind_type->init(bh, env, &val, length, prec, scale);
+  bh->bind_type->init(bh, &val, length, prec, scale);
   bh->rlen = bh->value_sz;
   if (!NIL_P(val)) {
     /* don't call oci8_set_data() directly.
@@ -437,7 +437,7 @@ static struct {
   {"OraDate",   &bind_oradate},
   {"OraNumber", &bind_oranumber},
   {"Integer",   &bind_integer},
-  {"Rowid",     &bind_rowid},
+  {"OCIRowid",  &bind_rowid},
   {"CLOB",      &bind_clob},
   {"BLOB",      &bind_blob},
   {"Cursor",    &bind_stmt},
@@ -457,7 +457,7 @@ void Init_oci8_bind(void)
     rb_ivar_set(klass, id_bind_type, Data_Wrap_Struct(rb_cObject, 0, 0, bind_types[i].bind_type));
   }
 
-  rb_define_method(cOCIBind, "initialize", oci8_bind_initialize, 5);
+  rb_define_method(cOCIBind, "initialize", oci8_bind_initialize, 4);
   rb_define_method(cOCIBind, "get", oci8_get_data, 0);
   rb_define_method(cOCIBind, "set", oci8_set_data, 1);
 }

@@ -10,14 +10,14 @@ The abstract class of OCI descriptors.
 */
 #include "oci8.h"
 
-VALUE oci8_descriptor_do_initialize(VALUE self, VALUE venv, ub4 type)
+VALUE oci8_descriptor_do_initialize(VALUE self, ub4 type)
 {
   sword rv;
   oci8_handle_t *envh;
   oci8_handle_t *h;
 
   Get_Handle(self, h);
-  Check_Handle(venv, OCIEnv, envh); /* 1 */
+  Check_Handle(oci8_env, OCIEnv, envh);
   rv = OCIDescriptorAlloc(envh->hp, &h->hp, type, 0, NULL);
   if (rv != OCI_SUCCESS)
     oci8_env_raise(envh->hp, rv);
@@ -47,12 +47,12 @@ VALUE oci8_descriptor_do_initialize(VALUE self, VALUE venv, ub4 type)
 =end
 */
 
-static VALUE oci8_rowid_initialize(VALUE self, VALUE venv)
+static VALUE oci8_rowid_initialize(VALUE self)
 {
   oci8_handle_t *h;
 
   Get_Handle(self, h);
-  oci8_descriptor_do_initialize(self, venv, OCI_DTYPE_ROWID);
+  oci8_descriptor_do_initialize(self, OCI_DTYPE_ROWID);
   return Qnil;
 }
 
@@ -61,5 +61,5 @@ void Init_oci8_descriptor(void)
   rb_define_method(cOCIDescriptor, "attrGet", oci8_attr_get, 1);
   rb_define_method(cOCIDescriptor, "attrSet", oci8_attr_set, 2);
   rb_define_method(cOCIDescriptor, "free", oci8_handle_free, 0);
-  rb_define_method(cOCIRowid, "initialize", oci8_rowid_initialize, 1);
+  rb_define_method(cOCIRowid, "initialize", oci8_rowid_initialize, 0);
 }

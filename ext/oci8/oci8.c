@@ -93,12 +93,16 @@ VALUE oci8_s_allocate(VALUE klass)
 void
 Init_oci8lib()
 {
+  /* OCI8 class */
+  cOCI8 = rb_define_class("OCI8", rb_cObject);
+  mOCI8BindType = rb_define_module_under(cOCI8, "BindType");
+
   /* Handle */
   cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
   cOCIEnv = rb_define_class("OCIEnv", cOCIHandle);
   cOCISvcCtx = rb_define_class("OCISvcCtx", cOCIHandle);
   cOCIStmt = rb_define_class("OCIStmt", cOCIHandle);
-  cOCIBind = rb_define_class("OCIBind", cOCIHandle);
+  cOCIBind = rb_define_class_under(mOCI8BindType, "Base", cOCIHandle);
 
   /* Descriptor */
   cOCIDescriptor = rb_define_class("OCIDescriptor", rb_cObject);
@@ -119,10 +123,6 @@ Init_oci8lib()
   /* oracle specific type */
   cOraDate = rb_define_class("OraDate", rb_cObject);
   cOraNumber = rb_define_class("OraNumber", rb_cObject);
-
-  /* OCI8 class */
-  cOCI8 = rb_define_class("OCI8", rb_cObject);
-  mOCI8BindType = rb_define_module_under(cOCI8, "BindType");
 
   /* register allocators */
   rb_define_alloc_func(cOCIHandle, oci8_s_allocate);

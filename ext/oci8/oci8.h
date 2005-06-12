@@ -110,7 +110,7 @@ typedef struct oci8_bind_handle oci8_bind_handle_t;
 struct oci8_bind_type {
   VALUE (*get)(oci8_bind_handle_t *bh);
   void (*set)(oci8_bind_handle_t *bh, VALUE val);
-  void (*init)(oci8_bind_handle_t *bh, VALUE env, VALUE *val, VALUE length, VALUE prec, VALUE scale);
+  void (*init)(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale);
   void (*free)(oci8_bind_handle_t *bh);
   ub2 dty;
 };
@@ -211,7 +211,7 @@ extern ID oci8_id_sql;
 
 /* handle.c */
 void  Init_oci8_handle(void);
-VALUE oci8_handle_do_initialize(VALUE self, VALUE venv, ub4 type);
+VALUE oci8_handle_do_initialize(VALUE self, ub4 type);
 VALUE oci8_handle_free(VALUE self);
 void oci8_handle_mark(oci8_handle_t *);
 void oci8_handle_cleanup(oci8_handle_t *);
@@ -222,6 +222,7 @@ void oci8_unlink(oci8_handle_t *self);
 
 /* env.c */
 void Init_oci8_env(void);
+extern VALUE oci8_env; /* use temporarily. delete later. */
 
 /* error.c */
 void Init_oci8_error(void);
@@ -239,7 +240,7 @@ void Init_oci8_bind(void);
 
 /* descriptor.c */
 void Init_oci8_descriptor(void);
-VALUE oci8_descriptor_do_initialize(VALUE self, VALUE venv, ub4 type);
+VALUE oci8_descriptor_do_initialize(VALUE self, ub4 type);
 VALUE oci8_param_get(VALUE self, VALUE pos);
 
 /* param.c */

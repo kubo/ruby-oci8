@@ -45,7 +45,6 @@ end
 
 class Driver < DBI::BaseDriver # :nodoc:
   include Util
-  @@env = nil
 
   def initialize
     super(USED_DBD_VERSION)

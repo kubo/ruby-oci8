@@ -26,7 +26,6 @@ static VALUE sym_SYSOPER;
 
 static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
 {
-  VALUE venv;
   VALUE vusername;
   VALUE vpassword;
   VALUE vdbname;
@@ -36,10 +35,10 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
   oci8_string_t u, p, d;
   sword rv;
 
-  rb_scan_args(argc, argv, "41", &venv, &vusername, &vpassword, &vdbname, &vmode);
+  rb_scan_args(argc, argv, "31", &vusername, &vpassword, &vdbname, &vmode);
 
   Get_Handle(self, h); /* 0 */
-  Check_Handle(venv, OCIEnv, envh); /* 1 */
+  Check_Handle(oci8_env, OCIEnv, envh); /* 1 */
   Get_String(vusername, u); /* 2 */
   Get_String(vpassword, p); /* 3 */
   Get_String(vdbname, d); /* 4 */

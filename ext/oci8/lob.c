@@ -1,11 +1,11 @@
 #include "oci8.h"
 
-static VALUE oci8_lob_initialize(VALUE self, VALUE venv)
+static VALUE oci8_lob_initialize(VALUE self)
 {
   oci8_handle_t *h;
 
   Get_Handle(self, h);
-  oci8_descriptor_do_initialize(self, venv, OCI_DTYPE_LOB);
+  oci8_descriptor_do_initialize(self, OCI_DTYPE_LOB);
 #ifndef OCI8_USE_CALLBACK_LOB_READ
   h->u.lob_locator.char_width = 1;
 #endif
@@ -28,17 +28,15 @@ static VALUE oci8_lob_set_char_width(VALUE self, VALUE vsize)
 }
 #endif
 
-static VALUE oci8_lob_is_initialized_p(VALUE self, VALUE venv)
+static VALUE oci8_lob_is_initialized_p(VALUE self)
 {
   oci8_handle_t *h;
-  oci8_handle_t *envh;
   boolean is_initialized;
   sword rv;
 
   Get_Handle(self, h); /* 0 */
-  Check_Handle(venv, OCIEnv, envh); /* 1 */
 
-  rv = OCILobLocatorIsInit(envh->hp, h->errhp, h->hp, &is_initialized);
+  rv = OCILobLocatorIsInit(h->envh->hp, h->errhp, h->hp, &is_initialized);
   if (rv != OCI_SUCCESS)
     oci8_raise(h->errhp, rv, NULL);
   return is_initialized ? Qtrue : Qfalse;
@@ -269,11 +267,11 @@ static VALUE oci8_lob_close(VALUE self, VALUE vsvc)
 
 void Init_oci8_lob(void)
 {
-  rb_define_method(cOCILobLocator, "initialize", oci8_lob_initialize, 1);
+  rb_define_method(cOCILobLocator, "initialize", oci8_lob_initialize, 0);
 #ifndef OCI8_USE_CALLBACK_LOB_READ
   rb_define_method(cOCILobLocator, "char_width=", oci8_lob_set_char_width, 1);
 #endif
-  rb_define_method(cOCILobLocator, "is_initialized?", oci8_lob_is_initialized_p, 1);
+  rb_define_method(cOCILobLocator, "is_initialized?", oci8_lob_is_initialized_p, 0);
   rb_define_method(cOCILobLocator, "getLength", oci8_lob_get_length, 1);
   rb_define_method(cOCILobLocator, "getChunkSize", oci8_lob_get_chunk_size, 1);
   rb_define_method(cOCILobLocator, "read", oci8_lob_read, -1);
