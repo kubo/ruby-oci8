@@ -50,14 +50,18 @@ VALUE oci8_get_sb2_attr(VALUE self, ub4 attrtype)
 VALUE oci8_get_ub4_attr(VALUE self, ub4 attrtype)
 {
     oci8_handle_t *h;
-    ub4 val = (ub4)-1234;
+    ub4 val;
     sword rv;
 
     Get_Handle(self, h); /* 0 */
     rv = OCIAttrGet(h->hp, h->type, &val, NULL, attrtype, h->errhp);
     if (rv != OCI_SUCCESS)
         oci8_raise(h->errhp, rv, NULL);
+#if SIZEOF_LONG > 4
     return INT2FIX(val);
+#else
+    return UINT2NUM(val);
+#endif
 }
 
 VALUE oci8_get_string_attr(VALUE self, ub4 attrtype)
