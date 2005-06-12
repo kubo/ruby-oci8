@@ -1,4 +1,32 @@
 2005-06-12  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/const.c: delete unused constants.
+	   move some oci_id_* to ext/oci8/error.c.
+	   move oci8_sym_*stmt to ext/oci8/stmt.c.
+	* ext/oci8/error.c: 
+	   move some oci_id_* from ext/oci8/const.c.
+	   move subclasses of cOCIException from ext/oci8/oci8.c.
+	* ext/oci8/extconf.rb: add have_func("localtime_r").
+	* ext/oci8/handle.c: delete explicit OCIParam.
+	* ext/oci8/lob.c: delete #ifdef OCI8_USE_CALLBACK_LOB_READ.
+	* ext/oci8/oci8.c: 
+	   move subclasses of cOCIException to ext/oci8/error.c.
+	   move cOraDate to ext/oci8/oradate.c.
+	   move cOraNumber to ext/oci8/oranumber.c.
+	* ext/oci8/oci8.h:
+	   move ora_date_t to ext/oci8/oradate.c.
+	   move ora_number_t and ora_vnumber_t to ext/oci8/oranumber.c.
+	* ext/oci8/oradate.c: fix indentation.
+	   move cOraDate from ext/oci8/oci8.c.
+	   move ora_date_t from ext/oci8/oci8.h.
+	* ext/oci8/oranumber.c: fix indentation.
+	   move cOraNumber from ext/oci8/oci8.c.
+	   move ora_number_t and ora_vnumber_t from ext/oci8/oci8.h.
+	* ext/oci8/param.c: delete OCIParam#paramGet().
+	* ext/oci8/stmt.c: 
+	   move oci8_sym_*stmt from ext/oci8/const.c.
+	   fix OCIStmt#prepare() and OCIStmt#execute().
+
+2005-06-12  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c: add oci8_register_bind_type().
 	   move bind_rowid* to ext/oci8/descriptor.c.
 	   move bind_clob* and bind_blob* to ext/oci8/lob.c.

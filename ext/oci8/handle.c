@@ -161,16 +161,13 @@ oci8_handle_t *oci8_make_handle(ub4 type, dvoid *hp, OCIError *errhp, oci8_handl
   switch (type) {
   case OCI_DTYPE_LOB:
     obj = Data_Make_Struct(cOCILobLocator, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
-#ifndef OCI8_USE_CALLBACK_LOB_READ
     h->u.lob_locator.char_width = 1;
-#endif
     break;
   case OCI_DTYPE_ROWID:
     obj = Data_Make_Struct(cOCIRowid, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
     break;
   case OCI_DTYPE_PARAM:
     obj = Data_Make_Struct(cOCIParam, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
-    h->u.param.is_implicit = 0;
     break;
   default:
     rb_bug("unsupported type %d in oci8_make_handle()", type);
@@ -198,6 +195,8 @@ void oci8_link(oci8_handle_t *parent, oci8_handle_t *child)
   oci8_unlink(child);
   child->parent = parent;
   child->envh = parent->envh;
+  if (child->errhp == NULL)
+    child->errhp = parent->errhp;
 
   for (i = 0;i < parent->size;i++) {
     if (parent->children[i] == NULL) {

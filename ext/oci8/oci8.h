@@ -23,32 +23,6 @@ extern "C" {
 
 #define IS_OCI_ERROR(v) (((v) != OCI_SUCCESS) && ((v) != OCI_SUCCESS_WITH_INFO))
 
-/* OraDate - Internal format of DATE */
-struct ora_date {
-  unsigned char century;
-  unsigned char year;
-  unsigned char month;
-  unsigned char day;
-  unsigned char hour;
-  unsigned char minute;
-  unsigned char second;
-};
-typedef struct ora_date ora_date_t;
-
-/* Member of ora_vnumber_t and ora_bind_handle_t - Internal format of NUMBER */
-struct ora_number {
-  unsigned char exponent;
-  unsigned char mantissa[20];
-};
-typedef struct ora_number ora_number_t;
-
-/* OraNumber - Internal format of VARNUM */
-struct ora_vnumber {
-  unsigned char size;
-  struct ora_number num;
-};
-typedef struct ora_vnumber ora_vnumber_t;
-
 /* OCIEnv, OCISvcCtx, OCIStmt, OCIDescribe, OCIParam */
 struct oci8_handle {
   ub4 type;
@@ -67,13 +41,8 @@ struct oci8_handle {
       OCIServer *srvhp;
     } svcctx;
     struct {
-      char is_implicit:1;
-    } param;
-#ifndef OCI8_USE_CALLBACK_LOB_READ
-    struct {
       int char_width;
     } lob_locator;
-#endif
   } u;
 };
 typedef struct oci8_handle oci8_handle_t;
@@ -100,9 +69,8 @@ struct oci8_bind_handle {
   union {
     sword sw;
     double dbl;
-    ora_date_t od;
-    ora_number_t on;
     void *hp;
+    char padding[21];
   } value;
 };
 typedef struct oci8_bind_handle oci8_bind_handle_t;
@@ -127,7 +95,7 @@ struct oci8_bind_type {
 } while (0)
 
 #define Check_Object(obj, name) do {\
-  if (!rb_obj_is_instance_of(obj, c##name)) { \
+  if (!rb_obj_is_kind_of(obj, c##name)) { \
     rb_raise(rb_eTypeError, "invalid argument %s (expect " #name ")", rb_class2name(CLASS_OF(obj))); \
   } \
 } while (0)
@@ -171,40 +139,13 @@ extern VALUE cOCILobLocator;
 extern VALUE cOCIParam;
 extern VALUE cOCIRowid;
 
-/* Exception */
-extern VALUE eOCIException;
-extern VALUE eOCINoData;
-extern VALUE eOCIError;
-extern VALUE eOCIInvalidHandle;
-extern VALUE eOCINeedData;
-extern VALUE eOCIStillExecuting;
-extern VALUE eOCIContinue;
-extern VALUE eOCISuccessWithInfo;
-
-/* oracle specific type */
-extern VALUE cOraDate;
-extern VALUE cOraNumber;
-
 /* OCI8 class */
 extern VALUE cOCI8;
 extern VALUE mOCI8BindType;
 
 /* const.c */
 void  Init_oci8_const(void);
-extern ID oci8_id_code;
-extern ID oci8_id_message;
 extern ID oci8_id_new;
-extern ID oci8_id_parse_error_offset;
-extern ID oci8_id_sql;
-extern VALUE oci8_sym_select_stmt;
-extern VALUE oci8_sym_update_stmt;
-extern VALUE oci8_sym_delete_stmt;
-extern VALUE oci8_sym_insert_stmt;
-extern VALUE oci8_sym_create_stmt;
-extern VALUE oci8_sym_drop_stmt;
-extern VALUE oci8_sym_alter_stmt;
-extern VALUE oci8_sym_begin_stmt;
-extern VALUE oci8_sym_declare_stmt;
 
 /* handle.c */
 void  Init_oci8_handle(void);
@@ -213,7 +154,6 @@ VALUE oci8_handle_free(VALUE self);
 void oci8_handle_mark(oci8_handle_t *);
 void oci8_handle_cleanup(oci8_handle_t *);
 oci8_handle_t *oci8_make_handle(ub4 type, dvoid *hp, OCIError *errhp, oci8_handle_t *chp, sb4 value_sz);
-VALUE oci8_make_rowid(OCIEnv *envhp, OCIError *errhp);
 void oci8_link(oci8_handle_t *parent, oci8_handle_t *child);
 void oci8_unlink(oci8_handle_t *self);
 
@@ -222,6 +162,7 @@ void Init_oci8_env(void);
 extern VALUE oci8_env; /* use temporarily. delete later. */
 
 /* error.c */
+extern VALUE eOCIException;
 void Init_oci8_error(void);
 NORETURN(void oci8_raise(OCIError *, sword status, OCIStmt *));
 NORETURN(void oci8_env_raise(OCIEnv *, sword status));
@@ -239,7 +180,6 @@ void oci8_register_bind_type(const char *name, oci8_bind_type_t *bind_type);
 /* descriptor.c */
 void Init_oci8_descriptor(void);
 VALUE oci8_descriptor_do_initialize(VALUE self, ub4 type);
-VALUE oci8_param_get(VALUE self, VALUE pos);
 
 /* param.c */
 void Init_oci8_param(void);
@@ -251,9 +191,7 @@ void Init_oci8_lob(void);
 void Init_ora_date(void);
 
 /* oranumber.c */
-#define ORA_NUMBER_BUF_SIZE (128 /* max scale */ + 38 /* max precision */ + 1 /* sign */ + 1 /* comma */ + 1 /* nul */)
 void Init_ora_number(void);
-void ora_number_to_str(unsigned char *buf, size_t *lenp, ora_number_t *on, unsigned char size);
 
 /* attr.c */
 VALUE oci8_get_sb1_attr(VALUE self, ub4 attrtype);

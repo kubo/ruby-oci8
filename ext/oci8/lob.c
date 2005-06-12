@@ -6,13 +6,10 @@ static VALUE oci8_lob_initialize(VALUE self)
 
   Get_Handle(self, h);
   oci8_descriptor_do_initialize(self, OCI_DTYPE_LOB);
-#ifndef OCI8_USE_CALLBACK_LOB_READ
   h->u.lob_locator.char_width = 1;
-#endif
   return Qnil;
 }
 
-#ifndef OCI8_USE_CALLBACK_LOB_READ
 static VALUE oci8_lob_set_char_width(VALUE self, VALUE vsize)
 {
   oci8_handle_t *h;
@@ -26,7 +23,6 @@ static VALUE oci8_lob_set_char_width(VALUE self, VALUE vsize)
   h->u.lob_locator.char_width = size;
   return vsize;
 }
-#endif
 
 static VALUE oci8_lob_is_initialized_p(VALUE self)
 {
@@ -66,21 +62,6 @@ static VALUE oci8_lob_get_length(VALUE self, VALUE vsvc)
   return INT2FIX(len);
 }
 
-#ifdef OCI8_USE_CALLBACK_LOB_READ
-static sb4 oci8_callback_lob_read(dvoid *ctxp, CONST dvoid *bufp, ub4 len, ub1 piece)
-{
-  VALUE v = *((VALUE *)ctxp);
-
-  if (v == Qnil)
-    v = rb_str_new(bufp, len);
-  else
-    v = rb_str_cat(v, bufp, len);
-
-  *((VALUE *)ctxp) = v;
-  return OCI_CONTINUE;
-}
-#endif
-
 static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
 {
   VALUE vsvc, voffset, vamt, vcsid, vcsfrm;
@@ -92,9 +73,7 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
   ub4 amt;
   sword rv;
   char buf[4096];
-#ifndef OCI8_USE_CALLBACK_LOB_READ
   size_t buf_size_in_char;
-#endif
   VALUE v = Qnil;
 
   rb_scan_args(argc, argv, "32", &vsvc, &voffset, &vamt, &vcsid, &vcsfrm);
@@ -105,15 +84,6 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
   Get_Int_With_Default(argc, 4, vcsid, csid, 0); /* 4 */
   Get_Int_With_Default(argc, 5, vcsfrm, csfrm, SQLCS_IMPLICIT); /* 5 */
 
-#ifdef OCI8_USE_CALLBACK_LOB_READ
-  /* This raises ORA-24812, when the size of readed data is two or
-   * three times longer than the size of buf. I couldn't fix it. Thus
-   * I use polling way instead of callback method.
-   */
-  rv = OCILobRead(svch->hp, h->errhp, h->hp, &amt, offset, buf, sizeof(buf), &v, oci8_callback_lob_read, csid, csfrm);
-  if (rv != OCI_SUCCESS)
-    oci8_raise(h->errhp, rv, NULL);
-#else
   /* Disadvantage of polling way in contrast with callback method is
    * that it sets 'amt' the number of characters readed, when charset
    * is fixed size. For single byte charset or variable size charset,
@@ -141,7 +111,6 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
     else
       v = rb_str_cat(v, buf, amt);
   } while (rv == OCI_NEED_DATA);
-#endif
   return v;
 }
 
@@ -311,9 +280,7 @@ static oci8_bind_type_t bind_blob = {
 void Init_oci8_lob(void)
 {
   rb_define_method(cOCILobLocator, "initialize", oci8_lob_initialize, 0);
-#ifndef OCI8_USE_CALLBACK_LOB_READ
   rb_define_method(cOCILobLocator, "char_width=", oci8_lob_set_char_width, 1);
-#endif
   rb_define_method(cOCILobLocator, "is_initialized?", oci8_lob_is_initialized_p, 0);
   rb_define_method(cOCILobLocator, "getLength", oci8_lob_get_length, 1);
   rb_define_method(cOCILobLocator, "read", oci8_lob_read, -1);

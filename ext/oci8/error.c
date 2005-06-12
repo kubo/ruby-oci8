@@ -9,6 +9,21 @@
 */
 #include "oci8.h"
 
+/* Exception */
+VALUE eOCIException;
+static VALUE eOCINoData;
+static VALUE eOCIError;
+static VALUE eOCIInvalidHandle;
+static VALUE eOCINeedData;
+static VALUE eOCIStillExecuting;
+static VALUE eOCIContinue;
+static VALUE eOCISuccessWithInfo;
+
+static ID oci8_id_code;
+static ID oci8_id_message;
+static ID oci8_id_parse_error_offset;
+static ID oci8_id_sql;
+
 NORETURN(static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp));
 
 static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp)
@@ -165,6 +180,20 @@ static VALUE oci8_error_sql(VALUE self)
 
 void Init_oci8_error(void)
 {
+  oci8_id_code = rb_intern("code");
+  oci8_id_message = rb_intern("message");
+  oci8_id_parse_error_offset = rb_intern("parse_error_offset");
+  oci8_id_sql = rb_intern("sql");
+
+  eOCIException = rb_define_class("OCIException", rb_eStandardError);
+  eOCINoData = rb_define_class("OCINoData", eOCIException);
+  eOCIError = rb_define_class("OCIError", eOCIException);
+  eOCIInvalidHandle = rb_define_class("OCIInvalidHandle", eOCIException);
+  eOCINeedData = rb_define_class("OCINeedData", eOCIException);
+  eOCIStillExecuting = rb_define_class("OCIStillExecuting", eOCIException);
+  eOCIContinue = rb_define_class("OCIContinue", eOCIException);
+  eOCISuccessWithInfo = rb_define_class("OCISuccessWithInfo", eOCIError);
+
   rb_define_method(eOCIError, "code", oci8_error_code, 0);
   rb_define_method(eOCIError, "codes", oci8_error_code_array, 0);
   rb_define_method(eOCIError, "messages", oci8_error_message_array, 0);

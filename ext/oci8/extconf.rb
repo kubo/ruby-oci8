@@ -59,6 +59,8 @@ if oraconf.cc_is_gcc
   $CFLAGS += " -Wall"
 end
 
+have_func("localtime_r")
+
 # replace files
 replace = {
   'OCI8_CLIENT_VERSION' => oraconf.version,

@@ -19,6 +19,16 @@ correspond native OCI datatype: ((|OCIStmt|))
 */
 #include "oci8.h"
 
+static VALUE oci8_sym_select_stmt;
+static VALUE oci8_sym_update_stmt;
+static VALUE oci8_sym_delete_stmt;
+static VALUE oci8_sym_insert_stmt;
+static VALUE oci8_sym_create_stmt;
+static VALUE oci8_sym_drop_stmt;
+static VALUE oci8_sym_alter_stmt;
+static VALUE oci8_sym_begin_stmt;
+static VALUE oci8_sym_declare_stmt;
+
 static oci8_bind_handle_t *make_bind_handle(ub4 type, oci8_handle_t *stmth, VALUE obj)
 {
   if (rb_obj_is_kind_of(obj, cOCIBind) && CLASS_OF(obj) != cOCIBind) {
@@ -56,21 +66,14 @@ static VALUE oci8_stmt_initialize(VALUE self)
      correspond native OCI function: ((|OCIStmtPrepare|))
 =end
  */
-static VALUE oci8_stmt_prepare(int argc, VALUE *argv, VALUE self)
+static VALUE oci8_stmt_prepare(VALUE self, VALUE sql)
 {
-  VALUE vsql, vlanguage, vmode;
   oci8_handle_t *h;
-  oci8_string_t s;
-  ub4 language;
-  ub4 mode;
   sword rv;
   int i;
 
-  rb_scan_args(argc, argv, "12", &vsql, &vlanguage, &vmode);
   Get_Handle(self, h); /* 0 */
-  Get_String(vsql, s); /* 1 */
-  Get_Int_With_Default(argc, 2, vlanguage, language, OCI_NTV_SYNTAX); /* 2 */
-  Get_Int_With_Default(argc, 3, vmode, mode, OCI_DEFAULT); /* 3 */
+  StringValue(sql);
 
   /* when a new statement is prepared, OCI implicitly free the previous 
    * statement's define and bind handles. 
@@ -84,7 +87,7 @@ static VALUE oci8_stmt_prepare(int argc, VALUE *argv, VALUE self)
     }
   }
 
-  rv = OCIStmtPrepare(h->hp, h->errhp, s.ptr, s.len, language, mode);
+  rv = OCIStmtPrepare(h->hp, h->errhp, RSTRING(sql)->ptr, RSTRING(sql)->len, OCI_NTV_SYNTAX, OCI_DEFAULT);
   if (IS_OCI_ERROR(rv)) {
     oci8_raise(h->errhp, rv, h->hp);
   }
@@ -218,37 +221,20 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
      correspond native OCI function: ((|OCIStmtExecute|))
 =end
 */
-static VALUE oci8_stmt_execute(int argc, VALUE *argv, VALUE self)
+static VALUE oci8_stmt_execute(VALUE self, VALUE vsvc, VALUE viters, VALUE vmode)
 {
-  VALUE vsvc;
-  VALUE viters;
-  VALUE vmode;
   oci8_handle_t *h;
   oci8_handle_t *svch;
   ub4 mode;
   ub4 iters;
-  ub2 stmt_type;
   sword rv;
 
-  rb_scan_args(argc, argv, "12", &vsvc, &viters, &vmode);
   Get_Handle(self, h); /* 0 */
   Check_Handle(vsvc, OCISvcCtx, svch); /* 1 */
-  if (argc >= 2) {
-    iters = NUM2INT(viters); /* 2 */
-  } else {
-    rv = OCIAttrGet(h->hp, OCI_HTYPE_STMT, &stmt_type, 0, OCI_ATTR_STMT_TYPE, h->errhp);
-    if (rv != OCI_SUCCESS) {
-      oci8_raise(h->errhp, rv, h->hp);
-    }
-    if (stmt_type == OCI_STMT_SELECT) {
-      /* for select statement, default value 0. */
-      iters = 0;
-    } else {
-      /* for non-select statement, default value 0. */
-      iters = 1;
-    }
-  }
-  Get_Int_With_Default(argc, 3, vmode, mode, OCI_DEFAULT); /* 3 */
+  Check_Type(viters, T_FIXNUM); /* 2 */
+  iters = FIX2INT(viters);
+  Check_Type(vmode, T_FIXNUM); /* 3 */
+  mode = FIX2INT(vmode);
 
   if (iters < 0) {
     rb_raise(rb_eArgError, "use Positive value for the 2nd argument");
@@ -324,6 +310,21 @@ static VALUE oci8_stmt_fetch(int argc, VALUE *argv, VALUE self)
   }
   return Qtrue;
 }  
+
+static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
+{
+    oci8_handle_t *h;
+    OCIParam *parmhp = NULL;
+    sword rv;
+
+    Get_Handle(self, h); /* 0 */
+    Check_Type(pos, T_FIXNUM); /* 1 */
+    rv = OCIParamGet(h->hp, h->type, h->errhp, (dvoid *)&parmhp, FIX2INT(pos));
+    if (rv != OCI_SUCCESS) {
+        oci8_raise(h->errhp, rv, NULL);
+    }
+    return oci8_make_handle(OCI_DTYPE_PARAM, parmhp, h->errhp, h, 0)->self;
+}
 
 static VALUE oci8_stmt_get_stmt_type(VALUE self)
 {
@@ -420,13 +421,23 @@ implemented in param.c
 
 void Init_oci8_stmt(void)
 {
+  oci8_sym_select_stmt = ID2SYM(rb_intern("select_stmt"));
+  oci8_sym_update_stmt = ID2SYM(rb_intern("update_stmt"));
+  oci8_sym_delete_stmt = ID2SYM(rb_intern("delete_stmt"));
+  oci8_sym_insert_stmt = ID2SYM(rb_intern("insert_stmt"));
+  oci8_sym_create_stmt = ID2SYM(rb_intern("create_stmt"));
+  oci8_sym_drop_stmt = ID2SYM(rb_intern("drop_stmt"));
+  oci8_sym_alter_stmt = ID2SYM(rb_intern("alter_stmt"));
+  oci8_sym_begin_stmt = ID2SYM(rb_intern("begin_stmt"));
+  oci8_sym_declare_stmt = ID2SYM(rb_intern("declare_stmt"));
+
   rb_define_method(cOCIStmt, "initialize", oci8_stmt_initialize, 0);
-  rb_define_method(cOCIStmt, "prepare", oci8_stmt_prepare, -1);
+  rb_define_method(cOCIStmt, "prepare", oci8_stmt_prepare, 1);
   rb_define_method(cOCIStmt, "defineByPos", oci8_define_by_pos, 2);
   rb_define_method(cOCIStmt, "bind", oci8_bind, 2);
-  rb_define_method(cOCIStmt, "execute", oci8_stmt_execute, -1);
+  rb_define_method(cOCIStmt, "execute", oci8_stmt_execute, 3);
   rb_define_method(cOCIStmt, "fetch", oci8_stmt_fetch, -1);
-  rb_define_method(cOCIStmt, "paramGet", oci8_param_get, 1);
+  rb_define_method(cOCIStmt, "paramGet", oci8_stmt_get_param, 1);
   rb_define_method(cOCIStmt, "stmt_type", oci8_stmt_get_stmt_type, 0);
   rb_define_method(cOCIStmt, "row_count", oci8_stmt_get_row_count, 0);
   rb_define_method(cOCIStmt, "rowid", oci8_stmt_get_rowid, 0);

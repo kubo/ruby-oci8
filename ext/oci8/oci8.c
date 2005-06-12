@@ -62,20 +62,6 @@ VALUE cOCIParam;
 VALUE cOCILobLocator;
 VALUE cOCIRowid;
 
-/* Exception */
-VALUE eOCIException;
-VALUE eOCINoData;
-VALUE eOCIError;
-VALUE eOCIInvalidHandle;
-VALUE eOCINeedData;
-VALUE eOCIStillExecuting;
-VALUE eOCIContinue;
-VALUE eOCISuccessWithInfo;
-
-/* oracle specific type */
-VALUE cOraDate;
-VALUE cOraNumber;
-
 /* OCI8 class */
 VALUE cOCI8;
 VALUE mOCI8BindType;
@@ -109,20 +95,6 @@ Init_oci8lib()
   cOCILobLocator = rb_define_class("OCILobLocator", cOCIDescriptor);
   cOCIParam = rb_define_class("OCIParam", cOCIDescriptor);
   cOCIRowid = rb_define_class("OCIRowid", cOCIDescriptor);
-
-  /* Exception */
-  eOCIException = rb_define_class("OCIException", rb_eStandardError);
-  eOCINoData = rb_define_class("OCINoData", eOCIException);
-  eOCIError = rb_define_class("OCIError", eOCIException);
-  eOCIInvalidHandle = rb_define_class("OCIInvalidHandle", eOCIException);
-  eOCINeedData = rb_define_class("OCINeedData", eOCIException);
-  eOCIStillExecuting = rb_define_class("OCIStillExecuting", eOCIException);
-  eOCIContinue = rb_define_class("OCIContinue", eOCIException);
-  eOCISuccessWithInfo = rb_define_class("OCISuccessWithInfo", eOCIError);
-
-  /* oracle specific type */
-  cOraDate = rb_define_class("OraDate", rb_cObject);
-  cOraNumber = rb_define_class("OraNumber", rb_cObject);
 
   /* register allocators */
   rb_define_alloc_func(cOCIHandle, oci8_s_allocate);

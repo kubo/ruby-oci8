@@ -1,15 +1,29 @@
 /*
-  oradate.c - part of ruby-oci8
-
-  Copyright (C) 2002 KUBO Takehiro <kubo@jiubao.org>
-
-=begin
-== OraDate
-date and time between 4712 B.C. and 9999 A.D.
-=end
-*/
+ *  oradate.c
+ *
+ * $Author$
+ * $Date$
+ *
+ * Copyright (C) 2002-2005 KUBO Takehiro <kubo@jiubao.org>
+ *
+ * date and time between 4712 B.C. and 9999 A.D.
+ */
 #include "oci8.h"
 #include <time.h>
+
+static VALUE cOraDate;
+
+/* OraDate - Internal format of DATE */
+struct ora_date {
+    unsigned char century;
+    unsigned char year;
+    unsigned char month;
+    unsigned char day;
+    unsigned char hour;
+    unsigned char minute;
+    unsigned char second;
+};
+typedef struct ora_date ora_date_t;
 
 #define Set_year(od, y) (od)->century = y / 100 + 100, (od)->year = y % 100 + 100
 #define Set_month(od, m) (od)->month = m
@@ -26,33 +40,38 @@ date and time between 4712 B.C. and 9999 A.D.
 #define Get_second(od) ((od)->second - 1)
 
 #define Check_year(year) \
-  if (year < -4712 || 9999 < year) \
-    rb_raise(rb_eRangeError, "Out of range for year %d (expect -4712 .. 9999)", year)
+    if (year < -4712 || 9999 < year) \
+        rb_raise(rb_eRangeError, "Out of range for year %d (expect -4712 .. 9999)", year)
 #define Check_month(month) \
-  if (month < 1 || 12 < month) \
-    rb_raise(rb_eRangeError, "Out of range for month %d (expect 1 .. 12)", month)
+    if (month < 1 || 12 < month) \
+        rb_raise(rb_eRangeError, "Out of range for month %d (expect 1 .. 12)", month)
 #define Check_day(day) \
-  if (day < 1 || 31 < day) \
-    rb_raise(rb_eRangeError, "Out of range for day %d (expect 1 .. 31)", day)
+    if (day < 1 || 31 < day) \
+        rb_raise(rb_eRangeError, "Out of range for day %d (expect 1 .. 31)", day)
 #define Check_hour(hour) \
-  if (hour < 0 || 23 < hour) \
-    rb_raise(rb_eRangeError, "Out of range for hour %d (expect 0 .. 24)", hour)
+    if (hour < 0 || 23 < hour) \
+        rb_raise(rb_eRangeError, "Out of range for hour %d (expect 0 .. 24)", hour)
 #define Check_minute(min) \
-  if (min < 0 || 59 < min) \
-    rb_raise(rb_eRangeError, "Out of range for minute %d (expect 0 .. 59)", min)
+    if (min < 0 || 59 < min) \
+        rb_raise(rb_eRangeError, "Out of range for minute %d (expect 0 .. 59)", min)
 #define Check_second(sec) \
-  if (sec < 0 || 59 < sec) \
-    rb_raise(rb_eRangeError, "Out of range for second %d (expect 0 .. 59)", sec)
-
+    if (sec < 0 || 59 < sec) \
+        rb_raise(rb_eRangeError, "Out of range for second %d (expect 0 .. 59)", sec)
 
 static void oci8_set_ora_date(ora_date_t *od, int year, int month, int day, int hour, int minute, int second)
 {
-  Set_year(od, year);
-  Set_month(od, month);
-  Set_day(od, day);
-  Set_hour(od, hour);
-  Set_minute(od, minute);
-  Set_second(od, second);
+    Set_year(od, year);
+    Set_month(od, month);
+    Set_day(od, day);
+    Set_hour(od, hour);
+    Set_minute(od, minute);
+    Set_second(od, second);
+}
+
+static VALUE ora_date_s_allocate(VALUE klass)
+{
+    ora_date_t *od;
+    return Data_Make_Struct(klass, ora_date_t, NULL, xfree, od);
 }
 
 /*
@@ -60,60 +79,58 @@ static void oci8_set_ora_date(ora_date_t *od, int year, int month, int day, int 
 --- OraDate.new([year [, month [, day [, hour [, min [,sec]]]]]])
 =end
 */
-static VALUE ora_date_s_new(int argc, VALUE *argv, VALUE klass)
+static VALUE ora_date_initialize(int argc, VALUE *argv, VALUE self)
 {
-  VALUE vyear, vmonth, vday, vhour, vmin, vsec;
-  ora_date_t *od;
-  VALUE obj;
-  int year, month, day, hour, min, sec;
+    VALUE vyear, vmonth, vday, vhour, vmin, vsec;
+    ora_date_t *od = DATA_PTR(self);
+    int year, month, day, hour, min, sec;
 
-  rb_scan_args(argc, argv, "06", &vyear, &vmonth, &vday, &vhour, &vmin, &vsec);
-  /* set year */
-  if (argc > 0) {
-    year = NUM2INT(vyear);
-    Check_year(year);
-  } else {
-    year = 1;
-  }
-  /* set month */
-  if (argc > 1) {
-    month = NUM2INT(vmonth);
-    Check_month(month);
-  } else {
-    month = 1;
-  }
-  /* set day */
-  if (argc > 2) {
-    day = NUM2INT(vday);
-    Check_day(day);
-  } else {
-    day = 1;
-  }
-  /* set hour */
-  if (argc > 3) {
-    hour = NUM2INT(vhour);
-    Check_hour(hour);
-  } else {
-    hour = 0;
-  }
-  /* set minute */
-  if (argc > 4) {
-    min = NUM2INT(vmin);
-    Check_minute(min);
-  } else {
-    min = 0;
-  }
-  /* set second */
-  if (argc > 5) {
-    sec = NUM2INT(vsec);
-    Check_second(sec);
-  } else {
-    sec = 0;
-  }
+    rb_scan_args(argc, argv, "06", &vyear, &vmonth, &vday, &vhour, &vmin, &vsec);
+    /* set year */
+    if (argc > 0) {
+        year = NUM2INT(vyear);
+        Check_year(year);
+    } else {
+        year = 1;
+    }
+    /* set month */
+    if (argc > 1) {
+        month = NUM2INT(vmonth);
+        Check_month(month);
+    } else {
+        month = 1;
+    }
+    /* set day */
+    if (argc > 2) {
+        day = NUM2INT(vday);
+        Check_day(day);
+    } else {
+        day = 1;
+    }
+    /* set hour */
+    if (argc > 3) {
+        hour = NUM2INT(vhour);
+        Check_hour(hour);
+    } else {
+        hour = 0;
+    }
+    /* set minute */
+    if (argc > 4) {
+        min = NUM2INT(vmin);
+        Check_minute(min);
+    } else {
+        min = 0;
+    }
+    /* set second */
+    if (argc > 5) {
+        sec = NUM2INT(vsec);
+        Check_second(sec);
+    } else {
+        sec = 0;
+    }
 
-  obj = Data_Make_Struct(cOraDate, ora_date_t, NULL, xfree, od);
-  oci8_set_ora_date(od, year, month, day, hour, min, sec);
-  return obj;
+    oci8_set_ora_date(od, year, month, day, hour, min, sec);
+    return Qnil;
 }
 
 /*
@@ -121,26 +138,29 @@ static VALUE ora_date_s_new(int argc, VALUE *argv, VALUE klass)
 --- OraDate.now()
 =end
 */
-static VALUE ora_date_s_now(int argc, VALUE *argv)
+static VALUE ora_date_s_now(int argc, VALUE *argv, VALUE klass)
 {
-  ora_date_t *od;
-  VALUE obj;
-  int year, month, day, hour, min, sec;
-  time_t tm;
-  struct tm *tp;
+    VALUE obj = ora_date_s_allocate(klass);
+    ora_date_t *od = DATA_PTR(obj);
+    time_t tm = time(0);
+    int year, month, day, hour, min, sec;
+#ifdef HAVE_LOCALTIME_R
+    struct tm t;
+    localtime_r(&tm, &t);
+#define tp (&t)
+#else
+    struct tm *tp;
+    tp = localtime(&tm);
+#endif
+    year = tp->tm_year + 1900;
+    month = tp->tm_mon + 1;
+    day = tp->tm_mday;
+    hour = tp->tm_hour;
+    min = tp->tm_min;
+    sec = tp->tm_sec;
 
-  tm = time(0);
-  tp = localtime(&tm);
-  year = tp->tm_year + 1900;
-  month = tp->tm_mon + 1;
-  day = tp->tm_mday;
-  hour = tp->tm_hour;
-  min = tp->tm_min;
-  sec = tp->tm_sec;
-
-  obj = Data_Make_Struct(cOraDate, ora_date_t, NULL, xfree, od);
-  oci8_set_ora_date(od, year, month, day, hour, min, sec);
-  return obj;
+    oci8_set_ora_date(od, year, month, day, hour, min, sec);
+    return obj;
 }
 
 /*
@@ -150,13 +170,13 @@ static VALUE ora_date_s_now(int argc, VALUE *argv)
 */
 static VALUE ora_date_to_s(VALUE self)
 {
-  ora_date_t *od;
-  char buf[30];
-  
-  Data_Get_Struct(self, ora_date_t, od);
-  sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d", Get_year(od), Get_month(od),
-	  Get_day(od), Get_hour(od), Get_minute(od), Get_second(od));
-  return rb_str_new2(buf);
+    ora_date_t *od;
+    char buf[30];
+
+    Data_Get_Struct(self, ora_date_t, od);
+    sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d", Get_year(od), Get_month(od),
+            Get_day(od), Get_hour(od), Get_minute(od), Get_second(od));
+    return rb_str_new2(buf);
 }
 
 /*
@@ -166,39 +186,39 @@ static VALUE ora_date_to_s(VALUE self)
 */
 static VALUE ora_date_to_a(VALUE self)
 {
-  ora_date_t *od;
-  VALUE ary[6];
+    ora_date_t *od;
+    VALUE ary[6];
   
-  Data_Get_Struct(self, ora_date_t, od);
-  ary[0] = INT2FIX(Get_year(od));
-  ary[1] = INT2FIX(Get_month(od));
-  ary[2] = INT2FIX(Get_day(od));
-  ary[3] = INT2FIX(Get_hour(od));
-  ary[4] = INT2FIX(Get_minute(od));
-  ary[5] = INT2FIX(Get_second(od));
-  return rb_ary_new4(6, ary);
+    Data_Get_Struct(self, ora_date_t, od);
+    ary[0] = INT2FIX(Get_year(od));
+    ary[1] = INT2FIX(Get_month(od));
+    ary[2] = INT2FIX(Get_day(od));
+    ary[3] = INT2FIX(Get_hour(od));
+    ary[4] = INT2FIX(Get_minute(od));
+    ary[5] = INT2FIX(Get_second(od));
+    return rb_ary_new4(6, ary);
 }
 
 #define DEFINE_GETTER_FUNC(where) \
 static VALUE ora_date_##where(VALUE self) \
 { \
-  ora_date_t *od; \
+    ora_date_t *od; \
  \
-  Data_Get_Struct(self, ora_date_t, od); \
-  return INT2FIX(Get_##where(od)); \
+    Data_Get_Struct(self, ora_date_t, od); \
+    return INT2FIX(Get_##where(od)); \
 }
 
 #define DEFINE_SETTER_FUNC(where) \
 static VALUE ora_date_set_##where(VALUE self, VALUE val) \
 { \
-  ora_date_t *od; \
-  int v; \
+    ora_date_t *od; \
+    int v; \
  \
-  v = NUM2INT(val); \
-  Check_##where(v); \
-  Data_Get_Struct(self, ora_date_t, od); \
-  Set_##where(od, v); \
-  return self; \
+    v = NUM2INT(val); \
+    Check_##where(v); \
+    Data_Get_Struct(self, ora_date_t, od); \
+    Set_##where(od, v); \
+    return self; \
 }
 
 /*
@@ -272,24 +292,25 @@ static VALUE ora_date_trunc(VALUE self)
 */
 static VALUE ora_date_cmp(VALUE self, VALUE val)
 {
-  ora_date_t *od1, *od2;
-  Data_Get_Struct(self, ora_date_t, od1);
-  Data_Get_Struct(val, ora_date_t, od2);
-  if (od1->century < od2->century) return INT2FIX(-1);
-  if (od1->century > od2->century) return INT2FIX(1);
-  if (od1->year < od2->year) return INT2FIX(-1);
-  if (od1->year > od2->year) return INT2FIX(1);
-  if (od1->month < od2->month) return INT2FIX(-1);
-  if (od1->month > od2->month) return INT2FIX(1);
-  if (od1->day < od2->day) return INT2FIX(-1);
-  if (od1->day > od2->day) return INT2FIX(1);
-  if (od1->hour < od2->hour) return INT2FIX(-1);
-  if (od1->hour > od2->hour) return INT2FIX(1);
-  if (od1->minute < od2->minute) return INT2FIX(-1);
-  if (od1->minute > od2->minute) return INT2FIX(1);
-  if (od1->second < od2->second) return INT2FIX(-1);
-  if (od1->second > od2->second) return INT2FIX(1);
-  return INT2FIX(0);
+    ora_date_t *od1, *od2;
+    Data_Get_Struct(self, ora_date_t, od1);
+    Check_Object(val, OraDate);
+    Data_Get_Struct(val, ora_date_t, od2);
+    if (od1->century < od2->century) return INT2FIX(-1);
+    if (od1->century > od2->century) return INT2FIX(1);
+    if (od1->year < od2->year) return INT2FIX(-1);
+    if (od1->year > od2->year) return INT2FIX(1);
+    if (od1->month < od2->month) return INT2FIX(-1);
+    if (od1->month > od2->month) return INT2FIX(1);
+    if (od1->day < od2->day) return INT2FIX(-1);
+    if (od1->day > od2->day) return INT2FIX(1);
+    if (od1->hour < od2->hour) return INT2FIX(-1);
+    if (od1->hour > od2->hour) return INT2FIX(1);
+    if (od1->minute < od2->minute) return INT2FIX(-1);
+    if (od1->minute > od2->minute) return INT2FIX(1);
+    if (od1->second < od2->second) return INT2FIX(-1);
+    if (od1->second > od2->second) return INT2FIX(1);
+    return INT2FIX(0);
 }
 
 /*
@@ -297,63 +318,71 @@ static VALUE ora_date_cmp(VALUE self, VALUE val)
  */
 static VALUE bind_oradate_get(oci8_bind_handle_t *bh)
 {
-  ora_date_t *od;
-  VALUE obj = Data_Make_Struct(cOraDate, ora_date_t, NULL, xfree, od);
-  memcpy(od, &(bh->value.od), sizeof(ora_date_t));
-  return obj;
+    ora_date_t *od;
+    VALUE obj = Data_Make_Struct(cOraDate, ora_date_t, NULL, xfree, od);
+    memcpy(od, &bh->value, sizeof(ora_date_t));
+    return obj;
 }
 
 static void bind_oradate_set(oci8_bind_handle_t *bh, VALUE val)
 {
-  ora_date_t *od;
-  Check_Object(val, OraDate);
-  Data_Get_Struct(val, ora_date_t, od);
-  memcpy(&(bh->value.od), od, sizeof(ora_date_t));
+    ora_date_t *od;
+    Check_Object(val, OraDate);
+    Data_Get_Struct(val, ora_date_t, od);
+    memcpy(&bh->value, od, sizeof(ora_date_t));
 }
 
 static void bind_oradate_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
-  bh->valuep = &bh->value.od;
-  bh->value_sz = sizeof(bh->value.od);
+    bh->valuep = &bh->value;
+    bh->value_sz = sizeof(ora_date_t);
+#ifdef OCI_CHECK_STRICT
+    if (sizeof(ora_data_t) > sizeof(bh->value)) {
+        rb_bug("sizeof(ora_data_t) > sizeof(bh->value)");
+    }
+#endif
 }
 
 static oci8_bind_type_t bind_oradate = {
-  bind_oradate_get,
-  bind_oradate_set,
-  bind_oradate_init,
-  NULL,
-  SQLT_DAT,
+    bind_oradate_get,
+    bind_oradate_set,
+    bind_oradate_init,
+    NULL,
+    SQLT_DAT,
 };
 
 void Init_ora_date(void)
 {
-  rb_define_singleton_method(cOraDate, "new", ora_date_s_new, -1);
-  rb_define_singleton_method(cOraDate, "now", ora_date_s_now, 0);
-  rb_define_method(cOraDate, "to_s", ora_date_to_s, 0);
-  rb_define_method(cOraDate, "to_a", ora_date_to_a, 0);
+    cOraDate = rb_define_class("OraDate", rb_cObject);
 
-  rb_define_method(cOraDate, "year", ora_date_year, 0);
-  rb_define_method(cOraDate, "year=", ora_date_set_year, 1);
+    rb_define_alloc_func(cOraDate, ora_date_s_allocate);
+    rb_define_method(cOraDate, "initialize", ora_date_initialize, -1);
+    rb_define_singleton_method(cOraDate, "now", ora_date_s_now, 0);
+    rb_define_method(cOraDate, "to_s", ora_date_to_s, 0);
+    rb_define_method(cOraDate, "to_a", ora_date_to_a, 0);
 
-  rb_define_method(cOraDate, "month", ora_date_month, 0);
-  rb_define_method(cOraDate, "month=", ora_date_set_month, 1);
+    rb_define_method(cOraDate, "year", ora_date_year, 0);
+    rb_define_method(cOraDate, "year=", ora_date_set_year, 1);
 
-  rb_define_method(cOraDate, "day", ora_date_day, 0);
-  rb_define_method(cOraDate, "day=", ora_date_set_day, 1);
+    rb_define_method(cOraDate, "month", ora_date_month, 0);
+    rb_define_method(cOraDate, "month=", ora_date_set_month, 1);
 
-  rb_define_method(cOraDate, "hour", ora_date_hour, 0);
-  rb_define_method(cOraDate, "hour=", ora_date_set_hour, 1);
+    rb_define_method(cOraDate, "day", ora_date_day, 0);
+    rb_define_method(cOraDate, "day=", ora_date_set_day, 1);
 
-  rb_define_method(cOraDate, "minute", ora_date_minute, 0);
-  rb_define_method(cOraDate, "minute=", ora_date_set_minute, 1);
+    rb_define_method(cOraDate, "hour", ora_date_hour, 0);
+    rb_define_method(cOraDate, "hour=", ora_date_set_hour, 1);
 
-  rb_define_method(cOraDate, "second", ora_date_second, 0);
-  rb_define_method(cOraDate, "second=", ora_date_set_second, 1);
+    rb_define_method(cOraDate, "minute", ora_date_minute, 0);
+    rb_define_method(cOraDate, "minute=", ora_date_set_minute, 1);
 
-  rb_define_method(cOraDate, "trunc", ora_date_trunc, 0);
+    rb_define_method(cOraDate, "second", ora_date_second, 0);
+    rb_define_method(cOraDate, "second=", ora_date_set_second, 1);
 
-  rb_define_method(cOraDate, "<=>", ora_date_cmp, 1);
-  rb_include_module(cOraDate, rb_mComparable);
+    rb_define_method(cOraDate, "trunc", ora_date_trunc, 0);
 
-  oci8_register_bind_type("OraDate", &bind_oradate);
+    rb_define_method(cOraDate, "<=>", ora_date_cmp, 1);
+    rb_include_module(cOraDate, rb_mComparable);
+
+    oci8_register_bind_type("OraDate", &bind_oradate);
 }
