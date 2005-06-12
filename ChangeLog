@@ -1,4 +1,24 @@
 2005-06-12  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/bind.c: add oci8_register_bind_type().
+	   move bind_rowid* to ext/oci8/descriptor.c.
+	   move bind_clob* and bind_blob* to ext/oci8/lob.c.
+	   move bind_oradate* to ext/oci8/oradate.c.
+	   move bind_oranumber* and bind_integer* to ext/oci8/oranumber.c.
+	   move bind_stmt* to ext/oci8/stmt.c.
+	* ext/oci8/const.c: add oci8_sym_*_stmt. delete ruby constants OCI_STMT_*.
+	* ext/oci8/descriptor.c: move bind_rowid* from ext/oci8/bind.c.
+	* ext/oci8/lob.c: move bind_clob* and bind_blob* from ext/oci8/bind.c.
+	* ext/oci8/oci8.c: change initialization order for oci8_register_bind_type().
+	* ext/oci8/oci8.h: add oci8_register_bind_type(). add oci8_sym_*_stmt.
+	* ext/oci8/oradate.c: move bind_oradate* from  ext/oci8/bind.c.
+	   oci8_set_ora_date() become a static function.
+	   delete oci8_get_ora_date().
+	* ext/oci8/oranumber.c: move bind_oranumber* and bind_integer* from ext/oci8/bind.c.
+	* ext/oci8/stmt.c: move bind_stmt* from ext/oci8/bind.c.
+	   OCIStmt#stmt_type returns a Symbol instead of a Fixnum.
+	* lib/oci8.rb.in: OCI8::Cursor#type returns a Symbol instead of a Fixnum.
+
+2005-06-12  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb: add have_func("OCILobLocatorAssign").
 	* ext/oci8/lob.c: delete OCILobLocator#getChunkSize().
 	   use OCILobAssign instead of OCILobLocatorAssign on Oracle 8.

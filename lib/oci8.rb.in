@@ -20,15 +20,6 @@ class OCI8
   CLIENT_VERSION = '@@OCI8_CLIENT_VERSION@@'
   # :stopdoc:
   RAW = OCI_TYPECODE_RAW
-  STMT_SELECT = OCI_STMT_SELECT
-  STMT_UPDATE = OCI_STMT_UPDATE
-  STMT_DELETE = OCI_STMT_DELETE
-  STMT_INSERT = OCI_STMT_INSERT
-  STMT_CREATE = OCI_STMT_CREATE
-  STMT_DROP = OCI_STMT_DROP
-  STMT_ALTER = OCI_STMT_ALTER
-  STMT_BEGIN = OCI_STMT_BEGIN
-  STMT_DECLARE = OCI_STMT_DECLARE
   # :startdoc:
 
   # sql type (varchar, varchar2)
@@ -206,7 +197,7 @@ class OCI8
       cursor.parse(sql)
       ret = cursor.exec(*bindvars)
       case cursor.type
-      when OCI_STMT_SELECT
+      when :select_stmt
         cursor.exec(*bindvars)
         if block_given?
           cursor.fetch { |row| yield(row) }   # for each row
@@ -216,7 +207,7 @@ class OCI8
           cursor = nil # unset cursor to skip cursor.close in ensure block
           ret
         end
-      when OCI_STMT_BEGIN, OCI_STMT_DECLARE # PL/SQL block
+      when :begin_stmt, :declare_stmt # PL/SQL block
         ary = []
         cursor.keys.sort.each do |key|
           ary << cursor[key]
@@ -668,10 +659,10 @@ class OCI8
     def exec(*bindvars)
       bind_params(*bindvars)
       case @stmttype
-      when OCI_STMT_SELECT
+      when :select_stmt
 	do_ocicall(@ctx) { @stmt.execute(@svc, 0, OCI_DEFAULT) }
         define_columns()
-      when OCI_STMT_UPDATE, OCI_STMT_DELETE, OCI_STMT_INSERT
+      when :update_stmt, :delete_stmt, :insert_stmt
 	do_ocicall(@ctx) { @stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG]) }
 	@stmt.row_count
       else
@@ -1114,3 +1105,27 @@ class OraDate
     Date.new(year, month, day)
   end
 end
+
+# :stopdoc:
+# for compatibility.
+OCI_STMT_SELECT = :select_stmt
+OCI_STMT_UPDATE = :update_stmt
+OCI_STMT_DELETE = :delete_stmt
+OCI_STMT_INSERT = :insert_stmt
+OCI_STMT_CREATE = :create_stmt
+OCI_STMT_DROP = :drop_stmt
+OCI_STMT_ALTER = :alter_stmt
+OCI_STMT_BEGIN = :begin_stmt
+OCI_STMT_DECLARE = :declare_stmt
+class OCI8
+  STMT_SELECT = :select_stmt
+  STMT_UPDATE = :update_stmt
+  STMT_DELETE = :delete_stmt
+  STMT_INSERT = :insert_stmt
+  STMT_CREATE = :create_stmt
+  STMT_DROP = :drop_stmt
+  STMT_ALTER = :alter_stmt
+  STMT_BEGIN = :begin_stmt
+  STMT_DECLARE = :declare_stmt
+end
+# :startdoc:

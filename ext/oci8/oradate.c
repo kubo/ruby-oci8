@@ -44,6 +44,17 @@ date and time between 4712 B.C. and 9999 A.D.
   if (sec < 0 || 59 < sec) \
     rb_raise(rb_eRangeError, "Out of range for second %d (expect 0 .. 59)", sec)
 
+
+static void oci8_set_ora_date(ora_date_t *od, int year, int month, int day, int hour, int minute, int second)
+{
+  Set_year(od, year);
+  Set_month(od, month);
+  Set_day(od, day);
+  Set_hour(od, hour);
+  Set_minute(od, minute);
+  Set_second(od, second);
+}
+
 /*
 =begin
 --- OraDate.new([year [, month [, day [, hour [, min [,sec]]]]]])
@@ -281,6 +292,39 @@ static VALUE ora_date_cmp(VALUE self, VALUE val)
   return INT2FIX(0);
 }
 
+/*
+ * bind_oradate
+ */
+static VALUE bind_oradate_get(oci8_bind_handle_t *bh)
+{
+  ora_date_t *od;
+  VALUE obj = Data_Make_Struct(cOraDate, ora_date_t, NULL, xfree, od);
+  memcpy(od, &(bh->value.od), sizeof(ora_date_t));
+  return obj;
+}
+
+static void bind_oradate_set(oci8_bind_handle_t *bh, VALUE val)
+{
+  ora_date_t *od;
+  Check_Object(val, OraDate);
+  Data_Get_Struct(val, ora_date_t, od);
+  memcpy(&(bh->value.od), od, sizeof(ora_date_t));
+}
+
+static void bind_oradate_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+{
+  bh->valuep = &bh->value.od;
+  bh->value_sz = sizeof(bh->value.od);
+}
+
+static oci8_bind_type_t bind_oradate = {
+  bind_oradate_get,
+  bind_oradate_set,
+  bind_oradate_init,
+  NULL,
+  SQLT_DAT,
+};
+
 void Init_ora_date(void)
 {
   rb_define_singleton_method(cOraDate, "new", ora_date_s_new, -1);
@@ -310,25 +354,6 @@ void Init_ora_date(void)
 
   rb_define_method(cOraDate, "<=>", ora_date_cmp, 1);
   rb_include_module(cOraDate, rb_mComparable);
-}
 
-void oci8_set_ora_date(ora_date_t *od, int year, int month, int day, int hour, int minute, int second)
-{
-  Set_year(od, year);
-  Set_month(od, month);
-  Set_day(od, day);
-  Set_hour(od, hour);
-  Set_minute(od, minute);
-  Set_second(od, second);
+  oci8_register_bind_type("OraDate", &bind_oradate);
 }
-
-void oci8_get_ora_date(ora_date_t *od, int *year, int *month, int *day, int *hour, int *minute, int *second)
-{
-  *year = Get_year(od);
-  *month = Get_month(od);
-  *day = Get_day(od);
-  *hour = Get_hour(od);
-  *minute = Get_minute(od);
-  *second = Get_second(od);
-}
-

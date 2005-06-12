@@ -196,6 +196,15 @@ extern ID oci8_id_message;
 extern ID oci8_id_new;
 extern ID oci8_id_parse_error_offset;
 extern ID oci8_id_sql;
+extern VALUE oci8_sym_select_stmt;
+extern VALUE oci8_sym_update_stmt;
+extern VALUE oci8_sym_delete_stmt;
+extern VALUE oci8_sym_insert_stmt;
+extern VALUE oci8_sym_create_stmt;
+extern VALUE oci8_sym_drop_stmt;
+extern VALUE oci8_sym_alter_stmt;
+extern VALUE oci8_sym_begin_stmt;
+extern VALUE oci8_sym_declare_stmt;
 
 /* handle.c */
 void  Init_oci8_handle(void);
@@ -225,6 +234,7 @@ void Init_oci8_stmt(void);
 
 /* bind.c */
 void Init_oci8_bind(void);
+void oci8_register_bind_type(const char *name, oci8_bind_type_t *bind_type);
 
 /* descriptor.c */
 void Init_oci8_descriptor(void);
@@ -239,8 +249,6 @@ void Init_oci8_lob(void);
 
 /* oradate.c */
 void Init_ora_date(void);
-void oci8_set_ora_date(ora_date_t *, int year, int month, int day, int hour, int minute, int second);
-void oci8_get_ora_date(ora_date_t *, int *year, int *month, int *day, int *hour, int *minute, int *second);
 
 /* oranumber.c */
 #define ORA_NUMBER_BUF_SIZE (128 /* max scale */ + 38 /* max precision */ + 1 /* sign */ + 1 /* comma */ + 1 /* nul */)

@@ -327,7 +327,29 @@ static VALUE oci8_stmt_fetch(int argc, VALUE *argv, VALUE self)
 
 static VALUE oci8_stmt_get_stmt_type(VALUE self)
 {
-  return oci8_get_ub2_attr(self, OCI_ATTR_STMT_TYPE);
+  VALUE stmt_type = oci8_get_ub2_attr(self, OCI_ATTR_STMT_TYPE);
+  switch (stmt_type) {
+  case INT2FIX(OCI_STMT_SELECT):
+    return oci8_sym_select_stmt;
+  case INT2FIX(OCI_STMT_UPDATE):
+    return oci8_sym_update_stmt;
+  case INT2FIX(OCI_STMT_DELETE):
+    return oci8_sym_delete_stmt;
+  case INT2FIX(OCI_STMT_INSERT):
+    return oci8_sym_insert_stmt;
+  case INT2FIX(OCI_STMT_CREATE):
+    return oci8_sym_create_stmt;
+  case INT2FIX(OCI_STMT_DROP):
+    return oci8_sym_drop_stmt;
+  case INT2FIX(OCI_STMT_ALTER):
+    return oci8_sym_alter_stmt;
+  case INT2FIX(OCI_STMT_BEGIN):
+    return oci8_sym_begin_stmt;
+  case INT2FIX(OCI_STMT_DECLARE):
+    return oci8_sym_declare_stmt;
+  default:
+    rb_bug("unexcepted statement type %d in OCIStmt#stmt_type", FIX2INT(stmt_type));
+  }
 }
 
 static VALUE oci8_stmt_get_row_count(VALUE self)
@@ -344,6 +366,41 @@ static VALUE oci8_stmt_get_param_count(VALUE self)
 {
   return oci8_get_ub4_attr(self, OCI_ATTR_PARAM_COUNT);
 }
+
+/*
+ * bind_stmt
+ */
+static VALUE bind_stmt_get(oci8_bind_handle_t *bh)
+{
+  return bh->obj;
+}
+
+static void bind_stmt_set(oci8_bind_handle_t *bh, VALUE val)
+{
+  oci8_handle_t *h;
+  if (!rb_obj_is_instance_of(val, cOCIStmt))
+    rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIStmt)", rb_class2name(CLASS_OF(val)));
+  h = DATA_PTR(val);
+  bh->obj = val;
+  bh->value.hp = h->hp;
+}
+
+static void bind_stmt_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+{
+  bh->valuep = &bh->value.hp;
+  bh->value_sz = sizeof(bh->value.hp);
+  if (NIL_P(*val)) {
+    *val = rb_funcall(cOCIStmt, oci8_id_new, 0);
+  }
+}
+
+static oci8_bind_type_t bind_stmt = {
+  bind_stmt_get,
+  bind_stmt_set,
+  bind_stmt_init,
+  NULL,
+  SQLT_RSET,
+};
 
 /*
 implemented in param.c
@@ -374,4 +431,6 @@ void Init_oci8_stmt(void)
   rb_define_method(cOCIStmt, "row_count", oci8_stmt_get_row_count, 0);
   rb_define_method(cOCIStmt, "rowid", oci8_stmt_get_rowid, 0);
   rb_define_method(cOCIStmt, "param_count", oci8_stmt_get_param_count, 0);
+
+  oci8_register_bind_type("Cursor", &bind_stmt);
 }

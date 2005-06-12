@@ -132,9 +132,9 @@ Init_oci8lib()
   Init_oci8_handle();
   Init_oci8_env();
   Init_oci8_error();
+  Init_oci8_bind();
   Init_oci8_svcctx();
   Init_oci8_stmt();
-  Init_oci8_bind();
 
   Init_oci8_descriptor();
   Init_oci8_param();

@@ -12,6 +12,15 @@ ID oci8_id_message;
 ID oci8_id_new;
 ID oci8_id_parse_error_offset;
 ID oci8_id_sql;
+VALUE oci8_sym_select_stmt;
+VALUE oci8_sym_update_stmt;
+VALUE oci8_sym_delete_stmt;
+VALUE oci8_sym_insert_stmt;
+VALUE oci8_sym_create_stmt;
+VALUE oci8_sym_drop_stmt;
+VALUE oci8_sym_alter_stmt;
+VALUE oci8_sym_begin_stmt;
+VALUE oci8_sym_declare_stmt;
 
 struct oci8_names {
   const char *name;
@@ -55,6 +64,16 @@ void  Init_oci8_const(void)
   oci8_id_new = rb_intern("new");
   oci8_id_parse_error_offset = rb_intern("parse_error_offset");
   oci8_id_sql = rb_intern("sql");
+
+  oci8_sym_select_stmt = ID2SYM(rb_intern("select_stmt"));
+  oci8_sym_update_stmt = ID2SYM(rb_intern("update_stmt"));
+  oci8_sym_delete_stmt = ID2SYM(rb_intern("delete_stmt"));
+  oci8_sym_insert_stmt = ID2SYM(rb_intern("insert_stmt"));
+  oci8_sym_create_stmt = ID2SYM(rb_intern("create_stmt"));
+  oci8_sym_drop_stmt = ID2SYM(rb_intern("drop_stmt"));
+  oci8_sym_alter_stmt = ID2SYM(rb_intern("alter_stmt"));
+  oci8_sym_begin_stmt = ID2SYM(rb_intern("begin_stmt"));
+  oci8_sym_declare_stmt = ID2SYM(rb_intern("declare_stmt"));
 
   rb_define_global_const("OCI_DEFAULT", INT2FIX(OCI_DEFAULT));
 
@@ -122,17 +141,6 @@ void  Init_oci8_const(void)
   /* Bind and Define Options */
   rb_define_global_const("OCI_DATA_AT_EXEC", INT2FIX(OCI_DATA_AT_EXEC));
   rb_define_global_const("OCI_DYNAMIC_FETCH", INT2FIX(OCI_DYNAMIC_FETCH));
-
-  /* OCI Statement Types */
-  rb_define_global_const("OCI_STMT_SELECT", INT2FIX(OCI_STMT_SELECT));
-  rb_define_global_const("OCI_STMT_UPDATE", INT2FIX(OCI_STMT_UPDATE));
-  rb_define_global_const("OCI_STMT_DELETE", INT2FIX(OCI_STMT_DELETE));
-  rb_define_global_const("OCI_STMT_INSERT", INT2FIX(OCI_STMT_INSERT));
-  rb_define_global_const("OCI_STMT_CREATE", INT2FIX(OCI_STMT_CREATE));
-  rb_define_global_const("OCI_STMT_DROP", INT2FIX(OCI_STMT_DROP));
-  rb_define_global_const("OCI_STMT_ALTER", INT2FIX(OCI_STMT_ALTER));
-  rb_define_global_const("OCI_STMT_BEGIN", INT2FIX(OCI_STMT_BEGIN));
-  rb_define_global_const("OCI_STMT_DECLARE", INT2FIX(OCI_STMT_DECLARE));
 
   /* Piece Definitions */
   rb_define_global_const("OCI_ONE_PIECE", INT2FIX(OCI_ONE_PIECE));

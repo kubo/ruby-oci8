@@ -252,6 +252,62 @@ static VALUE oci8_lob_close(VALUE self, VALUE vsvc)
 }
 #endif
 
+/*
+ * bind_clob
+ */
+static VALUE bind_lob_get(oci8_bind_handle_t *bh)
+{
+  return bh->obj;
+}
+
+static void bind_clob_set(oci8_bind_handle_t *bh, VALUE val)
+{
+  oci8_handle_t *h;
+  if (!rb_obj_is_instance_of(val, cOCILobLocator))
+    rb_raise(rb_eArgError, "Invalid argument: %s (expect OCILobLocator)", rb_class2name(CLASS_OF(val)));
+  h = DATA_PTR(val);
+  bh->obj = val;
+  bh->value.hp = h->hp;
+}
+
+static void bind_lob_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+{
+  bh->valuep = &bh->value.hp;
+  bh->value_sz = sizeof(bh->value.hp);
+  if (NIL_P(*val)) {
+    *val = rb_funcall(cOCILobLocator, oci8_id_new, 0);
+  }
+}
+
+static oci8_bind_type_t bind_clob = {
+  bind_lob_get,
+  bind_clob_set,
+  bind_lob_init,
+  NULL,
+  SQLT_CLOB,
+};
+
+/*
+ * bind_blob
+ */
+static void bind_blob_set(oci8_bind_handle_t *bh, VALUE val)
+{
+  oci8_handle_t *h;
+  if (!rb_obj_is_instance_of(val, cOCILobLocator))
+    rb_raise(rb_eArgError, "Invalid argument: %s (expect OCILobLocator)", rb_class2name(CLASS_OF(val)));
+  h = DATA_PTR(val);
+  bh->obj = val;
+  bh->value.hp = h->hp;
+}
+
+static oci8_bind_type_t bind_blob = {
+  bind_lob_get,
+  bind_blob_set,
+  bind_lob_init,
+  NULL,
+  SQLT_BLOB,
+};
+
 void Init_oci8_lob(void)
 {
   rb_define_method(cOCILobLocator, "initialize", oci8_lob_initialize, 0);
@@ -270,4 +326,7 @@ void Init_oci8_lob(void)
 #ifdef HAVE_OCILOBCLOSE
   rb_define_method(cOCILobLocator, "close", oci8_lob_close, 1);
 #endif
+
+  oci8_register_bind_type("CLOB", &bind_clob);
+  oci8_register_bind_type("BLOB", &bind_blob);
 }
