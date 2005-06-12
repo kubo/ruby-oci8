@@ -51,6 +51,7 @@ have_func("OCILobOpen")
 #   9.0.1  - OK
 have_func("OCILobClose")
 
+have_func("OCILobLocatorAssign")
 $defs.push("-DHAVE_OCIRESET") unless /80./ =~ oraconf.version
 
 # Checking gcc or not

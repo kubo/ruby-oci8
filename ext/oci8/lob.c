@@ -66,22 +66,6 @@ static VALUE oci8_lob_get_length(VALUE self, VALUE vsvc)
   return INT2FIX(len);
 }
 
-static VALUE oci8_lob_get_chunk_size(VALUE self, VALUE vsvc)
-{
-  oci8_handle_t *h;
-  oci8_handle_t *svch;
-  ub4 len;
-  sword rv;
-
-  Get_Handle(self, h); /* 0 */
-  Check_Handle(vsvc, OCISvcCtx, svch); /* 1 */
-
-  rv = OCILobGetChunkSize(svch->hp, h->errhp, h->hp, &len);
-  if (rv != OCI_SUCCESS)
-    oci8_raise(h->errhp, rv, NULL);
-  return INT2FIX(len);
-}
-
 #ifdef OCI8_USE_CALLBACK_LOB_READ
 static sb4 oci8_callback_lob_read(dvoid *ctxp, CONST dvoid *bufp, ub4 len, ub1 piece)
 {
@@ -207,7 +191,6 @@ static VALUE oci8_lob_clone(VALUE self, VALUE vsvc)
 {
   oci8_handle_t *h;
   oci8_handle_t *svch;
-  oci8_handle_t *envh;
   oci8_handle_t *newh;
   OCILobLocator *hp;
   sword rv;
@@ -215,13 +198,17 @@ static VALUE oci8_lob_clone(VALUE self, VALUE vsvc)
   Get_Handle(self, h); /* 0 */
   Check_Handle(vsvc, OCISvcCtx, svch); /* 1 */
 
-  /* get environment handle */
-  for (envh = h; envh->type != OCI_HTYPE_ENV; envh = envh->parent);
-  rv = OCIDescriptorAlloc(envh->hp, (void *)&hp, OCI_DTYPE_LOB, 0, NULL);
+  rv = OCIDescriptorAlloc(h->envh->hp, (void *)&hp, OCI_DTYPE_LOB, 0, NULL);
   if (rv != OCI_SUCCESS) {
-    oci8_env_raise(envh->hp, rv);
+    oci8_env_raise(h->envh->hp, rv);
   }
+#ifdef HAVE_OCILOBLOCATORASSIGN
+  /* Oracle 8.1 or upper */
   rv = OCILobLocatorAssign(svch->hp, h->errhp, h->hp, &hp);
+#else
+  /* Oracle 8.0 */
+  rv = OCILobAssign(h->envh->hp, h->errhp, h->hp, &hp);
+#endif
   if (rv != OCI_SUCCESS) {
     oci8_raise(h->errhp, rv, NULL);
   }
@@ -273,7 +260,6 @@ void Init_oci8_lob(void)
 #endif
   rb_define_method(cOCILobLocator, "is_initialized?", oci8_lob_is_initialized_p, 0);
   rb_define_method(cOCILobLocator, "getLength", oci8_lob_get_length, 1);
-  rb_define_method(cOCILobLocator, "getChunkSize", oci8_lob_get_chunk_size, 1);
   rb_define_method(cOCILobLocator, "read", oci8_lob_read, -1);
   rb_define_method(cOCILobLocator, "write", oci8_lob_write, -1);
   rb_define_method(cOCILobLocator, "trim", oci8_lob_trim, 2);

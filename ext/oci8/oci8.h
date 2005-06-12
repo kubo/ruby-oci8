@@ -158,18 +158,6 @@ typedef struct oci8_string oci8_string_t;
   } \
 } while (0)
 
-#define ATTR_FOR_HNDL 1
-#define ATTR_FOR_DESC 2
-#define ATTR_FOR_BOTH (ATTR_FOR_HNDL | ATTR_FOR_DESC)
-struct oci8_attr {
-  const char *name;
-  ub4 attr;
-  char attr_type;
-  VALUE (*get)(oci8_handle_t *hp, ub4 attr);
-  void (*set)(oci8_handle_t *hp, ub4 attr, VALUE value);
-};
-typedef struct oci8_attr oci8_attr_t;
-
 /* Handle */
 extern VALUE cOCIHandle;
 extern VALUE cOCIEnv;
@@ -260,11 +248,12 @@ void Init_ora_number(void);
 void ora_number_to_str(unsigned char *buf, size_t *lenp, ora_number_t *on, unsigned char size);
 
 /* attr.c */
-void Init_oci8_attr(void);
-VALUE oci8_attr_get(VALUE self, VALUE vtype);
-VALUE oci8_attr_set(VALUE self, VALUE vtype, VALUE vvalue);
-extern oci8_attr_t oci8_attr_list[];
-extern size_t oci8_attr_size;
+VALUE oci8_get_sb1_attr(VALUE self, ub4 attrtype);
+VALUE oci8_get_ub2_attr(VALUE self, ub4 attrtype);
+VALUE oci8_get_sb2_attr(VALUE self, ub4 attrtype);
+VALUE oci8_get_ub4_attr(VALUE self, ub4 attrtype);
+VALUE oci8_get_string_attr(VALUE self, ub4 attrtype);
+VALUE oci8_get_rowid_attr(VALUE self, ub4 attrtype);
 
 #define _D_ fprintf(stderr, "%s:%d - %s\n", __FILE__, __LINE__, __FUNCTION__)
 #endif

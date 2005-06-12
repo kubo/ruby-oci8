@@ -90,10 +90,6 @@ void  Init_oci8_const(void)
 
   rb_define_global_const("OCI_FETCH_NEXT", INT2FIX(OCI_FETCH_NEXT));
 
-  for (i = 0;i < oci8_attr_size;i++) {
-    rb_define_global_const(oci8_attr_list[i].name, INT2FIX(i));
-  }
-
   /* TYPE CODE */
   for (i = 0;i < NUM_OF_OCI8_TYPECODE;i++)
     rb_define_global_const(oci8_typecode[i].name, oci8_typecode[i].value);

@@ -119,8 +119,6 @@ void  Init_oci8_handle(void)
 {
   rb_define_method(cOCIHandle, "initialize", oci8_handle_initialize, 0);
   rb_define_method(cOCIHandle, "free", oci8_handle_free, 0);
-  rb_define_method(cOCIHandle, "attrSet", oci8_attr_set, 2);
-  rb_define_method(cOCIHandle, "attrGet", oci8_attr_get, 1);
 }
 
 void oci8_handle_cleanup(oci8_handle_t *h)

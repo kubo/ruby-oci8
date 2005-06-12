@@ -1,4 +1,21 @@
 2005-06-12  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb: add have_func("OCILobLocatorAssign").
+	* ext/oci8/lob.c: delete OCILobLocator#getChunkSize().
+	   use OCILobAssign instead of OCILobLocatorAssign on Oracle 8.
+	* ext/oci8/attr.c, ext/oci8/oci8.h: delete OCI*#attrGet(), OCI*#attrSet().
+	* ext/oci8/const.c: delete OCI_ATTR_* constants.
+	* ext/oci8/descriptor.c: delete OCIDescriptor#attrGet(), OCIDescriptor#attrSet().
+	* ext/oci8/handle.c: delete OCIHandle#attrGet(), OCIHandle#attrSet().
+	* ext/oci8/param.c: add OCIParam#name, OCIParam#data_type, OCIParam#data_size, 
+	   OCIParam#precision and OCIParam#scale.
+	* ext/oci8/stmt.c: add OCIStmt#stmt_type, OCIStmt#row_count, OCIStmt#rowid and
+	   OCIStmt#param_count.
+	* lib/oci8.rb.in: use OCIParam#name, OCIParam#data_type, OCIParam#data_size, 
+	   OCIParam#precision, OCIParam#scale, OCIStmt#stmt_type, OCIStmt#row_count, 
+	   OCIStmt#rowid and OCIStmt#param_count instead of OCIHandle#attrGet() and
+	   OCIDescriptor#attrGet().
+
+2005-06-12  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: rewrie OraConf#check_lp64().
 	* ext/oci8/bind.c, ext/oci8/descriptor.c, ext/oci8/env.c,
 	  ext/oci8/handle.c, ext/oci8/lob.c, ext/oci8/oci8.h,

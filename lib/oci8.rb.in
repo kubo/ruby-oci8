@@ -495,7 +495,7 @@ class OCI8
         @stmttype = nil
       else
         @stmt = stmt
-        @stmttype = @stmt.attrGet(OCI_ATTR_STMT_TYPE)
+        @stmttype = @stmt.stmt_type
         define_columns()
       end
     end # initialize
@@ -504,7 +504,7 @@ class OCI8
       free_binds()
       @parms = nil
       @stmt.prepare(sql)
-      @stmttype = do_ocicall(@ctx) { @stmt.attrGet(OCI_ATTR_STMT_TYPE) }
+      @stmttype = @stmt.stmt_type
     end # parse
 
     # explicitly indicate the date type of fetched value. run this
@@ -673,7 +673,7 @@ class OCI8
         define_columns()
       when OCI_STMT_UPDATE, OCI_STMT_DELETE, OCI_STMT_INSERT
 	do_ocicall(@ctx) { @stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG]) }
-	@stmt.attrGet(OCI_ATTR_ROW_COUNT)
+	@stmt.row_count
       else
 	do_ocicall(@ctx) { @stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG]) }
 	true
@@ -698,7 +698,7 @@ class OCI8
 
     # Returns the number of processed rows.
     def row_count
-      @stmt.attrGet(OCI_ATTR_ROW_COUNT)
+      @stmt.row_count
     end
 
     # Gets the names of select-list as array. Please use this
@@ -706,7 +706,7 @@ class OCI8
     def get_col_names
       return [] if @parms.nil?
       @parms.collect do |p|
-	do_ocicall(@ctx) { p.attrGet(OCI_ATTR_NAME) }
+	p.name
       end
     end # get_col_names
 
@@ -738,7 +738,7 @@ class OCI8
       if rs = fetch_a_row()
         ret = {}
         @parms.each do |p|
-          ret[p.attrGet(OCI_ATTR_NAME)] = rs.shift
+          ret[p.name] = rs.shift
         end
         ret
       else 
@@ -760,7 +760,7 @@ class OCI8
     # This value is available as bind data.
     # On the other hand it isn't available for other purpose.
     def rowid
-      @stmt.attrGet(OCI_ATTR_ROWID)
+      @stmt.rowid
     end
 
     private
@@ -800,7 +800,7 @@ class OCI8
     end # bind_or_define
 
     def define_columns
-      num_cols = @stmt.attrGet(OCI_ATTR_PARAM_COUNT)
+      num_cols = @stmt.param_count
       @parms = Array.new(num_cols)
       1.upto(num_cols) do |i|
         @parms[i - 1] = @stmt.paramGet(i)
@@ -814,10 +814,10 @@ class OCI8
 
     def define_a_column(i)
       p = @parms[i - 1]
-      datatype = do_ocicall(@ctx) { p.attrGet(OCI_ATTR_DATA_TYPE) }
-      datasize = do_ocicall(@ctx) { p.attrGet(OCI_ATTR_DATA_SIZE) }
-      precision = do_ocicall(@ctx) { p.attrGet(OCI_ATTR_PRECISION) }
-      scale = do_ocicall(@ctx) { p.attrGet(OCI_ATTR_SCALE) }
+      datatype = p.data_type
+      datasize = p.data_size
+      precision = p.precision
+      scale = p.scale
 
       case datatype
       when SQLT_CHR, SQLT_AFC

@@ -58,8 +58,6 @@ static VALUE oci8_rowid_initialize(VALUE self)
 
 void Init_oci8_descriptor(void)
 {
-  rb_define_method(cOCIDescriptor, "attrGet", oci8_attr_get, 1);
-  rb_define_method(cOCIDescriptor, "attrSet", oci8_attr_set, 2);
   rb_define_method(cOCIDescriptor, "free", oci8_handle_free, 0);
   rb_define_method(cOCIRowid, "initialize", oci8_rowid_initialize, 0);
 }

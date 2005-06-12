@@ -325,6 +325,26 @@ static VALUE oci8_stmt_fetch(int argc, VALUE *argv, VALUE self)
   return Qtrue;
 }  
 
+static VALUE oci8_stmt_get_stmt_type(VALUE self)
+{
+  return oci8_get_ub2_attr(self, OCI_ATTR_STMT_TYPE);
+}
+
+static VALUE oci8_stmt_get_row_count(VALUE self)
+{
+  return oci8_get_ub4_attr(self, OCI_ATTR_ROW_COUNT);
+}
+
+static VALUE oci8_stmt_get_rowid(VALUE self)
+{
+  return oci8_get_rowid_attr(self, OCI_ATTR_ROWID);
+}
+
+static VALUE oci8_stmt_get_param_count(VALUE self)
+{
+  return oci8_get_ub4_attr(self, OCI_ATTR_PARAM_COUNT);
+}
+
 /*
 implemented in param.c
 =begin
@@ -350,4 +370,8 @@ void Init_oci8_stmt(void)
   rb_define_method(cOCIStmt, "execute", oci8_stmt_execute, -1);
   rb_define_method(cOCIStmt, "fetch", oci8_stmt_fetch, -1);
   rb_define_method(cOCIStmt, "paramGet", oci8_param_get, 1);
+  rb_define_method(cOCIStmt, "stmt_type", oci8_stmt_get_stmt_type, 0);
+  rb_define_method(cOCIStmt, "row_count", oci8_stmt_get_row_count, 0);
+  rb_define_method(cOCIStmt, "rowid", oci8_stmt_get_rowid, 0);
+  rb_define_method(cOCIStmt, "param_count", oci8_stmt_get_param_count, 0);
 }
