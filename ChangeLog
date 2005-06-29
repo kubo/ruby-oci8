@@ -1,3 +1,6 @@
+2005-06-29  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: don't read sysliblist when instant client.
+
 2005-06-12  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/const.c: delete unused constants.
 	   move some oci_id_* to ext/oci8/error.c.

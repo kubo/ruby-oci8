@@ -145,8 +145,13 @@ class OraConf
     rescue
       print <<EOS
 --------------- common error message --------------
-If you use Oracle instant client, try
-  ruby setup.rb config -- --with-instant-client#{/linux/ !~ RUBY_PLATFORM ? '=/path/to/instantclient10_1' : ''}
+If you use Oracle instant client, try with --with-instant-client.
+
+zip package:
+  ruby setup.rb config -- --with-instant-client=/path/to/instantclient10_1
+
+rpm package:
+  ruby setup.rb config -- --with-instant-client
 
 The latest version of oraconf.rb may solve the problem.
   http://rubyforge.org/cgi-bin/viewcvs.cgi/ruby-oci8/ext/oci8/oraconf.rb?cvsroot=ruby-oci8&only_with_tag=MAIN
@@ -488,7 +493,6 @@ EOS
       # zip package
       lib_dir = ic_dir
       inc_dir = "#{ic_dir}/sdk/include"
-      sysliblist = "#{ic_dir}/sdk/demo/sysliblist"
     else
       # rpm package
       lib_dirs = Dir.glob("/usr/lib/oracle/*/client/lib")
@@ -497,7 +501,6 @@ EOS
       end
       lib_dir = lib_dirs.sort[-1]
       inc_dir = lib_dir.gsub(%r{^/usr/lib/oracle/(.*)/client/lib}, "/usr/include/oracle/\\1/client")
-      sysliblist = ""
     end
 
     @version = "1010"
@@ -555,7 +558,6 @@ EOS
         raise 'failed'
       end
       @libs = " -L#{lib_dir} -lclntsh "
-      @libs += File.read(sysliblist) if File.exist?(sysliblist)
       case RUBY_PLATFORM
       when /linux/
         @libs += " -Wl,-rpath,#{lib_dir}"
