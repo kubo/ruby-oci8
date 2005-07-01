@@ -1,3 +1,6 @@
+2005-07-01  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: try default $libs then get from demo_rdbms.mk.
+
 2005-06-29  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: don't read sysliblist when instant client.
 

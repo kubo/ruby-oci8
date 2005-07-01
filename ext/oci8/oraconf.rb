@@ -111,35 +111,37 @@ class OraConf
       @oracle_home = get_home(oracle_home)
       @version = get_version()
       @cflags = get_cflags()
-      @libs = get_libs()
+      $CFLAGS += @cflags
 
-      $CFLAGS += ' ' + @cflags
-      return if try_link_oci()
-
-      oracle_64bit = File.exist?(@oracle_home + '/lib32')
-      if oracle_64bit && !@lp64
-        # use demo_rdbms.mk for 32bit application.
-        case @version
-        when /^9..$/
-          print("retry with postfix 32.\n")
-          @libs = get_libs('', '32')
-          return if try_link_oci()
-        when /^10..$/
-          print("retry with postfix 32.\n")
-          @libs = get_libs('32', '')
-          return if try_link_oci()
-        end
+      if !@lp64 && File.exist?("#{@oracle_home}/lib32")
+        # ruby - 32bit
+        # oracle - 64bit
+        use_lib32 = true
+      else
+        use_lib32 = false
       end
 
+      # default
       if @version.to_i >= 900
-        if oracle_64bit && !@lp64
+        if use_lib32
           @libs = "-L#{@oracle_home}/lib32 -lclntsh"
         else
           @libs = "-L#{@oracle_home}/lib -lclntsh"
         end
-        print('simplest libs as a last resort.\n')
         return if try_link_oci()
       end
+
+      # get from demo_rdbms.mk
+      if use_lib32
+        if File.exist?("#{@oracle_home}/rdbms/demo/demo_rdbms32.mk")
+          @libs = get_libs('32', '')
+        else
+          @libs = get_libs('', '32')
+        end
+      else
+        @libs = get_libs()
+      end
+      return if try_link_oci()
 
       raise 'cannot compile OCI'
     rescue
