@@ -294,7 +294,7 @@ static VALUE ora_date_cmp(VALUE self, VALUE val)
 {
     ora_date_t *od1, *od2;
     Data_Get_Struct(self, ora_date_t, od1);
-    Check_Object(val, OraDate);
+    Check_Object(val, cOraDate);
     Data_Get_Struct(val, ora_date_t, od2);
     if (od1->century < od2->century) return INT2FIX(-1);
     if (od1->century > od2->century) return INT2FIX(1);
@@ -316,38 +316,46 @@ static VALUE ora_date_cmp(VALUE self, VALUE val)
 /*
  * bind_oradate
  */
-static VALUE bind_oradate_get(oci8_bind_handle_t *bh)
+typedef struct {
+    oci8_bind_t base;
+    ora_date_t od;
+} oci8_bind_oradate_t;
+
+static VALUE bind_oradate_get(oci8_bind_t *bb)
 {
     ora_date_t *od;
+
     VALUE obj = Data_Make_Struct(cOraDate, ora_date_t, NULL, xfree, od);
-    memcpy(od, &bh->value, sizeof(ora_date_t));
+    memcpy(od, bb->valuep, sizeof(ora_date_t));
     return obj;
 }
 
-static void bind_oradate_set(oci8_bind_handle_t *bh, VALUE val)
+static void bind_oradate_set(oci8_bind_t *bb, VALUE val)
 {
     ora_date_t *od;
-    Check_Object(val, OraDate);
+
+    Check_Object(val, cOraDate);
     Data_Get_Struct(val, ora_date_t, od);
-    memcpy(&bh->value, od, sizeof(ora_date_t));
+    memcpy(bb->valuep, od, sizeof(ora_date_t));
 }
 
-static void bind_oradate_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_oradate_init(oci8_bind_t *bb, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
-    bh->valuep = &bh->value;
-    bh->value_sz = sizeof(ora_date_t);
-#ifdef OCI_CHECK_STRICT
-    if (sizeof(ora_data_t) > sizeof(bh->value)) {
-        rb_bug("sizeof(ora_data_t) > sizeof(bh->value)");
-    }
-#endif
+    oci8_bind_oradate_t *bo = (oci8_bind_oradate_t *)bb;
+
+    bb->valuep = &bo->od;
+    bb->value_sz = sizeof(ora_date_t);
 }
 
-static oci8_bind_type_t bind_oradate = {
+static oci8_bind_class_t bind_oradate_class = {
+    {
+        NULL,
+	NULL,
+	sizeof(oci8_bind_oradate_t)
+    },
     bind_oradate_get,
     bind_oradate_set,
     bind_oradate_init,
-    NULL,
     SQLT_DAT,
 };
 
@@ -384,5 +392,5 @@ void Init_ora_date(void)
     rb_define_method(cOraDate, "<=>", ora_date_cmp, 1);
     rb_include_module(cOraDate, rb_mComparable);
 
-    oci8_register_bind_type("OraDate", &bind_oradate);
+    oci8_define_bind_class("OraDate", &bind_oradate_class);
 }

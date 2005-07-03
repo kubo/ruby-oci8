@@ -19,7 +19,7 @@ class OCI8
   VERSION = '@@OCI8_MODULE_VERSION@@'
   CLIENT_VERSION = '@@OCI8_CLIENT_VERSION@@'
   # :stopdoc:
-  RAW = OCI_TYPECODE_RAW
+  RAW = :raw
   # :startdoc:
 
   # sql type (varchar, varchar2)

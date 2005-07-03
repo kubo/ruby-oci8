@@ -3,114 +3,130 @@
 
   Copyright (C) 2002-2005 KUBO Takehiro <kubo@jiubao.org>
 
-=begin
-== OCISvcCtx
-The service context handle is correspond to `session' compared
-with other general database interfaces although OCI constains OCISession.
-
-This handle cooperates with a ((<server handle|OCIServer>)), a
-((<user session handle|OCISession>)), and a transaction handle.
-But these three handles work at the back of it. So you don't have to use
-them except when you have special purpose.
-
-super class: ((<OCIHandle>))
-
-correspond native OCI datatype: ((|OCISvcCtx|))
-=end
 */
 #include "oci8.h"
 
-enum {T_IMPLICIT, T_EXPLICIT};
+VALUE cOCISvcCtx;
+
+enum logon_type_t {T_IMPLICIT, T_EXPLICIT};
+
+typedef struct  {
+    oci8_base_t base;
+    enum logon_type_t logon_type;
+    OCISession *authhp;
+    OCIServer *srvhp;
+} oci8_svcctx_t;
+
+static void oci8_svcctx_free(oci8_base_t *base)
+{
+    oci8_svcctx_t *svcctx = (oci8_svcctx_t *)base;
+    if (svcctx->authhp) {
+        OCIHandleFree(svcctx->authhp, OCI_HTYPE_SESSION);
+	svcctx->authhp = NULL;
+    }
+    if (svcctx->srvhp) {
+        OCIHandleFree(svcctx->srvhp, OCI_HTYPE_SERVER);
+	svcctx->srvhp = NULL;
+    }
+}
+
+static oci8_base_class_t oci8_svcctx_class = {
+    NULL,
+    oci8_svcctx_free,
+    sizeof(oci8_svcctx_t)
+};
+
 static VALUE sym_SYSDBA;
 static VALUE sym_SYSOPER;
 
 static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
 {
-  VALUE vusername;
-  VALUE vpassword;
-  VALUE vdbname;
-  VALUE vmode;
-  oci8_handle_t *h;
-  oci8_handle_t *envh;
-  oci8_string_t u, p, d;
-  sword rv;
+    VALUE vusername;
+    VALUE vpassword;
+    VALUE vdbname;
+    VALUE vmode;
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    sword rv;
 
-  rb_scan_args(argc, argv, "31", &vusername, &vpassword, &vdbname, &vmode);
+    rb_scan_args(argc, argv, "31", &vusername, &vpassword, &vdbname, &vmode);
 
-  Get_Handle(self, h); /* 0 */
-  Check_Handle(oci8_env, OCIEnv, envh); /* 1 */
-  Get_String(vusername, u); /* 2 */
-  Get_String(vpassword, p); /* 3 */
-  Get_String(vdbname, d); /* 4 */
-  if (NIL_P(vmode)) {
+    StringValue(vusername); /* 1 */
+    StringValue(vpassword); /* 2 */
+    if (!NIL_P(vdbname)) {
+        StringValue(vdbname); /* 3 */
+    }
+    if (NIL_P(vmode)) { /* 4 */
 #if defined(HAVE_OCISESSIONGET)
 #error TODO
 #elif defined(HAVE_OCILOGON2)
 #error TODO
 #else
-    rv = OCILogon(envh->hp, envh->errhp, (OCISvcCtx **)&h->hp,
-		  u.ptr, u.len, p.ptr, p.len, d.ptr, d.len);
-    if (rv != OCI_SUCCESS) {
-      oci8_raise(envh->errhp, rv, NULL);
-    }
+        rv = OCILogon(oci8_envhp, oci8_errhp, (OCISvcCtx **)&svcctx->base.hp,
+		      RSTRING(vusername)->ptr, RSTRING(vusername)->len,
+		      RSTRING(vpassword)->ptr, RSTRING(vpassword)->len,
+		      NIL_P(vdbname) ? NULL : RSTRING(vdbname)->ptr,
+		      NIL_P(vdbname) ? 0 : RSTRING(vdbname)->len);
+	if (rv != OCI_SUCCESS) {
+	    oci8_raise(oci8_errhp, rv, NULL);
+	}
 #endif
-    h->errhp = envh->errhp;
-    h->u.svcctx.logon_type = T_IMPLICIT;
-  } else {
-    ub4 mode;
-    OCISession *authhp = NULL;
-    OCIServer *srvhp = NULL;
-
-    Check_Type(vmode, T_SYMBOL);
-    if (vmode == sym_SYSDBA) {
-      mode = OCI_SYSDBA;
-    } else if (vmode == sym_SYSOPER) {
-      mode = OCI_SYSOPER;
+	svcctx->base.type = OCI_HTYPE_SVCCTX;
+	svcctx->logon_type = T_IMPLICIT;
     } else {
-      rb_raise(rb_eArgError, "invalid privilege name %s (expect :SYSDBA or :SYSOPER)", rb_id2name(SYM2ID(vmode)));
+        ub4 mode;
+
+	Check_Type(vmode, T_SYMBOL);
+	if (vmode == sym_SYSDBA) {
+	    mode = OCI_SYSDBA;
+	} else if (vmode == sym_SYSOPER) {
+	    mode = OCI_SYSOPER;
+	} else {
+	    rb_raise(rb_eArgError, "invalid privilege name %s (expect :SYSDBA or :SYSOPER)", rb_id2name(SYM2ID(vmode)));
+	}
+	/* allocate OCI handles. */
+	rv = OCIHandleAlloc(oci8_envhp, (void*)&svcctx->base.hp, OCI_HTYPE_SVCCTX, 0, 0);
+	if (rv != OCI_SUCCESS)
+	    oci8_env_raise(oci8_envhp, rv);
+	svcctx->base.type = OCI_HTYPE_SVCCTX;
+	rv = OCIHandleAlloc(oci8_envhp, (void*)&svcctx->authhp, OCI_HTYPE_SESSION, 0, 0);
+	if (rv != OCI_SUCCESS)
+	    oci8_env_raise(oci8_envhp, rv);
+	rv = OCIHandleAlloc(oci8_envhp, (void*)&svcctx->srvhp, OCI_HTYPE_SERVER, 0, 0);
+	if (rv != OCI_SUCCESS)
+	    oci8_env_raise(oci8_envhp, rv);
+
+	/* set username and password to OCISession. */
+	rv = OCIAttrSet(svcctx->authhp, OCI_HTYPE_SESSION,
+			RSTRING(vusername)->ptr, RSTRING(vusername)->len,
+			OCI_ATTR_USERNAME, oci8_errhp);
+	if (rv != OCI_SUCCESS)
+	    oci8_raise(oci8_errhp, rv, NULL);
+	rv = OCIAttrSet(svcctx->authhp, OCI_HTYPE_SESSION,
+			RSTRING(vpassword)->ptr, RSTRING(vpassword)->len,
+			OCI_ATTR_PASSWORD, oci8_errhp);
+	if (rv != OCI_SUCCESS)
+	    oci8_raise(oci8_errhp, rv, NULL);
+
+	/* attach to server and set to OCISvcCtx. */
+	rv = OCIServerAttach(svcctx->srvhp, oci8_errhp,
+			     NIL_P(vdbname) ? NULL : RSTRING(vdbname)->ptr,
+			     NIL_P(vdbname) ? 0 : RSTRING(vdbname)->len, OCI_DEFAULT);
+	if (rv != OCI_SUCCESS)
+	    oci8_raise(oci8_errhp, rv, NULL);
+	rv = OCIAttrSet(svcctx->base.hp, OCI_HTYPE_SVCCTX, svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp);
+	if (rv != OCI_SUCCESS)
+	    oci8_raise(oci8_errhp, rv, NULL);
+
+	/* attach to server and set to OCISvcCtx. */
+	rv = OCISessionBegin(svcctx->base.hp, oci8_errhp, svcctx->authhp, OCI_CRED_RDBMS, mode);
+	if (rv != OCI_SUCCESS)
+	    oci8_raise(oci8_errhp, rv, NULL);
+	rv = OCIAttrSet(svcctx->base.hp, OCI_HTYPE_SVCCTX, svcctx->authhp, 0, OCI_ATTR_SESSION, oci8_errhp);
+	if (rv != OCI_SUCCESS)
+	    oci8_raise(oci8_errhp, rv, NULL);
+	svcctx->logon_type = T_EXPLICIT;
     }
-    h->errhp = envh->errhp;
-    /* allocate OCI handles. */
-    rv = OCIHandleAlloc(envh->hp, (void*)&h->hp, OCI_HTYPE_SVCCTX, 0, 0);
-    if (rv != OCI_SUCCESS)
-      oci8_env_raise(envh->hp, rv);
-    rv = OCIHandleAlloc(envh->hp, (void*)&h->u.svcctx.authhp, OCI_HTYPE_SESSION, 0, 0);
-    if (rv != OCI_SUCCESS)
-      oci8_env_raise(envh->hp, rv);
-    authhp = h->u.svcctx.authhp;
-    rv = OCIHandleAlloc(envh->hp, (void*)&h->u.svcctx.srvhp, OCI_HTYPE_SERVER, 0, 0);
-    if (rv != OCI_SUCCESS)
-      oci8_env_raise(envh->hp, rv);
-    srvhp = h->u.svcctx.srvhp;
-
-    /* set username and password to OCISession. */
-    rv = OCIAttrSet(authhp, OCI_HTYPE_SESSION, u.ptr, u.len, OCI_ATTR_USERNAME, h->errhp);
-    if (rv != OCI_SUCCESS)
-      oci8_raise(h->errhp, rv, NULL);
-    rv = OCIAttrSet(authhp, OCI_HTYPE_SESSION, p.ptr, p.len, OCI_ATTR_PASSWORD, h->errhp);
-    if (rv != OCI_SUCCESS)
-      oci8_raise(h->errhp, rv, NULL);
-
-    /* attach to server and set to OCISvcCtx. */
-    rv = OCIServerAttach(srvhp, h->errhp, d.ptr, d.len, OCI_DEFAULT);
-    if (rv != OCI_SUCCESS)
-      oci8_raise(h->errhp, rv, NULL);
-    rv = OCIAttrSet(h->hp, OCI_HTYPE_SVCCTX, srvhp, 0, OCI_ATTR_SERVER, h->errhp);
-    if (rv != OCI_SUCCESS)
-      oci8_raise(h->errhp, rv, NULL);
-
-    /* attach to server and set to OCISvcCtx. */
-    rv = OCISessionBegin(h->hp, h->errhp, authhp, OCI_CRED_RDBMS, mode);
-    if (rv != OCI_SUCCESS)
-      oci8_raise(h->errhp, rv, NULL);
-    rv = OCIAttrSet(h->hp, OCI_HTYPE_SVCCTX, authhp, 0, OCI_ATTR_SESSION, h->errhp);
-    if (rv != OCI_SUCCESS)
-      oci8_raise(h->errhp, rv, NULL);
-    h->u.svcctx.logon_type = T_EXPLICIT;
-  }
-  h->type = OCI_HTYPE_SVCCTX;
-  oci8_link(envh, h);
-  return Qnil;
+    return Qnil;
 }
 
 /*
@@ -127,27 +143,27 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
 */
 static VALUE oci8_svcctx_logoff(VALUE self)
 {
-  oci8_handle_t *h;
-  sword rv;
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    sword rv;
 
-  Get_Handle(self, h); /* 0 */
-  switch (h->u.svcctx.logon_type) {
-  case T_IMPLICIT:
-    rv = OCILogoff(h->hp, h->errhp);
-    if (rv != OCI_SUCCESS)
-      oci8_raise(h->errhp, rv, NULL);
-    break;
-  case T_EXPLICIT:
-    rv = OCISessionEnd(h->hp, h->errhp, h->u.svcctx.authhp, OCI_DEFAULT);
-    if (rv != OCI_SUCCESS)
-      oci8_raise(h->errhp, rv, NULL);
-    rv = OCIServerDetach(h->u.svcctx.srvhp, h->errhp, OCI_DEFAULT);
-    if (rv != OCI_SUCCESS)
-      oci8_raise(h->errhp, rv, NULL);
-    break;
-  }
-  oci8_handle_free(self);
-  return self;
+    switch (svcctx->logon_type) {
+    case T_IMPLICIT:
+        rv = OCILogoff(svcctx->base.hp, oci8_errhp);
+	if (rv != OCI_SUCCESS)
+	    oci8_raise(oci8_errhp, rv, NULL);
+	svcctx->base.type = 0;
+	break;
+    case T_EXPLICIT:
+        rv = OCISessionEnd(svcctx->base.hp, oci8_errhp, svcctx->authhp, OCI_DEFAULT);
+	if (rv != OCI_SUCCESS)
+	    oci8_raise(oci8_errhp, rv, NULL);
+	rv = OCIServerDetach(svcctx->srvhp, oci8_errhp, OCI_DEFAULT);
+	if (rv != OCI_SUCCESS)
+	    oci8_raise(oci8_errhp, rv, NULL);
+	break;
+    }
+    oci8_base_free(&svcctx->base);
+    return self;
 }
 
 /*
@@ -168,27 +184,25 @@ static VALUE oci8_svcctx_logoff(VALUE self)
      correspond native OCI function: ((|OCIPasswordChange|))
 =end
 */
-static VALUE oci8_password_change(int argc, VALUE *argv, VALUE self)
+static VALUE oci8_password_change(VALUE self, VALUE username, VALUE opasswd, VALUE npasswd, VALUE mode)
 {
-  VALUE vusername, vopasswd, vnpasswd, vmode;
-  oci8_handle_t *h;
-  oci8_string_t username, opasswd, npasswd;
-  ub4 mode;
-  sword rv;
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    sword rv;
 
-  rb_scan_args(argc, argv, "31", &vusername, &vopasswd, &vnpasswd, &vmode);
-  Get_Handle(self, h); /* 0 */
-  Get_String(vusername, username); /* 1 */
-  Get_String(vopasswd, opasswd); /* 2 */
-  Get_String(vnpasswd, npasswd); /* 3 */
-  Get_Int_With_Default(argc, 4, vmode, mode, OCI_DEFAULT); /* 4 */
+    StringValue(username); /* 1 */
+    StringValue(opasswd); /* 2 */
+    StringValue(npasswd); /* 3 */
+    Check_Type(mode, T_FIXNUM); /* 4 */
 
-  rv = OCIPasswordChange(h->hp, h->errhp, username.ptr, username.len,
-			 opasswd.ptr, opasswd.len, npasswd.ptr, npasswd.len, mode);
-  if (rv != OCI_SUCCESS) {
-    oci8_raise(h->errhp, rv, NULL);
-  }
-  return self;
+    rv = OCIPasswordChange(svcctx->base.hp, oci8_errhp,
+			   RSTRING(username)->ptr, RSTRING(username)->len,
+			   RSTRING(opasswd)->ptr, RSTRING(opasswd)->len,
+			   RSTRING(npasswd)->ptr, RSTRING(npasswd)->len,
+			   FIX2INT(mode));
+    if (rv != OCI_SUCCESS) {
+        oci8_raise(oci8_errhp, rv, NULL);
+    }
+    return self;
 }
 
 /*
@@ -205,20 +219,19 @@ static VALUE oci8_password_change(int argc, VALUE *argv, VALUE self)
 */
 static VALUE oci8_trans_commit(int argc, VALUE *argv, VALUE self)
 {
-  VALUE vflags;
-  oci8_handle_t *h;
-  ub4 flags;
-  sword rv;
+    VALUE vflags;
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    ub4 flags;
+    sword rv;
 
-  rb_scan_args(argc, argv, "01", &vflags);
-  Get_Handle(self, h); /* 0 */
-  Get_Int_With_Default(argc, 1, vflags, flags, OCI_DEFAULT); /* 1 */
+    rb_scan_args(argc, argv, "01", &vflags);
+    Get_Int_With_Default(argc, 1, vflags, flags, OCI_DEFAULT); /* 1 */
 
-  rv = OCITransCommit(h->hp, h->errhp, flags);
-  if (rv != OCI_SUCCESS) {
-    oci8_raise(h->errhp, rv, NULL);
-  }
-  return self;
+    rv = OCITransCommit(svcctx->base.hp, oci8_errhp, flags);
+    if (rv != OCI_SUCCESS) {
+        oci8_raise(oci8_errhp, rv, NULL);
+    }
+    return self;
 }
 
 /*
@@ -235,137 +248,139 @@ static VALUE oci8_trans_commit(int argc, VALUE *argv, VALUE self)
 */
 static VALUE oci8_trans_rollback(int argc, VALUE *argv, VALUE self)
 {
-  VALUE vflags;
-  oci8_handle_t *h;
-  ub4 flags;
-  sword rv;
+    VALUE vflags;
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    ub4 flags;
+    sword rv;
 
-  rb_scan_args(argc, argv, "01", &vflags);
-  Get_Handle(self, h); /* 0 */
-  Get_Int_With_Default(argc, 1, vflags, flags, OCI_DEFAULT); /* 1 */
+    rb_scan_args(argc, argv, "01", &vflags);
+    Get_Int_With_Default(argc, 1, vflags, flags, OCI_DEFAULT); /* 1 */
 
-  rv = OCITransRollback(h->hp, h->errhp, flags);
-  if (rv != OCI_SUCCESS) {
-    oci8_raise(h->errhp, rv, NULL);
-  }
-  return self;
+    rv = OCITransRollback(svcctx->base.hp, oci8_errhp, flags);
+    if (rv != OCI_SUCCESS) {
+        oci8_raise(oci8_errhp, rv, NULL);
+    }
+    return self;
 }
 
 static VALUE oci8_svcctx_non_blocking_p(VALUE self)
 {
-  oci8_handle_t *h;
-  sb1 non_blocking;
-  sword rv;
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    sb1 non_blocking;
+    sword rv;
 
-  Get_Handle(self, h); /* 0 */
-  if (h->u.svcctx.srvhp == NULL) {
-    rv = OCIAttrGet(h->hp, OCI_HTYPE_SVCCTX, &h->u.svcctx.srvhp, 0, OCI_ATTR_SERVER, h->errhp);
+    if (svcctx->srvhp == NULL) {
+        rv = OCIAttrGet(svcctx->base.hp, OCI_HTYPE_SVCCTX, &svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp);
+	if (rv != OCI_SUCCESS)
+	    oci8_raise(oci8_errhp, rv, NULL);
+    }
+    rv = OCIAttrGet(svcctx->srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp);
     if (rv != OCI_SUCCESS)
-      oci8_raise(h->errhp, rv, NULL);
-  }
-  rv = OCIAttrGet(h->u.svcctx.srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, h->errhp);
-  if (rv != OCI_SUCCESS)
-    oci8_raise(h->errhp, rv, NULL);
-  return non_blocking ? Qtrue : Qfalse;
+        oci8_raise(oci8_errhp, rv, NULL);
+    return non_blocking ? Qtrue : Qfalse;
 }
 
 static VALUE oci8_svcctx_set_non_blocking(VALUE self, VALUE val)
 {
-  oci8_handle_t *h;
-  sb1 non_blocking;
-  sword rv;
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    sb1 non_blocking;
+    sword rv;
 
-  Get_Handle(self, h); /* 0 */
-  if (h->u.svcctx.srvhp == NULL) {
-    rv = OCIAttrGet(h->hp, OCI_HTYPE_SVCCTX, &h->u.svcctx.srvhp, 0, OCI_ATTR_SERVER, h->errhp);
+    if (svcctx->srvhp == NULL) {
+        rv = OCIAttrGet(svcctx->base.hp, OCI_HTYPE_SVCCTX, &svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp);
+	if (rv != OCI_SUCCESS)
+	    oci8_raise(oci8_errhp, rv, NULL);
+    }
+    rv = OCIAttrGet(svcctx->srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp);
     if (rv != OCI_SUCCESS)
-      oci8_raise(h->errhp, rv, NULL);
-  }
-  rv = OCIAttrGet(h->u.svcctx.srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, h->errhp);
-  if (rv != OCI_SUCCESS)
-    oci8_raise(h->errhp, rv, NULL);
-  if (RTEST(val) && !non_blocking) {
-    /* toggle blocking / non-blocking. */
-    rv = OCIAttrSet(h->u.svcctx.srvhp, OCI_HTYPE_SERVER, 0, 0, OCI_ATTR_NONBLOCKING_MODE, h->errhp);
-    if (rv != OCI_SUCCESS)
-      oci8_raise(h->errhp, rv, NULL);
-  }
-  return val;
+        oci8_raise(oci8_errhp, rv, NULL);
+    if (RTEST(val) && !non_blocking) {
+        /* toggle blocking / non-blocking. */
+        rv = OCIAttrSet(svcctx->srvhp, OCI_HTYPE_SERVER, 0, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp);
+	if (rv != OCI_SUCCESS)
+	    oci8_raise(oci8_errhp, rv, NULL);
+    }
+    return val;
 }
 
 static VALUE oci8_server_version(VALUE self)
 {
-  oci8_handle_t *h;
-  OraText buf[1024];
-  sword rv;
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    OraText buf[1024];
+    sword rv;
 
-  Get_Handle(self, h); /* 0 */
-  rv = OCIServerVersion(h->hp, h->errhp, buf, sizeof(buf), h->type);
-  if (rv != OCI_SUCCESS)
-    oci8_raise(h->errhp, rv, NULL);
-  return rb_str_new2(buf);
+    rv = OCIServerVersion(svcctx->base.hp, oci8_errhp, buf, sizeof(buf), OCI_HTYPE_SVCCTX);
+    if (rv != OCI_SUCCESS)
+        oci8_raise(oci8_errhp, rv, NULL);
+    return rb_str_new2(buf);
 }
 
 #ifdef HAVE_OCISERVERRELEASE
 static VALUE oci8_server_release(VALUE self)
 {
-  oci8_handle_t *h;
-  OraText buf[1024];
-  ub4 version = 0;
-  sword rv;
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    OraText buf[1024];
+    ub4 version = 0;
+    sword rv;
 
-  Get_Handle(self, h); /* 0 */
-  rv = OCIServerRelease(h->hp, h->errhp, buf, sizeof(buf), h->type, &version);
-  if (rv != OCI_SUCCESS)
-    oci8_raise(h->errhp, rv, NULL);
-  return rb_ary_new3(2, INT2FIX(version), rb_str_new2(buf));
+    rv = OCIServerRelease(svcctx->base.hp, oci8_errhp, buf, sizeof(buf), OCI_HTYPE_SVCCTX, &version);
+    if (rv != OCI_SUCCESS)
+        oci8_raise(oci8_errhp, rv, NULL);
+    return rb_ary_new3(2, INT2FIX(version), rb_str_new2(buf));
 }
 #endif
 
 static VALUE oci8_break(VALUE self)
 {
-  oci8_handle_t *h;
-  sword rv;
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    sword rv;
 
-  Get_Handle(self, h); /* 0 */
-  rv = OCIBreak(h->hp, h->errhp);
-  if (rv != OCI_SUCCESS)
-    oci8_raise(h->errhp, rv, NULL);
-  return self;
+    rv = OCIBreak(svcctx->base.hp, oci8_errhp);
+    if (rv != OCI_SUCCESS)
+      oci8_raise(oci8_errhp, rv, NULL);
+    return self;
 }
 
 #ifdef HAVE_OCIRESET
 static VALUE oci8_reset(VALUE self)
 {
-  oci8_handle_t *h;
-  sword rv;
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    sword rv;
 
-  Get_Handle(self, h); /* 0 */
-  rv = OCIReset(h->hp, h->errhp);
-  if (rv != OCI_SUCCESS)
-    oci8_raise(h->errhp, rv, NULL);
-  return self;
+    rv = OCIReset(svcctx->base.hp, oci8_errhp);
+    if (rv != OCI_SUCCESS)
+      oci8_raise(oci8_errhp, rv, NULL);
+    return self;
 }
 #endif
 
 void Init_oci8_svcctx(void)
 {
-  sym_SYSDBA = ID2SYM(rb_intern("SYSDBA"));
-  sym_SYSOPER = ID2SYM(rb_intern("SYSOPER"));
+    cOCISvcCtx = oci8_define_class("OCISvcCtx", &oci8_svcctx_class);
 
-  rb_define_method(cOCISvcCtx, "initialize", oci8_svcctx_initialize, -1);
-  rb_define_method(cOCISvcCtx, "logoff", oci8_svcctx_logoff, 0);
-  rb_define_method(cOCISvcCtx, "passwordChange", oci8_password_change, -1);
-  rb_define_method(cOCISvcCtx, "commit", oci8_trans_commit, -1);
-  rb_define_method(cOCISvcCtx, "rollback", oci8_trans_rollback, -1);
-  rb_define_method(cOCISvcCtx, "non_blocking?", oci8_svcctx_non_blocking_p, 0);
-  rb_define_method(cOCISvcCtx, "non_blocking=", oci8_svcctx_set_non_blocking, 1);
-  rb_define_method(cOCISvcCtx, "version", oci8_server_version, 0);
+    sym_SYSDBA = ID2SYM(rb_intern("SYSDBA"));
+    sym_SYSOPER = ID2SYM(rb_intern("SYSOPER"));
+
+    rb_define_method(cOCISvcCtx, "initialize", oci8_svcctx_initialize, -1);
+    rb_define_method(cOCISvcCtx, "logoff", oci8_svcctx_logoff, 0);
+    rb_define_method(cOCISvcCtx, "passwordChange", oci8_password_change, 4);
+    rb_define_method(cOCISvcCtx, "commit", oci8_trans_commit, -1);
+    rb_define_method(cOCISvcCtx, "rollback", oci8_trans_rollback, -1);
+    rb_define_method(cOCISvcCtx, "non_blocking?", oci8_svcctx_non_blocking_p, 0);
+    rb_define_method(cOCISvcCtx, "non_blocking=", oci8_svcctx_set_non_blocking, 1);
+    rb_define_method(cOCISvcCtx, "version", oci8_server_version, 0);
 #ifdef HAVE_OCISERVERRELEASE
-  rb_define_method(cOCISvcCtx, "release", oci8_server_release, 0);
+    rb_define_method(cOCISvcCtx, "release", oci8_server_release, 0);
 #endif
-  rb_define_method(cOCISvcCtx, "break", oci8_break, 0);
+    rb_define_method(cOCISvcCtx, "break", oci8_break, 0);
 #ifdef HAVE_OCIRESET
-  rb_define_method(cOCISvcCtx, "reset", oci8_reset, 0);
+    rb_define_method(cOCISvcCtx, "reset", oci8_reset, 0);
 #endif
+}
+
+oci8_base_t *oci8_get_svcctx(VALUE obj)
+{
+    oci8_base_t *base;
+    Check_Handle(obj, cOCISvcCtx, base);
+    return base;
 }

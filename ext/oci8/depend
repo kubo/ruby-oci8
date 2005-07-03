@@ -1,14 +1,13 @@
 Makefile: extconf.rb oraconf.rb
 	$(RUBY) extconf.rb
 oci8.o: $(srcdir)/oci8.c $(srcdir)/oci8.h Makefile
-handle.o: $(srcdir)/handle.c $(srcdir)/oci8.h Makefile
 const.o: $(srcdir)/const.c $(srcdir)/oci8.h Makefile
 env.o: $(srcdir)/env.c $(srcdir)/oci8.h Makefile
 error.o: $(srcdir)/error.c $(srcdir)/oci8.h Makefile
 svcctx.o: $(srcdir)/svcctx.c $(srcdir)/oci8.h Makefile
 stmt.o: $(srcdir)/stmt.c $(srcdir)/oci8.h Makefile
 bind.o: $(srcdir)/bind.c $(srcdir)/oci8.h Makefile
-descriptor.o: $(srcdir)/descriptor.c $(srcdir)/oci8.h Makefile
+rowid.o: $(srcdir)/rowid.c $(srcdir)/oci8.h Makefile
 param.o: $(srcdir)/param.c $(srcdir)/oci8.h Makefile
 lob.o: $(srcdir)/lob.c $(srcdir)/oci8.h Makefile
 oradate.o: $(srcdir)/oradate.c $(srcdir)/oci8.h Makefile

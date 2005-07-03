@@ -1,3 +1,4 @@
+/* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
   env.c - part of ruby-oci8
 
@@ -15,50 +16,43 @@ correspond native OCI datatype: ((|OCIEnv|))
 */
 #include "oci8.h"
 
-VALUE oci8_env;
+OCIEnv *oci8_envhp;
+OCIError *oci8_errhp;
 
 static dvoid *rb_oci8_maloc(dvoid *ctxp, size_t size)
 {
-  return ruby_xmalloc(size);
+    return ruby_xmalloc(size);
 }
 
 static dvoid *rb_oci8_raloc(dvoid *ctxp, dvoid *memptr, size_t newsize)
 {
-  return ruby_xrealloc(memptr, newsize);
+    return ruby_xrealloc(memptr, newsize);
 }
 
 static void rb_oci8_mfree(dvoid *ctxp, dvoid *memptr)
 {
-  ruby_xfree(memptr);
-}
-
-static VALUE oci8_env_initialize(VALUE self)
-{
-  oci8_handle_t *h;
-  sword rv;
-
-  Get_Handle(self, h);
-#ifdef HAVE_OCIENVCREATE
-  rv = OCIEnvCreate((OCIEnv **)&h->hp, OCI_OBJECT, NULL, rb_oci8_maloc, rb_oci8_raloc, rb_oci8_mfree, 0, NULL);
-#else
-  rv = OCIEnvInit((OCIEnv **)&h->hp, OCI_DEFAULT, 0, NULL);
-#endif
-  if (rv != OCI_SUCCESS)
-    oci8_env_raise(h->hp, rv);
-  h->type = OCI_HTYPE_ENV;
-  rv = OCIHandleAlloc(h->hp, (dvoid *)&h->errhp, OCI_HTYPE_ERROR, 0, NULL);
-  if (rv != OCI_SUCCESS)
-    oci8_env_raise(h->hp, rv);
-  h->envh = h;
-  return Qnil;
+    ruby_xfree(memptr);
 }
 
 void Init_oci8_env(void)
 {
-#ifndef HAVE_OCIENVCREATE
-  OCIInitialize(OCI_OBJECT, NULL, rb_oci8_maloc, rb_oci8_raloc, rb_oci8_mfree);
+    sword rv;
+
+#ifdef HAVE_OCIENVCREATE
+    rv = OCIEnvCreate(&oci8_envhp, OCI_OBJECT, NULL, rb_oci8_maloc, rb_oci8_raloc, rb_oci8_mfree, 0, NULL);
+#else
+    rv = OCIInitialize(OCI_OBJECT, NULL, rb_oci8_maloc, rb_oci8_raloc, rb_oci8_mfree);
+    if (rv != OCI_SUCCESS) {
+        /* TODO: more proper error */
+        oci8_env_raise(h->hp, rv);
+    }
+    rv = OCIEnvInit(&oci8_envhp, OCI_DEFAULT, 0, NULL);
 #endif
-  rb_define_method(cOCIEnv, "initialize", oci8_env_initialize, 0);
-  oci8_env = rb_funcall(cOCIEnv, oci8_id_new, 0);
-  rb_global_variable(&oci8_env);
+    if (rv != OCI_SUCCESS) {
+        /* TODO: more proper error */
+        oci8_env_raise(oci8_envhp, rv);
+    }
+    rv = OCIHandleAlloc(oci8_envhp, (dvoid *)&oci8_errhp, OCI_HTYPE_ERROR, 0, NULL);
+    if (rv != OCI_SUCCESS)
+        oci8_env_raise(oci8_envhp, rv);
 }

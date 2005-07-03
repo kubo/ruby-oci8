@@ -12,6 +12,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <assert.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -21,99 +22,63 @@ extern "C" {
 #endif
 #include "extconf.h"
 
+#define DEBUG_CORE_FILE 1
+#define OCI8_DEBUG 1
+#ifdef OCI8_DEBUG
+#define ASSERT(v) if (!(v)) { rb_bug("%s:%d: " #v, __FILE__, __LINE__); }
+#define ASSERT_(v) if (!(v)) { abort(); }
+#else
+#define ASSERT(v)
+#endif
+
 #define IS_OCI_ERROR(v) (((v) != OCI_SUCCESS) && ((v) != OCI_SUCCESS_WITH_INFO))
 
-/* OCIEnv, OCISvcCtx, OCIStmt, OCIDescribe, OCIParam */
-struct oci8_handle {
-  ub4 type;
-  dvoid *hp;
-  struct oci8_handle *envh;
-  OCIError *errhp;
-  VALUE self;
-  struct oci8_handle *parent;
-  size_t size;
-  struct oci8_handle **children;
-  /* End of common part */
-  union {
-    struct {
-      int logon_type;
-      OCISession *authhp;
-      OCIServer *srvhp;
-    } svcctx;
-    struct {
-      int char_width;
-    } lob_locator;
-  } u;
-};
-typedef struct oci8_handle oci8_handle_t;
+typedef struct oci8_base_class oci8_base_class_t;
+typedef struct oci8_bind_class oci8_bind_class_t;
 
-typedef struct oci8_bind_type oci8_bind_type_t;
+typedef struct oci8_base oci8_base_t;
+typedef struct oci8_bind oci8_bind_t;
 
-/* OCIBind, OCIDefine */
-struct oci8_bind_handle {
-  ub4 type;
-  dvoid *hp;
-  struct oci8_handle *envh;
-  OCIError *errhp;
-  VALUE self;
-  struct oci8_handle *parent;
-  size_t size;
-  struct oci8_handle **children;
-  /* End of common part */
-  oci8_bind_type_t *bind_type;
-  void *valuep;
-  sb4 value_sz;
-  ub2 rlen;
-  sb2 ind;
-  VALUE obj;
-  union {
-    sword sw;
-    double dbl;
-    void *hp;
-    char padding[21];
-  } value;
-};
-typedef struct oci8_bind_handle oci8_bind_handle_t;
-
-struct oci8_bind_type {
-  VALUE (*get)(oci8_bind_handle_t *bh);
-  void (*set)(oci8_bind_handle_t *bh, VALUE val);
-  void (*init)(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale);
-  void (*free)(oci8_bind_handle_t *bh);
-  ub2 dty;
+struct oci8_base_class {
+    void (*mark)(oci8_base_t *base);
+    void (*free)(oci8_base_t *base);
+    size_t size;
 };
 
-#define Get_Handle(obj, hp) do { \
-  Data_Get_Struct(obj, oci8_handle_t, hp); \
-} while (0);
+struct oci8_bind_class {
+    oci8_base_class_t base;
+    VALUE (*get)(oci8_bind_t *bh);
+    void (*set)(oci8_bind_t *bh, VALUE val);
+    void (*init)(oci8_bind_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale);
+    ub2 dty;
+};
 
-#define Check_Handle(obj, name, hp) do {\
-  if (!rb_obj_is_instance_of(obj, c##name)) { \
-    rb_raise(rb_eTypeError, "invalid argument %s (expect " #name ")", rb_class2name(CLASS_OF(obj))); \
-  } \
-  Data_Get_Struct(obj, oci8_handle_t, hp); \
+struct oci8_base {
+    ub4 type;
+    dvoid *hp;
+    VALUE self;
+    oci8_base_class_t *klass;
+};
+
+struct oci8_bind {
+    oci8_base_t base;
+    oci8_base_t *next;
+    void *valuep;
+    sb4 value_sz;
+    ub2 rlen;
+    sb2 ind;
+};
+
+#define Check_Handle(obj, klass, hp) do { \
+    if (!rb_obj_is_kind_of(obj, klass)) { \
+        rb_raise(rb_eTypeError, "invalid argument %s (expect %s)", rb_class2name(CLASS_OF(obj)), rb_class2name(klass)); \
+    } \
+    Data_Get_Struct(obj, oci8_base_t, hp); \
 } while (0)
 
-#define Check_Object(obj, name) do {\
-  if (!rb_obj_is_kind_of(obj, c##name)) { \
-    rb_raise(rb_eTypeError, "invalid argument %s (expect " #name ")", rb_class2name(CLASS_OF(obj))); \
-  } \
-} while (0)
-
-struct oci8_string {
-  OraText *ptr;
-  ub4 len;
-};
-typedef struct oci8_string oci8_string_t;
-
-#define Get_String(obj, s) do { \
-  if (!NIL_P(obj)) { \
-    Check_Type(obj, T_STRING); \
-    s.ptr = RSTRING(obj)->ptr; \
-    s.len = RSTRING(obj)->len; \
-  } else { \
-    s.ptr = NULL; \
-    s.len = 0; \
+#define Check_Object(obj, klass) do {\
+  if (!rb_obj_is_kind_of(obj, klass)) { \
+    rb_raise(rb_eTypeError, "invalid argument %s (expect %s)", rb_class2name(CLASS_OF(obj)), rb_class2name(klass)); \
   } \
 } while (0)
 
@@ -126,40 +91,19 @@ typedef struct oci8_string oci8_string_t;
   } \
 } while (0)
 
-/* Handle */
-extern VALUE cOCIHandle;
-extern VALUE cOCIEnv;
-extern VALUE cOCISvcCtx;
-extern VALUE cOCIStmt;
-extern VALUE cOCIBind;
-
-/* Descriptor */
-extern VALUE cOCIDescriptor;
-extern VALUE cOCILobLocator;
-extern VALUE cOCIParam;
-extern VALUE cOCIRowid;
-
-/* OCI8 class */
-extern VALUE cOCI8;
-extern VALUE mOCI8BindType;
+/* env.c */
+extern OCIEnv *oci8_envhp;
+extern OCIError *oci8_errhp;
+void Init_oci8_env(void);
 
 /* const.c */
-void  Init_oci8_const(void);
 extern ID oci8_id_new;
+void  Init_oci8_const(void);
 
-/* handle.c */
-void  Init_oci8_handle(void);
-VALUE oci8_handle_do_initialize(VALUE self, ub4 type);
-VALUE oci8_handle_free(VALUE self);
-void oci8_handle_mark(oci8_handle_t *);
-void oci8_handle_cleanup(oci8_handle_t *);
-oci8_handle_t *oci8_make_handle(ub4 type, dvoid *hp, OCIError *errhp, oci8_handle_t *chp, sb4 value_sz);
-void oci8_link(oci8_handle_t *parent, oci8_handle_t *child);
-void oci8_unlink(oci8_handle_t *self);
-
-/* env.c */
-void Init_oci8_env(void);
-extern VALUE oci8_env; /* use temporarily. delete later. */
+/* oci8.c */
+void oci8_base_free(oci8_base_t *base);
+VALUE oci8_define_class(const char *name, oci8_base_class_t *klass);
+VALUE oci8_define_bind_class(const char *name, oci8_bind_class_t *oci8_bind_class);
 
 /* error.c */
 extern VALUE eOCIException;
@@ -169,20 +113,29 @@ NORETURN(void oci8_env_raise(OCIEnv *, sword status));
 
 /* svcctx.c */
 void Init_oci8_svcctx(void);
+oci8_base_t *oci8_get_svcctx(VALUE obj);
 
 /* stmt.c */
 void Init_oci8_stmt(void);
 
 /* bind.c */
-void Init_oci8_bind(void);
-void oci8_register_bind_type(const char *name, oci8_bind_type_t *bind_type);
+typedef struct {
+    oci8_bind_t bind;
+    void *hp;
+    VALUE obj;
+} oci8_bind_handle_t;
+void oci8_bind_handle_mark(oci8_base_t *base);
+VALUE oci8_bind_handle_get(oci8_bind_t *bind);
+void Init_oci8_bind(VALUE cOCIBind);
+oci8_bind_t *oci8_get_bind(VALUE obj);
 
-/* descriptor.c */
-void Init_oci8_descriptor(void);
-VALUE oci8_descriptor_do_initialize(VALUE self, ub4 type);
+/* rowid.c */
+void Init_oci8_rowid(void);
+VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype);
 
 /* param.c */
 void Init_oci8_param(void);
+VALUE oci8_param_create(OCIParam *parmhp, OCIError *errhp);
 
 /* lob.c */
 void Init_oci8_lob(void);
@@ -194,12 +147,11 @@ void Init_ora_date(void);
 void Init_ora_number(void);
 
 /* attr.c */
-VALUE oci8_get_sb1_attr(VALUE self, ub4 attrtype);
-VALUE oci8_get_ub2_attr(VALUE self, ub4 attrtype);
-VALUE oci8_get_sb2_attr(VALUE self, ub4 attrtype);
-VALUE oci8_get_ub4_attr(VALUE self, ub4 attrtype);
-VALUE oci8_get_string_attr(VALUE self, ub4 attrtype);
-VALUE oci8_get_rowid_attr(VALUE self, ub4 attrtype);
+VALUE oci8_get_sb1_attr(oci8_base_t *base, ub4 attrtype);
+VALUE oci8_get_ub2_attr(oci8_base_t *base, ub4 attrtype);
+VALUE oci8_get_sb2_attr(oci8_base_t *base, ub4 attrtype);
+VALUE oci8_get_ub4_attr(oci8_base_t *base, ub4 attrtype);
+VALUE oci8_get_string_attr(oci8_base_t *base, ub4 attrtype);
 
 #define _D_ fprintf(stderr, "%s:%d - %s\n", __FILE__, __LINE__, __FUNCTION__)
 #endif

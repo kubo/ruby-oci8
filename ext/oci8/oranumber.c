@@ -145,63 +145,73 @@ static VALUE ora_number_uminus(VALUE self)
 /*
  * bind_oranumber
  */
-static VALUE bind_oranumber_get(oci8_bind_handle_t *bh)
+typedef struct {
+    oci8_bind_t base;
+    ora_number_t on;
+} oci8_bind_oranumber_t;
+
+static VALUE bind_oranumber_get(oci8_bind_t *bb)
 {
     ora_vnumber_t *ovn;
     VALUE obj = Data_Make_Struct(cOraNumber, ora_vnumber_t, NULL, xfree, ovn);
-    ovn->size = bh->rlen;
-    memcpy(&(ovn->num), &bh->value, sizeof(ora_number_t));
+    ovn->size = bb->rlen;
+    memcpy(&(ovn->num), bb->valuep, sizeof(ora_number_t));
     return obj;
 }
 
-static void bind_oranumber_set(oci8_bind_handle_t *bh, VALUE val)
+static void bind_oranumber_set(oci8_bind_t *bb, VALUE val)
 {
     ora_vnumber_t *ovn;
-    Check_Object(val, OraNumber);
+    Check_Object(val, cOraNumber);
     Data_Get_Struct(val, ora_vnumber_t, ovn);
-    bh->rlen = ovn->size;
-    memcpy(&bh->value, &(ovn->num), sizeof(ora_number_t));
+    bb->rlen = ovn->size;
+    memcpy(bb->valuep, &ovn->num, sizeof(ora_number_t));
 }
 
-static void bind_oranumber_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_oranumber_init(oci8_bind_t *bb, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
-    bh->valuep = &bh->value;
-    bh->value_sz = sizeof(ora_number_t);
-#ifdef OCI_CHECK_STRICT
-    if (sizeof(ora_number_t) > sizeof(bh->value)) {
-        rb_bug("sizeof(ora_number_t) > sizeof(bh->value)");
-    }
-#endif
+    oci8_bind_oranumber_t *bo = (oci8_bind_oranumber_t *)bb;
+    bb->valuep = &bo->on;
+    bb->value_sz = sizeof(ora_number_t);
 }
 
-static oci8_bind_type_t bind_oranumber = {
+static oci8_bind_class_t bind_oranumber_class = {
+    {
+        NULL,
+	NULL,
+	sizeof(oci8_bind_oranumber_t)
+    },
     bind_oranumber_get,
     bind_oranumber_set,
     bind_oranumber_init,
-    NULL,
-    SQLT_NUM,
+    SQLT_NUM
 };
 
 /*
  * bind_integer
  */
-static VALUE bind_integer_get(oci8_bind_handle_t *bh)
+static VALUE bind_integer_get(oci8_bind_t *bb)
 {
+    oci8_bind_oranumber_t *bo = (oci8_bind_oranumber_t *)bb;
     unsigned char buf[ORA_NUMBER_BUF_SIZE];
-    ora_number_to_str(buf, NULL, (ora_number_t*)&bh->value, bh->rlen);
+    ora_number_to_str(buf, NULL, &bo->on, bb->rlen);
     return rb_cstr2inum(buf, 10);
 }
 
-static void bind_integer_set(oci8_bind_handle_t *bh, VALUE val)
+static void bind_integer_set(oci8_bind_t *bb, VALUE val)
 {
     rb_notimplement();
 }
 
-static oci8_bind_type_t bind_integer = {
+static oci8_bind_class_t bind_integer_class = {
+    {
+        NULL,
+	NULL,
+	sizeof(oci8_bind_oranumber_t)
+    },
     bind_integer_get,
     bind_integer_set,
     bind_oranumber_init,
-    NULL,
     SQLT_NUM,
 };
 
@@ -215,8 +225,8 @@ void Init_ora_number(void)
     rb_define_method(cOraNumber, "to_s", ora_number_to_s, 0);
     rb_define_method(cOraNumber, "-@", ora_number_uminus, 0);
 
-    oci8_register_bind_type("OraNumber", &bind_oranumber);
-    oci8_register_bind_type("Integer", &bind_integer);
+    oci8_define_bind_class("OraNumber", &bind_oranumber_class);
+    oci8_define_bind_class("Integer", &bind_integer_class);
 }
 
 static void ora_number_to_str(unsigned char *buf, size_t *lenp, ora_number_t *on, unsigned char size)

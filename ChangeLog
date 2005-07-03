@@ -1,3 +1,10 @@
+2005-07-03  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/*.c, ext/oci8/*.h: remove oci8_handle_t and oci8_base_class_t.
+	  use oci8_base_t and oci8_bind_t instead of them. use oci8_base_class_t
+	  and oci8_bind_class_t.
+	* ext/oci8/descriptor.c, ext/oci8/handle.c: removed.
+	* ext/oci8/rowid.c: added.
+
 2005-07-01  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: try default $libs then get from demo_rdbms.mk.
 

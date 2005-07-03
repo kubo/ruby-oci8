@@ -18,9 +18,9 @@ def replace_keyword(source, target, replace)
   }        
 end
 
-$objs = ["oci8.o", "handle.o", "const.o", "env.o", "error.o", "svcctx.o",
+$objs = ["oci8.o", "const.o", "env.o", "error.o", "svcctx.o",
          "stmt.o", "bind.o",
-         "descriptor.o", "param.o", "lob.o",
+         "rowid.o", "param.o", "lob.o",
          "oradate.o", "oranumber.o", "attr.o"]
 
 $CFLAGS += oraconf.cflags

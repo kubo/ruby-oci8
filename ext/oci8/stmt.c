@@ -29,23 +29,61 @@ static VALUE oci8_sym_alter_stmt;
 static VALUE oci8_sym_begin_stmt;
 static VALUE oci8_sym_declare_stmt;
 
-static oci8_bind_handle_t *make_bind_handle(ub4 type, oci8_handle_t *stmth, VALUE obj)
+static VALUE cOCIStmt;
+
+typedef struct {
+    oci8_base_t base;
+    VALUE svc;
+    VALUE binds;
+    VALUE defines;
+} oci8_stmt_t;
+
+static VALUE oci8_bind_free_cb(VALUE obj)
 {
-  if (rb_obj_is_kind_of(obj, cOCIBind) && CLASS_OF(obj) != cOCIBind) {
-    oci8_bind_handle_t *bh = DATA_PTR(obj);
-    bh->type = type;
-    bh->errhp = stmth->errhp;
-    oci8_link(stmth, (oci8_handle_t*)bh);
-    return bh;
-  } else {
-    /* error */
-    rb_raise(rb_eArgError, "Not supported object %s (expect a subclass of %s)", rb_class2name(obj), rb_class2name(cOCIBind));
-  }
+    oci8_base_free(DATA_PTR(obj));
+    return Qnil;
 }
+
+static void oci8_stmt_mark(oci8_base_t *base)
+{
+    oci8_stmt_t *stmt = (oci8_stmt_t *)base;
+    rb_gc_mark(stmt->svc);
+    rb_gc_mark(stmt->binds);
+    rb_gc_mark(stmt->defines);
+}
+
+static void oci8_stmt_free(oci8_base_t *base)
+{
+    oci8_stmt_t *stmt = (oci8_stmt_t *)base;
+    if (!NIL_P(stmt->binds)) {
+        rb_iterate(rb_each, stmt->binds, oci8_bind_free_cb, Qnil);
+	stmt->binds = Qnil;
+    }
+    if (!NIL_P(stmt->defines)) {
+        rb_iterate(rb_each, stmt->defines, oci8_bind_free_cb, Qnil);
+	stmt->defines = Qnil;
+    }
+}
+
+static oci8_base_class_t oci8_stmt_class = {
+    oci8_stmt_mark,
+    NULL,
+    sizeof(oci8_stmt_t),
+};
 
 static VALUE oci8_stmt_initialize(VALUE self)
 {
-  return oci8_handle_do_initialize(self, OCI_HTYPE_STMT);
+    oci8_stmt_t *stmt = DATA_PTR(self);
+    sword rv;
+
+    rv = OCIHandleAlloc(oci8_envhp, &stmt->base.hp, OCI_HTYPE_STMT, 0, NULL);
+    if (rv != OCI_SUCCESS)
+        oci8_env_raise(oci8_envhp, rv);
+    stmt->base.type = OCI_HTYPE_STMT;
+    stmt->svc = Qnil;
+    stmt->binds = Qnil;
+    stmt->defines = Qnil;
+    return Qnil;
 }
 
 /*
@@ -68,30 +106,29 @@ static VALUE oci8_stmt_initialize(VALUE self)
  */
 static VALUE oci8_stmt_prepare(VALUE self, VALUE sql)
 {
-  oci8_handle_t *h;
-  sword rv;
-  int i;
+    oci8_stmt_t *stmt = DATA_PTR(self);
+    sword rv;
 
-  Get_Handle(self, h); /* 0 */
-  StringValue(sql);
+    StringValue(sql);
 
-  /* when a new statement is prepared, OCI implicitly free the previous 
-   * statement's define and bind handles. 
-   * But ruby's object don't know it. So free these handles in advance.
-   */
-  for (i = 0;i < h->size;i++) {
-    if (h->children[i] != NULL) {
-      if (h->children[i]->type == OCI_HTYPE_BIND || h->children[i]->type == OCI_HTYPE_DEFINE) {
-	oci8_handle_free(h->children[i]->self);
-      }
+    /* when a new statement is prepared, OCI implicitly free the previous 
+     * statement's define and bind handles. 
+     * But ruby's object don't know it. So free these handles in advance.
+     */
+    if (!NIL_P(stmt->binds)) {
+        rb_iterate(rb_each, stmt->binds, oci8_bind_free_cb, Qnil);
+	stmt->binds = Qnil;
     }
-  }
+    if (!NIL_P(stmt->defines)) {
+        rb_iterate(rb_each, stmt->defines, oci8_bind_free_cb, Qnil);
+	stmt->defines = Qnil;
+    }
 
-  rv = OCIStmtPrepare(h->hp, h->errhp, RSTRING(sql)->ptr, RSTRING(sql)->len, OCI_NTV_SYNTAX, OCI_DEFAULT);
-  if (IS_OCI_ERROR(rv)) {
-    oci8_raise(h->errhp, rv, h->hp);
-  }
-  return self;
+    rv = OCIStmtPrepare(stmt->base.hp, oci8_errhp, RSTRING(sql)->ptr, RSTRING(sql)->len, OCI_NTV_SYNTAX, OCI_DEFAULT);
+    if (IS_OCI_ERROR(rv)) {
+        oci8_raise(oci8_errhp, rv, stmt->base.hp);
+    }
+    return self;
 }
 
 /*
@@ -123,69 +160,77 @@ static VALUE oci8_stmt_prepare(VALUE self, VALUE sql)
  */
 static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
 {
-  oci8_handle_t *h;
-  ub4 position;
-  oci8_bind_handle_t *bh;
-  OCIDefine *dfnhp = NULL;
-  sword status;
+    oci8_stmt_t *stmt = DATA_PTR(self);
+    ub4 position;
+    oci8_bind_t *bind;
+    oci8_bind_class_t *bind_class;
+    sword status;
 
-  Get_Handle(self, h); /* 0 */
-  position = NUM2INT(vposition); /* 1 */
-  bh = make_bind_handle(OCI_HTYPE_DEFINE, h, vbindobj); /* 2 */
-
-  status = OCIDefineByPos(h->hp, &dfnhp, h->errhp, position, bh->valuep, bh->value_sz, bh->bind_type->dty, &bh->ind, &bh->rlen, 0, OCI_DEFAULT);
-  if (status != OCI_SUCCESS) {
-    oci8_unlink((oci8_handle_t *)bh);
-    bh->type = 0;
-    oci8_raise(h->errhp, status, h->hp);
-  }
-  bh->hp = dfnhp;
-  return bh->self;
+    position = NUM2INT(vposition); /* 1 */
+    bind = oci8_get_bind(vbindobj); /* 2 */
+    if (bind->base.hp != NULL) {
+        oci8_base_free(&bind->base); /* TODO: OK? */
+    }
+    bind_class = (oci8_bind_class_t *)bind->base.klass;
+    status = OCIDefineByPos(stmt->base.hp, (OCIDefine**)&bind->base.hp, oci8_errhp, position, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, &bind->rlen, 0, OCI_DEFAULT);
+    if (status != OCI_SUCCESS) {
+	oci8_raise(oci8_errhp, status, stmt->base.hp);
+    }
+    bind->base.type = OCI_HTYPE_DEFINE;
+    if (NIL_P(stmt->defines)) {
+      stmt->defines = rb_hash_new();
+    }
+    rb_hash_aset(stmt->defines, vposition, bind->base.self);
+    return bind->base.self;
 }
 
 static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
 {
-  oci8_handle_t *h;
-  oci8_string_t placeholder;
-  ub4 position = 0;
-  oci8_bind_handle_t *bh;
-  OCIBind *bindhp = NULL;
-  sword status;
-  int bind_by_pos = 0;
+    oci8_stmt_t *stmt = DATA_PTR(self);
+    char *placeholder_ptr = (char*)-1; /* initialize as an invalid value */
+    ub4 placeholder_len = 0;
+    ub4 position = 0;
+    oci8_bind_t *bind;
+    oci8_bind_class_t *bind_class;
+    sword status;
 
-  Get_Handle(self, h); /* 0 */
-  if (NIL_P(vplaceholder)) {
-    placeholder.ptr = NULL;
-    placeholder.len = 0;
-  } else if (SYMBOL_P(vplaceholder)) {
-    char *symname = rb_id2name(SYM2ID(vplaceholder));
-    size_t len = strlen(symname);
-    placeholder.ptr = ALLOCA_N(char, len + 1);
-    placeholder.len = len + 1;
-    placeholder.ptr[0] = ':';
-    memcpy(placeholder.ptr + 1, symname, len);
-  } else if (FIXNUM_P(vplaceholder)) {
-    bind_by_pos = 1;
-    position = NUM2INT(vplaceholder);
-  } else {
-    Check_Type(vplaceholder, T_STRING);
-    placeholder.ptr = RSTRING(vplaceholder)->ptr;
-    placeholder.len = RSTRING(vplaceholder)->len;
-  }
-  bh = make_bind_handle(OCI_HTYPE_BIND, h, vbindobj); /* 2 */
+    if (NIL_P(vplaceholder)) { /* 1 */
+        placeholder_ptr = NULL;
+	placeholder_len = 0;
+    } else if (SYMBOL_P(vplaceholder)) {
+        char *symname = rb_id2name(SYM2ID(vplaceholder));
+	size_t len = strlen(symname);
+	placeholder_ptr = ALLOCA_N(char, len + 1);
+	placeholder_len = len + 1;
+	placeholder_ptr[0] = ':';
+	memcpy(placeholder_ptr + 1, symname, len);
+    } else if (FIXNUM_P(vplaceholder)) {
+	position = NUM2INT(vplaceholder);
+    } else {
+        StringValue(vplaceholder);
+	placeholder_ptr = RSTRING(vplaceholder)->ptr;
+	placeholder_len = RSTRING(vplaceholder)->len;
+    }
+    bind = oci8_get_bind(vbindobj); /* 2 */
+    if (bind->base.hp != NULL) {
+        oci8_base_free(&bind->base); /* TODO: OK? */
+    }
+    bind_class = (oci8_bind_class_t *)bind->base.klass;
 
-  if (bind_by_pos) {
-    status = OCIBindByPos(h->hp, &bindhp, h->errhp, position, bh->valuep, bh->value_sz, bh->bind_type->dty, &bh->ind, &bh->rlen, 0, 0, 0, OCI_DEFAULT);
-  } else {
-    status = OCIBindByName(h->hp, &bindhp, h->errhp, placeholder.ptr, placeholder.len, bh->valuep, bh->value_sz, bh->bind_type->dty, &bh->ind, &bh->rlen, 0, 0, 0, OCI_DEFAULT);
-  }
-  if (status != OCI_SUCCESS) {
-    oci8_unlink((oci8_handle_t *)bh);
-    bh->type = 0;
-    oci8_raise(h->errhp, status, h->hp);
-  }
-  bh->hp = bindhp;
-  return bh->self;
+    if (placeholder_ptr == (char*)-1) {
+        status = OCIBindByPos(stmt->base.hp, (OCIBind**)&bind->base.hp, oci8_errhp, position, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, &bind->rlen, 0, 0, 0, OCI_DEFAULT);
+    } else {
+        status = OCIBindByName(stmt->base.hp, (OCIBind**)&bind->base.hp, oci8_errhp, placeholder_ptr, placeholder_len, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, &bind->rlen, 0, 0, 0, OCI_DEFAULT);
+    }
+    if (status != OCI_SUCCESS) {
+        oci8_raise(oci8_errhp, status, stmt->base.hp);
+    }
+    bind->base.type = OCI_HTYPE_BIND;
+    if (NIL_P(stmt->binds)) {
+      stmt->binds = rb_hash_new();
+    }
+    rb_hash_aset(stmt->binds, vplaceholder, bind->base.self);
+    return bind->base.self;
 }
 
 /*
@@ -223,38 +268,38 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
 */
 static VALUE oci8_stmt_execute(VALUE self, VALUE vsvc, VALUE viters, VALUE vmode)
 {
-  oci8_handle_t *h;
-  oci8_handle_t *svch;
-  ub4 mode;
-  ub4 iters;
-  sword rv;
+    oci8_stmt_t *stmt = DATA_PTR(self);
+    oci8_base_t *svcctx;
+    ub4 mode;
+    ub4 iters;
+    sword rv;
 
-  Get_Handle(self, h); /* 0 */
-  Check_Handle(vsvc, OCISvcCtx, svch); /* 1 */
-  Check_Type(viters, T_FIXNUM); /* 2 */
-  iters = FIX2INT(viters);
-  Check_Type(vmode, T_FIXNUM); /* 3 */
-  mode = FIX2INT(vmode);
+    svcctx = oci8_get_svcctx(vsvc); /* 1 */
+    Check_Type(viters, T_FIXNUM); /* 2 */
+    iters = FIX2INT(viters);
+    Check_Type(vmode, T_FIXNUM); /* 3 */
+    mode = FIX2INT(vmode);
 
-  if (iters < 0) {
-    rb_raise(rb_eArgError, "use Positive value for the 2nd argument");
-  } else if (iters > 1) {
-    rb_raise(rb_eArgError, "current implementation doesn't support array fatch or batch mode");
-  }
-
-  rv = OCIStmtExecute(svch->hp, h->hp, h->errhp, iters, 0, NULL, NULL, mode);
-  if (rv == OCI_ERROR) {
-    ub4 errcode;
-    OCIErrorGet(h->errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
-    if (errcode == 1000) {
-      rb_gc();
-      rv = OCIStmtExecute(svch->hp, h->hp, h->errhp, iters, 0, NULL, NULL, mode);
+    if (iters < 0) {
+        rb_raise(rb_eArgError, "use Positive value for the 2nd argument");
+    } else if (iters > 1) {
+        rb_raise(rb_eArgError, "current implementation doesn't support array fatch or batch mode");
     }
-  }
-  if (IS_OCI_ERROR(rv)) {
-    oci8_raise(h->errhp, rv, h->hp);
-  }
-  return self;
+
+    rv = OCIStmtExecute(svcctx->hp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode);
+    if (rv == OCI_ERROR) {
+        ub4 errcode;
+	OCIErrorGet(oci8_errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
+	if (errcode == 1000) {
+	    rb_gc();
+	    rv = OCIStmtExecute(svcctx->hp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode);
+	}
+    }
+    if (IS_OCI_ERROR(rv)) {
+        oci8_raise(oci8_errhp, rv, stmt->base.hp);
+    }
+    stmt->svc = vsvc;
+    return self;
 }
 
 /*
@@ -286,121 +331,122 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE vsvc, VALUE viters, VALUE vmode
 */
 static VALUE oci8_stmt_fetch(int argc, VALUE *argv, VALUE self)
 {
-  VALUE vnrows;
-  VALUE vorientation;
-  VALUE vmode;
-  oci8_handle_t *h;
-  ub4 nrows;
-  ub2 orientation;
-  ub4 mode;
-  sword rv;
+    oci8_stmt_t *stmt = DATA_PTR(self);
+    VALUE vnrows;
+    VALUE vorientation;
+    VALUE vmode;
+    ub4 nrows;
+    ub2 orientation;
+    ub4 mode;
+    sword rv;
 
-  rb_scan_args(argc, argv, "03", &vnrows, &vorientation, &vmode);
-  Get_Handle(self, h); /* 0 */
-  Get_Int_With_Default(argc, 1, vnrows, nrows, 1); /* 1 */
-  Get_Int_With_Default(argc, 2, vorientation, orientation, OCI_FETCH_NEXT); /* 2 */
-  Get_Int_With_Default(argc, 3, vmode, mode, OCI_DEFAULT); /* 3 */
+    rb_scan_args(argc, argv, "03", &vnrows, &vorientation, &vmode);
+    Get_Int_With_Default(argc, 1, vnrows, nrows, 1); /* 1 */
+    Get_Int_With_Default(argc, 2, vorientation, orientation, OCI_FETCH_NEXT); /* 2 */
+    Get_Int_With_Default(argc, 3, vmode, mode, OCI_DEFAULT); /* 3 */
 
-  rv = OCIStmtFetch(h->hp, h->errhp, nrows, orientation, mode);
-  if (rv == OCI_NO_DATA) {
-    return Qnil;
-  }
-  if (IS_OCI_ERROR(rv)) {
-    oci8_raise(h->errhp, rv, h->hp);
-  }
-  return Qtrue;
-}  
+    rv = OCIStmtFetch(stmt->base.hp, oci8_errhp, nrows, orientation, mode);
+    if (rv == OCI_NO_DATA) {
+        return Qnil;
+    }
+    if (IS_OCI_ERROR(rv)) {
+        oci8_raise(oci8_errhp, rv, stmt->base.hp);
+    }
+    if (nrows == 0)
+      stmt->svc = Qnil;
+    return Qtrue;
+}
 
 static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
 {
-    oci8_handle_t *h;
+    oci8_stmt_t *stmt = DATA_PTR(self);
     OCIParam *parmhp = NULL;
     sword rv;
 
-    Get_Handle(self, h); /* 0 */
     Check_Type(pos, T_FIXNUM); /* 1 */
-    rv = OCIParamGet(h->hp, h->type, h->errhp, (dvoid *)&parmhp, FIX2INT(pos));
+    rv = OCIParamGet(stmt->base.hp, OCI_HTYPE_STMT, oci8_errhp, (dvoid *)&parmhp, FIX2INT(pos));
     if (rv != OCI_SUCCESS) {
-        oci8_raise(h->errhp, rv, NULL);
+        oci8_raise(oci8_errhp, rv, NULL);
     }
-    return oci8_make_handle(OCI_DTYPE_PARAM, parmhp, h->errhp, h, 0)->self;
+    return oci8_param_create(parmhp, oci8_errhp);
 }
 
 static VALUE oci8_stmt_get_stmt_type(VALUE self)
 {
-  VALUE stmt_type = oci8_get_ub2_attr(self, OCI_ATTR_STMT_TYPE);
-  switch (stmt_type) {
-  case INT2FIX(OCI_STMT_SELECT):
-    return oci8_sym_select_stmt;
-  case INT2FIX(OCI_STMT_UPDATE):
-    return oci8_sym_update_stmt;
-  case INT2FIX(OCI_STMT_DELETE):
-    return oci8_sym_delete_stmt;
-  case INT2FIX(OCI_STMT_INSERT):
-    return oci8_sym_insert_stmt;
-  case INT2FIX(OCI_STMT_CREATE):
-    return oci8_sym_create_stmt;
-  case INT2FIX(OCI_STMT_DROP):
-    return oci8_sym_drop_stmt;
-  case INT2FIX(OCI_STMT_ALTER):
-    return oci8_sym_alter_stmt;
-  case INT2FIX(OCI_STMT_BEGIN):
-    return oci8_sym_begin_stmt;
-  case INT2FIX(OCI_STMT_DECLARE):
-    return oci8_sym_declare_stmt;
-  default:
-    rb_bug("unexcepted statement type %d in OCIStmt#stmt_type", FIX2INT(stmt_type));
-  }
+    VALUE stmt_type = oci8_get_ub2_attr(DATA_PTR(self), OCI_ATTR_STMT_TYPE);
+    switch (stmt_type) {
+    case INT2FIX(OCI_STMT_SELECT):
+        return oci8_sym_select_stmt;
+    case INT2FIX(OCI_STMT_UPDATE):
+        return oci8_sym_update_stmt;
+    case INT2FIX(OCI_STMT_DELETE):
+        return oci8_sym_delete_stmt;
+    case INT2FIX(OCI_STMT_INSERT):
+        return oci8_sym_insert_stmt;
+    case INT2FIX(OCI_STMT_CREATE):
+        return oci8_sym_create_stmt;
+    case INT2FIX(OCI_STMT_DROP):
+        return oci8_sym_drop_stmt;
+    case INT2FIX(OCI_STMT_ALTER):
+        return oci8_sym_alter_stmt;
+    case INT2FIX(OCI_STMT_BEGIN):
+        return oci8_sym_begin_stmt;
+    case INT2FIX(OCI_STMT_DECLARE):
+        return oci8_sym_declare_stmt;
+    default:
+        rb_bug("unexcepted statement type %d in OCIStmt#stmt_type", FIX2INT(stmt_type));
+    }
 }
 
 static VALUE oci8_stmt_get_row_count(VALUE self)
 {
-  return oci8_get_ub4_attr(self, OCI_ATTR_ROW_COUNT);
+    return oci8_get_ub4_attr(DATA_PTR(self), OCI_ATTR_ROW_COUNT);
 }
 
 static VALUE oci8_stmt_get_rowid(VALUE self)
 {
-  return oci8_get_rowid_attr(self, OCI_ATTR_ROWID);
+    return oci8_get_rowid_attr(DATA_PTR(self), OCI_ATTR_ROWID);
 }
 
 static VALUE oci8_stmt_get_param_count(VALUE self)
 {
-  return oci8_get_ub4_attr(self, OCI_ATTR_PARAM_COUNT);
+    return oci8_get_ub4_attr(DATA_PTR(self), OCI_ATTR_PARAM_COUNT);
 }
 
 /*
  * bind_stmt
  */
-static VALUE bind_stmt_get(oci8_bind_handle_t *bh)
+static void bind_stmt_set(oci8_bind_t *bind, VALUE val)
 {
-  return bh->obj;
+    oci8_bind_handle_t *handle = (oci8_bind_handle_t *)bind;
+    oci8_base_t *h;
+    if (!rb_obj_is_instance_of(val, cOCIStmt))
+        rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIStmt)", rb_class2name(CLASS_OF(val)));
+    h = DATA_PTR(val);
+    handle->hp = h->hp;
+    handle->obj = val;
 }
 
-static void bind_stmt_set(oci8_bind_handle_t *bh, VALUE val)
+static void bind_stmt_init(oci8_bind_t *bind, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
-  oci8_handle_t *h;
-  if (!rb_obj_is_instance_of(val, cOCIStmt))
-    rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIStmt)", rb_class2name(CLASS_OF(val)));
-  h = DATA_PTR(val);
-  bh->obj = val;
-  bh->value.hp = h->hp;
+    oci8_bind_handle_t *handle = (oci8_bind_handle_t *)bind;
+    bind->valuep = &handle->hp;
+    bind->value_sz = sizeof(handle->hp);
+    if (NIL_P(*val)) {
+        *val = rb_funcall(cOCIStmt, oci8_id_new, 0);
+    }
 }
 
-static void bind_stmt_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
-{
-  bh->valuep = &bh->value.hp;
-  bh->value_sz = sizeof(bh->value.hp);
-  if (NIL_P(*val)) {
-    *val = rb_funcall(cOCIStmt, oci8_id_new, 0);
-  }
-}
-
-static oci8_bind_type_t bind_stmt = {
-  bind_stmt_get,
-  bind_stmt_set,
-  bind_stmt_init,
-  NULL,
-  SQLT_RSET,
+static oci8_bind_class_t bind_stmt_class = {
+    {
+        oci8_bind_handle_mark,
+	NULL,
+	sizeof(oci8_bind_handle_t)
+    },
+    oci8_bind_handle_get,
+    bind_stmt_set,
+    bind_stmt_init,
+    SQLT_RSET
 };
 
 /*
@@ -421,27 +467,29 @@ implemented in param.c
 
 void Init_oci8_stmt(void)
 {
-  oci8_sym_select_stmt = ID2SYM(rb_intern("select_stmt"));
-  oci8_sym_update_stmt = ID2SYM(rb_intern("update_stmt"));
-  oci8_sym_delete_stmt = ID2SYM(rb_intern("delete_stmt"));
-  oci8_sym_insert_stmt = ID2SYM(rb_intern("insert_stmt"));
-  oci8_sym_create_stmt = ID2SYM(rb_intern("create_stmt"));
-  oci8_sym_drop_stmt = ID2SYM(rb_intern("drop_stmt"));
-  oci8_sym_alter_stmt = ID2SYM(rb_intern("alter_stmt"));
-  oci8_sym_begin_stmt = ID2SYM(rb_intern("begin_stmt"));
-  oci8_sym_declare_stmt = ID2SYM(rb_intern("declare_stmt"));
+    cOCIStmt = oci8_define_class("OCIStmt", &oci8_stmt_class);
 
-  rb_define_method(cOCIStmt, "initialize", oci8_stmt_initialize, 0);
-  rb_define_method(cOCIStmt, "prepare", oci8_stmt_prepare, 1);
-  rb_define_method(cOCIStmt, "defineByPos", oci8_define_by_pos, 2);
-  rb_define_method(cOCIStmt, "bind", oci8_bind, 2);
-  rb_define_method(cOCIStmt, "execute", oci8_stmt_execute, 3);
-  rb_define_method(cOCIStmt, "fetch", oci8_stmt_fetch, -1);
-  rb_define_method(cOCIStmt, "paramGet", oci8_stmt_get_param, 1);
-  rb_define_method(cOCIStmt, "stmt_type", oci8_stmt_get_stmt_type, 0);
-  rb_define_method(cOCIStmt, "row_count", oci8_stmt_get_row_count, 0);
-  rb_define_method(cOCIStmt, "rowid", oci8_stmt_get_rowid, 0);
-  rb_define_method(cOCIStmt, "param_count", oci8_stmt_get_param_count, 0);
+    oci8_sym_select_stmt = ID2SYM(rb_intern("select_stmt"));
+    oci8_sym_update_stmt = ID2SYM(rb_intern("update_stmt"));
+    oci8_sym_delete_stmt = ID2SYM(rb_intern("delete_stmt"));
+    oci8_sym_insert_stmt = ID2SYM(rb_intern("insert_stmt"));
+    oci8_sym_create_stmt = ID2SYM(rb_intern("create_stmt"));
+    oci8_sym_drop_stmt = ID2SYM(rb_intern("drop_stmt"));
+    oci8_sym_alter_stmt = ID2SYM(rb_intern("alter_stmt"));
+    oci8_sym_begin_stmt = ID2SYM(rb_intern("begin_stmt"));
+    oci8_sym_declare_stmt = ID2SYM(rb_intern("declare_stmt"));
 
-  oci8_register_bind_type("Cursor", &bind_stmt);
+    rb_define_method(cOCIStmt, "initialize", oci8_stmt_initialize, 0);
+    rb_define_method(cOCIStmt, "prepare", oci8_stmt_prepare, 1);
+    rb_define_method(cOCIStmt, "defineByPos", oci8_define_by_pos, 2);
+    rb_define_method(cOCIStmt, "bind", oci8_bind, 2);
+    rb_define_method(cOCIStmt, "execute", oci8_stmt_execute, 3);
+    rb_define_method(cOCIStmt, "fetch", oci8_stmt_fetch, -1);
+    rb_define_method(cOCIStmt, "paramGet", oci8_stmt_get_param, 1);
+    rb_define_method(cOCIStmt, "stmt_type", oci8_stmt_get_stmt_type, 0);
+    rb_define_method(cOCIStmt, "row_count", oci8_stmt_get_row_count, 0);
+    rb_define_method(cOCIStmt, "rowid", oci8_stmt_get_rowid, 0);
+    rb_define_method(cOCIStmt, "param_count", oci8_stmt_get_param_count, 0);
+
+    oci8_define_bind_class("Cursor", &bind_stmt_class);
 }

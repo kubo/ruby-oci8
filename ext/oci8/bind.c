@@ -1,3 +1,4 @@
+/* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
  * bind.c
  *
@@ -11,25 +12,40 @@
 static ID id_bind_type;
 static ID id_set;
 
+static VALUE cOCIBind;
+
 /*
  * bind_string
  */
-static VALUE bind_string_get(oci8_bind_handle_t *bh)
+typedef struct {
+    oci8_bind_t base;
+} oci8_bind_string_t;
+
+static void bind_string_free(oci8_base_t *base)
 {
-    return rb_str_new(bh->valuep, bh->rlen);
+    oci8_bind_t *bind_base = (oci8_bind_t *)base;
+    if (bind_base->valuep != NULL) {
+        xfree(bind_base->valuep);
+	bind_base->valuep = NULL;
+    }
 }
 
-static void bind_string_set(oci8_bind_handle_t *bh, VALUE val)
+static VALUE bind_string_get(oci8_bind_t *base)
+{
+    return rb_str_new(base->valuep, base->rlen);
+}
+
+static void bind_string_set(oci8_bind_t *base, VALUE val)
 {
     StringValue(val);
-    if (RSTRING(val)->len > bh->value_sz) {
-        rb_raise(rb_eArgError, "too long String to set. (%d for %d)", RSTRING(val)->len, bh->value_sz);
+    if (RSTRING(val)->len > base->value_sz) {
+        rb_raise(rb_eArgError, "too long String to set. (%d for %d)", RSTRING(val)->len, base->value_sz);
     }
-    memcpy(bh->valuep, RSTRING(val)->ptr, RSTRING(val)->len);
-    bh->rlen = RSTRING(val)->len;
+    memcpy(base->valuep, RSTRING(val)->ptr, RSTRING(val)->len);
+    base->rlen = RSTRING(val)->len;
 }
 
-static void bind_string_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_string_init(oci8_bind_t *base, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
     sb4 sz = 0;
 
@@ -45,172 +61,193 @@ static void bind_string_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, V
     if (sz <= 0) {
         rb_raise(rb_eArgError, "invalid bind length %d", sz);
     }
-    bh->valuep = xmalloc(sz);
-    bh->value_sz = sz;
+    base->valuep = xmalloc(sz);
+    base->value_sz = sz;
 }
 
-static void bind_string_free(oci8_bind_handle_t *bh)
-{
-    if (bh->valuep != NULL)
-        xfree(bh->valuep);
-}
-
-static oci8_bind_type_t bind_string = {
+static oci8_bind_class_t bind_string_class = {
+    {
+        NULL,
+	bind_string_free,
+	sizeof(oci8_bind_string_t)
+    },
     bind_string_get,
     bind_string_set,
     bind_string_init,
-    bind_string_free,
-    SQLT_CHR,
+    SQLT_CHR
 };
 
 /*
  * bind_raw
  */
-static oci8_bind_type_t bind_raw = {
+static oci8_bind_class_t bind_raw_class = {
+    {
+        NULL,
+	bind_string_free,
+	sizeof(oci8_bind_string_t)
+    },
     bind_string_get,
     bind_string_set,
     bind_string_init,
-    bind_string_free,
-    SQLT_BIN,
+    SQLT_BIN
 };
 
 /*
  * bind_fixnum
  */
-static VALUE bind_fixnum_get(oci8_bind_handle_t *bh)
+typedef struct {
+    oci8_bind_t base;
+    sword val;
+} oci8_bind_fixnum_t;
+
+static VALUE bind_fixnum_get(oci8_bind_t *base)
 {
-    return INT2FIX(bh->value.sw);
+    oci8_bind_fixnum_t *fixnum = (oci8_bind_fixnum_t *)base;
+
+    return INT2FIX(fixnum->val);
 }
 
-static void bind_fixnum_set(oci8_bind_handle_t *bh, VALUE val)
+static void bind_fixnum_set(oci8_bind_t *base, VALUE val)
 {
+    oci8_bind_fixnum_t *fixnum = (oci8_bind_fixnum_t *)base;
+
     Check_Type(val, T_FIXNUM);
-    bh->value.sw = FIX2INT(val);
+    fixnum->val = FIX2INT(val);
 }
 
-static void bind_fixnum_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_fixnum_init(oci8_bind_t *base, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
-    bh->valuep = &bh->value.sw;
-    bh->value_sz = sizeof(bh->value.sw);
+    oci8_bind_fixnum_t *fixnum = (oci8_bind_fixnum_t *)base;
+
+    base->valuep = &fixnum->val;
+    base->value_sz = sizeof(fixnum->val);
 }
 
-static oci8_bind_type_t bind_fixnum = {
+static oci8_bind_class_t bind_fixnum_class = {
+    {
+        NULL,
+	NULL,
+	sizeof(oci8_bind_fixnum_t)
+    },
     bind_fixnum_get,
     bind_fixnum_set,
     bind_fixnum_init,
-    NULL,
-    SQLT_INT,
+    SQLT_INT
 };
 
 /*
  * bind_float
  */
-static VALUE bind_float_get(oci8_bind_handle_t *bh)
+typedef struct {
+    oci8_bind_t base;
+    double val;
+} oci8_bind_float_t;
+
+static VALUE bind_float_get(oci8_bind_t *base)
 {
-    return rb_float_new(bh->value.dbl);
+    oci8_bind_float_t *flt = (oci8_bind_float_t *)base;
+
+    return rb_float_new(flt->val);
 }
 
-static void bind_float_set(oci8_bind_handle_t *bh, VALUE val)
+static void bind_float_set(oci8_bind_t *base, VALUE val)
 {
+    oci8_bind_float_t *flt = (oci8_bind_float_t *)base;
+
     Check_Type(val, T_FLOAT);
-    bh->value.dbl = RFLOAT(val)->value;
+    flt->val = RFLOAT(val)->value;
 }
 
-static void bind_float_init(oci8_bind_handle_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_float_init(oci8_bind_t *base, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
-    bh->valuep = &bh->value.dbl;
-    bh->value_sz = sizeof(bh->value.dbl);
+    oci8_bind_float_t *flt = (oci8_bind_float_t *)base;
+
+    base->valuep = &flt->val;
+    base->value_sz = sizeof(flt->val);
 }
 
-static oci8_bind_type_t bind_float = {
+static oci8_bind_class_t bind_float_class = {
+    {
+        NULL,
+	NULL,
+	sizeof(oci8_bind_float_t)
+    },
     bind_float_get,
     bind_float_set,
     bind_float_init,
-    NULL,
-    SQLT_FLT,
+    SQLT_FLT
 };
 
 static VALUE oci8_get_data(VALUE self)
 {
-    oci8_bind_handle_t *bh;
+    oci8_bind_t *base = DATA_PTR(self);
+    oci8_bind_class_t *bind_class = (oci8_bind_class_t *)base->base.klass;
 
-    Data_Get_Struct(self, oci8_bind_handle_t, bh);
-    if (bh->ind != 0)
+    if (base->ind != 0)
         return Qnil;
-    return bh->bind_type->get(bh);
+    return bind_class->get(base);
 }
 
 static VALUE oci8_set_data(VALUE self, VALUE val)
 {
-    oci8_bind_handle_t *bh;
+    oci8_bind_t *base = DATA_PTR(self);
+    oci8_bind_class_t *bind_class = (oci8_bind_class_t *)base->base.klass;
 
-    Data_Get_Struct(self, oci8_bind_handle_t, bh);
     if (NIL_P(val)) {
-        bh->ind = -1;
+        base->ind = -1;
     } else {
-        bh->bind_type->set(bh, val);
-        bh->ind = 0;
+        bind_class->set(base, val);
+        base->ind = 0;
     }
     return self;
 }
 
-static VALUE oci8_bind_s_allocate(VALUE klass)
-{
-    oci8_bind_handle_t *bh;
-    VALUE obj;
-    VALUE bind_type;
-
-    if (klass == cOCIBind) {
-        rb_raise(rb_eRuntimeError, "Could not create an abstract class OCIBind");
-    }
-    obj = Data_Make_Struct(klass, oci8_bind_handle_t, oci8_handle_mark, oci8_handle_cleanup, bh);
-    bh->self = obj;
-    bh->ind = -1;
-    bh->obj = Qnil;
-    bind_type = rb_ivar_get(klass, id_bind_type);
-    while (NIL_P(bind_type)) {
-        klass = RCLASS(klass)->super;
-        bind_type = rb_ivar_get(klass, id_bind_type);
-    }
-    bh->bind_type = DATA_PTR(bind_type);
-    return obj;
-}
-
 static VALUE oci8_bind_initialize(VALUE self, VALUE val, VALUE length, VALUE prec, VALUE scale)
 {
-    oci8_bind_handle_t *bh = DATA_PTR(self);
+    oci8_bind_t *base = DATA_PTR(self);
+    oci8_bind_class_t *bind_class = (oci8_bind_class_t *)base->base.klass;
 
-    bh->bind_type->init(bh, &val, length, prec, scale);
-    bh->rlen = bh->value_sz;
+    bind_class->init(base, &val, length, prec, scale);
+    base->rlen = base->value_sz;
+    base->ind = -1;
     if (!NIL_P(val)) {
-        /* don't call oci8_set_data() directly.
-         * #set(val) may be overwritten by subclass.
-         */
         rb_funcall(self, id_set, 1, val);
     }
     return Qnil;
 }
 
-void Init_oci8_bind(void)
+void oci8_bind_handle_mark(oci8_base_t *base)
 {
+    oci8_bind_handle_t *bind_handle = (oci8_bind_handle_t *)base;
+    rb_gc_mark(bind_handle->obj);
+}
+
+VALUE oci8_bind_handle_get(oci8_bind_t *bind)
+{
+    oci8_bind_handle_t *bind_handle = (oci8_bind_handle_t *)bind;
+    return bind_handle->obj;
+}
+
+void Init_oci8_bind(VALUE klass)
+{
+    cOCIBind = klass;
     id_bind_type = rb_intern("bind_type");
     id_set = rb_intern("set");
 
-    rb_define_alloc_func(cOCIBind, oci8_bind_s_allocate);
     rb_define_method(cOCIBind, "initialize", oci8_bind_initialize, 4);
     rb_define_method(cOCIBind, "get", oci8_get_data, 0);
     rb_define_method(cOCIBind, "set", oci8_set_data, 1);
 
     /* register primitive data types. */
-    oci8_register_bind_type("String", &bind_string);
-    oci8_register_bind_type("RAW", &bind_raw);
-    oci8_register_bind_type("Fixnum", &bind_fixnum);
-    oci8_register_bind_type("Float", &bind_float);
+    oci8_define_bind_class("String", &bind_string_class);
+    oci8_define_bind_class("RAW", &bind_raw_class);
+    oci8_define_bind_class("Fixnum", &bind_fixnum_class);
+    oci8_define_bind_class("Float", &bind_float_class);
 }
 
-void oci8_register_bind_type(const char *name, oci8_bind_type_t *bind_type)
+oci8_bind_t *oci8_get_bind(VALUE obj)
 {
-    VALUE klass = rb_define_class_under(mOCI8BindType, name, cOCIBind);
-    VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, bind_type);
-    rb_ivar_set(klass, id_bind_type, obj);
+    oci8_base_t *base;
+    Check_Handle(obj, cOCIBind, base);
+    return (oci8_bind_t *)base;
 }

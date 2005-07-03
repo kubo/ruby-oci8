@@ -27,4 +27,5 @@ if is_dbi_loaded
   end
 end
 
-exit Test::Unit::AutoRunner.run($0 != "-e" && $0, nil, ["-v"])
+#Test::Unit::AutoRunner.run(true, true)
+Test::Unit::AutoRunner.run
