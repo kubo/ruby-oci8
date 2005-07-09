@@ -56,7 +56,7 @@ static void bind_rowid_init(oci8_bind_t *base, VALUE *val, VALUE length, VALUE p
 static oci8_bind_class_t bind_rowid_class = {
     {
         oci8_bind_handle_mark,
-	NULL,
+	oci8_bind_free,
 	sizeof(oci8_bind_handle_t)
     },
     oci8_bind_handle_get,

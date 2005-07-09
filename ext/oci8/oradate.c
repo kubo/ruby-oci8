@@ -350,7 +350,7 @@ static void bind_oradate_init(oci8_bind_t *bb, VALUE *val, VALUE length, VALUE p
 static oci8_bind_class_t bind_oradate_class = {
     {
         NULL,
-	NULL,
+	oci8_bind_free,
 	sizeof(oci8_bind_oradate_t)
     },
     bind_oradate_get,

@@ -33,16 +33,12 @@ static VALUE cOCIStmt;
 
 typedef struct {
     oci8_base_t base;
+    oci8_bind_t *next;
+    oci8_bind_t *prev;
     VALUE svc;
     VALUE binds;
     VALUE defines;
 } oci8_stmt_t;
-
-static VALUE oci8_bind_free_cb(VALUE obj)
-{
-    oci8_base_free(DATA_PTR(obj));
-    return Qnil;
-}
 
 static void oci8_stmt_mark(oci8_base_t *base)
 {
@@ -55,19 +51,17 @@ static void oci8_stmt_mark(oci8_base_t *base)
 static void oci8_stmt_free(oci8_base_t *base)
 {
     oci8_stmt_t *stmt = (oci8_stmt_t *)base;
-    if (!NIL_P(stmt->binds)) {
-        rb_iterate(rb_each, stmt->binds, oci8_bind_free_cb, Qnil);
-	stmt->binds = Qnil;
-    }
-    if (!NIL_P(stmt->defines)) {
-        rb_iterate(rb_each, stmt->defines, oci8_bind_free_cb, Qnil);
-	stmt->defines = Qnil;
-    }
+    while (stmt->next != (oci8_bind_t*)stmt)
+      oci8_base_free((oci8_base_t*)stmt->next);
+    stmt->next = stmt->prev = (oci8_bind_t*)stmt;
+    stmt->svc = Qnil;
+    stmt->binds = Qnil;
+    stmt->defines = Qnil;
 }
 
 static oci8_base_class_t oci8_stmt_class = {
     oci8_stmt_mark,
-    NULL,
+    oci8_stmt_free,
     sizeof(oci8_stmt_t),
 };
 
@@ -80,6 +74,8 @@ static VALUE oci8_stmt_initialize(VALUE self)
     if (rv != OCI_SUCCESS)
         oci8_env_raise(oci8_envhp, rv);
     stmt->base.type = OCI_HTYPE_STMT;
+    stmt->next = (oci8_bind_t*)stmt;
+    stmt->prev = (oci8_bind_t*)stmt;
     stmt->svc = Qnil;
     stmt->binds = Qnil;
     stmt->defines = Qnil;
@@ -115,14 +111,7 @@ static VALUE oci8_stmt_prepare(VALUE self, VALUE sql)
      * statement's define and bind handles. 
      * But ruby's object don't know it. So free these handles in advance.
      */
-    if (!NIL_P(stmt->binds)) {
-        rb_iterate(rb_each, stmt->binds, oci8_bind_free_cb, Qnil);
-	stmt->binds = Qnil;
-    }
-    if (!NIL_P(stmt->defines)) {
-        rb_iterate(rb_each, stmt->defines, oci8_bind_free_cb, Qnil);
-	stmt->defines = Qnil;
-    }
+    oci8_stmt_free(DATA_PTR(self));
 
     rv = OCIStmtPrepare(stmt->base.hp, oci8_errhp, RSTRING(sql)->ptr, RSTRING(sql)->len, OCI_NTV_SYNTAX, OCI_DEFAULT);
     if (IS_OCI_ERROR(rv)) {
@@ -180,7 +169,13 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
     if (NIL_P(stmt->defines)) {
       stmt->defines = rb_hash_new();
     }
-    rb_hash_aset(stmt->defines, vposition, bind->base.self);
+    rb_hash_aset(stmt->defines, INT2FIX(position), bind->base.self);
+    bind->next->prev = bind->prev;
+    bind->prev->prev = bind->next;
+    bind->next = stmt->next;
+    bind->prev = (oci8_bind_t*)stmt;
+    stmt->next->prev = bind;
+    stmt->next = bind;
     return bind->base.self;
 }
 
@@ -230,6 +225,12 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
       stmt->binds = rb_hash_new();
     }
     rb_hash_aset(stmt->binds, vplaceholder, bind->base.self);
+    bind->next->prev = bind->prev;
+    bind->prev->prev = bind->next;
+    bind->next = stmt->next;
+    bind->prev = (oci8_bind_t*)stmt;
+    stmt->next->prev = bind;
+    stmt->next = bind;
     return bind->base.self;
 }
 
@@ -440,7 +441,7 @@ static void bind_stmt_init(oci8_bind_t *bind, VALUE *val, VALUE length, VALUE pr
 static oci8_bind_class_t bind_stmt_class = {
     {
         oci8_bind_handle_mark,
-	NULL,
+	oci8_bind_free,
 	sizeof(oci8_bind_handle_t)
     },
     oci8_bind_handle_get,

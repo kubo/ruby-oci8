@@ -178,7 +178,7 @@ static void bind_oranumber_init(oci8_bind_t *bb, VALUE *val, VALUE length, VALUE
 static oci8_bind_class_t bind_oranumber_class = {
     {
         NULL,
-	NULL,
+	oci8_bind_free,
 	sizeof(oci8_bind_oranumber_t)
     },
     bind_oranumber_get,
@@ -206,7 +206,7 @@ static void bind_integer_set(oci8_bind_t *bb, VALUE val)
 static oci8_bind_class_t bind_integer_class = {
     {
         NULL,
-	NULL,
+	oci8_bind_free,
 	sizeof(oci8_bind_oranumber_t)
     },
     bind_integer_get,

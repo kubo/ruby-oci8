@@ -33,6 +33,8 @@ extern "C" {
 
 #define IS_OCI_ERROR(v) (((v) != OCI_SUCCESS) && ((v) != OCI_SUCCESS_WITH_INFO))
 
+#define rb_define_method_nodoc rb_define_method
+
 typedef struct oci8_base_class oci8_base_class_t;
 typedef struct oci8_bind_class oci8_bind_class_t;
 
@@ -62,7 +64,8 @@ struct oci8_base {
 
 struct oci8_bind {
     oci8_base_t base;
-    oci8_base_t *next;
+    oci8_bind_t *next;
+    oci8_bind_t *prev;
     void *valuep;
     sb4 value_sz;
     ub2 rlen;
@@ -124,6 +127,7 @@ typedef struct {
     void *hp;
     VALUE obj;
 } oci8_bind_handle_t;
+void oci8_bind_free(oci8_base_t *base);
 void oci8_bind_handle_mark(oci8_base_t *base);
 VALUE oci8_bind_handle_get(oci8_bind_t *bind);
 void Init_oci8_bind(VALUE cOCIBind);
@@ -145,6 +149,9 @@ void Init_ora_date(void);
 
 /* oranumber.c */
 void Init_ora_number(void);
+
+/* ocinumber.c */
+void Init_oci_number(VALUE mOCI);
 
 /* attr.c */
 VALUE oci8_get_sb1_attr(oci8_base_t *base, ub4 attrtype);

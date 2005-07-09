@@ -24,9 +24,10 @@ typedef struct {
 static void bind_string_free(oci8_base_t *base)
 {
     oci8_bind_t *bind_base = (oci8_bind_t *)base;
+    oci8_bind_free(base);
     if (bind_base->valuep != NULL) {
         xfree(bind_base->valuep);
-	bind_base->valuep = NULL;
+        bind_base->valuep = NULL;
     }
 }
 
@@ -68,8 +69,8 @@ static void bind_string_init(oci8_bind_t *base, VALUE *val, VALUE length, VALUE 
 static oci8_bind_class_t bind_string_class = {
     {
         NULL,
-	bind_string_free,
-	sizeof(oci8_bind_string_t)
+        bind_string_free,
+        sizeof(oci8_bind_string_t)
     },
     bind_string_get,
     bind_string_set,
@@ -83,8 +84,8 @@ static oci8_bind_class_t bind_string_class = {
 static oci8_bind_class_t bind_raw_class = {
     {
         NULL,
-	bind_string_free,
-	sizeof(oci8_bind_string_t)
+        bind_string_free,
+        sizeof(oci8_bind_string_t)
     },
     bind_string_get,
     bind_string_set,
@@ -126,8 +127,8 @@ static void bind_fixnum_init(oci8_bind_t *base, VALUE *val, VALUE length, VALUE 
 static oci8_bind_class_t bind_fixnum_class = {
     {
         NULL,
-	NULL,
-	sizeof(oci8_bind_fixnum_t)
+        oci8_bind_free,
+        sizeof(oci8_bind_fixnum_t)
     },
     bind_fixnum_get,
     bind_fixnum_set,
@@ -169,8 +170,8 @@ static void bind_float_init(oci8_bind_t *base, VALUE *val, VALUE length, VALUE p
 static oci8_bind_class_t bind_float_class = {
     {
         NULL,
-	NULL,
-	sizeof(oci8_bind_float_t)
+        oci8_bind_free,
+        sizeof(oci8_bind_float_t)
     },
     bind_float_get,
     bind_float_set,
@@ -207,6 +208,8 @@ static VALUE oci8_bind_initialize(VALUE self, VALUE val, VALUE length, VALUE pre
     oci8_bind_t *base = DATA_PTR(self);
     oci8_bind_class_t *bind_class = (oci8_bind_class_t *)base->base.klass;
 
+    base->next = base;
+    base->prev = base;
     bind_class->init(base, &val, length, prec, scale);
     base->rlen = base->value_sz;
     base->ind = -1;
@@ -214,6 +217,14 @@ static VALUE oci8_bind_initialize(VALUE self, VALUE val, VALUE length, VALUE pre
         rb_funcall(self, id_set, 1, val);
     }
     return Qnil;
+}
+
+void oci8_bind_free(oci8_base_t *base)
+{
+    oci8_bind_t *bind = (oci8_bind_t *)base;
+    bind->next->prev = bind->prev;
+    bind->prev->next = bind->next;
+    bind->next = bind->prev = bind;
 }
 
 void oci8_bind_handle_mark(oci8_base_t *base)

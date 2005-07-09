@@ -81,8 +81,10 @@ void
 Init_oci8lib()
 {
     VALUE cOCI8;
-    Init_oci8_env();
+
     Init_oci8_const();
+    Init_oci8_error();
+    Init_oci8_env();
 
     /* OCI8 class */
     cOCI8 = rb_define_class("OCI8", rb_cObject);
@@ -98,23 +100,22 @@ Init_oci8lib()
     rb_define_method(cOCI8Base, "free", oci8_handle_free, 0);
 
 
-  /* Handle */
-  Init_oci8_bind(cOCI8BindTypeBase);
-  Init_oci8_svcctx();
-  Init_oci8_stmt();
+    /* Handle */
+    Init_oci8_bind(cOCI8BindTypeBase);
+    Init_oci8_svcctx();
+    Init_oci8_stmt();
 
-  /* register allocators */
-  Init_oci8_error();
+    /* register allocators */
+    Init_oci8_rowid();
+    Init_oci8_param();
+    Init_oci8_lob();
 
-  Init_oci8_rowid();
-  Init_oci8_param();
-  Init_oci8_lob();
-
-  Init_ora_date();
-  Init_ora_number();
+    Init_ora_date();
+    Init_ora_number();
+    Init_oci_number(cOCI8);
 
 #ifdef DEBUG_CORE_FILE
-  signal(SIGSEGV, SIG_DFL);
+    signal(SIGSEGV, SIG_DFL);
 #endif
 }
 

@@ -247,7 +247,7 @@ static void bind_lob_init(oci8_bind_t *base, VALUE *val, VALUE length, VALUE pre
 static oci8_bind_class_t bind_clob_class = {
     {
         oci8_bind_handle_mark,
-	NULL,
+	oci8_bind_free,
 	sizeof(oci8_bind_handle_t)
     },
     oci8_bind_handle_get,
@@ -259,7 +259,7 @@ static oci8_bind_class_t bind_clob_class = {
 static oci8_bind_class_t bind_blob_class = {
     {
         oci8_bind_handle_mark,
-	NULL,
+	oci8_bind_free,
 	sizeof(oci8_bind_handle_t)
     },
     oci8_bind_handle_get,

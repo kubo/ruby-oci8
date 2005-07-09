@@ -1,3 +1,9 @@
+2005-07-09  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/bind.c, ext/oci8/lob.c, ext/oci8/oci8.h, ext/oci8/oradate.c,
+	   ext/oci8/oranumber.c, ext/oci8/rowid.c, ext/oci8/stmt.c:
+	   use doubly linked list to free OCI8::BindType::*.
+	* ext/oci8/extconf.rb, ext/oci8/oci8.c, ext/oci8/ocinumber.c: add OCINumber.
+
 2005-07-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/*.c, ext/oci8/*.h: remove oci8_handle_t and oci8_base_class_t.
 	  use oci8_base_t and oci8_bind_t instead of them. use oci8_base_class_t
