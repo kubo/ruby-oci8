@@ -1,4 +1,10 @@
 2005-07-10  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/svcctx.c, lib/oci8.rb.in:
+	  OCISvcCtx class is merged to OCI8 class. OCISvcCtx's public instance
+	  methods become OCI8's private instance methods.
+	* ext/oci8/depend: deleted.
+
+2005-07-10  KUBO Takehiro  <kubo@jiubao.org>
 	* Makefile, ext/oci8/extconf.rb: change version to 0.2.0-alpha.
 	* ext/oci8/extconf.rb: add "ocidatetime.o" to $objs. add '--with-instant-client'
 	  to Makefile when setup.rb is called with '--with-instant-client'.

@@ -112,8 +112,7 @@ class OCI8
   #   conn = OCI8.new("sys", "change_on_install", nil, :SYSDBA)
   def initialize(uid, pswd, dbname = nil, privilege = nil)
     @ctx = [0, Mutex.new, nil]
-    @svc = nil
-    do_ocicall(@ctx) { @svc = OCISvcCtx.new(uid, pswd, dbname, privilege) }
+    do_ocicall(@ctx) { __initialize(uid, pswd, dbname, privilege) }
   end # initialize
 
   # Disconnects from Oracle. Uncommitted transaction will be
@@ -125,7 +124,7 @@ class OCI8
   #   conn.logoff
   def logoff
     rollback()
-    @svc.logoff()
+    __logoff()
     true
   end # logoff
 
@@ -193,7 +192,7 @@ class OCI8
   # same with that of bind variables.
   def exec(sql, *bindvars)
     begin
-      cursor = OCI8::Cursor.new(@svc, @ctx)
+      cursor = OCI8::Cursor.new(self, @ctx)
       cursor.parse(sql)
       ret = cursor.exec(*bindvars)
       case cursor.type
@@ -224,7 +223,7 @@ class OCI8
   # Creates cursor, prepare to execute SQL statement and return the
   # instance of OCI8::Cursor.
   def parse(sql)
-    cursor = OCI8::Cursor.new(@svc, @ctx)
+    cursor = OCI8::Cursor.new(self, @ctx)
     cursor.parse(sql)
     cursor
   end # parse
@@ -237,7 +236,7 @@ class OCI8
   #   conn.commit
   #   conn.logoff
   def commit
-    do_ocicall(@ctx) { @svc.commit }
+    do_ocicall(@ctx) { __commit }
   end # commit
 
   # Rollbacks the transaction.
@@ -248,7 +247,7 @@ class OCI8
   #   conn.rollback
   #   conn.logoff
   def rollback
-    do_ocicall(@ctx) { @svc.rollback }
+    do_ocicall(@ctx) { __rollback }
   end # rollback
 
   # Returns the state of the autocommit mode. The default value is
@@ -282,26 +281,26 @@ class OCI8
   # Returns the status of blocking/non-blocking mode. The default
   # value is false 
   def non_blocking?
-    @svc.non_blocking?
+    __non_blocking?
   end # non_blocking?
 
   # Changes the status of blocking/non-blocking mode. Acceptable
   # values are true and false.
   def non_blocking=(nb)
-    @svc.non_blocking = nb
+    __non_blocking = nb
   end # non_blocking=
 
   # Cancels the OCI call performing in other thread. To use this, the
   # connection status must be non-blocking mode.
   def break
     @ctx[CTX_MUTEX].synchronize do
-      @svc.break()
+      __break()
       unless @ctx[CTX_THREAD].nil?
 	@ctx[CTX_THREAD].wakeup()
 	@ctx[CTX_THREAD] = nil
-	if @svc.respond_to?("reset")
+	if self.respond_to?("__reset")
 	  begin
-	    @svc.reset()
+	    __reset()
 	  rescue OCIError
 	    raise if $!.code != 1013 # ORA-01013
 	  end
@@ -862,7 +861,7 @@ class OCI8
   class LOB
     attr :pos
     def initialize(svc, locator) # :nodoc:
-      raise "invalid argument" unless svc.is_a? OCISvcCtx
+      raise "invalid argument" unless svc.is_a? OCI8
       raise "invalid argument" unless locator.is_a? OCILobLocator
       @svc = svc
       @locator = locator
