@@ -8,6 +8,12 @@
 #include <signal.h>
 #endif
 
+oci8_base_class_t oci8_base_class = {
+    NULL,
+    NULL,
+    sizeof(oci8_base_t),
+};
+
 static ID id_oci8_class;
 
 static VALUE cOCI8Base;
@@ -16,7 +22,7 @@ static VALUE cOCI8BindTypeBase;
 
 static VALUE oci8_handle_initialize(VALUE self)
 {
-    rb_raise(rb_eNameError, "private method `new' called for %s:Class", rb_class2name(self));
+    rb_raise(rb_eNameError, "private method `new' called for %s:Class", rb_class2name(CLASS_OF(self)));
 }
 
 void oci8_base_free(oci8_base_t *base)
@@ -113,6 +119,7 @@ Init_oci8lib()
     Init_ora_date();
     Init_ora_number();
     Init_oci_number(cOCI8);
+    Init_oci_datetime();
 
 #ifdef DEBUG_CORE_FILE
     signal(SIGSEGV, SIG_DFL);

@@ -1,7 +1,7 @@
 require 'mkmf'
 require File.dirname(__FILE__) + '/oraconf'
 
-RUBY_OCI8_VERSION = '0.1.10'
+RUBY_OCI8_VERSION = '0.2.0-alpha'
 
 oraconf = OraConf.new()
 
@@ -19,9 +19,9 @@ def replace_keyword(source, target, replace)
 end
 
 $objs = ["oci8.o", "const.o", "env.o", "error.o", "svcctx.o",
-         "stmt.o", "bind.o",
-         "rowid.o", "param.o", "lob.o",
-         "oradate.o", "oranumber.o", "attr.o"]
+         "stmt.o", "bind.o", "param.o", "attr.o",
+         "rowid.o", "lob.o", "oradate.o", "oranumber.o",
+         "ocinumber.o", "ocidatetime.o"]
 
 $CFLAGS += oraconf.cflags
 $libs += oraconf.libs
@@ -76,7 +76,15 @@ $defs = []
 # make dependency file
 open("depend", "w") do |f|
   f.puts("Makefile: extconf.rb oraconf.rb")
-  f.puts("\t$(RUBY) extconf.rb")
+  ic_dir = with_config('instant-client')
+  case ic_dir
+  when String
+    f.puts("\t$(RUBY) extconf.rb --with-instant-client=#{ic_dir}")
+  when true
+    f.puts("\t$(RUBY) extconf.rb --with-instant-client")
+  else
+    f.puts("\t$(RUBY) extconf.rb")
+  end
   $objs.each do |obj|
     f.puts("#{obj}: $(srcdir)/#{obj.sub(/\.o$/, ".c")} $(srcdir)/oci8.h Makefile")
   end

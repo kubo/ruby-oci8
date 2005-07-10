@@ -94,6 +94,19 @@ struct oci8_bind {
   } \
 } while (0)
 
+/* use for local call */
+#define oci_lc(rv) do { \
+    sword __rv = (rv); \
+    if (__rv != OCI_SUCCESS) { \
+        oci8_raise(oci8_errhp, __rv, NULL); \
+    } \
+} while(0)
+
+/* dangerous macros */
+#define CHECK_STRING(obj) if (!NIL_P(obj)) { StringValue(obj); }
+#define TO_STRING_PTR(obj) (NIL_P(obj) ? NULL : RSTRING(obj)->ptr)
+#define TO_STRING_LEN(obj) (NIL_P(obj) ? 0 : RSTRING(obj)->len)
+
 /* env.c */
 extern OCIEnv *oci8_envhp;
 extern OCIError *oci8_errhp;
@@ -107,6 +120,7 @@ void  Init_oci8_const(void);
 void oci8_base_free(oci8_base_t *base);
 VALUE oci8_define_class(const char *name, oci8_base_class_t *klass);
 VALUE oci8_define_bind_class(const char *name, oci8_bind_class_t *oci8_bind_class);
+extern oci8_base_class_t oci8_base_class;
 
 /* error.c */
 extern VALUE eOCIException;
@@ -152,6 +166,10 @@ void Init_ora_number(void);
 
 /* ocinumber.c */
 void Init_oci_number(VALUE mOCI);
+OCINumber *oci8_get_ocinumber(VALUE num);
+
+/* ocidatetim.c */
+void Init_oci_datetime(void);
 
 /* attr.c */
 VALUE oci8_get_sb1_attr(oci8_base_t *base, ub4 attrtype);

@@ -1,3 +1,13 @@
+2005-07-10  KUBO Takehiro  <kubo@jiubao.org>
+	* Makefile, ext/oci8/extconf.rb: change version to 0.2.0-alpha.
+	* ext/oci8/extconf.rb: add "ocidatetime.o" to $objs. add '--with-instant-client'
+	  to Makefile when setup.rb is called with '--with-instant-client'.
+	* ext/oci8/oci8.c: add oci8_base_class. fix bug in oci8_handle_initialize().
+	  call Init_oci_datetime() in Init_oci8().
+	* ext/oci8/oci8.h: add macros oci_lc, CHECK_STRING, TO_STRING_PTR and TO_STRING_LEN.
+	* ext/oci8/ocinumber.c: add oci8_get_ocinumber().
+	* ext/oci8/ocidatetime.c: add a new file for OCIDateTime.
+
 2005-07-09  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c, ext/oci8/lob.c, ext/oci8/oci8.h, ext/oci8/oradate.c,
 	   ext/oci8/oranumber.c, ext/oci8/rowid.c, ext/oci8/stmt.c:

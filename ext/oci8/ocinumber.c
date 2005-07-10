@@ -34,12 +34,6 @@ static OCINumber const_shreshold;
 #define NUMBER_FORMAT_INT_LEN (sizeof(NUMBER_FORMAT_INT) - 1)
 
 #define _NUMBER(val) ((OCINumber *)DATA_PTR(val)) /* dangerous macro */
-#define oci_lc(rv) do { \
-    sword __rv = (rv); \
-    if (__rv != OCI_SUCCESS) { \
-        oci8_raise(oci8_errhp, __rv, NULL); \
-    } \
-} while(0)
 
 static VALUE onum_s_alloc(VALUE klass)
 {
@@ -897,4 +891,12 @@ Init_oci_number(VALUE cOCI8)
     rb_define_singleton_method(cOCINumber, "_load", onum_s_load, 1);
 
     oci8_define_bind_class("OCINumber", &bind_ocinumber_class);
+}
+
+OCINumber *oci8_get_ocinumber(VALUE num)
+{
+    if (!rb_obj_is_kind_of(num, cOCINumber)) { 
+        rb_raise(rb_eTypeError, "invalid argument %s (expect a subclass of %s)", rb_class2name(CLASS_OF(num)), rb_class2name(cOCINumber));
+    }
+    return _NUMBER(num);
 }
