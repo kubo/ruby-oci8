@@ -1,3 +1,4 @@
+/* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
   svcctx.c - part of ruby-oci8
 
@@ -6,7 +7,7 @@
 */
 #include "oci8.h"
 
-VALUE cOCISvcCtx;
+static VALUE cOCI8;
 
 enum logon_type_t {T_IMPLICIT, T_EXPLICIT};
 
@@ -354,33 +355,35 @@ static VALUE oci8_reset(VALUE self)
 }
 #endif
 
-void Init_oci8_svcctx(void)
+VALUE Init_oci8_svcctx(void)
 {
-    cOCISvcCtx = oci8_define_class("OCISvcCtx", &oci8_svcctx_class);
+    cOCI8 = oci8_define_class("OCI8", &oci8_svcctx_class);
 
     sym_SYSDBA = ID2SYM(rb_intern("SYSDBA"));
     sym_SYSOPER = ID2SYM(rb_intern("SYSOPER"));
 
-    rb_define_method(cOCISvcCtx, "initialize", oci8_svcctx_initialize, -1);
-    rb_define_method(cOCISvcCtx, "logoff", oci8_svcctx_logoff, 0);
-    rb_define_method(cOCISvcCtx, "passwordChange", oci8_password_change, 4);
-    rb_define_method(cOCISvcCtx, "commit", oci8_trans_commit, -1);
-    rb_define_method(cOCISvcCtx, "rollback", oci8_trans_rollback, -1);
-    rb_define_method(cOCISvcCtx, "non_blocking?", oci8_svcctx_non_blocking_p, 0);
-    rb_define_method(cOCISvcCtx, "non_blocking=", oci8_svcctx_set_non_blocking, 1);
-    rb_define_method(cOCISvcCtx, "version", oci8_server_version, 0);
+    rb_define_private_method(cOCI8, "__initialize", oci8_svcctx_initialize, -1);
+    rb_define_private_method(cOCI8, "__logoff", oci8_svcctx_logoff, 0);
+    rb_define_private_method(cOCI8, "__passwordChange", oci8_password_change, 4);
+    rb_define_private_method(cOCI8, "__commit", oci8_trans_commit, -1);
+    rb_define_private_method(cOCI8, "__rollback", oci8_trans_rollback, -1);
+    rb_define_private_method(cOCI8, "__non_blocking?", oci8_svcctx_non_blocking_p, 0);
+    rb_define_private_method(cOCI8, "__non_blocking=", oci8_svcctx_set_non_blocking, 1);
+    rb_define_method(cOCI8, "version", oci8_server_version, 0);
 #ifdef HAVE_OCISERVERRELEASE
-    rb_define_method(cOCISvcCtx, "release", oci8_server_release, 0);
+    rb_define_method(cOCI8, "release", oci8_server_release, 0);
 #endif
-    rb_define_method(cOCISvcCtx, "break", oci8_break, 0);
+    rb_define_private_method(cOCI8, "__break", oci8_break, 0);
 #ifdef HAVE_OCIRESET
-    rb_define_method(cOCISvcCtx, "reset", oci8_reset, 0);
+    rb_define_private_method(cOCI8, "__reset", oci8_reset, 0);
 #endif
+
+    return cOCI8;
 }
 
 oci8_base_t *oci8_get_svcctx(VALUE obj)
 {
     oci8_base_t *base;
-    Check_Handle(obj, cOCISvcCtx, base);
+    Check_Handle(obj, cOCI8, base);
     return base;
 }

@@ -129,7 +129,7 @@ NORETURN(void oci8_raise(OCIError *, sword status, OCIStmt *));
 NORETURN(void oci8_env_raise(OCIEnv *, sword status));
 
 /* svcctx.c */
-void Init_oci8_svcctx(void);
+VALUE Init_oci8_svcctx(void);
 oci8_base_t *oci8_get_svcctx(VALUE obj);
 
 /* stmt.c */

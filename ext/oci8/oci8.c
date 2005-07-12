@@ -88,17 +88,17 @@ Init_oci8lib()
 {
     VALUE cOCI8;
 
+    id_oci8_class = rb_intern("__oci8_class__");
+
     Init_oci8_const();
     Init_oci8_error();
     Init_oci8_env();
 
     /* OCI8 class */
-    cOCI8 = rb_define_class("OCI8", rb_cObject);
     cOCI8Base = rb_define_class("OCI8Base", rb_cObject);
+    cOCI8 = Init_oci8_svcctx();
     mOCI8BindType = rb_define_module_under(cOCI8, "BindType");
     cOCI8BindTypeBase = rb_define_class_under(mOCI8BindType, "Base", cOCI8Base);
-
-    id_oci8_class = rb_intern("__oci8_class__");
 
     rb_define_alloc_func(cOCI8Base, oci8_s_allocate);
 
@@ -108,7 +108,6 @@ Init_oci8lib()
 
     /* Handle */
     Init_oci8_bind(cOCI8BindTypeBase);
-    Init_oci8_svcctx();
     Init_oci8_stmt();
 
     /* register allocators */
