@@ -1,3 +1,8 @@
+2005-07-16  KUBO Takehiro  <kubo@jiubao.org>
+	* metaconfig: move "require 'base64'" and "require 'zlib'" to the
+	  next line of "def get_zcontent(file)" for a ruby which doesn't
+	  have 'zlib'.
+
 2005-07-10  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/svcctx.c, lib/oci8.rb.in:
 	  OCISvcCtx class is merged to OCI8 class. OCISvcCtx's public instance
