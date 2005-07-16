@@ -1,6 +1,4 @@
 # --*- ruby -*--
-require 'base64'
-require 'zlib'
 
 ToplevelInstaller::TASKS.push ['test', 'run test.']
 ToplevelInstaller::TASKS.push ['distbin', 'make binary package.']
@@ -17,6 +15,8 @@ ToplevelInstaller.module_eval {
   end
 
   def get_zcontent(file)
+    require 'base64'
+    require 'zlib'
     File.open(file, 'rb') do |f|
       Base64.encode64(Zlib::Deflate::deflate(f.read))
     end

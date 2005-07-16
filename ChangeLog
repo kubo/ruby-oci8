@@ -1,3 +1,8 @@
+2005-07-16  KUBO Takehiro  <kubo@jiubao.org>
+	* metaconfig: move "require 'base64'" and "require 'zlib'" to the
+	  next line of "def get_zcontent(file)" for a ruby which doesn't
+	  have 'zlib'.
+
 2005-05-31  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: fix for cygwin. fix for oracle instant client.
 	* metaconfig: add distbin task.
