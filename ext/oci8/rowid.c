@@ -43,7 +43,7 @@ static void bind_rowid_set(oci8_bind_t *base, VALUE val)
     handle->obj = val;
 }
 
-static void bind_rowid_init(oci8_bind_t *base, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_rowid_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
     oci8_bind_handle_t *handle = (oci8_bind_handle_t *)base;
     base->valuep = &handle->hp;

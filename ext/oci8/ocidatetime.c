@@ -18,8 +18,7 @@ static dvoid *odt_get_hndl(VALUE ses)
     if (NIL_P(ses)) {
         return oci8_envhp;
     } else {
-        /* TODO: get session handle. */
-        rb_raise(rb_eNotImpError, "must be nil (fix in the future)");
+        return oci8_get_oci_session(ses);
     }
 }
 
@@ -402,7 +401,7 @@ static void bind_interval_set(oci8_bind_t *b, VALUE val)
     oci_lc(OCIIntervalAssign(oci8_envhp, oci8_errhp, base->hp, bd->base.hp));
 }
 
-static void bind_datetime_init(oci8_bind_t *b, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_datetime_init(oci8_bind_t *b, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
     oci8_bind_datetime_t *bd = (oci8_bind_datetime_t *)b;
 
@@ -415,7 +414,7 @@ static void bind_datetime_init(oci8_bind_t *b, VALUE *val, VALUE length, VALUE p
     }
 }
 
-static void bind_interval_init(oci8_bind_t *b, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_interval_init(oci8_bind_t *b, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
     oci8_bind_datetime_t *bd = (oci8_bind_datetime_t *)b;
 

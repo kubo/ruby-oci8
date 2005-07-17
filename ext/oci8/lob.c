@@ -61,13 +61,13 @@ static VALUE oci8_lob_is_initialized_p(VALUE self)
 static VALUE oci8_lob_get_length(VALUE self, VALUE vsvc)
 {
     oci8_lob_locator_t *lob = DATA_PTR(self);
-    oci8_base_t *svch;
+    OCISvcCtx *svchp;
     ub4 len;
     sword rv;
 
-    svch = oci8_get_svcctx(vsvc); /* 1 */
+    svchp = oci8_get_oci_svcctx(vsvc); /* 1 */
 
-    rv = OCILobGetLength(svch->hp, oci8_errhp, lob->base.hp, &len);
+    rv = OCILobGetLength(svchp, oci8_errhp, lob->base.hp, &len);
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);
     return INT2FIX(len);
@@ -77,7 +77,7 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
 {
     oci8_lob_locator_t *lob = DATA_PTR(self);
     VALUE vsvc, voffset, vamt, vcsid, vcsfrm;
-    oci8_base_t *svch;
+    OCISvcCtx *svchp;
     ub4 offset;
     ub2 csid;
     ub1 csfrm;
@@ -88,7 +88,7 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
     VALUE v = Qnil;
 
     rb_scan_args(argc, argv, "32", &vsvc, &voffset, &vamt, &vcsid, &vcsfrm);
-    svch = oci8_get_svcctx(vsvc); /* 1 */
+    svchp = oci8_get_oci_svcctx(vsvc); /* 1 */
     offset = NUM2INT(voffset); /* 2 */
     amt = NUM2INT(vamt); /* 3 */
     Get_Int_With_Default(argc, 4, vcsid, csid, 0); /* 4 */
@@ -107,7 +107,7 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
      */
     buf_size_in_char = sizeof(buf) / lob->char_width;
     do {
-        rv = OCILobRead(svch->hp, oci8_errhp, lob->base.hp, &amt, offset, buf, sizeof(buf), NULL, NULL, 0, SQLCS_IMPLICIT);
+        rv = OCILobRead(svchp, oci8_errhp, lob->base.hp, &amt, offset, buf, sizeof(buf), NULL, NULL, 0, SQLCS_IMPLICIT);
 	if (rv != OCI_SUCCESS && rv != OCI_NEED_DATA)
 	    oci8_raise(oci8_errhp, rv, NULL);
 	if (amt == 0)
@@ -128,7 +128,7 @@ static VALUE oci8_lob_write(int argc, VALUE *argv, VALUE self)
 {
     oci8_lob_locator_t *lob = DATA_PTR(self);
     VALUE vsvc, voffset, vbuf, vcsid, vcsfrm;
-    oci8_base_t *svch;
+    OCISvcCtx *svchp;
     ub4 offset;
     ub2 csid;
     ub1 csfrm;
@@ -136,14 +136,14 @@ static VALUE oci8_lob_write(int argc, VALUE *argv, VALUE self)
     sword rv;
 
     rb_scan_args(argc, argv, "30", &vsvc, &voffset, &vbuf, &vcsid, &vcsfrm);
-    svch = oci8_get_svcctx(vsvc); /* 1 */
+    svchp = oci8_get_oci_svcctx(vsvc); /* 1 */
     offset = NUM2INT(voffset); /* 2 */
     StringValue(vbuf);
     Get_Int_With_Default(argc, 4, vcsid, csid, 0); /* 4 */
     Get_Int_With_Default(argc, 5, vcsfrm, csfrm, SQLCS_IMPLICIT); /* 5 */
 
     amt = RSTRING(vbuf)->len;
-    rv = OCILobWrite(svch->hp, oci8_errhp, lob->base.hp, &amt, offset, RSTRING(vbuf)->ptr, amt, OCI_ONE_PIECE, NULL, NULL, csid, csfrm);
+    rv = OCILobWrite(svchp, oci8_errhp, lob->base.hp, &amt, offset, RSTRING(vbuf)->ptr, amt, OCI_ONE_PIECE, NULL, NULL, csid, csfrm);
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);
     return INT2FIX(amt);
@@ -152,12 +152,12 @@ static VALUE oci8_lob_write(int argc, VALUE *argv, VALUE self)
 static VALUE oci8_lob_trim(VALUE self, VALUE vsvc, VALUE len)
 {
     oci8_lob_locator_t *lob = DATA_PTR(self);
-    oci8_base_t *svch;
+    OCISvcCtx *svchp;
     sword rv;
 
-    svch = oci8_get_svcctx(vsvc); /* 1 */
+    svchp = oci8_get_oci_svcctx(vsvc); /* 1 */
 
-    rv = OCILobTrim(svch->hp, oci8_errhp, lob->base.hp, NUM2INT(len));
+    rv = OCILobTrim(svchp, oci8_errhp, lob->base.hp, NUM2INT(len));
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);
     return self;
@@ -167,17 +167,17 @@ static VALUE oci8_lob_clone(VALUE self, VALUE vsvc)
 {
     oci8_lob_locator_t *lob = DATA_PTR(self);
     oci8_lob_locator_t *newlob;
-    oci8_base_t *svch;
+    OCISvcCtx *svchp;
     VALUE newobj;
     sword rv;
 
-    svch = oci8_get_svcctx(vsvc); /* 1 */
+    svchp = oci8_get_oci_svcctx(vsvc); /* 1 */
 
     newobj = rb_funcall(CLASS_OF(self), oci8_id_new, 0);
     newlob = DATA_PTR(newobj);
 #ifdef HAVE_OCILOBLOCATORASSIGN
     /* Oracle 8.1 or upper */
-    rv = OCILobLocatorAssign(svch->hp, oci8_errhp, lob->base.hp, (OCILobLocator**)&newlob->base.hp);
+    rv = OCILobLocatorAssign(svchp, oci8_errhp, lob->base.hp, (OCILobLocator**)&newlob->base.hp);
 #else
     /* Oracle 8.0 */
     rv = OCILobAssign(oci8_envhp, oci8_errhp, lob->base.hp, (OCILobLocator**)&newlob->base.hp);
@@ -192,12 +192,12 @@ static VALUE oci8_lob_clone(VALUE self, VALUE vsvc)
 static VALUE oci8_lob_open(VALUE self, VALUE vsvc)
 {
     oci8_lob_locator_t *lob = DATA_PTR(self);
-    oci8_base_t *svch;
+    OCISvcCtx *svchp;
     sword rv;
 
-    svch = oci8_get_svcctx(vsvc); /* 1 */
+    svchp = oci8_get_oci_svcctx(vsvc); /* 1 */
   
-    rv = OCILobOpen(svch->hp, oci8_errhp, lob->base.hp, OCI_DEFAULT);
+    rv = OCILobOpen(svchp, oci8_errhp, lob->base.hp, OCI_DEFAULT);
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);
     return self;
@@ -208,12 +208,11 @@ static VALUE oci8_lob_open(VALUE self, VALUE vsvc)
 static VALUE oci8_lob_close(VALUE self, VALUE vsvc)
 {
     oci8_lob_locator_t *lob = DATA_PTR(self);
-    oci8_base_t *svch;
+    OCISvcCtx *svchp;
     sword rv;
 
-    svch = oci8_get_svcctx(vsvc); /* 1 */
-  
-    rv = OCILobClose(svch->hp, oci8_errhp, lob->base.hp);
+    svchp = oci8_get_oci_svcctx(vsvc); /* 1 */
+    rv = OCILobClose(svchp, oci8_errhp, lob->base.hp);
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);
     return self;
@@ -234,7 +233,7 @@ static void bind_lob_set(oci8_bind_t *base, VALUE val)
     handle->obj = val;
 }
 
-static void bind_lob_init(oci8_bind_t *base, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_lob_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
     oci8_bind_handle_t *handle = (oci8_bind_handle_t *)base;
     base->valuep = &handle->hp;

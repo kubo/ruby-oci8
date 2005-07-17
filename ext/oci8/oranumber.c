@@ -168,7 +168,7 @@ static void bind_oranumber_set(oci8_bind_t *bb, VALUE val)
     memcpy(bb->valuep, &ovn->num, sizeof(ora_number_t));
 }
 
-static void bind_oranumber_init(oci8_bind_t *bb, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_oranumber_init(oci8_bind_t *bb, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
     oci8_bind_oranumber_t *bo = (oci8_bind_oranumber_t *)bb;
     bb->valuep = &bo->on;

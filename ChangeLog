@@ -1,3 +1,11 @@
+2005-07-17  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/bind.c, ext/oci8/lob.c, ext/oci8/oci8.h, ext/oci8/ocidatetime.c,
+	  ext/oci8/ocinumber.c, ext/oci8/oradate.c, ext/oci8/oranumber.c,
+	  ext/oci8/rowid.c, ext/oci8/stmt.c, ext/oci8/svcctx.c:
+	  change arguments of (oci8_bind_class_t *)->init(). change the return
+	  value of oci8_get_svcctx(). add oci8_get_oci_session().
+	* lib/oci8.rb.in: change arguments of OCI8::BindType:Base.new().
+
 2005-07-16  KUBO Takehiro  <kubo@jiubao.org>
 	* metaconfig: move "require 'base64'" and "require 'zlib'" to the
 	  next line of "def get_zcontent(file)" for a ruby which doesn't

@@ -757,7 +757,7 @@ static void bind_ocinumber_set(oci8_bind_t *bb, VALUE val)
     set_oci_number_from_num(&bo->on, val, 1);
 }
 
-static void bind_ocinumber_init(oci8_bind_t *bb, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_ocinumber_init(oci8_bind_t *bb, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
     oci8_bind_ocinumber_t *bo = (oci8_bind_ocinumber_t *)bb;
     bb->valuep = &bo->on;

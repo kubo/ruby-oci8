@@ -341,7 +341,7 @@ class OCI8
 
     # get/set Number (for OCI8::SQLT_NUM)
     class Number
-      def self.factory(val, length, precision, scale) # :nodoc:
+      def self.dispatch(val, length, precision, scale) # :nodoc:
         if scale == -127
           if precision == 0
             # NUMBER declared without its scale and precision. (Oracle 9.2.0.3 or above)
@@ -372,7 +372,7 @@ class OCI8
             bind_type = OCI8::BindType::OraNumber
           end
         end
-        bind_type.new(val, length, precision, scale)
+        bind_type
       end
     end
 
@@ -773,11 +773,10 @@ class OCI8
       if bindclass.nil?
         raise "unsupported datatype: #{SQLT_NAMES[type] ? SQLT_NAMES[type] : type}"
       end
-      if bindclass.respond_to?(:factory)
-        bindobj = bindclass.factory(val, length, precision, scale)
-      else
-        bindobj = bindclass.new(val, length, precision, scale)
+      if bindclass.respond_to?(:dispatch)
+        bindclass = bindclass.dispatch(val, length, precision, scale)
       end
+      bindobj = bindclass.new(@svc, val, length, precision, scale)
 
       case bind_type
       when :bind

@@ -339,7 +339,7 @@ static void bind_oradate_set(oci8_bind_t *bb, VALUE val)
     memcpy(bb->valuep, od, sizeof(ora_date_t));
 }
 
-static void bind_oradate_init(oci8_bind_t *bb, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_oradate_init(oci8_bind_t *bb, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
     oci8_bind_oradate_t *bo = (oci8_bind_oradate_t *)bb;
 

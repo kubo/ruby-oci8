@@ -51,7 +51,7 @@ struct oci8_bind_class {
     oci8_base_class_t base;
     VALUE (*get)(oci8_bind_t *bh);
     void (*set)(oci8_bind_t *bh, VALUE val);
-    void (*init)(oci8_bind_t *bh, VALUE *val, VALUE length, VALUE prec, VALUE scale);
+    void (*init)(oci8_bind_t *bh, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale);
     ub2 dty;
 };
 
@@ -130,7 +130,8 @@ NORETURN(void oci8_env_raise(OCIEnv *, sword status));
 
 /* svcctx.c */
 VALUE Init_oci8_svcctx(void);
-oci8_base_t *oci8_get_svcctx(VALUE obj);
+OCISvcCtx *oci8_get_oci_svcctx(VALUE obj);
+OCISession *oci8_get_oci_session(VALUE obj);
 
 /* stmt.c */
 void Init_oci8_stmt(void);

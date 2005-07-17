@@ -270,12 +270,11 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
 static VALUE oci8_stmt_execute(VALUE self, VALUE vsvc, VALUE viters, VALUE vmode)
 {
     oci8_stmt_t *stmt = DATA_PTR(self);
-    oci8_base_t *svcctx;
+    OCISvcCtx *svchp = oci8_get_oci_svcctx(vsvc); /* 1 */
     ub4 mode;
     ub4 iters;
     sword rv;
 
-    svcctx = oci8_get_svcctx(vsvc); /* 1 */
     Check_Type(viters, T_FIXNUM); /* 2 */
     iters = FIX2INT(viters);
     Check_Type(vmode, T_FIXNUM); /* 3 */
@@ -287,13 +286,13 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE vsvc, VALUE viters, VALUE vmode
         rb_raise(rb_eArgError, "current implementation doesn't support array fatch or batch mode");
     }
 
-    rv = OCIStmtExecute(svcctx->hp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode);
+    rv = OCIStmtExecute(svchp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode);
     if (rv == OCI_ERROR) {
         ub4 errcode;
 	OCIErrorGet(oci8_errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
 	if (errcode == 1000) {
 	    rb_gc();
-	    rv = OCIStmtExecute(svcctx->hp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode);
+	    rv = OCIStmtExecute(svchp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode);
 	}
     }
     if (IS_OCI_ERROR(rv)) {
@@ -428,7 +427,7 @@ static void bind_stmt_set(oci8_bind_t *bind, VALUE val)
     handle->obj = val;
 }
 
-static void bind_stmt_init(oci8_bind_t *bind, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_stmt_init(oci8_bind_t *bind, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
     oci8_bind_handle_t *handle = (oci8_bind_handle_t *)bind;
     bind->valuep = &handle->hp;
