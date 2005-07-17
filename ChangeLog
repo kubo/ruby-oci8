@@ -1,4 +1,9 @@
 2005-07-17  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c, ext/oci8/oci8.c, ext/oci8/oci8.h, lib/oci8.rb.in:
+	  delete OCILobLocator. implement OCI8::LOB by C instead of ruby.
+	* ext/oci8/svcctx.c: add more check in oci8_get_svcctx().
+
+2005-07-17  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c, ext/oci8/lob.c, ext/oci8/oci8.h, ext/oci8/ocidatetime.c,
 	  ext/oci8/ocinumber.c, ext/oci8/oradate.c, ext/oci8/oranumber.c,
 	  ext/oci8/rowid.c, ext/oci8/stmt.c, ext/oci8/svcctx.c:

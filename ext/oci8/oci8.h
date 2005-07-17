@@ -102,6 +102,12 @@ struct oci8_bind {
     } \
 } while(0)
 
+#if SIZEOF_LONG > 4
+#define UB4_TO_NUM INT2FIX
+#else
+#define UB4_TO_NUM UINT2NUM
+#endif
+
 /* dangerous macros */
 #define CHECK_STRING(obj) if (!NIL_P(obj)) { StringValue(obj); }
 #define TO_STRING_PTR(obj) (NIL_P(obj) ? NULL : RSTRING(obj)->ptr)
@@ -119,6 +125,7 @@ void  Init_oci8_const(void);
 /* oci8.c */
 void oci8_base_free(oci8_base_t *base);
 VALUE oci8_define_class(const char *name, oci8_base_class_t *klass);
+VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_class_t *klass);
 VALUE oci8_define_bind_class(const char *name, oci8_bind_class_t *oci8_bind_class);
 extern oci8_base_class_t oci8_base_class;
 
@@ -132,6 +139,8 @@ NORETURN(void oci8_env_raise(OCIEnv *, sword status));
 VALUE Init_oci8_svcctx(void);
 OCISvcCtx *oci8_get_oci_svcctx(VALUE obj);
 OCISession *oci8_get_oci_session(VALUE obj);
+#define TO_SVCCTX oci8_get_oci_svcctx
+#define TO_SESSION oci8_get_oci_session
 
 /* stmt.c */
 void Init_oci8_stmt(void);
@@ -157,7 +166,7 @@ void Init_oci8_param(void);
 VALUE oci8_param_create(OCIParam *parmhp, OCIError *errhp);
 
 /* lob.c */
-void Init_oci8_lob(void);
+void Init_oci8_lob(VALUE cOCI8);
 
 /* oradate.c */
 void Init_ora_date(void);

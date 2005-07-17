@@ -381,22 +381,25 @@ VALUE Init_oci8_svcctx(void)
     return cOCI8;
 }
 
-static oci8_base_t *oci8_get_svcctx(VALUE obj)
+static oci8_svcctx_t *oci8_get_svcctx(VALUE obj)
 {
     oci8_base_t *base;
     Check_Handle(obj, cOCI8, base);
-    return base;
+    if (base->type == 0) {
+        rb_raise(rb_eTypeError, "invalid argument %s was freed already.", rb_class2name(CLASS_OF(obj)));
+    }
+    return (oci8_svcctx_t *)base;
 }
 
 OCISvcCtx *oci8_get_oci_svcctx(VALUE obj)
 {
-    oci8_svcctx_t *svcctx = (oci8_svcctx_t *)oci8_get_svcctx(obj);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(obj);
     return svcctx->base.hp;
 }
 
 OCISession *oci8_get_oci_session(VALUE obj)
 {
-    oci8_svcctx_t *svcctx = (oci8_svcctx_t *)oci8_get_svcctx(obj);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(obj);
 
     if (svcctx->authhp == NULL) {
         oci_lc(OCIAttrGet(svcctx->base.hp, OCI_HTYPE_SVCCTX, &svcctx->authhp, 0, OCI_ATTR_SESSION, oci8_errhp));

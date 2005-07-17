@@ -3,7 +3,7 @@
 */
 #include "oci8.h"
 
-/* #define DEBUG_CORE_FILE 1 */
+#define DEBUG_CORE_FILE 1
 #ifdef DEBUG_CORE_FILE
 #include <signal.h>
 #endif
@@ -113,7 +113,7 @@ Init_oci8lib()
     /* register allocators */
     Init_oci8_rowid();
     Init_oci8_param();
-    Init_oci8_lob();
+    Init_oci8_lob(cOCI8);
 
     Init_ora_date();
     Init_ora_number();
@@ -128,6 +128,14 @@ Init_oci8lib()
 VALUE oci8_define_class(const char *name, oci8_base_class_t *base_class)
 {
     VALUE klass = rb_define_class(name, cOCI8Base);
+    VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, base_class);
+    rb_ivar_set(klass, id_oci8_class, obj);
+    return klass;
+}
+
+VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_class_t *base_class)
+{
+    VALUE klass = rb_define_class_under(outer, name, cOCI8Base);
     VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, base_class);
     rb_ivar_set(klass, id_oci8_class, obj);
     return klass;
