@@ -111,42 +111,49 @@ class OraConf
       @oracle_home = get_home(oracle_home)
       @version = get_version()
       @cflags = get_cflags()
-      @libs = get_libs()
+      $CFLAGS += @cflags
 
-      $CFLAGS += ' ' + @cflags
-      return if try_link_oci()
-
-      oracle_64bit = File.exist?(@oracle_home + '/lib32')
-      if oracle_64bit && !@lp64
-        # use demo_rdbms.mk for 32bit application.
-        case @version
-        when /^9..$/
-          print("retry with postfix 32.\n")
-          @libs = get_libs('', '32')
-          return if try_link_oci()
-        when /^10..$/
-          print("retry with postfix 32.\n")
-          @libs = get_libs('32', '')
-          return if try_link_oci()
-        end
+      if !@lp64 && File.exist?("#{@oracle_home}/lib32")
+        # ruby - 32bit
+        # oracle - 64bit
+        use_lib32 = true
+      else
+        use_lib32 = false
       end
 
+      # default
       if @version.to_i >= 900
-        if oracle_64bit && !@lp64
+        if use_lib32
           @libs = "-L#{@oracle_home}/lib32 -lclntsh"
         else
           @libs = "-L#{@oracle_home}/lib -lclntsh"
         end
-        print('simplest libs as a last resort.\n')
         return if try_link_oci()
       end
+
+      # get from demo_rdbms.mk
+      if use_lib32
+        if File.exist?("#{@oracle_home}/rdbms/demo/demo_rdbms32.mk")
+          @libs = get_libs('32', '')
+        else
+          @libs = get_libs('', '32')
+        end
+      else
+        @libs = get_libs()
+      end
+      return if try_link_oci()
 
       raise 'cannot compile OCI'
     rescue
       print <<EOS
 --------------- common error message --------------
-If you use Oracle instant client, try
-  ruby setup.rb config -- --with-instant-client#{/linux/ !~ RUBY_PLATFORM ? '=/path/to/instantclient10_1' : ''}
+If you use Oracle instant client, try with --with-instant-client.
+
+zip package:
+  ruby setup.rb config -- --with-instant-client=/path/to/instantclient10_1
+
+rpm package:
+  ruby setup.rb config -- --with-instant-client
 
 The latest version of oraconf.rb may solve the problem.
   http://rubyforge.org/cgi-bin/viewcvs.cgi/ruby-oci8/ext/oci8/oraconf.rb?cvsroot=ruby-oci8&only_with_tag=MAIN
@@ -215,14 +222,14 @@ EOS
   def check_lp64
     print "checking for LP64... "
     STDOUT.flush
-    if macro_defined?("__LP64__", "") || macro_defined?("_LP64", "")
-      print "yes\n"
-      return true
+    if try_run("int main() { return sizeof(long) == 8 ? 0 : 1; }")
+      puts "yes"
+      true
     else
-      print "no\n"
-      return false
+      puts "no"
+      false
     end
-  end # cc_is_gcc
+  end # check_lp64
 
   def get_version
     print("Get the version of Oracle from SQL*Plus... ")
@@ -488,7 +495,6 @@ EOS
       # zip package
       lib_dir = ic_dir
       inc_dir = "#{ic_dir}/sdk/include"
-      sysliblist = "#{ic_dir}/sdk/demo/sysliblist"
     else
       # rpm package
       lib_dirs = Dir.glob("/usr/lib/oracle/*/client/lib")
@@ -497,7 +503,6 @@ EOS
       end
       lib_dir = lib_dirs.sort[-1]
       inc_dir = lib_dir.gsub(%r{^/usr/lib/oracle/(.*)/client/lib}, "/usr/include/oracle/\\1/client")
-      sysliblist = ""
     end
 
     @version = "1010"
@@ -555,7 +560,6 @@ EOS
         raise 'failed'
       end
       @libs = " -L#{lib_dir} -lclntsh "
-      @libs += File.read(sysliblist) if File.exist?(sysliblist)
       case RUBY_PLATFORM
       when /linux/
         @libs += " -Wl,-rpath,#{lib_dir}"

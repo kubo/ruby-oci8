@@ -1,3 +1,10 @@
+2005-07-20  KUBO Takehiro  <kubo@jiubao.org>
+	* README: rewrite.
+	* ext/oci8/oraconf.rb: 1. try $libs which works on many cases then
+	  get from demo_rdbms.mk. 2. don't read sysliblist when instant client.
+	  3. rewrie OraConf#check_lp64().
+	* Makefile, ext/oci8/extconf.rb: change version to 0.1.12.
+
 2005-07-16  KUBO Takehiro  <kubo@jiubao.org>
 	* metaconfig: move "require 'base64'" and "require 'zlib'" to the
 	  next line of "def get_zcontent(file)" for a ruby which doesn't

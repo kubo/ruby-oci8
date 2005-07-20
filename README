@@ -1,90 +1,106 @@
-1. How to make
+= How to make
 
-Unix (not Oracle Instant Client):
+== Oracle Full Client (not Oracle Instant Client)
 
-  make sure the environment variable ORACLE_HOME is set correctly.
-  run the the following commands.
+1. check the followings:
+   - ruby and make (or nmake on MSVC) are in the environment variable PATH.
+   - sqlplus runs correctly.
 
-    make
+2. check library search path.
 
-Windows (not Oracle Instant Client):
+   If sqlplus runs correctly, the environments variables are okay in general.
+   But if Oracle is 64-bit and ruby is 32-bit, make sure $ORACLE_HOME/lib32
+   in 32-bit library search path. (LD_LIBRARY_PATH_32 on Solaris, SHLIB_PATH
+   on HP-UX PA-RISC.)
 
-  ORACLE_HOME is got from the Windows registry.
+3. make and install
+   gzip -dc ruby-oci8-0.1.xx.tar.gz | tar xvf -
+   cd ruby-oci8-0.1.xx
+   make    # or nmake on MSVC.
 
-  MS Visual C++:
-    make sure ruby is in PATH and nmake works fine.
-    run the the following commands.
+== Oracle Instant Client
 
-    nmake
+1. donwload Oracle Instant Client Packages - Basic and SDK.
 
-  Cygwin or Mingw32:
-    make sure ruby is in PATH.
-    run the the following commands.
+   OTN (Oracle Technology Network):
+     URL:http://otn.oracle.com/
+   Instant Client Donload Page:
+     http://www.oracle.com/technology/software/tech/oci/instantclient/index.html
 
-      make
+   note:
+     download 32-bit packages for 32-bit ruby even though your OS is 64-bit.
 
-  Borland C++ Builder:
+2. install Oracle Instant Client Packages.
 
-    make sure ruby is in PATH and make works fine.
-    run the the following commands.
+   zip packages:
 
-      make
+     mkdir /opt
+     mkdir /opt/oracle
+     cd /opt/oracle
+     unzip path/to/instantclient-basic-XXXX-10.1.0.X.zip
+     unzip path/to/instantclient-sdk-XXXX-10.1.0.X.zip
 
-Oracle Instant Client(Unix and Windows):
+   rpm packages:
 
-  linux:
-    ruby setup.rb config -- --with-instant-client
-    make
+     rpm -i path/to/oracle-instantclient-basic-10.1.0.X-X.XXX.rpm
+     rpm -i path/to/oracle-instantclient-devel-10.1.0.X-X.XXX.rpm
 
-  other UNIX or Windows:
-    ruby setup.rb config -- --with-instant-client=/path/to/instantclient10_1
-    make (or nmake)
+     note for Debian user:
+       convert rpm packages to deb packages by alien.
+         alien path/to/oracle-instantclient-basic-10.1.0.X-X.XXX.rpm
+         alien path/to/oracle-instantclient-devel-10.1.0.X-X.XXX.rpm
+         dpkg -i oracle-instantclient-basic_10.1.0.X-X_XXX.deb
+         dpkg -i oracle-instantclient-devel_10.1.0.X-X_XXX.deb
 
-2. How to run unit test
+3. check installed libraries. (UNIX zip packages only)
 
-  before runing unit test, 
-  1. connect to Oracle as system:
+   If /opt/oracle/instantclient10_1/libclntsh.so not found,
+   make a symbolic link.
 
-      $ sqlplus system/<password_of_system>
+     cd /opt/oracle/instantclient10_1
+     ln -s libclntsh.so.10.1 libclntsh.so
 
-  2. create user ruby:
+   note:
+     libclntsh.sl for HP-UX PA-RISC
+     libclntsh.dylib for Mac OS X
 
-      SQL> CREATE USER ruby IDENTIFIED BY oci8;
+4. set library search path.
 
-     or
+   Windows:
+     add c:\oracle\instantclient10_1 to PATH.
 
-      SQL> CREATE USER ruby IDENTIFIED BY oci8
-         2 DEFAULT TABLESPACE users TEMPORARY TABLESPACE temp;
+   AIX:
+     add /opt/oracle/instantclient10_1 to LIBPATH.
 
-  3. grant the privilege to connect and execute.
+   HP-UX PA-RISC32: (for 32-bit ruby)
+     add /opt/oracle/instantclient10_1 to SHLIB_PATH.
 
-      SQL> GRANT connect, resource TO ruby;
+   Solaris SPARC 32: (for 32-bit ruby)
+     add /opt/oracle/instantclient10_1 to LD_LIBRARY_PATH_32.
 
-  4. If the Oracle version is 8i or later:
+   Mac OS X:
+     add /opt/oracle/instantclient10_1 to DYLD_LIBRARY_PATH.
 
-      SQL> CREATE TABLE ruby.test_clob (filename VARCHAR2(40), content CLOB);
+   Others:
+     add /opt/oracle/instantclient10_1 to LD_LIBRARY_PATH.
 
-  5. connect to Oracle as sys
+5. make and install.
 
-      $ sqlplus 'sys/<password_of_sys> as sysdba'
+   zip packages:
+     gzip -dc ruby-oci8-0.1.xx.tar.gz | tar xvf -
+     cd ruby-oci8-0.1.xx
+     ruby setup.rb config -- --with-instant-client=/opt/oracle/instantclient10_1
+     make
+     make install
 
-  6. grant the privilege for the unittest of blocking-mode.
+   rpm packages:
+     gzip -dc ruby-oci8-0.1.xx.tar.gz | tar xvf -
+     cd ruby-oci8-0.1.xx
+     ruby setup.rb config -- --with-instant-client
+     make
+     make install
 
-      SQL> GRANT EXECUTE ON dbms_lock TO ruby;
-
-  7. change test/config.rb as you like
-
-  Then you can run:
-    $ make check
-  or
-    $ nmake check   (If your compiler is MS Visual C++.)
-
-3. TODO
-
-  * more proper handling of OCI_SUCCESS_WITH_INFO.
-  * support Timestamp.
-
-4. On compilation failure
+== On compilation failure
 
   Please report the following information to kubo@jiubao.org.
 
@@ -101,41 +117,176 @@ Oracle Instant Client(Unix and Windows):
       gcc --print-prog-name=ld
       gcc --print-prog-name=as
   * on platforms which can use both 32bit/64bit binaries:
-      file $ORACLE_HOME/bin/oracle
+      file $ORACLE_HOME/bin/oracle  # Full Client only
       file `which ruby`
       echo $LD_LIBRARY_PATH
+      echo $LIBPATH              # AIX
+      echo $SHLIB_PATH           # HP-UX PA-RISC
+      echo $DYLD_LIBRARY_PATH    # Mac OS X
+      echo $LD_LIBRARY_PATH_32   # Solaris
 
-5. How to customize fetched datatypes.
+= How to run
 
-  OCI8::BindType::Mapping is available to change the mapping of Oracle
-  datatypes and ruby datatypes.
+== Oracle Full Client (not Oracle Instant Client)
 
-  Calculated number values whose precision is unknown and NUMBER
-  datatypes that have no explicit setting of their precision and scale
-  are selected as Float by default.
-  On Oracle 9.2.0.2 or below:
-    OCI8::BindType::Mapping[:number_unknown_prec] changes both behaviors.
-    OCI8::BindType::Mapping[:number_no_prec_setting] changes none.
-  On Oracle 9.2.0.3 or above:
-    OCI8::BindType::Mapping[:number_unknown_prec] changes the former.
-    OCI8::BindType::Mapping[:number_no_prec_setting] changes the latter.
-  Available setting values are OCI8::BindType::Fixnum, OCI8::BindType::Integer
-  and OCI8::BindType::Float.
+1. set environmet variables.
 
-    create table tab1 (col1 number);
-    select col1 from tab1; # col1: NUMBER datatype without precision and scale.
-    select col1 * 1.1 as cal1 from tab1; # cal1: calculated value.
+   The follwing environmet variables are required:
+     ORACLE_HOME
+     NLS_LANG
+     LD_LIBRARY_PATH (or LIBPATH, SHLIB_PATH, DYLD_LIBRARY_PATH, LD_LIBRARY_PATH_32)
 
-  To select col1 as Fixnum:
-    On Oracle 9.2.0.2 or below:
-      OCI8::BindType::Mapping[:number_unknown_prec] = OCI8::BindType::Fixnum
-    On Oracle 9.2.0.3 or above:
-      OCI8::BindType::Mapping[:number_no_prec_setting] = OCI8::BindType::Fixnum
+   To connect the local database:
+     ORACLE_SID
 
-  If you hate the side-effect of setting OCI8::BindType::Mapping, I
-  recommend you to define the datatype by explicitly:
-    cur = con.parse('select col1 from tab1')
-    cur.define(1, Fixnum)
+2. enjoy.
 
-  There are other undocumented features but it will be formally
-  supported on ruby-oci8 0.2.x.
+   sample one-liner:
+     ruby -r oci8 -e 'OCI8.new("scott", "tiger", nil).exec("select * from emp") do |r| puts r.join(","); end'
+
+== Oracle Instant Client
+
+1. set environmet variables.
+
+   The follwing environmet variables are required:
+     NLS_LANG
+     LD_LIBRARY_PATH (or LIBPATH, SHLIB_PATH, DYLD_LIBRARY_PATH, LD_LIBRARY_PATH_32)
+
+   ORACLE_HOME and TNS_ADMIN are optional:
+     see: http://www.oracle.com/technology/tech/oci/instantclient/ic-faq.html#A4428
+
+2. enjoy.
+
+   sample one-liner:
+     ruby -r oci8 -e 'OCI8.new("scott", "tiger", "//HOSTNAME_OR_IP/SID").exec("select * from emp") do |r| puts r.join(","); end'
+
+== Platform specific topics
+
+=== HP-UX
+
+1. I was reported that it doesn't work with 64-bit ruby. :-<
+
+2. link the libraries which contain thread local storages to ruby itself.
+
+   ruby 1.8.1 or later:
+     gzip -dc ruby-1.8.2.tar.gz | tar xvf -
+     cd ruby-1.8.2
+     ./configure --enable-pthread
+     vi Makefile     # add "-lcl" to LIBS manually.
+     make
+     make install
+
+   ruby 1.8.0 or 1.6.x:
+     gzip -dc ruby-1.x.x.tar.gz | tar xvf -
+     cd ruby-1.x.x
+     ./configure
+     vi Makefile     # add "-lpthread -lcl" to LIBS manually.
+     make
+     make install
+
+   If you can't recompile ruby, LD_PRELOAD may solve the problem.
+
+     LD_PRELOAD=/usr/lib/libpthread.1:/usr/lib/libcl.2
+     export LD_PRELOAD
+
+= How to run unit tests
+
+1. see "How to run"
+
+2. create user and tables on Oracle.
+
+   - connect to Oracle as system:
+
+      $ sqlplus system/<password_of_system>
+
+   - create user ruby:
+
+      SQL> CREATE USER ruby IDENTIFIED BY oci8;
+    or
+      SQL> CREATE USER ruby IDENTIFIED BY oci8
+         2 DEFAULT TABLESPACE users TEMPORARY TABLESPACE temp;
+
+   - grant the privilege to connect and execute.
+
+      SQL> GRANT connect, resource TO ruby;
+
+   - If the Oracle version is 8i or later:
+
+      SQL> CREATE TABLE ruby.test_clob (filename VARCHAR2(40), content CLOB);
+
+   - connect to Oracle as sys
+
+      $ sqlplus 'sys/<password_of_sys> as sysdba'
+
+   - grant the privilege for the unittest of blocking-mode.
+
+      SQL> GRANT EXECUTE ON dbms_lock TO ruby;
+
+3. set $dbname in test/config.rb.
+
+   for instant client, or full client which connect the remote server.
+
+4. run.
+
+     $ make check
+   or
+     $ nmake check   (If your compiler is MS Visual C++.)
+
+
+= How to customize fetched datatypes.
+
+== OCI8::BindType::Mapping
+
+OCI8::BindType::Mapping is available to change the mapping of Oracle
+datatypes and ruby datatypes.
+
+Examples:
+  fetch a Timestamp value as a OraDate:
+    OCI8::BindType::Mapping[OCI8::SQLT_TIMESTAMP] = OCI8::BindType::OraDate
+  fetch a Timestamp value as a String:
+    OCI8::BindType::Mapping[OCI8::SQLT_TIMESTAMP] = OCI8::BindType::String
+
+== Number datatype.
+
+OCI8::BindType::Number is a special bindtype. The actual bindtype
+depends on the precision and scale.
+  Fixnum or Integer for NUMBER(p, 0). (prec is positive).
+  Float for NUMBER(prec, scale). (prec is less then 15).
+  OraNumber for NUMBER(prec, scale). (prec equals or is greater then 15).
+
+If fetched value is defiend as NUMBER or calculated value, it is
+fetched as a Float by default. To customize this behavior, you can
+use OCI8::BindType::Mapping[:number_unknown_prec] and
+OCI8::BindType::Mapping[:number_no_prec_setting].
+
+Oracle 9.2.0.2 or earlier:
+  OCI8::BindType::Mapping[:number_unknown_prec] changes both behaviors.
+
+Oracle 9.2.0.3 or later:
+  OCI8::BindType::Mapping[:number_no_prec_setting] changes the former.
+  OCI8::BindType::Mapping[:number_unknown_prec] changes the latter.
+
+Examples:
+
+  CREATE TABLE tab1 (col1 NUMBER, col2 NUMBER(10));
+  SELECT col1 AS col FROM tab1:
+  SELECT col2 * 1.0 AS cal2 FROM tab1;
+  # col : NUMBER whose precision and scale are not defined explicitly.
+  # cal : calculated NUMBER value.
+
+  Oracle 9.2.0.2 or earlier:
+    OCI8::BindType::Mapping[:number_unknown_prec] = OCI8::BindType::Integer
+      ==> col is fetched as an Integer.
+          cal is fetched as an Integer.
+    :number_unknown_prec changes the both behaviors.
+
+  Oracle 9.2.0.3 or later:
+    OCI8::BindType::Mapping[:number_unknown_prec] = OCI8::BindType::Integer
+      ==> col is fetched as a Float.
+          cal is fetched as an Integer.
+    :number_unknown_prec changes the latter only.
+
+    OCI8::BindType::Mapping[:number_no_prec_setting] = OCI8::BindType::Integer
+      ==> col is fetched as an Integer.
+          cal is fetched as a Float.
+    :number_no_prec_setting changes the former only.
