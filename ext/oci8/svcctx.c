@@ -23,11 +23,11 @@ static void oci8_svcctx_free(oci8_base_t *base)
     oci8_svcctx_t *svcctx = (oci8_svcctx_t *)base;
     if (svcctx->authhp) {
         OCIHandleFree(svcctx->authhp, OCI_HTYPE_SESSION);
-	svcctx->authhp = NULL;
+        svcctx->authhp = NULL;
     }
     if (svcctx->srvhp) {
         OCIHandleFree(svcctx->srvhp, OCI_HTYPE_SERVER);
-	svcctx->srvhp = NULL;
+        svcctx->srvhp = NULL;
     }
 }
 
@@ -63,69 +63,69 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
 #error TODO
 #else
         rv = OCILogon(oci8_envhp, oci8_errhp, (OCISvcCtx **)&svcctx->base.hp,
-		      RSTRING(vusername)->ptr, RSTRING(vusername)->len,
-		      RSTRING(vpassword)->ptr, RSTRING(vpassword)->len,
-		      NIL_P(vdbname) ? NULL : RSTRING(vdbname)->ptr,
-		      NIL_P(vdbname) ? 0 : RSTRING(vdbname)->len);
-	if (rv != OCI_SUCCESS) {
-	    oci8_raise(oci8_errhp, rv, NULL);
-	}
+                      RSTRING(vusername)->ptr, RSTRING(vusername)->len,
+                      RSTRING(vpassword)->ptr, RSTRING(vpassword)->len,
+                      NIL_P(vdbname) ? NULL : RSTRING(vdbname)->ptr,
+                      NIL_P(vdbname) ? 0 : RSTRING(vdbname)->len);
+        if (rv != OCI_SUCCESS) {
+            oci8_raise(oci8_errhp, rv, NULL);
+        }
 #endif
-	svcctx->base.type = OCI_HTYPE_SVCCTX;
-	svcctx->logon_type = T_IMPLICIT;
+        svcctx->base.type = OCI_HTYPE_SVCCTX;
+        svcctx->logon_type = T_IMPLICIT;
     } else {
         ub4 mode;
 
-	Check_Type(vmode, T_SYMBOL);
-	if (vmode == sym_SYSDBA) {
-	    mode = OCI_SYSDBA;
-	} else if (vmode == sym_SYSOPER) {
-	    mode = OCI_SYSOPER;
-	} else {
-	    rb_raise(rb_eArgError, "invalid privilege name %s (expect :SYSDBA or :SYSOPER)", rb_id2name(SYM2ID(vmode)));
-	}
-	/* allocate OCI handles. */
-	rv = OCIHandleAlloc(oci8_envhp, (void*)&svcctx->base.hp, OCI_HTYPE_SVCCTX, 0, 0);
-	if (rv != OCI_SUCCESS)
-	    oci8_env_raise(oci8_envhp, rv);
-	svcctx->base.type = OCI_HTYPE_SVCCTX;
-	rv = OCIHandleAlloc(oci8_envhp, (void*)&svcctx->authhp, OCI_HTYPE_SESSION, 0, 0);
-	if (rv != OCI_SUCCESS)
-	    oci8_env_raise(oci8_envhp, rv);
-	rv = OCIHandleAlloc(oci8_envhp, (void*)&svcctx->srvhp, OCI_HTYPE_SERVER, 0, 0);
-	if (rv != OCI_SUCCESS)
-	    oci8_env_raise(oci8_envhp, rv);
+        Check_Type(vmode, T_SYMBOL);
+        if (vmode == sym_SYSDBA) {
+            mode = OCI_SYSDBA;
+        } else if (vmode == sym_SYSOPER) {
+            mode = OCI_SYSOPER;
+        } else {
+            rb_raise(rb_eArgError, "invalid privilege name %s (expect :SYSDBA or :SYSOPER)", rb_id2name(SYM2ID(vmode)));
+        }
+        /* allocate OCI handles. */
+        rv = OCIHandleAlloc(oci8_envhp, (void*)&svcctx->base.hp, OCI_HTYPE_SVCCTX, 0, 0);
+        if (rv != OCI_SUCCESS)
+            oci8_env_raise(oci8_envhp, rv);
+        svcctx->base.type = OCI_HTYPE_SVCCTX;
+        rv = OCIHandleAlloc(oci8_envhp, (void*)&svcctx->authhp, OCI_HTYPE_SESSION, 0, 0);
+        if (rv != OCI_SUCCESS)
+            oci8_env_raise(oci8_envhp, rv);
+        rv = OCIHandleAlloc(oci8_envhp, (void*)&svcctx->srvhp, OCI_HTYPE_SERVER, 0, 0);
+        if (rv != OCI_SUCCESS)
+            oci8_env_raise(oci8_envhp, rv);
 
-	/* set username and password to OCISession. */
-	rv = OCIAttrSet(svcctx->authhp, OCI_HTYPE_SESSION,
-			RSTRING(vusername)->ptr, RSTRING(vusername)->len,
-			OCI_ATTR_USERNAME, oci8_errhp);
-	if (rv != OCI_SUCCESS)
-	    oci8_raise(oci8_errhp, rv, NULL);
-	rv = OCIAttrSet(svcctx->authhp, OCI_HTYPE_SESSION,
-			RSTRING(vpassword)->ptr, RSTRING(vpassword)->len,
-			OCI_ATTR_PASSWORD, oci8_errhp);
-	if (rv != OCI_SUCCESS)
-	    oci8_raise(oci8_errhp, rv, NULL);
+        /* set username and password to OCISession. */
+        rv = OCIAttrSet(svcctx->authhp, OCI_HTYPE_SESSION,
+                        RSTRING(vusername)->ptr, RSTRING(vusername)->len,
+                        OCI_ATTR_USERNAME, oci8_errhp);
+        if (rv != OCI_SUCCESS)
+            oci8_raise(oci8_errhp, rv, NULL);
+        rv = OCIAttrSet(svcctx->authhp, OCI_HTYPE_SESSION,
+                        RSTRING(vpassword)->ptr, RSTRING(vpassword)->len,
+                        OCI_ATTR_PASSWORD, oci8_errhp);
+        if (rv != OCI_SUCCESS)
+            oci8_raise(oci8_errhp, rv, NULL);
 
-	/* attach to server and set to OCISvcCtx. */
-	rv = OCIServerAttach(svcctx->srvhp, oci8_errhp,
-			     NIL_P(vdbname) ? NULL : RSTRING(vdbname)->ptr,
-			     NIL_P(vdbname) ? 0 : RSTRING(vdbname)->len, OCI_DEFAULT);
-	if (rv != OCI_SUCCESS)
-	    oci8_raise(oci8_errhp, rv, NULL);
-	rv = OCIAttrSet(svcctx->base.hp, OCI_HTYPE_SVCCTX, svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp);
-	if (rv != OCI_SUCCESS)
-	    oci8_raise(oci8_errhp, rv, NULL);
+        /* attach to server and set to OCISvcCtx. */
+        rv = OCIServerAttach(svcctx->srvhp, oci8_errhp,
+                             NIL_P(vdbname) ? NULL : RSTRING(vdbname)->ptr,
+                             NIL_P(vdbname) ? 0 : RSTRING(vdbname)->len, OCI_DEFAULT);
+        if (rv != OCI_SUCCESS)
+            oci8_raise(oci8_errhp, rv, NULL);
+        rv = OCIAttrSet(svcctx->base.hp, OCI_HTYPE_SVCCTX, svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp);
+        if (rv != OCI_SUCCESS)
+            oci8_raise(oci8_errhp, rv, NULL);
 
-	/* attach to server and set to OCISvcCtx. */
-	rv = OCISessionBegin(svcctx->base.hp, oci8_errhp, svcctx->authhp, OCI_CRED_RDBMS, mode);
-	if (rv != OCI_SUCCESS)
-	    oci8_raise(oci8_errhp, rv, NULL);
-	rv = OCIAttrSet(svcctx->base.hp, OCI_HTYPE_SVCCTX, svcctx->authhp, 0, OCI_ATTR_SESSION, oci8_errhp);
-	if (rv != OCI_SUCCESS)
-	    oci8_raise(oci8_errhp, rv, NULL);
-	svcctx->logon_type = T_EXPLICIT;
+        /* attach to server and set to OCISvcCtx. */
+        rv = OCISessionBegin(svcctx->base.hp, oci8_errhp, svcctx->authhp, OCI_CRED_RDBMS, mode);
+        if (rv != OCI_SUCCESS)
+            oci8_raise(oci8_errhp, rv, NULL);
+        rv = OCIAttrSet(svcctx->base.hp, OCI_HTYPE_SVCCTX, svcctx->authhp, 0, OCI_ATTR_SESSION, oci8_errhp);
+        if (rv != OCI_SUCCESS)
+            oci8_raise(oci8_errhp, rv, NULL);
+        svcctx->logon_type = T_EXPLICIT;
     }
     return Qnil;
 }
@@ -150,18 +150,18 @@ static VALUE oci8_svcctx_logoff(VALUE self)
     switch (svcctx->logon_type) {
     case T_IMPLICIT:
         rv = OCILogoff(svcctx->base.hp, oci8_errhp);
-	if (rv != OCI_SUCCESS)
-	    oci8_raise(oci8_errhp, rv, NULL);
-	svcctx->base.type = 0;
-	break;
+        if (rv != OCI_SUCCESS)
+            oci8_raise(oci8_errhp, rv, NULL);
+        svcctx->base.type = 0;
+        break;
     case T_EXPLICIT:
         rv = OCISessionEnd(svcctx->base.hp, oci8_errhp, svcctx->authhp, OCI_DEFAULT);
-	if (rv != OCI_SUCCESS)
-	    oci8_raise(oci8_errhp, rv, NULL);
-	rv = OCIServerDetach(svcctx->srvhp, oci8_errhp, OCI_DEFAULT);
-	if (rv != OCI_SUCCESS)
-	    oci8_raise(oci8_errhp, rv, NULL);
-	break;
+        if (rv != OCI_SUCCESS)
+            oci8_raise(oci8_errhp, rv, NULL);
+        rv = OCIServerDetach(svcctx->srvhp, oci8_errhp, OCI_DEFAULT);
+        if (rv != OCI_SUCCESS)
+            oci8_raise(oci8_errhp, rv, NULL);
+        break;
     }
     oci8_base_free(&svcctx->base);
     return self;
@@ -196,10 +196,10 @@ static VALUE oci8_password_change(VALUE self, VALUE username, VALUE opasswd, VAL
     Check_Type(mode, T_FIXNUM); /* 4 */
 
     rv = OCIPasswordChange(svcctx->base.hp, oci8_errhp,
-			   RSTRING(username)->ptr, RSTRING(username)->len,
-			   RSTRING(opasswd)->ptr, RSTRING(opasswd)->len,
-			   RSTRING(npasswd)->ptr, RSTRING(npasswd)->len,
-			   FIX2INT(mode));
+                           RSTRING(username)->ptr, RSTRING(username)->len,
+                           RSTRING(opasswd)->ptr, RSTRING(opasswd)->len,
+                           RSTRING(npasswd)->ptr, RSTRING(npasswd)->len,
+                           FIX2INT(mode));
     if (rv != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, rv, NULL);
     }
@@ -272,8 +272,8 @@ static VALUE oci8_svcctx_non_blocking_p(VALUE self)
 
     if (svcctx->srvhp == NULL) {
         rv = OCIAttrGet(svcctx->base.hp, OCI_HTYPE_SVCCTX, &svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp);
-	if (rv != OCI_SUCCESS)
-	    oci8_raise(oci8_errhp, rv, NULL);
+        if (rv != OCI_SUCCESS)
+            oci8_raise(oci8_errhp, rv, NULL);
     }
     rv = OCIAttrGet(svcctx->srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp);
     if (rv != OCI_SUCCESS)
@@ -289,17 +289,17 @@ static VALUE oci8_svcctx_set_non_blocking(VALUE self, VALUE val)
 
     if (svcctx->srvhp == NULL) {
         rv = OCIAttrGet(svcctx->base.hp, OCI_HTYPE_SVCCTX, &svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp);
-	if (rv != OCI_SUCCESS)
-	    oci8_raise(oci8_errhp, rv, NULL);
+        if (rv != OCI_SUCCESS)
+            oci8_raise(oci8_errhp, rv, NULL);
     }
     rv = OCIAttrGet(svcctx->srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp);
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);
-    if (RTEST(val) && !non_blocking) {
+    if ((RTEST(val) && !non_blocking) || (!RTEST(val) && non_blocking)) {
         /* toggle blocking / non-blocking. */
         rv = OCIAttrSet(svcctx->srvhp, OCI_HTYPE_SERVER, 0, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp);
-	if (rv != OCI_SUCCESS)
-	    oci8_raise(oci8_errhp, rv, NULL);
+        if (rv != OCI_SUCCESS)
+            oci8_raise(oci8_errhp, rv, NULL);
     }
     return val;
 }
