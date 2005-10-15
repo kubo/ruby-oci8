@@ -1,12 +1,13 @@
-VERSION = 0.1.12
+VERSION = 0.1.13
 RUBY = ruby
+CONFIG_OPT = 
 
 all: build
 
 build: config.save setup
 
 config.save: lib/oci8.rb.in
-	$(RUBY) setup.rb config
+	$(RUBY) setup.rb config $(CONFIG_OPT)
 
 setup:
 	$(RUBY) setup.rb setup

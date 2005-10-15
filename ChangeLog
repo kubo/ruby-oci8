@@ -3,10 +3,11 @@
 	  fixed by Nathaniel Talbott. Thank you!
 	* ext/oci8/oraconf.rb: add -R to linker on Solaris and Linux.
 	  http://rubyforge.org/tracker/index.php?func=detail&aid=2148&group_id=256&atid=1051
-	* lib/oci8.rb.in: add DateTime suppport.
+	* lib/oci8.rb.in: add DateTime suppport. suggested by Daniel Berger.
 	* test/test_dbi.rb, test/test_oci8.rb: testcases for DateTime.
 	* test/test_oradate.rb: delete an unsuccessfull testcase, which depends on libc implementation.
 	* README: add bind-types.
+	* Makefile, ext/oci8/extconf.rb: change version to 0.1.13.
 
 2005-07-20  KUBO Takehiro  <kubo@jiubao.org>
 	* README: rewrite.
