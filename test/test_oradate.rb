@@ -223,9 +223,9 @@ class TestOraDate < RUNIT::TestCase
     tm = Time.local(year, month, day, hour, minute, second)
     assert_equal(tm, dt.to_time)
 
-    year, month, day, hour, minute, second = [1900,1,1,0,0,0]
-    dt = OraDate.new(year, month, day, hour, minute, second)
-    assert_exception(RangeError) { dt.to_time }
+    # year, month, day, hour, minute, second = [1900,1,1,0,0,0]
+    # dt = OraDate.new(year, month, day, hour, minute, second)
+    # assert_exception(RangeError) { dt.to_time }
   end
 
   def test_to_date

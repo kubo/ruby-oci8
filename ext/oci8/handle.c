@@ -22,6 +22,7 @@ static void oci8_handle_do_free(oci8_handle_t *h)
     if (h->children[i] != NULL)
       oci8_handle_do_free(h->children[i]);
   }
+  xfree(h->children);
   /* unlink from parent */
   oci8_unlink(h);
   /* do free */

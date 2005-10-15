@@ -1,3 +1,13 @@
+2005-10-15  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/handle.c: fix memory leaks. 700k per 10000 queries.
+	  fixed by Nathaniel Talbott. Thank you!
+	* ext/oci8/oraconf.rb: add -R to linker on Solaris and Linux.
+	  http://rubyforge.org/tracker/index.php?func=detail&aid=2148&group_id=256&atid=1051
+	* lib/oci8.rb.in: add DateTime suppport.
+	* test/test_dbi.rb, test/test_oci8.rb: testcases for DateTime.
+	* test/test_oradate.rb: delete an unsuccessfull testcase, which depends on libc implementation.
+	* README: add bind-types.
+
 2005-07-20  KUBO Takehiro  <kubo@jiubao.org>
 	* README: rewrite.
 	* ext/oci8/oraconf.rb: 1. try $libs which works on many cases then

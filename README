@@ -246,6 +246,23 @@ Examples:
   fetch a Timestamp value as a String:
     OCI8::BindType::Mapping[OCI8::SQLT_TIMESTAMP] = OCI8::BindType::String
 
+Bind-types are:
+  OCI8::BindType::String
+  OCI8::BindType::RAW
+  OCI8::BindType::OraDate
+  OCI8::BindType::Time
+  OCI8::BindType::Date
+  OCI8::BindType::DateTime (ruby 1.8.0 or upper)
+  OCI8::BindType::Float
+  OCI8::BindType::Fixnum
+  OCI8::BindType::Integer
+  OCI8::BindType::OraNumber
+  OCI8::BindType::Number
+  OCI8::BindType::OCIRowid
+  OCI8::BindType::BLOB
+  OCI8::BindType::CLOB
+  OCI8::BindType::Cursor
+
 == Number datatype.
 
 OCI8::BindType::Number is a special bindtype. The actual bindtype

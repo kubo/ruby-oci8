@@ -312,6 +312,24 @@ class OCI8
       end
     end
 
+    if defined? ::DateTime # ruby 1.8.0 or upper
+      # get/set DateTime 
+      DateTime = Object.new
+      class << DateTime
+        def fix_type(env, val, length, precision, scale)
+          [OCI8::SQLT_DAT, val, nil]
+        end
+        def decorate(b)
+          def b.set(val)
+            super(val && ::OraDate.new(val.year, val.mon, val.mday, val.hour, val.min, val.sec))
+          end
+          def b.get()
+            (val = super()) && val.to_datetime
+          end
+        end
+      end
+    end
+
     # get/set Float
     Float = Object.new
     class << Float
@@ -924,5 +942,11 @@ class OraDate
 
   def to_date
     Date.new(year, month, day)
+  end
+
+  if defined? DateTime # ruby 1.8.0 or upper
+    def to_datetime
+      DateTime.new(year, month, day, hour, minute, second)
+    end
   end
 end
