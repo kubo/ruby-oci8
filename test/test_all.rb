@@ -1,15 +1,18 @@
 srcdir = File.dirname(__FILE__)
 
-# Low-level API
+require 'oci8'
+require 'test/unit'
+require './config'
+
 require "#{srcdir}/test_oradate"
 require "#{srcdir}/test_oranumber"
+require "#{srcdir}/test_ocinumber"
 require "#{srcdir}/test_bind_time"
 require "#{srcdir}/test_bind_raw"
 if $test_clob
   require "#{srcdir}/test_clob"
 end
 
-# High-level API
 require "#{srcdir}/test_break"
 require "#{srcdir}/test_oci8"
 
@@ -28,4 +31,5 @@ if is_dbi_loaded
 end
 
 #Test::Unit::AutoRunner.run(true, true)
-Test::Unit::AutoRunner.run
+Test::Unit::AutoRunner.run()
+

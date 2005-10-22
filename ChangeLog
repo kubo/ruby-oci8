@@ -1,3 +1,16 @@
+2005-10-22  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/ocidatetime.c: fix to bind OCIDateTime.
+	* ext/oci8/oraconf.rb: add -R to linker on Solaris and Linux.
+	  http://rubyforge.org/tracker/index.php?func=detail&aid=2148&group_id=256&atid=1051
+	* ext/oci8/svcctx.c: change a setter name. __non_blocking= doesn't work. use 
+	  __set_non_blocking instead.
+	* lib/oci8.rb.in: add ruby's Datetime support.
+	* lib/ocidatetime.rb: add a ruby's Datetime support file.
+	* test/test_all.rb: fix 
+	* test/test_break.rb: add two assesion to check a non_blocking status.
+	* test/test_dbi.rb, test/test_oci8.rb: testcases for DateTime.
+	* test/test_oradate.rb: delete an unsuccessfull testcase, which depends on libc implementation.
+
 2005-07-17  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c, ext/oci8/oci8.c, ext/oci8/oci8.h, lib/oci8.rb.in:
 	  delete OCILobLocator. implement OCI8::LOB by C instead of ruby.

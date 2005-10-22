@@ -13,8 +13,8 @@ class TestBreak < Test::Unit::TestCase
   OCIBREAK = 2
   SEND_BREAK = 3
 
-  TIME_IN_PLSQL = 3
-  TIME_TO_BREAK = 1
+  TIME_IN_PLSQL = 5
+  TIME_TO_BREAK = 2
   MARGIN = 0.1
 
   def do_test_ocibreak(conn, expect)
@@ -38,6 +38,7 @@ class TestBreak < Test::Unit::TestCase
   def test_blocking_mode
     conn = OCI8.new($dbuser, $dbpass, $dbname)
     conn.non_blocking = false
+    assert_equal(false, conn.non_blocking?)
     expect = []
     expect[PLSQL_DONE] = TIME_IN_PLSQL
     expect[OCIBREAK]   = "Invalid status"
@@ -49,6 +50,7 @@ class TestBreak < Test::Unit::TestCase
   def test_non_blocking_mode
     conn = OCI8.new($dbuser, $dbpass, $dbname)
     conn.non_blocking = true
+    assert_equal(true, conn.non_blocking?)
     expect = []
     expect[PLSQL_DONE] = "Invalid status"
     if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/

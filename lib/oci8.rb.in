@@ -7,6 +7,7 @@
 require 'oci8lib'
 require 'date'
 require 'thread'
+require 'ocidatetime.rb'
 
 class OCIBreak < OCIException
   def initialize(errstr = "Canceled by user request.")
@@ -287,7 +288,7 @@ class OCI8
   # Changes the status of blocking/non-blocking mode. Acceptable
   # values are true and false.
   def non_blocking=(nb)
-    __non_blocking = nb
+    __set_non_blocking(nb)
   end # non_blocking=
 
   # Cancels the OCI call performing in other thread. To use this, the
@@ -312,6 +313,7 @@ class OCI8
   module BindType
     Mapping = {}
 
+    # OCI8::BindType::Base
     class Base # :nodoc:
       def set_handle(svc, ctx)
         @svc = svc
@@ -336,6 +338,16 @@ class OCI8
       end
       def get()
         (val = super()) && val.to_date
+      end
+    end
+
+    # get/set DateTime
+    class DateTime < OCI8::BindType::OCITimestampTZ
+      def set(val)
+        super(val && ::OCITimestampTZ.new(val))
+      end
+      def get()
+        (val = super()) && val.to_datetime
       end
     end
 
@@ -851,6 +863,7 @@ class OCI8
   BindType::Mapping[::OraDate]      = BindType::OraDate
   BindType::Mapping[::Time]         = BindType::Time
   BindType::Mapping[::Date]         = BindType::Date
+  BindType::Mapping[::DateTime]     = BindType::DateTime
   BindType::Mapping[::OCIRowid]     = BindType::OCIRowid
   BindType::Mapping[::OCI8::BLOB]   = BindType::BLOB
   BindType::Mapping[::OCI8::CLOB]   = BindType::CLOB
@@ -939,6 +952,16 @@ class OraDate
 
   def to_date
     Date.new(year, month, day)
+  end
+
+  if defined? DateTime # ruby 1.8.0 or upper
+
+    # get timezone offset.
+    @@tz_offset = Time.now.utc_offset.to_r/86400
+
+    def to_datetime
+      DateTime.new(year, month, day, hour, minute, second, @@tz_offset)
+    end
   end
 end
 

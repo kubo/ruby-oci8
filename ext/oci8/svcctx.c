@@ -368,7 +368,7 @@ VALUE Init_oci8_svcctx(void)
     rb_define_private_method(cOCI8, "__commit", oci8_trans_commit, -1);
     rb_define_private_method(cOCI8, "__rollback", oci8_trans_rollback, -1);
     rb_define_private_method(cOCI8, "__non_blocking?", oci8_svcctx_non_blocking_p, 0);
-    rb_define_private_method(cOCI8, "__non_blocking=", oci8_svcctx_set_non_blocking, 1);
+    rb_define_private_method(cOCI8, "__set_non_blocking", oci8_svcctx_set_non_blocking, 1);
     rb_define_method(cOCI8, "version", oci8_server_version, 0);
 #ifdef HAVE_OCISERVERRELEASE
     rb_define_method(cOCI8, "release", oci8_server_release, 0);

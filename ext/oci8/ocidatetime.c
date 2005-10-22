@@ -335,6 +335,7 @@ static inline ub4 sqlt_to_datetime_dtype(ub2 dty)
     case SQLT_TIMESTAMP_LTZ:
         return OCI_DTYPE_TIMESTAMP_LTZ;
     }
+    rb_bug("invalid dtype %d.", dty);
 }
 
 static inline ub4 sqlt_to_interval_dtype(ub2 dty)
@@ -345,17 +346,19 @@ static inline ub4 sqlt_to_interval_dtype(ub2 dty)
     case SQLT_INTERVAL_DS:
         return OCI_DTYPE_INTERVAL_DS;
     }
+    rb_bug("invalid dtype %d.", dty);
 }
 
 typedef struct {
     oci8_bind_handle_t base;
-    ub2 dty;
 } oci8_bind_datetime_t;
+
+#define GET_DTY(bd) (((oci8_bind_class_t *)bd->base.bind.base.klass)->dty)
 
 static VALUE bind_datetime_get(oci8_bind_t *b)
 {
     oci8_bind_datetime_t *bd = (oci8_bind_datetime_t*)b;
-    ub4 type = sqlt_to_datetime_dtype(bd->dty);
+    ub4 type = sqlt_to_datetime_dtype(GET_DTY(bd));
     VALUE obj = rb_obj_alloc(cOCIDateTime);
     odt_initialize(obj, INT2FIX(type));
     oci_lc(OCIDateTimeAssign(oci8_envhp, oci8_errhp, bd->base.hp, TO_DATETIME(obj)));
@@ -365,7 +368,7 @@ static VALUE bind_datetime_get(oci8_bind_t *b)
 static VALUE bind_interval_get(oci8_bind_t *b)
 {
     oci8_bind_datetime_t *bd = (oci8_bind_datetime_t*)b;
-    ub4 type = sqlt_to_interval_dtype(bd->dty);
+    ub4 type = sqlt_to_interval_dtype(GET_DTY(bd));
     VALUE obj = rb_obj_alloc(cOCIInterval);
     odt_initialize(obj, INT2FIX(type));
     oci_lc(OCIIntervalAssign(oci8_envhp, oci8_errhp, bd->base.hp, TO_INTERVAL(obj)));
@@ -375,7 +378,7 @@ static VALUE bind_interval_get(oci8_bind_t *b)
 static void bind_datetime_set(oci8_bind_t *b, VALUE val)
 {
     oci8_bind_datetime_t *bd = (oci8_bind_datetime_t*)b;
-    ub4 type = sqlt_to_datetime_dtype(bd->dty);
+    ub4 type = sqlt_to_datetime_dtype(GET_DTY(bd));
     oci8_base_t *base;
 
     if (!rb_obj_is_kind_of(val, cOCIDateTime)) { 
@@ -409,7 +412,10 @@ static void bind_datetime_init(oci8_bind_t *b, VALUE svc, VALUE *val, VALUE leng
     b->value_sz = sizeof(bd->base.hp);
     if (NIL_P(*val)) {
         VALUE obj = rb_obj_alloc(cOCIDateTime);
-        odt_initialize(obj, INT2FIX(sqlt_to_datetime_dtype(bd->dty)));
+        oci8_base_t *base = DATA_PTR(obj);
+        odt_initialize(obj, INT2FIX(sqlt_to_datetime_dtype(GET_DTY(bd))));
+        bd->base.hp = base->hp;
+        bd->base.obj = obj;
         *val = obj;
     }
 }
@@ -422,7 +428,7 @@ static void bind_interval_init(oci8_bind_t *b, VALUE svc, VALUE *val, VALUE leng
     b->value_sz = sizeof(bd->base.hp);
     if (NIL_P(*val)) {
         VALUE obj = rb_obj_alloc(cOCIInterval);
-        odt_initialize(obj, INT2FIX(sqlt_to_interval_dtype(bd->dty)));
+        odt_initialize(obj, INT2FIX(sqlt_to_interval_dtype(GET_DTY(bd))));
         *val = obj;
     }
 }

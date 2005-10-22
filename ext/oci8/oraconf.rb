@@ -124,9 +124,17 @@ class OraConf
       # default
       if @version.to_i >= 900
         if use_lib32
-          @libs = "-L#{@oracle_home}/lib32 -lclntsh"
+          lib_dir = "#{@oracle_home}/lib32"
         else
-          @libs = "-L#{@oracle_home}/lib -lclntsh"
+          lib_dir = "#{@oracle_home}/lib"
+        end
+        case RUBY_PLATFORM
+        when /solaris/
+          @libs = "-L#{lib_dir} -R#{lib_dir} -lclntsh"
+        when /linux/
+          @libs = "-L#{lib_dir} -Wl,-rpath,#{lib_dir} -lclntsh"
+        else
+          @libs = "-L#{lib_dir} -lclntsh"
         end
         return if try_link_oci()
       end
@@ -560,10 +568,6 @@ EOS
         raise 'failed'
       end
       @libs = " -L#{lib_dir} -lclntsh "
-      case RUBY_PLATFORM
-      when /linux/
-        @libs += " -Wl,-rpath,#{lib_dir}"
-      end
     end
     $CFLAGS += @cflags
     unless try_link_oci()
