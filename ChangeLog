@@ -1,4 +1,9 @@
 2005-10-22  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8lib.c, ext/oci8/oci8.c, ext/oci8/svcctx.c, ext/oci8/extconf.rb:
+	    oci8.c is renamed to oci8lib.c.
+	    svcctx.c is renamed to oci8.c.
+
+2005-10-22  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocidatetime.c: fix to bind OCIDateTime.
 	* ext/oci8/oraconf.rb: add -R to linker on Solaris and Linux.
 	  http://rubyforge.org/tracker/index.php?func=detail&aid=2148&group_id=256&atid=1051
