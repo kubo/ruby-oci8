@@ -1,3 +1,10 @@
+2006-01-28  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/bind.c, ext/oci8/error.c, ext/oci8/oci8.c,
+	    ext/oci8/ocidatetime.c, ext/oci8/oradate.c,
+	    ext/oci8/oranumber.c, ext/oci8/param.c, ext/oci8/rowid.c,
+	    ext/oci8/stmt.c: fix indentation.
+	* .cvsignore, ext/oci8/.cvsignore: added.
+
 2005-10-22  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8lib.c, ext/oci8/oci8.c, ext/oci8/svcctx.c, ext/oci8/extconf.rb:
 	    oci8.c is renamed to oci8lib.c.

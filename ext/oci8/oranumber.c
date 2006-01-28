@@ -1,3 +1,4 @@
+/* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
  *  oranumber.c
  *
@@ -178,8 +179,8 @@ static void bind_oranumber_init(oci8_bind_t *bb, VALUE svc, VALUE *val, VALUE le
 static oci8_bind_class_t bind_oranumber_class = {
     {
         NULL,
-	oci8_bind_free,
-	sizeof(oci8_bind_oranumber_t)
+        oci8_bind_free,
+        sizeof(oci8_bind_oranumber_t)
     },
     bind_oranumber_get,
     bind_oranumber_set,
@@ -206,8 +207,8 @@ static void bind_integer_set(oci8_bind_t *bb, VALUE val)
 static oci8_bind_class_t bind_integer_class = {
     {
         NULL,
-	oci8_bind_free,
-	sizeof(oci8_bind_oranumber_t)
+        oci8_bind_free,
+        sizeof(oci8_bind_oranumber_t)
     },
     bind_integer_get,
     bind_integer_set,

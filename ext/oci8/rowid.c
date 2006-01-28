@@ -1,3 +1,4 @@
+/* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
   descriptor.c - part of ruby-oci8
 
@@ -37,7 +38,7 @@ static void bind_rowid_set(oci8_bind_t *base, VALUE val)
     oci8_bind_handle_t *handle = (oci8_bind_handle_t *)base;
     oci8_base_t *h;
     if (!rb_obj_is_instance_of(val, cOCIRowid))
-      rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIRowid)", rb_class2name(CLASS_OF(val)));
+        rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIRowid)", rb_class2name(CLASS_OF(val)));
     h = DATA_PTR(val);
     handle->hp = h->hp;
     handle->obj = val;
@@ -56,8 +57,8 @@ static void bind_rowid_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE leng
 static oci8_bind_class_t bind_rowid_class = {
     {
         oci8_bind_handle_mark,
-	oci8_bind_free,
-	sizeof(oci8_bind_handle_t)
+        oci8_bind_free,
+        sizeof(oci8_bind_handle_t)
     },
     oci8_bind_handle_get,
     bind_rowid_set,

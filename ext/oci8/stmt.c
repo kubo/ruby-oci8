@@ -1,3 +1,4 @@
+/* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
   stmt.c - part of ruby-oci8
            implement the methods of OCIStmt.
@@ -52,7 +53,7 @@ static void oci8_stmt_free(oci8_base_t *base)
 {
     oci8_stmt_t *stmt = (oci8_stmt_t *)base;
     while (stmt->next != (oci8_bind_t*)stmt)
-      oci8_base_free((oci8_base_t*)stmt->next);
+        oci8_base_free((oci8_base_t*)stmt->next);
     stmt->next = stmt->prev = (oci8_bind_t*)stmt;
     stmt->svc = Qnil;
     stmt->binds = Qnil;
@@ -163,11 +164,11 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
     bind_class = (oci8_bind_class_t *)bind->base.klass;
     status = OCIDefineByPos(stmt->base.hp, (OCIDefine**)&bind->base.hp, oci8_errhp, position, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, &bind->rlen, 0, OCI_DEFAULT);
     if (status != OCI_SUCCESS) {
-	oci8_raise(oci8_errhp, status, stmt->base.hp);
+        oci8_raise(oci8_errhp, status, stmt->base.hp);
     }
     bind->base.type = OCI_HTYPE_DEFINE;
     if (NIL_P(stmt->defines)) {
-      stmt->defines = rb_hash_new();
+        stmt->defines = rb_hash_new();
     }
     rb_hash_aset(stmt->defines, INT2FIX(position), bind->base.self);
     bind->next->prev = bind->prev;
@@ -191,20 +192,20 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
 
     if (NIL_P(vplaceholder)) { /* 1 */
         placeholder_ptr = NULL;
-	placeholder_len = 0;
+        placeholder_len = 0;
     } else if (SYMBOL_P(vplaceholder)) {
         char *symname = rb_id2name(SYM2ID(vplaceholder));
-	size_t len = strlen(symname);
-	placeholder_ptr = ALLOCA_N(char, len + 1);
-	placeholder_len = len + 1;
-	placeholder_ptr[0] = ':';
-	memcpy(placeholder_ptr + 1, symname, len);
+        size_t len = strlen(symname);
+        placeholder_ptr = ALLOCA_N(char, len + 1);
+        placeholder_len = len + 1;
+        placeholder_ptr[0] = ':';
+        memcpy(placeholder_ptr + 1, symname, len);
     } else if (FIXNUM_P(vplaceholder)) {
-	position = NUM2INT(vplaceholder);
+        position = NUM2INT(vplaceholder);
     } else {
         StringValue(vplaceholder);
-	placeholder_ptr = RSTRING(vplaceholder)->ptr;
-	placeholder_len = RSTRING(vplaceholder)->len;
+        placeholder_ptr = RSTRING(vplaceholder)->ptr;
+        placeholder_len = RSTRING(vplaceholder)->len;
     }
     bind = oci8_get_bind(vbindobj); /* 2 */
     if (bind->base.hp != NULL) {
@@ -222,7 +223,7 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     }
     bind->base.type = OCI_HTYPE_BIND;
     if (NIL_P(stmt->binds)) {
-      stmt->binds = rb_hash_new();
+        stmt->binds = rb_hash_new();
     }
     rb_hash_aset(stmt->binds, vplaceholder, bind->base.self);
     bind->next->prev = bind->prev;
@@ -289,11 +290,11 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE vsvc, VALUE viters, VALUE vmode
     rv = OCIStmtExecute(svchp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode);
     if (rv == OCI_ERROR) {
         ub4 errcode;
-	OCIErrorGet(oci8_errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
-	if (errcode == 1000) {
-	    rb_gc();
-	    rv = OCIStmtExecute(svchp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode);
-	}
+        OCIErrorGet(oci8_errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
+        if (errcode == 1000) {
+            rb_gc();
+            rv = OCIStmtExecute(svchp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode);
+        }
     }
     if (IS_OCI_ERROR(rv)) {
         oci8_raise(oci8_errhp, rv, stmt->base.hp);
@@ -353,7 +354,7 @@ static VALUE oci8_stmt_fetch(int argc, VALUE *argv, VALUE self)
         oci8_raise(oci8_errhp, rv, stmt->base.hp);
     }
     if (nrows == 0)
-      stmt->svc = Qnil;
+        stmt->svc = Qnil;
     return Qtrue;
 }
 
@@ -440,8 +441,8 @@ static void bind_stmt_init(oci8_bind_t *bind, VALUE svc, VALUE *val, VALUE lengt
 static oci8_bind_class_t bind_stmt_class = {
     {
         oci8_bind_handle_mark,
-	oci8_bind_free,
-	sizeof(oci8_bind_handle_t)
+        oci8_bind_free,
+        sizeof(oci8_bind_handle_t)
     },
     oci8_bind_handle_get,
     bind_stmt_set,

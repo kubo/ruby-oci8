@@ -338,7 +338,7 @@ static VALUE oci8_break(VALUE self)
 
     rv = OCIBreak(svcctx->base.hp, oci8_errhp);
     if (rv != OCI_SUCCESS)
-      oci8_raise(oci8_errhp, rv, NULL);
+        oci8_raise(oci8_errhp, rv, NULL);
     return self;
 }
 
@@ -350,7 +350,7 @@ static VALUE oci8_reset(VALUE self)
 
     rv = OCIReset(svcctx->base.hp, oci8_errhp);
     if (rv != OCI_SUCCESS)
-      oci8_raise(oci8_errhp, rv, NULL);
+        oci8_raise(oci8_errhp, rv, NULL);
     return self;
 }
 #endif

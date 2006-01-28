@@ -114,17 +114,17 @@ static int set_oci_number_from_num(OCINumber *result, VALUE num, int force)
     if (!RTEST(rb_obj_is_kind_of(num, rb_cNumeric)))
         rb_raise(rb_eTypeError, "expect Numeric but %s", rb_class2name(CLASS_OF(num)));
     switch (rb_type(num)) {
-      case T_FIXNUM:
+    case T_FIXNUM:
         /* set from long. */
         sl = NUM2LONG(num);
         oci_lc(OCINumberFromInt(oci8_errhp, &sl, sizeof(sl), OCI_NUMBER_SIGNED, result));
         return 1;
-      case T_FLOAT:
+    case T_FLOAT:
         /* set from double. */
         dbl = NUM2DBL(num);
         oci_lc(OCINumberFromReal(oci8_errhp, &dbl, sizeof(dbl), result));
         return 1;
-      case T_BIGNUM:
+    case T_BIGNUM:
         /* change via string. */
         num = rb_big2str(num, 10);
         set_oci_number_from_str(result, num, Qnil, Qnil);
@@ -166,11 +166,11 @@ static VALUE omath_atan2(VALUE self, VALUE Ycoordinate, VALUE Xcoordinate)
     if (is_zero) {
         oci_lc(OCINumberSign(oci8_errhp, &nY, &sign));
         switch (sign) {
-          case 0:
+        case 0:
             return INT2FIX(0); /* atan2(0, 0) => 0 or ERROR? */
-          case 1:
+        case 1:
             return make_oci_number(&const_PI2); /* atan2(positive, 0) => PI/2 */
-          case -1:
+        case -1:
             return make_oci_number(&const_mPI2); /* atan2(negative, 0) => -PI/2 */
         }
     }

@@ -57,7 +57,7 @@ static void bind_string_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE len
         StringValue(*val);
         sz = RSTRING(*val)->len;
     } else {
-      sz = NUM2INT(length);
+        sz = NUM2INT(length);
     }
     if (sz <= 0) {
         rb_raise(rb_eArgError, "invalid bind length %d", sz);
