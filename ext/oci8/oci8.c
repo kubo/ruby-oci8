@@ -355,7 +355,7 @@ static VALUE oci8_reset(VALUE self)
 }
 #endif
 
-VALUE Init_oci8_svcctx(void)
+VALUE Init_oci8(void)
 {
     cOCI8 = oci8_define_class("OCI8", &oci8_svcctx_class);
 

@@ -1,4 +1,14 @@
 2006-01-28  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/const.c: delete this file.
+	    delete global constants OCI_TYPECODE_*.
+	* ext/oci8/extconf.rb: delete const.o from compilation objects.
+	* ext/oci8/oci8lib.c: move oci8_id_new, OCI_DEFAULT and
+	    OCI_COMMIT_ON_SUCCESS from const.c.
+	    rename Init_oci8_svcctx() to Init_oci8().
+	* ext/oci8/oci8.c: rename Init_oci8_svcctx() to Init_oci8().
+	* ext/oci8/oci8.h: rename Init_oci8_svcctx() to Init_oci8() and so on...
+
+2006-01-28  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c, ext/oci8/error.c, ext/oci8/oci8.c,
 	    ext/oci8/ocidatetime.c, ext/oci8/oradate.c,
 	    ext/oci8/oranumber.c, ext/oci8/param.c, ext/oci8/rowid.c,

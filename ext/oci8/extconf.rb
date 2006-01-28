@@ -18,7 +18,7 @@ def replace_keyword(source, target, replace)
   }        
 end
 
-$objs = ["oci8lib.o", "const.o", "env.o", "error.o", "oci8.o",
+$objs = ["oci8lib.o", "env.o", "error.o", "oci8.o",
          "stmt.o", "bind.o", "param.o", "attr.o",
          "rowid.o", "lob.o", "oradate.o", "oranumber.o",
          "ocinumber.o", "ocidatetime.o"]

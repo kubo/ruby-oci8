@@ -14,6 +14,7 @@ oci8_base_class_t oci8_base_class = {
     sizeof(oci8_base_t),
 };
 
+ID oci8_id_new;
 static ID id_oci8_class;
 
 static VALUE cOCI8Base;
@@ -89,14 +90,18 @@ Init_oci8lib()
     VALUE cOCI8;
 
     id_oci8_class = rb_intern("__oci8_class__");
+    oci8_id_new = rb_intern("new");
 
-    Init_oci8_const();
+    /* following two constants will be deleted before release. */
+    rb_define_global_const("OCI_DEFAULT", INT2FIX(OCI_DEFAULT));
+    rb_define_global_const("OCI_COMMIT_ON_SUCCESS", INT2FIX(OCI_COMMIT_ON_SUCCESS));
+
     Init_oci8_error();
     Init_oci8_env();
 
     /* OCI8 class */
     cOCI8Base = rb_define_class("OCI8Base", rb_cObject);
-    cOCI8 = Init_oci8_svcctx();
+    cOCI8 = Init_oci8();
     mOCI8BindType = rb_define_module_under(cOCI8, "BindType");
     cOCI8BindTypeBase = rb_define_class_under(mOCI8BindType, "Base", cOCI8Base);
 

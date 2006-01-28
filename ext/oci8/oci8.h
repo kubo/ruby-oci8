@@ -118,11 +118,8 @@ extern OCIEnv *oci8_envhp;
 extern OCIError *oci8_errhp;
 void Init_oci8_env(void);
 
-/* const.c */
+/* oci8lib.c */
 extern ID oci8_id_new;
-void  Init_oci8_const(void);
-
-/* oci8.c */
 void oci8_base_free(oci8_base_t *base);
 VALUE oci8_define_class(const char *name, oci8_base_class_t *klass);
 VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_class_t *klass);
@@ -135,8 +132,8 @@ void Init_oci8_error(void);
 NORETURN(void oci8_raise(OCIError *, sword status, OCIStmt *));
 NORETURN(void oci8_env_raise(OCIEnv *, sword status));
 
-/* svcctx.c */
-VALUE Init_oci8_svcctx(void);
+/* oci8.c */
+VALUE Init_oci8(void);
 OCISvcCtx *oci8_get_oci_svcctx(VALUE obj);
 OCISession *oci8_get_oci_session(VALUE obj);
 #define TO_SVCCTX oci8_get_oci_svcctx
