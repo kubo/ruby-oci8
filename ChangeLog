@@ -1,3 +1,6 @@
+2006-01-29  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8lib.c: rename OCI8Base to OCIHandle.
+
 2006-01-28  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/const.c: delete this file.
 	    delete global constants OCI_TYPECODE_*.
