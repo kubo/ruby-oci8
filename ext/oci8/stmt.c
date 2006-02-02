@@ -271,7 +271,7 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
 static VALUE oci8_stmt_execute(VALUE self, VALUE vsvc, VALUE viters, VALUE vmode)
 {
     oci8_stmt_t *stmt = DATA_PTR(self);
-    OCISvcCtx *svchp = oci8_get_oci_svcctx(vsvc); /* 1 */
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(vsvc); /* 1 */
     ub4 mode;
     ub4 iters;
     sword rv;
@@ -287,13 +287,13 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE vsvc, VALUE viters, VALUE vmode
         rb_raise(rb_eArgError, "current implementation doesn't support array fatch or batch mode");
     }
 
-    rv = OCIStmtExecute(svchp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode);
+    oci_rc2(rv, svcctx, OCIStmtExecute(svcctx->base.hp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode));
     if (rv == OCI_ERROR) {
         ub4 errcode;
         OCIErrorGet(oci8_errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
         if (errcode == 1000) {
             rb_gc();
-            rv = OCIStmtExecute(svchp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode);
+            oci_rc2(rv, svcctx, OCIStmtExecute(svcctx->base.hp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode));
         }
     }
     if (IS_OCI_ERROR(rv)) {
@@ -330,31 +330,19 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE vsvc, VALUE viters, VALUE vmode
      correspond native OCI function: ((|OCIStmtFetch|))
 =end
 */
-static VALUE oci8_stmt_fetch(int argc, VALUE *argv, VALUE self)
+static VALUE oci8_stmt_fetch(VALUE self, VALUE svc)
 {
     oci8_stmt_t *stmt = DATA_PTR(self);
-    VALUE vnrows;
-    VALUE vorientation;
-    VALUE vmode;
-    ub4 nrows;
-    ub2 orientation;
-    ub4 mode;
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(svc);
     sword rv;
 
-    rb_scan_args(argc, argv, "03", &vnrows, &vorientation, &vmode);
-    Get_Int_With_Default(argc, 1, vnrows, nrows, 1); /* 1 */
-    Get_Int_With_Default(argc, 2, vorientation, orientation, OCI_FETCH_NEXT); /* 2 */
-    Get_Int_With_Default(argc, 3, vmode, mode, OCI_DEFAULT); /* 3 */
-
-    rv = OCIStmtFetch(stmt->base.hp, oci8_errhp, nrows, orientation, mode);
+    oci_rc2(rv, svcctx, OCIStmtFetch(stmt->base.hp, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT));
     if (rv == OCI_NO_DATA) {
         return Qnil;
     }
     if (IS_OCI_ERROR(rv)) {
         oci8_raise(oci8_errhp, rv, stmt->base.hp);
     }
-    if (nrows == 0)
-        stmt->svc = Qnil;
     return Qtrue;
 }
 
@@ -485,7 +473,7 @@ void Init_oci8_stmt(void)
     rb_define_method(cOCIStmt, "defineByPos", oci8_define_by_pos, 2);
     rb_define_method(cOCIStmt, "bind", oci8_bind, 2);
     rb_define_method(cOCIStmt, "execute", oci8_stmt_execute, 3);
-    rb_define_method(cOCIStmt, "fetch", oci8_stmt_fetch, -1);
+    rb_define_method(cOCIStmt, "fetch", oci8_stmt_fetch, 1);
     rb_define_method(cOCIStmt, "paramGet", oci8_stmt_get_param, 1);
     rb_define_method(cOCIStmt, "stmt_type", oci8_stmt_get_stmt_type, 0);
     rb_define_method(cOCIStmt, "row_count", oci8_stmt_get_row_count, 0);

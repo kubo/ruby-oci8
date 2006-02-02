@@ -72,6 +72,16 @@ struct oci8_bind {
     sb2 ind;
 };
 
+enum logon_type_t {T_IMPLICIT, T_EXPLICIT};
+
+typedef struct  {
+    oci8_base_t base;
+    VALUE executing_thread;
+    enum logon_type_t logon_type;
+    OCISession *authhp;
+    OCIServer *srvhp;
+} oci8_svcctx_t;
+
 #define Check_Handle(obj, klass, hp) do { \
     if (!rb_obj_is_kind_of(obj, klass)) { \
         rb_raise(rb_eTypeError, "invalid argument %s (expect %s)", rb_class2name(CLASS_OF(obj)), rb_class2name(klass)); \
@@ -102,6 +112,56 @@ struct oci8_bind {
     } \
 } while(0)
 
+#ifndef HAVE_OCIRESET
+#define OCIReset(svchp, errhp) do {} while(0)
+#endif
+
+#define NB_STATE_NOT_EXECUTING INT2FIX(0)
+#define NB_STATE_CANCELING     INT2FIX(1)
+/* remote call without check */
+#define oci_rc2(rv, svcctx, func) do { \
+    struct timeval __time; \
+    sword __r; \
+    if (svcctx->executing_thread != NB_STATE_NOT_EXECUTING) { \
+        rb_raise(rb_eRuntimeError /* FIXME */, "executing in another thread"); \
+    } \
+    __time.tv_sec = 0; \
+    __time.tv_usec = 100000; \
+    svcctx->executing_thread = rb_thread_current(); \
+    while ((__r = (func)) == OCI_STILL_EXECUTING) { \
+        rb_thread_wait_for(__time); \
+        if (svcctx->executing_thread == NB_STATE_CANCELING) { \
+            svcctx->executing_thread = NB_STATE_NOT_EXECUTING; \
+            OCIReset(svcctx->base.hp, oci8_errhp); \
+            rb_raise(eOCIBreak, "Canceled by user request."); \
+        } \
+        if (__time.tv_usec < 500000) \
+        __time.tv_usec <<= 1; \
+    } \
+    if (__r == OCI_ERROR) { \
+       ub4 errcode; \
+       OraText errmsg[1]; \
+       OCIErrorGet(oci8_errhp, 1, NULL, &errcode, errmsg, sizeof(errmsg), OCI_HTYPE_ERROR); \
+       if (errcode == 1013) { \
+            svcctx->executing_thread = NB_STATE_NOT_EXECUTING; \
+            OCIReset(svcctx->base.hp, oci8_errhp); \
+            rb_raise(eOCIBreak, "Canceled by user request."); \
+       } \
+    } \
+    svcctx->executing_thread = NB_STATE_NOT_EXECUTING; \
+    (rv) = __r; \
+} while (0)
+
+/* remote call */
+#define oci_rc(svcctx, func) do { \
+    sword __rv; \
+    oci_rc2(__rv, svcctx, func); \
+    if (__rv != OCI_SUCCESS) { \
+        oci8_raise(oci8_errhp, __rv, NULL); \
+    } \
+} while (0)
+
+
 #if SIZEOF_LONG > 4
 #define UB4_TO_NUM INT2FIX
 #else
@@ -128,12 +188,14 @@ extern oci8_base_class_t oci8_base_class;
 
 /* error.c */
 extern VALUE eOCIException;
+extern VALUE eOCIBreak;
 void Init_oci8_error(void);
 NORETURN(void oci8_raise(OCIError *, sword status, OCIStmt *));
 NORETURN(void oci8_env_raise(OCIEnv *, sword status));
 
 /* oci8.c */
 VALUE Init_oci8(void);
+oci8_svcctx_t *oci8_get_svcctx(VALUE obj);
 OCISvcCtx *oci8_get_oci_svcctx(VALUE obj);
 OCISession *oci8_get_oci_session(VALUE obj);
 #define TO_SVCCTX oci8_get_oci_svcctx

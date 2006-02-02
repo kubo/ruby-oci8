@@ -1,3 +1,22 @@
+2006-02-02  KUBO Takehiro  <kubo@jiubao.org>
+	move non-blocking handling code from oci8.rb to oci8lib.so.
+	* ext/oci8/error.c: add OCIBreak class.
+	* ext/oci8/oci8.c: move oci8_svcctx_t to oci8.h.
+	    change oci8_commit(), oci8_rollback(), oci8_non_blocking_p()
+	    and oci8_set_non_blocking() to use oci_rc macro.
+	    change oci8_break() for oci_rc macro.
+	    delete oci8_reset(). OCIReset is called in oci_rc macro now.
+	    change oci8_get_svcctx() scope to global.
+	    implement OCI8#commit, OCI8#rollback, OCI8#non_blocking?,
+	    OCI8#non_blocking=, OCI8#break in C layer.
+	* ext/oci8/oci8.h: move oci8_svcctx_t from oci8.c.
+	    implement oci_rc2 and oci_rc macro.
+	* ext/oci8/stmt.c: change oci8_stmt_execute() and oci8_stmt_fetch()
+	    to use oci_rc macro.
+	* lib/oci8.rb.in: delete non-blocking handling code.
+	    delete OCI8#commit, OCI8#rollback, OCI8#non_blocking?,
+	    OCI8#non_blocking=, OCI8#break from ruby layer.
+
 2006-01-29  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8lib.c: rename OCI8Base to OCIHandle.
 

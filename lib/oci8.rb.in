@@ -6,14 +6,7 @@
 #  # select all data from emp and print them as CVS format.
 require 'oci8lib'
 require 'date'
-require 'thread'
 require 'ocidatetime.rb'
-
-class OCIBreak < OCIException
-  def initialize(errstr = "Canceled by user request.")
-    super(errstr)
-  end
-end
 
 # The database connection class.
 class OCI8
@@ -73,30 +66,6 @@ class OCI8
 
   module Util # :nodoc:
     CTX_EXECFLAG = 0
-    CTX_MUTEX = 1
-    CTX_THREAD = 2
-
-    def do_ocicall(ctx)
-      sleep_time = 0.01
-      ctx[CTX_MUTEX].lock
-      ctx[CTX_THREAD] = Thread.current
-      begin
-	yield
-      rescue OCIStillExecuting # non-blocking mode
-	ctx[CTX_MUTEX].unlock
-	sleep(sleep_time)
-	ctx[CTX_MUTEX].lock
-	if ctx[CTX_THREAD].nil?
-	  raise OCIBreak
-	end
-	# expand sleep time to prevent busy loop.
-	sleep_time *= 2 if sleep_time < 0.5
-	retry
-      ensure
-	ctx[CTX_THREAD] = nil
-	ctx[CTX_MUTEX].unlock
-      end
-    end # do_ocicall
   end
   include Util
 
@@ -112,8 +81,8 @@ class OCI8
   #   # sqlplus 'sys/change_on_install as sysdba'
   #   conn = OCI8.new("sys", "change_on_install", nil, :SYSDBA)
   def initialize(uid, pswd, dbname = nil, privilege = nil)
-    @ctx = [0, Mutex.new, nil]
-    do_ocicall(@ctx) { __initialize(uid, pswd, dbname, privilege) }
+    @ctx = [0]
+    __initialize(uid, pswd, dbname, privilege)
   end # initialize
 
   # Disconnects from Oracle. Uncommitted transaction will be
@@ -198,7 +167,6 @@ class OCI8
       ret = cursor.exec(*bindvars)
       case cursor.type
       when :select_stmt
-        cursor.exec(*bindvars)
         if block_given?
           cursor.fetch { |row| yield(row) }   # for each row
           cursor.row_count()
@@ -229,28 +197,6 @@ class OCI8
     cursor
   end # parse
 
-  # Commits the transaction.
-  #
-  # example:
-  #   conn = OCI8.new("scott", "tiger")
-  #   conn.exec("UPDATE emp SET sal = sal * 1.1") # yahoo
-  #   conn.commit
-  #   conn.logoff
-  def commit
-    do_ocicall(@ctx) { __commit }
-  end # commit
-
-  # Rollbacks the transaction.
-  # 
-  # example:
-  #   conn = OCI8.new("scott", "tiger")
-  #   conn.exec("UPDATE emp SET sal = sal * 0.9") # boos
-  #   conn.rollback
-  #   conn.logoff
-  def rollback
-    do_ocicall(@ctx) { __rollback }
-  end # rollback
-
   # Returns the state of the autocommit mode. The default value is
   # false. If true, the transaction is committed automatically
   # whenever executing insert/update/delete statements.
@@ -278,37 +224,6 @@ class OCI8
     end
     ac
   end # autocommit=
-
-  # Returns the status of blocking/non-blocking mode. The default
-  # value is false 
-  def non_blocking?
-    __non_blocking?
-  end # non_blocking?
-
-  # Changes the status of blocking/non-blocking mode. Acceptable
-  # values are true and false.
-  def non_blocking=(nb)
-    __set_non_blocking(nb)
-  end # non_blocking=
-
-  # Cancels the OCI call performing in other thread. To use this, the
-  # connection status must be non-blocking mode.
-  def break
-    @ctx[CTX_MUTEX].synchronize do
-      __break()
-      unless @ctx[CTX_THREAD].nil?
-	@ctx[CTX_THREAD].wakeup()
-	@ctx[CTX_THREAD] = nil
-	if self.respond_to?("__reset")
-	  begin
-	    __reset()
-	  rescue OCIError
-	    raise if $!.code != 1013 # ORA-01013
-	  end
-	end
-      end
-    end
-  end # break
 
   module BindType
     Mapping = {}
@@ -653,13 +568,13 @@ class OCI8
       bind_params(*bindvars)
       case @stmttype
       when :select_stmt
-	do_ocicall(@ctx) { @stmt.execute(@svc, 0, OCI_DEFAULT) }
+	@stmt.execute(@svc, 0, OCI_DEFAULT)
         define_columns()
       when :update_stmt, :delete_stmt, :insert_stmt
-	do_ocicall(@ctx) { @stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG]) }
+	@stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG])
 	@stmt.row_count
       else
-	do_ocicall(@ctx) { @stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG]) }
+	@stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG])
 	true
       end
     end # exec
@@ -827,7 +742,7 @@ class OCI8
     end # bind_params
 
     def fetch_a_row
-      res = do_ocicall(@ctx) { @stmt.fetch() }
+      res = @stmt.fetch(@svc)
       return nil if res.nil?
       @defns.collect do |r| r.get() end
     end # fetch_a_row

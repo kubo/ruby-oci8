@@ -9,15 +9,6 @@
 
 static VALUE cOCI8;
 
-enum logon_type_t {T_IMPLICIT, T_EXPLICIT};
-
-typedef struct  {
-    oci8_base_t base;
-    enum logon_type_t logon_type;
-    OCISession *authhp;
-    OCIServer *srvhp;
-} oci8_svcctx_t;
-
 static void oci8_svcctx_free(oci8_base_t *base)
 {
     oci8_svcctx_t *svcctx = (oci8_svcctx_t *)base;
@@ -127,6 +118,7 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
             oci8_raise(oci8_errhp, rv, NULL);
         svcctx->logon_type = T_EXPLICIT;
     }
+    svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
     return Qnil;
 }
 
@@ -207,99 +199,69 @@ static VALUE oci8_password_change(VALUE self, VALUE username, VALUE opasswd, VAL
 }
 
 /*
-=begin
---- OCISvcCtx#commit([flags])
-     commit the transaction.
-
-     :flags
-        ((|OCI_DEFAULT|)) or ((|OCI_TRANS_TWOPHASE|)).
-        Default value is ((|OCI_DEFAULT|)).
-
-     correspond native OCI function: ((|OCITransCommit|))
-=end
-*/
-static VALUE oci8_trans_commit(int argc, VALUE *argv, VALUE self)
+ * Commits the transaction.
+ *
+ * example:
+ *   conn = OCI8.new("scott", "tiger")
+ *   conn.exec("UPDATE emp SET sal = sal * 1.1") # yahoo
+ *   conn.commit
+ *   conn.logoff
+ */
+static VALUE oci8_commit(VALUE self)
 {
-    VALUE vflags;
     oci8_svcctx_t *svcctx = DATA_PTR(self);
-    ub4 flags;
-    sword rv;
-
-    rb_scan_args(argc, argv, "01", &vflags);
-    Get_Int_With_Default(argc, 1, vflags, flags, OCI_DEFAULT); /* 1 */
-
-    rv = OCITransCommit(svcctx->base.hp, oci8_errhp, flags);
-    if (rv != OCI_SUCCESS) {
-        oci8_raise(oci8_errhp, rv, NULL);
-    }
+    oci_rc(svcctx, OCITransCommit(svcctx->base.hp, oci8_errhp, OCI_DEFAULT));
     return self;
 }
 
 /*
-=begin
-
---- OCISvcCtx#rollback([flags])
-     rollback the transaction.
-
-     :flags
-        ((|OCI_DEFAULT|)) only valid. Default value is ((|OCI_DEFAULT|)).
-
-     correspond native OCI function: ((|OCITransRollback|))
-=end
-*/
-static VALUE oci8_trans_rollback(int argc, VALUE *argv, VALUE self)
+ * Rollbacks the transaction.
+ * 
+ * example:
+ *   conn = OCI8.new("scott", "tiger")
+ *   conn.exec("UPDATE emp SET sal = sal * 0.9") # boos
+ *   conn.rollback
+ *   conn.logoff
+ */
+static VALUE oci8_rollback(VALUE self)
 {
-    VALUE vflags;
     oci8_svcctx_t *svcctx = DATA_PTR(self);
-    ub4 flags;
-    sword rv;
-
-    rb_scan_args(argc, argv, "01", &vflags);
-    Get_Int_With_Default(argc, 1, vflags, flags, OCI_DEFAULT); /* 1 */
-
-    rv = OCITransRollback(svcctx->base.hp, oci8_errhp, flags);
-    if (rv != OCI_SUCCESS) {
-        oci8_raise(oci8_errhp, rv, NULL);
-    }
+    oci_rc(svcctx, OCITransRollback(svcctx->base.hp, oci8_errhp, OCI_DEFAULT));
     return self;
 }
 
-static VALUE oci8_svcctx_non_blocking_p(VALUE self)
+/*
+ * Returns the status of blocking/non-blocking mode. The default
+ * value is false 
+ */
+static VALUE oci8_non_blocking_p(VALUE self)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
     sb1 non_blocking;
-    sword rv;
 
     if (svcctx->srvhp == NULL) {
-        rv = OCIAttrGet(svcctx->base.hp, OCI_HTYPE_SVCCTX, &svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp);
-        if (rv != OCI_SUCCESS)
-            oci8_raise(oci8_errhp, rv, NULL);
+        oci_lc(OCIAttrGet(svcctx->base.hp, OCI_HTYPE_SVCCTX, &svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp));
     }
-    rv = OCIAttrGet(svcctx->srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp);
-    if (rv != OCI_SUCCESS)
-        oci8_raise(oci8_errhp, rv, NULL);
+    oci_lc(OCIAttrGet(svcctx->srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp));
     return non_blocking ? Qtrue : Qfalse;
 }
 
-static VALUE oci8_svcctx_set_non_blocking(VALUE self, VALUE val)
+/*
+ * Changes the status of blocking/non-blocking mode. Acceptable
+ * values are true and false.
+ */
+static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
     sb1 non_blocking;
-    sword rv;
 
     if (svcctx->srvhp == NULL) {
-        rv = OCIAttrGet(svcctx->base.hp, OCI_HTYPE_SVCCTX, &svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp);
-        if (rv != OCI_SUCCESS)
-            oci8_raise(oci8_errhp, rv, NULL);
+        oci_lc(OCIAttrGet(svcctx->base.hp, OCI_HTYPE_SVCCTX, &svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp));
     }
-    rv = OCIAttrGet(svcctx->srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp);
-    if (rv != OCI_SUCCESS)
-        oci8_raise(oci8_errhp, rv, NULL);
+    oci_lc(OCIAttrGet(svcctx->srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp));
     if ((RTEST(val) && !non_blocking) || (!RTEST(val) && non_blocking)) {
         /* toggle blocking / non-blocking. */
-        rv = OCIAttrSet(svcctx->srvhp, OCI_HTYPE_SERVER, 0, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp);
-        if (rv != OCI_SUCCESS)
-            oci8_raise(oci8_errhp, rv, NULL);
+        oci_lc(OCIAttrSet(svcctx->srvhp, OCI_HTYPE_SERVER, 0, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp));
     }
     return val;
 }
@@ -331,29 +293,27 @@ static VALUE oci8_server_release(VALUE self)
 }
 #endif
 
+/*
+ * Cancels the OCI call performing in other thread. To use this, the
+ * connection status must be non-blocking mode.
+ */
 static VALUE oci8_break(VALUE self)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
     sword rv;
 
+    if (svcctx->executing_thread == NB_STATE_NOT_EXECUTING) {
+        return Qfalse;
+    }
+    if (svcctx->executing_thread == NB_STATE_CANCELING) {
+        return Qtrue;
+    }
     rv = OCIBreak(svcctx->base.hp, oci8_errhp);
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);
-    return self;
+    rb_thread_wakeup(svcctx->executing_thread);
+    return Qtrue;
 }
-
-#ifdef HAVE_OCIRESET
-static VALUE oci8_reset(VALUE self)
-{
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
-    sword rv;
-
-    rv = OCIReset(svcctx->base.hp, oci8_errhp);
-    if (rv != OCI_SUCCESS)
-        oci8_raise(oci8_errhp, rv, NULL);
-    return self;
-}
-#endif
 
 VALUE Init_oci8(void)
 {
@@ -365,23 +325,19 @@ VALUE Init_oci8(void)
     rb_define_private_method(cOCI8, "__initialize", oci8_svcctx_initialize, -1);
     rb_define_private_method(cOCI8, "__logoff", oci8_svcctx_logoff, 0);
     rb_define_private_method(cOCI8, "__passwordChange", oci8_password_change, 4);
-    rb_define_private_method(cOCI8, "__commit", oci8_trans_commit, -1);
-    rb_define_private_method(cOCI8, "__rollback", oci8_trans_rollback, -1);
-    rb_define_private_method(cOCI8, "__non_blocking?", oci8_svcctx_non_blocking_p, 0);
-    rb_define_private_method(cOCI8, "__set_non_blocking", oci8_svcctx_set_non_blocking, 1);
+    rb_define_method(cOCI8, "commit", oci8_commit, 0);
+    rb_define_method(cOCI8, "rollback", oci8_rollback, 0);
+    rb_define_method(cOCI8, "non_blocking?", oci8_non_blocking_p, 0);
+    rb_define_method(cOCI8, "non_blocking=", oci8_set_non_blocking, 1);
     rb_define_method(cOCI8, "version", oci8_server_version, 0);
 #ifdef HAVE_OCISERVERRELEASE
     rb_define_method(cOCI8, "release", oci8_server_release, 0);
 #endif
-    rb_define_private_method(cOCI8, "__break", oci8_break, 0);
-#ifdef HAVE_OCIRESET
-    rb_define_private_method(cOCI8, "__reset", oci8_reset, 0);
-#endif
-
+    rb_define_method(cOCI8, "break", oci8_break, 0);
     return cOCI8;
 }
 
-static oci8_svcctx_t *oci8_get_svcctx(VALUE obj)
+oci8_svcctx_t *oci8_get_svcctx(VALUE obj)
 {
     oci8_base_t *base;
     Check_Handle(obj, cOCI8, base);

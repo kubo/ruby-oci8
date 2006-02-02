@@ -12,6 +12,7 @@
 
 /* Exception */
 VALUE eOCIException;
+VALUE eOCIBreak;
 static VALUE eOCINoData;
 static VALUE eOCIError;
 static VALUE eOCIInvalidHandle;
@@ -187,6 +188,8 @@ void Init_oci8_error(void)
     oci8_id_sql = rb_intern("sql");
 
     eOCIException = rb_define_class("OCIException", rb_eStandardError);
+    eOCIBreak = rb_define_class("OCIBreak", eOCIException);
+
     eOCINoData = rb_define_class("OCINoData", eOCIException);
     eOCIError = rb_define_class("OCIError", eOCIException);
     eOCIInvalidHandle = rb_define_class("OCIInvalidHandle", eOCIException);
