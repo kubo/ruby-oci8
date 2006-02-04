@@ -1,3 +1,14 @@
+2006-02-04  KUBO Takehiro  <kubo@jiubao.org>
+	merge OCIStmt to OCi8::Curosr.
+	* ext/oci8/oci8.c: implement OCI8::autocommit? and OCI8::autocommit=
+	    in C layer.
+	* ext/oci8/oci8.h: fix oci8_svcctx_t structure to support
+	    OCI8::autocommit in C layer. fix Init_oci8_stmt() prototype.
+	* ext/oci8/oci8lib.c: fix Init_oci8_stmt().
+	* ext/oci8/stmt.c: OCIStmt become OCI8::Cursor. Almost OCIStmt's
+	    methods become private methods, which are called by ruby layer.
+	* lib/oci8.rb.in: delete OCI8::autocommit?, OCI8::autocommit=,
+
 2006-02-02  KUBO Takehiro  <kubo@jiubao.org>
 	move non-blocking handling code from oci8.rb to oci8lib.so.
 	* ext/oci8/error.c: add OCIBreak class.

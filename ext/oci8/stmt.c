@@ -1,23 +1,11 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
-  stmt.c - part of ruby-oci8
-           implement the methods of OCIStmt.
-
-  Copyright (C) 2002-2005 KUBO Takehiro <kubo@jiubao.org>
-
-=begin
-== OCIStmt
-Statemet handle identify a SQL or PL/SQL statement and its associated attributes.
-
-Information about SQL or PL/SQL's input/output variables is managed by the 
-((<bind handle|OCIBind>)). Fetched data of select statement is managed by the
-((<define handle|OCIDefine>)). 
-
-super class: ((<OCIHandle>))
-
-correspond native OCI datatype: ((|OCIStmt|))
-=end
-*/
+ * stmt.c - part of ruby-oci8
+ *         implement the methods of OCIStmt.
+ *
+ * Copyright (C) 2002-2006 KUBO Takehiro <kubo@jiubao.org>
+ *
+ */
 #include "oci8.h"
 
 static VALUE oci8_sym_select_stmt;
@@ -49,15 +37,20 @@ static void oci8_stmt_mark(oci8_base_t *base)
     rb_gc_mark(stmt->defines);
 }
 
-static void oci8_stmt_free(oci8_base_t *base)
+static void oci8_stmt_free2(oci8_stmt_t *stmt)
 {
-    oci8_stmt_t *stmt = (oci8_stmt_t *)base;
     while (stmt->next != (oci8_bind_t*)stmt)
         oci8_base_free((oci8_base_t*)stmt->next);
     stmt->next = stmt->prev = (oci8_bind_t*)stmt;
-    stmt->svc = Qnil;
     stmt->binds = Qnil;
     stmt->defines = Qnil;
+}
+
+static void oci8_stmt_free(oci8_base_t *base)
+{
+    oci8_stmt_t *stmt = (oci8_stmt_t *)base;
+    oci8_stmt_free2(stmt);
+    stmt->svc = Qnil;
 }
 
 static oci8_base_class_t oci8_stmt_class = {
@@ -66,7 +59,7 @@ static oci8_base_class_t oci8_stmt_class = {
     sizeof(oci8_stmt_t),
 };
 
-static VALUE oci8_stmt_initialize(VALUE self)
+static VALUE oci8_stmt_initialize(VALUE self, VALUE svc)
 {
     oci8_stmt_t *stmt = DATA_PTR(self);
     sword rv;
@@ -77,7 +70,7 @@ static VALUE oci8_stmt_initialize(VALUE self)
     stmt->base.type = OCI_HTYPE_STMT;
     stmt->next = (oci8_bind_t*)stmt;
     stmt->prev = (oci8_bind_t*)stmt;
-    stmt->svc = Qnil;
+    stmt->svc = svc;
     stmt->binds = Qnil;
     stmt->defines = Qnil;
     return Qnil;
@@ -112,7 +105,7 @@ static VALUE oci8_stmt_prepare(VALUE self, VALUE sql)
      * statement's define and bind handles. 
      * But ruby's object don't know it. So free these handles in advance.
      */
-    oci8_stmt_free(DATA_PTR(self));
+    oci8_stmt_free2(stmt);
 
     rv = OCIStmtPrepare(stmt->base.hp, oci8_errhp, RSTRING(sql)->ptr, RSTRING(sql)->len, OCI_NTV_SYNTAX, OCI_DEFAULT);
     if (IS_OCI_ERROR(rv)) {
@@ -235,58 +228,21 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     return bind->base.self;
 }
 
-/*
-=begin
---- OCIStmt#execute(svc [, iters [, mode]])
-     execute statement at the ((<service context handle|OCISvcCtx>)).
-
-     :svc
-        ((<service context handle|OCISvcCtx>))
-     :iters
-        the number of iterations to execute.
-
-        For select statement, if there are columns which is not defined
-        by ((<OCIStmt#defineByPos>)) and this value is positive, it 
-        raises exception. If zero, no exception. In any case you must define
-        all columns before you call ((<OCIStmt#fetch>)).
-
-        For non-select statement, use positive value.
-
-        Default value is 0 for select statement, 1 for non-select statement.
-
-        note: Current implemantation doesn't support array fetch and batch mode, so
-        valid value is 0 or 1.
-     :mode
-        ((|OCI_DEFAULT|)), ((|OCI_BATCH_ERRORS|)), ((|OCI_COMMIT_ON_SUCCESS|)),
-        ((|OCI_DESCRIBE_ONLY|)), ((|OCI_EXACT_FETCH|)), ((|OCI_PARSE_ONLY|)), 
-        any combinations of previous values, or ((|OCI_STMT_SCROLLABLE_READONLY|)).
-        Default value is ((|OCI_DEFAULT|)).
-
-        ((|OCI_BATCH_ERRORS|)) and ((|OCI_STMT_SCROLLABLE_READONLY|)) are not
-        supported by current implementation.
-
-     correspond native OCI function: ((|OCIStmtExecute|))
-=end
-*/
-static VALUE oci8_stmt_execute(VALUE self, VALUE vsvc, VALUE viters, VALUE vmode)
+static VALUE oci8_stmt_execute(VALUE self)
 {
     oci8_stmt_t *stmt = DATA_PTR(self);
-    oci8_svcctx_t *svcctx = oci8_get_svcctx(vsvc); /* 1 */
-    ub4 mode;
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(stmt->svc);
     ub4 iters;
+    ub4 mode;
     sword rv;
 
-    Check_Type(viters, T_FIXNUM); /* 2 */
-    iters = FIX2INT(viters);
-    Check_Type(vmode, T_FIXNUM); /* 3 */
-    mode = FIX2INT(vmode);
-
-    if (iters < 0) {
-        rb_raise(rb_eArgError, "use Positive value for the 2nd argument");
-    } else if (iters > 1) {
-        rb_raise(rb_eArgError, "current implementation doesn't support array fatch or batch mode");
+    if (oci8_get_ub2_attr(&stmt->base, OCI_ATTR_STMT_TYPE) == INT2FIX(OCI_STMT_SELECT)) {
+        iters = 0;
+        mode = OCI_DEFAULT;
+    } else {
+        iters = 1;
+        mode = svcctx->is_autocommit ? OCI_COMMIT_ON_SUCCESS : OCI_DEFAULT;
     }
-
     oci_rc2(rv, svcctx, OCIStmtExecute(svcctx->base.hp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode));
     if (rv == OCI_ERROR) {
         ub4 errcode;
@@ -299,41 +255,13 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE vsvc, VALUE viters, VALUE vmode
     if (IS_OCI_ERROR(rv)) {
         oci8_raise(oci8_errhp, rv, stmt->base.hp);
     }
-    stmt->svc = vsvc;
     return self;
 }
 
-/*
-=begin
---- OCIStmt#fetch([nrows [, orientation [, mode]]])
-     fetch data from select statement.
-     fetched data are stored to previously defined ((<define handle|OCIDefine>)).
-
-     :nrows
-        number of rows to fetch. If zero, cancel the cursor.
-        The default value is 1.
-
-        Because array fetch is not supported, valid value is 0 or 1.
-
-     :orientation
-        orientation to fetch. ((|OCI_FETCH_NEXT|)) only valid.
-        The default value is ((|OCI_FETCH_NEXT|)).
-
-     :mode
-        ((|OCI_DEFULT|)) only valid. 
-        The default value is ((|OCI_DEFAULT|)).
-
-     :return value
-        array of define handles, which are defined previously,
-        or nil when end of data.
-
-     correspond native OCI function: ((|OCIStmtFetch|))
-=end
-*/
-static VALUE oci8_stmt_fetch(VALUE self, VALUE svc)
+static VALUE oci8_stmt_fetch(VALUE self)
 {
     oci8_stmt_t *stmt = DATA_PTR(self);
-    oci8_svcctx_t *svcctx = oci8_get_svcctx(svc);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(stmt->svc);
     sword rv;
 
     oci_rc2(rv, svcctx, OCIStmtFetch(stmt->base.hp, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT));
@@ -360,6 +288,20 @@ static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
     return oci8_param_create(parmhp, oci8_errhp);
 }
 
+/*
+ * gets the type of SQL statement. Its value is one of the follows.
+ * * OCI8::STMT_SELECT
+ * * OCI8::STMT_UPDATE
+ * * OCI8::STMT_DELETE
+ * * OCI8::STMT_INSERT
+ * * OCI8::STMT_CREATE
+ * * OCI8::STMT_DROP
+ * * OCI8::STMT_ALTER
+ * * OCI8::STMT_BEGIN
+ * * OCI8::STMT_DECLARE
+ * For PL/SQL statement, it returns OCI8::STMT_BEGIN or
+ * OCI8::STMT_DECLARE.
+ */
 static VALUE oci8_stmt_get_stmt_type(VALUE self)
 {
     VALUE stmt_type = oci8_get_ub2_attr(DATA_PTR(self), OCI_ATTR_STMT_TYPE);
@@ -387,11 +329,19 @@ static VALUE oci8_stmt_get_stmt_type(VALUE self)
     }
 }
 
+/*
+ * Returns the number of processed rows.
+ */
 static VALUE oci8_stmt_get_row_count(VALUE self)
 {
     return oci8_get_ub4_attr(DATA_PTR(self), OCI_ATTR_ROW_COUNT);
 }
 
+/*
+ * get the rowid of the last processed row.
+ * This value is available as bind data.
+ * On the other hand it isn't available for other purpose.
+ */
 static VALUE oci8_stmt_get_rowid(VALUE self)
 {
     return oci8_get_rowid_attr(DATA_PTR(self), OCI_ATTR_ROWID);
@@ -402,9 +352,22 @@ static VALUE oci8_stmt_get_param_count(VALUE self)
     return oci8_get_ub4_attr(DATA_PTR(self), OCI_ATTR_PARAM_COUNT);
 }
 
+static VALUE oci8_stmt_connection(VALUE self)
+{
+    oci8_stmt_t *stmt = DATA_PTR(self);
+    return stmt->svc;
+}
+
 /*
  * bind_stmt
  */
+VALUE oci8_stmt_get(oci8_bind_t *bind)
+{
+    oci8_bind_handle_t *bind_handle = (oci8_bind_handle_t *)bind;
+    rb_funcall(bind_handle->obj, rb_intern("define_columns"), 0);
+    return bind_handle->obj;
+}
+
 static void bind_stmt_set(oci8_bind_t *bind, VALUE val)
 {
     oci8_bind_handle_t *handle = (oci8_bind_handle_t *)bind;
@@ -422,7 +385,7 @@ static void bind_stmt_init(oci8_bind_t *bind, VALUE svc, VALUE *val, VALUE lengt
     bind->valuep = &handle->hp;
     bind->value_sz = sizeof(handle->hp);
     if (NIL_P(*val)) {
-        *val = rb_funcall(cOCIStmt, oci8_id_new, 0);
+        *val = rb_funcall(cOCIStmt, oci8_id_new, 1, svc);
     }
 }
 
@@ -432,7 +395,7 @@ static oci8_bind_class_t bind_stmt_class = {
         oci8_bind_free,
         sizeof(oci8_bind_handle_t)
     },
-    oci8_bind_handle_get,
+    oci8_stmt_get,
     bind_stmt_set,
     bind_stmt_init,
     SQLT_RSET
@@ -454,9 +417,9 @@ implemented in param.c
 =end
 */
 
-void Init_oci8_stmt(void)
+void Init_oci8_stmt(VALUE cOCI8)
 {
-    cOCIStmt = oci8_define_class("OCIStmt", &oci8_stmt_class);
+    cOCIStmt = oci8_define_class_under(cOCI8, "Cursor", &oci8_stmt_class);
 
     oci8_sym_select_stmt = ID2SYM(rb_intern("select_stmt"));
     oci8_sym_update_stmt = ID2SYM(rb_intern("update_stmt"));
@@ -468,17 +431,18 @@ void Init_oci8_stmt(void)
     oci8_sym_begin_stmt = ID2SYM(rb_intern("begin_stmt"));
     oci8_sym_declare_stmt = ID2SYM(rb_intern("declare_stmt"));
 
-    rb_define_method(cOCIStmt, "initialize", oci8_stmt_initialize, 0);
-    rb_define_method(cOCIStmt, "prepare", oci8_stmt_prepare, 1);
-    rb_define_method(cOCIStmt, "defineByPos", oci8_define_by_pos, 2);
-    rb_define_method(cOCIStmt, "bind", oci8_bind, 2);
-    rb_define_method(cOCIStmt, "execute", oci8_stmt_execute, 3);
-    rb_define_method(cOCIStmt, "fetch", oci8_stmt_fetch, 1);
-    rb_define_method(cOCIStmt, "paramGet", oci8_stmt_get_param, 1);
-    rb_define_method(cOCIStmt, "stmt_type", oci8_stmt_get_stmt_type, 0);
+    rb_define_method(cOCIStmt, "initialize", oci8_stmt_initialize, 1);
+    rb_define_private_method(cOCIStmt, "__prepare", oci8_stmt_prepare, 1);
+    rb_define_private_method(cOCIStmt, "__defineByPos", oci8_define_by_pos, 2);
+    rb_define_private_method(cOCIStmt, "__bind", oci8_bind, 2);
+    rb_define_private_method(cOCIStmt, "__execute", oci8_stmt_execute, 0);
+    rb_define_private_method(cOCIStmt, "__fetch", oci8_stmt_fetch, 0);
+    rb_define_private_method(cOCIStmt, "__paramGet", oci8_stmt_get_param, 1);
+    rb_define_method(cOCIStmt, "type", oci8_stmt_get_stmt_type, 0);
     rb_define_method(cOCIStmt, "row_count", oci8_stmt_get_row_count, 0);
     rb_define_method(cOCIStmt, "rowid", oci8_stmt_get_rowid, 0);
-    rb_define_method(cOCIStmt, "param_count", oci8_stmt_get_param_count, 0);
+    rb_define_private_method(cOCIStmt, "__param_count", oci8_stmt_get_param_count, 0);
+    rb_define_private_method(cOCIStmt, "__connection", oci8_stmt_connection, 0);
 
     oci8_define_bind_class("Cursor", &bind_stmt_class);
 }

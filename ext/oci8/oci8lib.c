@@ -1,6 +1,7 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
-*/
+ * Copyright (C) 2002-2006 KUBO Takehiro <kubo@jiubao.org>
+ */
 #include "oci8.h"
 
 #define DEBUG_CORE_FILE 1
@@ -114,7 +115,7 @@ Init_oci8lib()
 
     /* Handle */
     Init_oci8_bind(cOCI8BindTypeBase);
-    Init_oci8_stmt();
+    Init_oci8_stmt(cOCI8);
 
     /* register allocators */
     Init_oci8_rowid();

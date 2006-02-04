@@ -1,7 +1,8 @@
+/* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
   oci8.h - part of ruby-oci8
 
-  Copyright (C) 2002 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002-2006 KUBO Takehiro <kubo@jiubao.org>
 */
 #ifndef _RUBY_OCI_H_
 #define _RUBY_OCI_H_ 1
@@ -80,6 +81,7 @@ typedef struct  {
     enum logon_type_t logon_type;
     OCISession *authhp;
     OCIServer *srvhp;
+    int is_autocommit;
 } oci8_svcctx_t;
 
 #define Check_Handle(obj, klass, hp) do { \
@@ -140,8 +142,7 @@ typedef struct  {
     } \
     if (__r == OCI_ERROR) { \
        ub4 errcode; \
-       OraText errmsg[1]; \
-       OCIErrorGet(oci8_errhp, 1, NULL, &errcode, errmsg, sizeof(errmsg), OCI_HTYPE_ERROR); \
+       OCIErrorGet(oci8_errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR); \
        if (errcode == 1013) { \
             svcctx->executing_thread = NB_STATE_NOT_EXECUTING; \
             OCIReset(svcctx->base.hp, oci8_errhp); \
@@ -202,7 +203,7 @@ OCISession *oci8_get_oci_session(VALUE obj);
 #define TO_SESSION oci8_get_oci_session
 
 /* stmt.c */
-void Init_oci8_stmt(void);
+void Init_oci8_stmt(VALUE cOCI8);
 
 /* bind.c */
 typedef struct {

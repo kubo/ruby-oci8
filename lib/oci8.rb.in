@@ -64,40 +64,6 @@ class OCI8
     end
   end
 
-  module Util # :nodoc:
-    CTX_EXECFLAG = 0
-  end
-  include Util
-
-  # Connects to Oracle by +userid+ and +password+. +dbname+ is the connect
-  # string of Net8. If you need DBA privilege, please set privilege
-  # as :SYSDBA or :SYSOPER.
-  #
-  # example:
-  #   # sqlplus scott/tiger@orcl.world
-  #   conn = OCI8.new("scott", "tiger", "orcl.world")
-  #
-  # example:
-  #   # sqlplus 'sys/change_on_install as sysdba'
-  #   conn = OCI8.new("sys", "change_on_install", nil, :SYSDBA)
-  def initialize(uid, pswd, dbname = nil, privilege = nil)
-    @ctx = [0]
-    __initialize(uid, pswd, dbname, privilege)
-  end # initialize
-
-  # Disconnects from Oracle. Uncommitted transaction will be
-  # rollbacked.
-  #
-  # example:
-  #   conn = OCI8.new("scott", "tiger")
-  #   ... do something ...
-  #   conn.logoff
-  def logoff
-    rollback()
-    __logoff()
-    true
-  end # logoff
-
   # Executes the sql statement. The type of return value depends on
   # the type of sql statement: select; insert, update and delete;
   # create, alter and drop; and PL/SQL.
@@ -162,7 +128,7 @@ class OCI8
   # same with that of bind variables.
   def exec(sql, *bindvars)
     begin
-      cursor = OCI8::Cursor.new(self, @ctx)
+      cursor = OCI8::Cursor.new(self)
       cursor.parse(sql)
       ret = cursor.exec(*bindvars)
       case cursor.type
@@ -192,49 +158,16 @@ class OCI8
   # Creates cursor, prepare to execute SQL statement and return the
   # instance of OCI8::Cursor.
   def parse(sql)
-    cursor = OCI8::Cursor.new(self, @ctx)
+    cursor = OCI8::Cursor.new(self)
     cursor.parse(sql)
     cursor
   end # parse
 
-  # Returns the state of the autocommit mode. The default value is
-  # false. If true, the transaction is committed automatically
-  # whenever executing insert/update/delete statements.
-  def autocommit?
-    (@ctx[CTX_EXECFLAG] & OCI_COMMIT_ON_SUCCESS) == OCI_COMMIT_ON_SUCCESS
-  end # autocommit?
-
   # add alias compatible with 'Oracle7 Module for Ruby'.
   alias autocommit autocommit?
 
-  # Changes the status of the autocommit mode. Acceptable values are
-  # true and false.
-  #
-  # example:
-  #   conn = OCI8.new("scott", "tiger")
-  #   conn.autocommit = true
-  #   ... do something ...
-  #   conn.logoff
-  def autocommit=(ac)
-    if ac
-      commit()
-      @ctx[CTX_EXECFLAG] |= OCI_COMMIT_ON_SUCCESS
-    else
-      @ctx[CTX_EXECFLAG] &= ~OCI_COMMIT_ON_SUCCESS
-    end
-    ac
-  end # autocommit=
-
   module BindType
     Mapping = {}
-
-    # OCI8::BindType::Base
-    class Base # :nodoc:
-      def set_handle(svc, ctx)
-        @svc = svc
-        @ctx = ctx
-      end
-    end
 
     # get/set Time
     class Time < OCI8::BindType::OraDate
@@ -303,27 +236,6 @@ class OCI8
       end
     end
 
-    # get Cursor
-    class Cursor
-      alias orig_set set
-      private :orig_set
-      def set(val)
-        case val
-        when OCIStmt
-          stmt = val
-        when OCI8::Cursor
-          stmt = val.instance_eval do @stmt end
-        else
-          raise ArgumentError
-        end
-        orig_set(stmt)
-      end
-      alias orig_get get
-      private :orig_get
-      def get()
-        (val = orig_get()) && OCI8::Cursor.new(@svc, @ctx, val)
-      end
-    end
   end # BindType
 
   # The instance of this class corresponds to cursor in the term of
@@ -334,7 +246,6 @@ class OCI8
   # calling OCI8#exec or OCI8#parse.
   class Cursor
 
-    include OCI8::Util
     # number column declared without its scale and precision. (Oracle 9.2.0.3 or above)
     @@bind_default_number = OCI8::BindType::Float
     # number value whose scale and precision is unknown
@@ -383,27 +294,10 @@ class OCI8
       end
     end
 
-    def initialize(svc, ctx, stmt = nil)
-      @svc = svc
-      @ctx = ctx
-      @binds = nil
-      @parms = nil
-      @defns = nil
-      if stmt.nil?
-        @stmt = OCIStmt.new()
-        @stmttype = nil
-      else
-        @stmt = stmt
-        @stmttype = @stmt.stmt_type
-        define_columns()
-      end
-    end # initialize
-
     def parse(sql)
       free_binds()
       @parms = nil
-      @stmt.prepare(sql)
-      @stmttype = @stmt.stmt_type
+      __prepare(sql)
     end # parse
 
     # explicitly indicate the date type of fetched value. run this
@@ -566,39 +460,16 @@ class OCI8
     # variables.
     def exec(*bindvars)
       bind_params(*bindvars)
-      case @stmttype
+      __execute()
+      case type
       when :select_stmt
-	@stmt.execute(@svc, 0, OCI_DEFAULT)
         define_columns()
       when :update_stmt, :delete_stmt, :insert_stmt
-	@stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG])
-	@stmt.row_count
+	row_count
       else
-	@stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG])
 	true
       end
     end # exec
-
-    # gets the type of SQL statement. Its value is one of the follows.
-    # * OCI8::STMT_SELECT
-    # * OCI8::STMT_UPDATE
-    # * OCI8::STMT_DELETE
-    # * OCI8::STMT_INSERT
-    # * OCI8::STMT_CREATE
-    # * OCI8::STMT_DROP
-    # * OCI8::STMT_ALTER
-    # * OCI8::STMT_BEGIN
-    # * OCI8::STMT_DECLARE
-    # For PL/SQL statement, it returns OCI8::STMT_BEGIN or
-    # OCI8::STMT_DECLARE.
-    def type
-      @stmttype
-    end
-
-    # Returns the number of processed rows.
-    def row_count
-      @stmt.row_count
-    end
 
     # Gets the names of select-list as array. Please use this
     # method after exec.
@@ -647,20 +518,11 @@ class OCI8
 
     # close the cursor.
     def close
-      @svc = nil
       free_defns()
       free_binds()
-      @stmt.free()
+      free()
       @parms = nil
-      @stmttype = nil
     end # close
-
-    # get the rowid of the last processed row.
-    # This value is available as bind data.
-    # On the other hand it isn't available for other purpose.
-    def rowid
-      @stmt.rowid
-    end
 
     private
 
@@ -685,23 +547,22 @@ class OCI8
       if bindclass.respond_to?(:dispatch)
         bindclass = bindclass.dispatch(val, length, precision, scale)
       end
-      bindobj = bindclass.new(@svc, val, length, precision, scale)
+      bindobj = bindclass.new(__connection, val, length, precision, scale)
 
       case bind_type
       when :bind
-        b = @stmt.bind(key, bindobj)
+        b = __bind(key, bindobj)
       when :define
-	b = @stmt.defineByPos(key, bindobj)
+	b = __defineByPos(key, bindobj)
       end
-      b.set_handle(@svc, @ctx)
       b
     end # bind_or_define
 
     def define_columns
-      num_cols = @stmt.param_count
+      num_cols = __param_count
       @parms = Array.new(num_cols)
       1.upto(num_cols) do |i|
-        @parms[i - 1] = @stmt.paramGet(i)
+        @parms[i - 1] = __paramGet(i)
       end
       @defns = Array.new(@parms.size) if @defns.nil?
       1.upto(num_cols) do |i|
@@ -742,7 +603,7 @@ class OCI8
     end # bind_params
 
     def fetch_a_row
-      res = @stmt.fetch(@svc)
+      res = __fetch()
       return nil if res.nil?
       @defns.collect do |r| r.get() end
     end # fetch_a_row

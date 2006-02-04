@@ -2,7 +2,7 @@
 /*
   svcctx.c - part of ruby-oci8
 
-  Copyright (C) 2002-2005 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002-2006 KUBO Takehiro <kubo@jiubao.org>
 
 */
 #include "oci8.h"
@@ -31,6 +31,19 @@ static oci8_base_class_t oci8_svcctx_class = {
 static VALUE sym_SYSDBA;
 static VALUE sym_SYSOPER;
 
+/*
+ * Connects to Oracle by +userid+ and +password+. +dbname+ is the connect
+ * string of Net8. If you need DBA privilege, please set privilege
+ * as :SYSDBA or :SYSOPER.
+ *
+ * example:
+ *   # sqlplus scott/tiger@orcl.world
+ *   conn = OCI8.new("scott", "tiger", "orcl.world")
+ *
+ * example:
+ *   # sqlplus 'sys/change_on_install as sysdba'
+ *   conn = OCI8.new("sys", "change_on_install", nil, :SYSDBA)
+ */
 static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
 {
     VALUE vusername;
@@ -119,26 +132,26 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
         svcctx->logon_type = T_EXPLICIT;
     }
     svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
+    svcctx->is_autocommit = 0;
     return Qnil;
 }
 
+
 /*
-=begin
---- OCISvcCtx#logoff()
-     disconnect from Oracle.
-
-     If you use ((<OCIServer#attach>)) and ((<OCISession#begin>)) to logon,
-     use ((<OCIServer#detach>)) and ((<OCISession#end>)) instead.
-     See also ((<Simplified Logon>)) and ((<Explicit Attach and Begin Session>)).
-
-     correspond native OCI function: ((|OCILogoff|))
-=end
-*/
+ * Disconnects from Oracle. Uncommitted transaction will be
+ * rollbacked.
+ *
+ * example:
+ *   conn = OCI8.new("scott", "tiger")
+ *   ... do something ...
+ *   conn.logoff
+ */
 static VALUE oci8_svcctx_logoff(VALUE self)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
     sword rv;
 
+    oci_rc(svcctx, OCITransRollback(svcctx->base.hp, oci8_errhp, OCI_DEFAULT));
     switch (svcctx->logon_type) {
     case T_IMPLICIT:
         rv = OCILogoff(svcctx->base.hp, oci8_errhp);
@@ -156,7 +169,7 @@ static VALUE oci8_svcctx_logoff(VALUE self)
         break;
     }
     oci8_base_free(&svcctx->base);
-    return self;
+    return Qtrue;
 }
 
 /*
@@ -266,6 +279,34 @@ static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
     return val;
 }
 
+/*
+ * Returns the state of the autocommit mode. The default value is
+ * false. If true, the transaction is committed automatically
+ * whenever executing insert/update/delete statements.
+ */
+static VALUE oci8_autocommit_p(VALUE self)
+{
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    return svcctx->is_autocommit ? Qtrue : Qfalse;
+}
+
+/*
+ * Changes the status of the autocommit mode. Acceptable values are
+ * true and false.
+ *
+ * example:
+ *   conn = OCI8.new("scott", "tiger")
+ *   conn.autocommit = true
+ *   ... do something ...
+ *   conn.logoff
+ */
+static VALUE oci8_set_autocommit(VALUE self, VALUE val)
+{
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    svcctx->is_autocommit = RTEST(val);
+    return val;
+}
+
 static VALUE oci8_server_version(VALUE self)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
@@ -322,13 +363,15 @@ VALUE Init_oci8(void)
     sym_SYSDBA = ID2SYM(rb_intern("SYSDBA"));
     sym_SYSOPER = ID2SYM(rb_intern("SYSOPER"));
 
-    rb_define_private_method(cOCI8, "__initialize", oci8_svcctx_initialize, -1);
-    rb_define_private_method(cOCI8, "__logoff", oci8_svcctx_logoff, 0);
+    rb_define_method(cOCI8, "initialize", oci8_svcctx_initialize, -1);
+    rb_define_method(cOCI8, "logoff", oci8_svcctx_logoff, 0);
     rb_define_private_method(cOCI8, "__passwordChange", oci8_password_change, 4);
     rb_define_method(cOCI8, "commit", oci8_commit, 0);
     rb_define_method(cOCI8, "rollback", oci8_rollback, 0);
     rb_define_method(cOCI8, "non_blocking?", oci8_non_blocking_p, 0);
     rb_define_method(cOCI8, "non_blocking=", oci8_set_non_blocking, 1);
+    rb_define_method(cOCI8, "autocommit?", oci8_autocommit_p, 0);
+    rb_define_method(cOCI8, "autocommit=", oci8_set_autocommit, 1);
     rb_define_method(cOCI8, "version", oci8_server_version, 0);
 #ifdef HAVE_OCISERVERRELEASE
     rb_define_method(cOCI8, "release", oci8_server_release, 0);
