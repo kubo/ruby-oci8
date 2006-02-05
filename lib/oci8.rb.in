@@ -7,6 +7,7 @@
 require 'oci8lib'
 require 'date'
 require 'ocidatetime.rb'
+require 'oci8/metadata.rb'
 
 # The database connection class.
 class OCI8

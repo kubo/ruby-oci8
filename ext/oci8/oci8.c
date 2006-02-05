@@ -53,7 +53,7 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
     oci8_svcctx_t *svcctx = DATA_PTR(self);
     sword rv;
 
-    rb_scan_args(argc, argv, "31", &vusername, &vpassword, &vdbname, &vmode);
+    rb_scan_args(argc, argv, "22", &vusername, &vpassword, &vdbname, &vmode);
 
     StringValue(vusername); /* 1 */
     StringValue(vpassword); /* 2 */

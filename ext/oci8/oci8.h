@@ -141,9 +141,7 @@ typedef struct  {
         __time.tv_usec <<= 1; \
     } \
     if (__r == OCI_ERROR) { \
-       ub4 errcode; \
-       OCIErrorGet(oci8_errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR); \
-       if (errcode == 1013) { \
+       if (oci8_get_error_code(oci8_errhp) == 1013) { \
             svcctx->executing_thread = NB_STATE_NOT_EXECUTING; \
             OCIReset(svcctx->base.hp, oci8_errhp); \
             rb_raise(eOCIBreak, "Canceled by user request."); \
@@ -193,6 +191,7 @@ extern VALUE eOCIBreak;
 void Init_oci8_error(void);
 NORETURN(void oci8_raise(OCIError *, sword status, OCIStmt *));
 NORETURN(void oci8_env_raise(OCIEnv *, sword status));
+ub4 oci8_get_error_code(OCIError *errhp);
 
 /* oci8.c */
 VALUE Init_oci8(void);
@@ -221,9 +220,9 @@ oci8_bind_t *oci8_get_bind(VALUE obj);
 void Init_oci8_rowid(void);
 VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype);
 
-/* param.c */
-void Init_oci8_param(void);
-VALUE oci8_param_create(OCIParam *parmhp, OCIError *errhp);
+/* metadata.c */
+void Init_oci8_metadata(VALUE cOCI8);
+VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE desc);
 
 /* lob.c */
 void Init_oci8_lob(VALUE cOCI8);
@@ -233,6 +232,9 @@ void Init_ora_date(void);
 
 /* oranumber.c */
 void Init_ora_number(void);
+#define ORA_NUMBER_BUF_SIZE (128 /* max scale */ + 38 /* max precision */ + 1 /* sign */ + 1 /* comma */ + 1 /* nul */)
+typedef struct ora_number ora_number_t;
+void ora_number_to_str(unsigned char *buf, size_t *lenp, ora_number_t *on, unsigned char size);
 
 /* ocinumber.c */
 void Init_oci_number(VALUE mOCI);

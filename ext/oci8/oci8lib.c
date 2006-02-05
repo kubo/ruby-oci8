@@ -119,7 +119,7 @@ Init_oci8lib()
 
     /* register allocators */
     Init_oci8_rowid();
-    Init_oci8_param();
+    Init_oci8_metadata(cOCI8);
     Init_oci8_lob(cOCI8);
 
     Init_ora_date();

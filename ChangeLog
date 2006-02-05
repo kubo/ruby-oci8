@@ -1,3 +1,20 @@
+2006-02-05  KUBO Takehiro  <kubo@jiubao.org>
+	add OCI8::Metadata module.
+	* ext/oci8/error.c: add oci8_get_error_code().
+	* ext/oci8/extconf.rb: delete param.o and add metadata.o.
+	* ext/oci8/metadata.c: add a new file.
+	* ext/oci8/oci8.h: add oci8_get_error_code(), Init_oci8_metadata(),
+	    oci8_metadata_create() and ora_number_to_str().
+	    delete  and oci8_param_create().
+	* ext/oci8/oci8lib.c: call Init_oci8_metadata() instead of
+	     Init_oci8_param().
+	* ext/oci8/oranumber.c: export ora_number_to_str().
+	* ext/oci8/param.c: deleted.
+	* ext/oci8/stmt.c: call oci8_metadata_create instead of 
+	     oci8_param_create().
+	* lib/oci8.rb.in: require 'oci8/metadata.rb'
+	* lib/oci8/metadata.rb: add a new file.
+
 2006-02-04  KUBO Takehiro  <kubo@jiubao.org>
 	merge OCIStmt to OCi8::Curosr.
 	* ext/oci8/oci8.c: implement OCI8::autocommit? and OCI8::autocommit=

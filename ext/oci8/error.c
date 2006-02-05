@@ -180,6 +180,13 @@ static VALUE oci8_error_sql(VALUE self)
 }
 #endif
 
+ub4 oci8_get_error_code(OCIError *errhp)
+{
+    ub4 errcode;
+    OCIErrorGet(oci8_errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
+    return errcode;
+}
+
 void Init_oci8_error(void)
 {
     oci8_id_code = rb_intern("code");

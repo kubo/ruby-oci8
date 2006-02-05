@@ -14,14 +14,11 @@
 
 static VALUE cOraNumber;
 
-#define ORA_NUMBER_BUF_SIZE (128 /* max scale */ + 38 /* max precision */ + 1 /* sign */ + 1 /* comma */ + 1 /* nul */)
-
 /* Member of ora_vnumber_t and ora_bind_handle_t - Internal format of NUMBER */
 struct ora_number {
     unsigned char exponent;
     unsigned char mantissa[20];
 };
-typedef struct ora_number ora_number_t;
 
 /* OraNumber - Internal format of VARNUM */
 struct ora_vnumber {
@@ -29,8 +26,6 @@ struct ora_vnumber {
     struct ora_number num;
 };
 typedef struct ora_vnumber ora_vnumber_t;
-
-static void ora_number_to_str(unsigned char *buf, size_t *lenp, ora_number_t *on, unsigned char size);
 
 #define Get_Sign(on) ((on)->exponent & 0x80)
 #define Get_Exp_Part(on) ((on)->exponent & 0x7F)
@@ -230,7 +225,7 @@ void Init_ora_number(void)
     oci8_define_bind_class("Integer", &bind_integer_class);
 }
 
-static void ora_number_to_str(unsigned char *buf, size_t *lenp, ora_number_t *on, unsigned char size)
+void ora_number_to_str(unsigned char *buf, size_t *lenp, ora_number_t *on, unsigned char size)
 {
     int exponent;
     int len = 0;

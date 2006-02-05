@@ -285,7 +285,7 @@ static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
     if (rv != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, rv, NULL);
     }
-    return oci8_param_create(parmhp, oci8_errhp);
+    return oci8_metadata_create(parmhp, stmt->svc, Qnil);
 }
 
 /*
