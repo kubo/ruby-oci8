@@ -15,6 +15,10 @@
 	* lib/oci8.rb.in: require 'oci8/metadata.rb'
 	* lib/oci8/metadata.rb: add a new file.
 
+2006-02-08  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8.rb: move almost code to lib/oci8/oci8.rb.
+	* lib/oci8/oci8.rb: moved from lib/oci8.rb.
+
 2006-02-04  KUBO Takehiro  <kubo@jiubao.org>
 	merge OCIStmt to OCi8::Curosr.
 	* ext/oci8/oci8.c: implement OCI8::autocommit? and OCI8::autocommit=
