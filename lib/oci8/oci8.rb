@@ -1,59 +1,10 @@
+#   --*- ruby -*--
+# This is based on yoshidam's oracle.rb.
+
 require 'date'
 
 # The database connection class.
 class OCI8
-  # :stopdoc:
-  RAW = :raw
-  # :startdoc:
-
-  # sql type (varchar, varchar2)
-  SQLT_CHR = 1
-  # sql type (number, double precision, float, real, numeric, int, integer, smallint)
-  SQLT_NUM = 2
-  # sql type (long)
-  SQLT_LNG = 8
-  # sql type (date)
-  SQLT_DAT = 12
-  # sql type (raw)
-  SQLT_BIN = 23
-  # sql type (long raw)
-  SQLT_LBI = 24
-  # sql type (char)
-  SQLT_AFC = 96
-  # sql type (rowid)
-  SQLT_RDD = 104
-  # sql type (clob)
-  SQLT_CLOB = 112
-  # sql type (blob)
-  SQLT_BLOB = 113
-  # sql type (result set)
-  SQLT_RSET = 116
-  # sql type (timestamp), not supported yet.
-  #
-  # If you want to fetch a timestamp before native timestamp data type
-  # will be supported, fetch data as an OraDate by adding the following
-  # code to your code.
-  #   OCI8::BindType::Mapping[OCI8::SQLT_TIMESTAMP] = OCI8::BindType::OraDate
-  SQLT_TIMESTAMP = 187
-  # sql type (timestamp with time zone), not supported yet
-  SQLT_TIMESTAMP_TZ = 188
-  # sql type (interval year to month), not supported yet
-  SQLT_INTERVAL_YM = 189
-  # sql type (interval day to second), not supported yet
-  SQLT_INTERVAL_DS = 190
-  # sql type (timestamp with local time zone), not supported yet
-  SQLT_TIMESTAMP_LTZ = 232
-
-  # mapping of sql type number to sql type name.
-  SQLT_NAMES = {}
-  constants.each do |name|
-    next if name.index("SQLT_") != 0
-    val = const_get name.intern
-    if val.is_a? Fixnum
-      SQLT_NAMES[val] = name
-    end
-  end
-
   # Executes the sql statement. The type of return value depends on
   # the type of sql statement: select; insert, update and delete;
   # create, alter and drop; and PL/SQL.
@@ -153,9 +104,6 @@ class OCI8
     cursor
   end # parse
 
-  # add alias compatible with 'Oracle7 Module for Ruby'.
-  alias autocommit autocommit?
-
   module BindType
     Mapping = {}
 
@@ -226,6 +174,92 @@ class OCI8
       end
     end
 
+    # bind or explicitly define
+    Mapping[::String]       = ::OCI8::BindType::String
+    Mapping[::OraNumber]    = ::OCI8::BindType::OraNumber
+    Mapping[::OCINumber]    = ::OCI8::BindType::OCINumber
+    Mapping[::Fixnum]       = ::OCI8::BindType::Fixnum
+    Mapping[::Float]        = ::OCI8::BindType::Float
+    Mapping[::Integer]      = ::OCI8::BindType::Integer
+    Mapping[::Bignum]       = ::OCI8::BindType::Integer
+    Mapping[::OraDate]      = ::OCI8::BindType::OraDate
+    Mapping[::Time]         = ::OCI8::BindType::Time
+    Mapping[::Date]         = ::OCI8::BindType::Date
+    Mapping[::DateTime]     = ::OCI8::BindType::DateTime
+    Mapping[::OCIRowid]     = ::OCI8::BindType::OCIRowid
+    Mapping[::OCI8::BLOB]   = ::OCI8::BindType::BLOB
+    Mapping[::OCI8::CLOB]   = ::OCI8::BindType::CLOB
+    Mapping[::OCI8::Cursor] = ::OCI8::BindType::Cursor
+
+    # implicitly define
+
+    # datatype        type     size prec scale
+    # -------------------------------------------------
+    # CHAR(1)       SQLT_AFC      1    0    0
+    # CHAR(10)      SQLT_AFC     10    0    0
+    Mapping[:char] = ::OCI8::BindType::String
+
+    # datatype        type     size prec scale
+    # -------------------------------------------------
+    # VARCHAR(1)    SQLT_CHR      1    0    0
+    # VARCHAR(10)   SQLT_CHR     10    0    0
+    # VARCHAR2(1)   SQLT_CHR      1    0    0
+    # VARCHAR2(10)  SQLT_CHR     10    0    0
+    Mapping[:varchar2] = ::OCI8::BindType::String
+
+    # datatype        type     size prec scale
+    # -------------------------------------------------
+    # RAW(1)        SQLT_BIN      1    0    0
+    # RAW(10)       SQLT_BIN     10    0    0
+    Mapping[:raw] = ::OCI8::BindType::RAW
+
+    # datatype        type     size prec scale
+    # -------------------------------------------------
+    # LONG          SQLT_LNG      0    0    0
+    Mapping[:long] = ::OCI8::BindType::String
+
+    # datatype        type     size prec scale
+    # -------------------------------------------------
+    # LONG RAW      SQLT_LBI      0    0    0
+    Mapping[:long_raw] = ::OCI8::BindType::RAW
+
+    # datatype        type     size prec scale
+    # -------------------------------------------------
+    # CLOB          SQLT_CLOB  4000    0    0
+    Mapping[:clob] = ::OCI8::BindType::CLOB
+
+    # datatype        type     size prec scale
+    # -------------------------------------------------
+    # BLOB          SQLT_BLOB  4000    0    0
+    Mapping[:blob] = ::OCI8::BindType::BLOB
+
+    # datatype        type     size prec scale
+    # -------------------------------------------------
+    # DATE          SQLT_DAT      7    0    0
+    Mapping[:date] = ::OCI8::BindType::OraDate
+
+    # datatype        type     size prec scale
+    # -------------------------------------------------
+    # ROWID         SQLT_RDD      4    0    0
+    Mapping[:rowid] = ::OCI8::BindType::OCIRowid
+
+    # datatype           type     size prec scale
+    # -----------------------------------------------------
+    # FLOAT            SQLT_NUM     22  126 -127
+    # FLOAT(1)         SQLT_NUM     22    1 -127
+    # FLOAT(126)       SQLT_NUM     22  126 -127
+    # DOUBLE PRECISION SQLT_NUM     22  126 -127
+    # REAL             SQLT_NUM     22   63 -127
+    # NUMBER           SQLT_NUM     22    0    0
+    # NUMBER(1)        SQLT_NUM     22    1    0
+    # NUMBER(38)       SQLT_NUM     22   38    0
+    # NUMBER(1, 0)     SQLT_NUM     22    1    0
+    # NUMBER(38, 0)    SQLT_NUM     22   38    0
+    # NUMERIC          SQLT_NUM     22   38    0
+    # INT              SQLT_NUM     22   38    0
+    # INTEGER          SQLT_NUM     22   38    0
+    # SMALLINT         SQLT_NUM     22   38    0
+    Mapping[:number] = ::OCI8::BindType::Number
   end # BindType
 
   # The instance of this class corresponds to cursor in the term of
@@ -259,34 +293,9 @@ class OCI8
       @@bind_unknown_number = val
     end
 
-    # obsolete.
-    def self.select_number_as=(val) # :nodoc:
-      if val == Fixnum
-        @@bind_unknown_number = OCI8::BindType::Fixnum
-      elsif val == Integer
-        @@bind_unknown_number = OCI8::BindType::Integer
-      elsif val == Float
-        @@bind_unknown_number = OCI8::BindType::Float
-      else
-        raise ArgumentError, "must be Fixnum, Integer or Float"
-      end
-    end
-
-    # obsolete.
-    def self.select_number_as # :nodoc:
-      case @@bind_unknown_number
-      when OCI8::BindType::Fixnum
-        return Fixnum
-      when OCI8::BindType::Integer
-        return Integer
-      when OCI8::BindType::Float
-        return Float
-      end
-    end
-
     def parse(sql)
       free_binds()
-      @parms = nil
+      @names = []
       __prepare(sql)
     end # parse
 
@@ -300,7 +309,7 @@ class OCI8
     #  cursor.define(2, Time)       # fetch the second column as Time.
     #  cursor.exec()
     def define(pos, type, length = nil)
-      @defns = [] if @defns.nil?
+      @defns ||= []
       if type == String and length.nil?
 	length = 4000
       end
@@ -464,14 +473,8 @@ class OCI8
     # Gets the names of select-list as array. Please use this
     # method after exec.
     def get_col_names
-      return [] if @parms.nil?
-      @parms.collect do |p|
-	p.name
-      end
+      @names
     end # get_col_names
-
-    # add alias compatible with 'Oracle7 Module for Ruby'.
-    alias getColNames get_col_names
 
     # Gets fetched data as array. This is available for select
     # statement only.
@@ -497,8 +500,8 @@ class OCI8
     def fetch_hash
       if rs = fetch_a_row()
         ret = {}
-        @parms.each do |p|
-          ret[p.name] = rs.shift
+        @names.each do |name|
+          ret[name] = rs.shift
         end
         ret
       else 
@@ -511,7 +514,7 @@ class OCI8
       free_defns()
       free_binds()
       free()
-      @parms = nil
+      @names = nil
     end # close
 
     private
@@ -532,7 +535,7 @@ class OCI8
 
       bindclass = OCI8::BindType::Mapping[type]
       if bindclass.nil?
-        raise "unsupported datatype: #{SQLT_NAMES[type] ? SQLT_NAMES[type] : type}"
+        raise "unsupported datatype: #{type}"
       end
       if bindclass.respond_to?(:dispatch)
         bindclass = bindclass.dispatch(val, length, precision, scale)
@@ -550,31 +553,29 @@ class OCI8
 
     def define_columns
       num_cols = __param_count
-      @parms = Array.new(num_cols)
+      @defns ||= Array.new(num_cols)
       1.upto(num_cols) do |i|
-        @parms[i - 1] = __paramGet(i)
-      end
-      @defns = Array.new(@parms.size) if @defns.nil?
-      1.upto(num_cols) do |i|
-	@defns[i - 1] = define_a_column(i) if @defns[i - 1].nil?
+        parm = __paramGet(i)
+        @defns[i - 1] = define_a_column(i, parm) if @defns[i - 1].nil?
+        @names[i - 1] = parm.name
+        parm.free
       end
       num_cols
     end # define_columns
 
-    def define_a_column(i)
-      p = @parms[i - 1]
+    def define_a_column(i, p)
       datatype = p.data_type
       datasize = p.data_size
       precision = p.precision
       scale = p.scale
 
       case datatype
-      when SQLT_CHR, SQLT_AFC
+      when :varchar2, :char
         # character size may become large on character set conversion.
         # The length of a half-width kana is one in Shift_JIS, two in EUC-JP,
         # three in UTF-8.
         datasize *= 3
-      when SQLT_LNG, SQLT_LBI
+      when :long, :long_raw
         # TODO: use OCI_DYNAMIC_FETCH
         datasize = 65535
       end
@@ -616,94 +617,6 @@ class OCI8
       @binds = nil
     end # free_binds
   end # OCI8::Cursor
-
-  # bind or explicitly define
-  BindType::Mapping[::String]       = BindType::String
-  BindType::Mapping[::OCI8::RAW]    = BindType::RAW
-  BindType::Mapping[::OraNumber]    = BindType::OraNumber
-  BindType::Mapping[::OCINumber]    = BindType::OCINumber
-  BindType::Mapping[::Fixnum]       = BindType::Fixnum
-  BindType::Mapping[::Float]        = BindType::Float
-  BindType::Mapping[::Integer]      = BindType::Integer
-  BindType::Mapping[::Bignum]       = BindType::Integer
-  BindType::Mapping[::OraDate]      = BindType::OraDate
-  BindType::Mapping[::Time]         = BindType::Time
-  BindType::Mapping[::Date]         = BindType::Date
-  BindType::Mapping[::DateTime]     = BindType::DateTime
-  BindType::Mapping[::OCIRowid]     = BindType::OCIRowid
-  BindType::Mapping[::OCI8::BLOB]   = BindType::BLOB
-  BindType::Mapping[::OCI8::CLOB]   = BindType::CLOB
-  BindType::Mapping[::OCI8::Cursor] = BindType::Cursor
-
-  # implicitly define
-
-  # datatype        type     size prec scale
-  # -------------------------------------------------
-  # CHAR(1)       SQLT_AFC      1    0    0
-  # CHAR(10)      SQLT_AFC     10    0    0
-  BindType::Mapping[OCI8::SQLT_AFC] = BindType::String
-
-  # datatype        type     size prec scale
-  # -------------------------------------------------
-  # VARCHAR(1)    SQLT_CHR      1    0    0
-  # VARCHAR(10)   SQLT_CHR     10    0    0
-  # VARCHAR2(1)   SQLT_CHR      1    0    0
-  # VARCHAR2(10)  SQLT_CHR     10    0    0
-  BindType::Mapping[OCI8::SQLT_CHR] = BindType::String
-
-  # datatype        type     size prec scale
-  # -------------------------------------------------
-  # RAW(1)        SQLT_BIN      1    0    0
-  # RAW(10)       SQLT_BIN     10    0    0
-  BindType::Mapping[OCI8::SQLT_BIN] = BindType::RAW
-
-  # datatype        type     size prec scale
-  # -------------------------------------------------
-  # LONG          SQLT_LNG      0    0    0
-  BindType::Mapping[OCI8::SQLT_LNG] = BindType::String
-
-  # datatype        type     size prec scale
-  # -------------------------------------------------
-  # LONG RAW      SQLT_LBI      0    0    0
-  BindType::Mapping[OCI8::SQLT_LBI] = BindType::RAW
-
-  # datatype        type     size prec scale
-  # -------------------------------------------------
-  # CLOB          SQLT_CLOB  4000    0    0
-  BindType::Mapping[OCI8::SQLT_CLOB] = BindType::CLOB
-
-  # datatype        type     size prec scale
-  # -------------------------------------------------
-  # BLOB          SQLT_BLOB  4000    0    0
-  BindType::Mapping[OCI8::SQLT_BLOB] = BindType::BLOB
-
-  # datatype        type     size prec scale
-  # -------------------------------------------------
-  # DATE          SQLT_DAT      7    0    0
-  BindType::Mapping[OCI8::SQLT_DAT] = BindType::OraDate
-
-  # datatype        type     size prec scale
-  # -------------------------------------------------
-  # ROWID         SQLT_RDD      4    0    0
-  BindType::Mapping[OCI8::SQLT_RDD] = BindType::OCIRowid
-
-  # datatype           type     size prec scale
-  # -----------------------------------------------------
-  # FLOAT            SQLT_NUM     22  126 -127
-  # FLOAT(1)         SQLT_NUM     22    1 -127
-  # FLOAT(126)       SQLT_NUM     22  126 -127
-  # DOUBLE PRECISION SQLT_NUM     22  126 -127
-  # REAL             SQLT_NUM     22   63 -127
-  # NUMBER           SQLT_NUM     22    0    0
-  # NUMBER(1)        SQLT_NUM     22    1    0
-  # NUMBER(38)       SQLT_NUM     22   38    0
-  # NUMBER(1, 0)     SQLT_NUM     22    1    0
-  # NUMBER(38, 0)    SQLT_NUM     22   38    0
-  # NUMERIC          SQLT_NUM     22   38    0
-  # INT              SQLT_NUM     22   38    0
-  # INTEGER          SQLT_NUM     22   38    0
-  # SMALLINT         SQLT_NUM     22   38    0
-  BindType::Mapping[OCI8::SQLT_NUM] = BindType::Number
 end # OCI8
 
 class OraDate
@@ -730,27 +643,3 @@ class OraDate
     end
   end
 end
-
-# :stopdoc:
-# for compatibility.
-OCI_STMT_SELECT = :select_stmt
-OCI_STMT_UPDATE = :update_stmt
-OCI_STMT_DELETE = :delete_stmt
-OCI_STMT_INSERT = :insert_stmt
-OCI_STMT_CREATE = :create_stmt
-OCI_STMT_DROP = :drop_stmt
-OCI_STMT_ALTER = :alter_stmt
-OCI_STMT_BEGIN = :begin_stmt
-OCI_STMT_DECLARE = :declare_stmt
-class OCI8
-  STMT_SELECT = :select_stmt
-  STMT_UPDATE = :update_stmt
-  STMT_DELETE = :delete_stmt
-  STMT_INSERT = :insert_stmt
-  STMT_CREATE = :create_stmt
-  STMT_DROP = :drop_stmt
-  STMT_ALTER = :alter_stmt
-  STMT_BEGIN = :begin_stmt
-  STMT_DECLARE = :declare_stmt
-end
-# :startdoc:

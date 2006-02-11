@@ -30,60 +30,117 @@ class OCI8
       def __type_encap(idx); raise NotImplementedError; end
       def __type_param_mode(idx); raise NotImplementedError; end
 
-      def __type_string
-        type = case data_type
-               when  1 # SQLT_CHR
-                 "VARCHAR2(#{data_size})"
-               when 2 # SQLT_NUM
-                 case scale
-                 when -127
-                   case precision
-                   when 0
-                     "NUMBER"
-                   else
-                     "FLOAT(#{precision})"
-                   end
-                 when 0
-                   case precision
-                   when 0
-                     "NUMBER"
-                   else
-                     "NUMBER(#{precision})"
-                   end
+      DATA_TYPE_MAP = {
+        # SQLT_CHR
+        1 => [:varchar2,
+              Proc.new do |p|
+                if p.charset_form == 2
+                  "NVARCHAR2(#{p.data_size})"
+                else
+                  "VARCHAR2(#{p.data_size})"
+                end
+              end],
+        # SQLT_NUM
+        2 => [:number,
+              Proc.new do |p|
+                case p.scale
+                when -127
+                  case p.precision
+                  when 0
+                    "NUMBER"
+                  else
+                    "FLOAT(#{p.precision})"
+                  end
+                when 0
+                  case p.precision
+                  when 0
+                    "NUMBER"
+                  else
+                    "NUMBER(#{p.precision})"
+                  end
+                else
+                  "NUMBER(#{p.precision},#{p.scale})"
+                end
+              end],
+        # SQLT_LNG
+        8 => [:long, "LONG"],
+        # SQLT_DAT
+        12 => [:date, "DATE"],
+        # SQLT_BIN
+        23 => [:raw,
+               Proc.new do |p|
+                 "RAW(#{p.data_size})"
+               end],
+        # SQLT_LBI
+        24 => [:long_raw, "LONG RAW"],
+        # SQLT_AFC
+        96 => [:char,
+               Proc.new do |p|
+                 if p.charset_form == 2
+                   "NCHAR(#{p.data_size})"
                  else
-                   "NUMBER(#{precision},#{scale})"
+                   "CHAR(#{p.data_size})"
                  end
-               when  8 # SQLT_LNG
-                 "LONG"
-               when 12 # SQLT_DAT
-                 "DATE"
-               when 23 # SQLT_BIN
-                 "RAW(#{data_size})"
-               when 24 # SQLT_LBI
-                 "LONG RAW"
-               when 96 # SQLT_AFC
-                 "CHAR(#{data_size})"
-               when 104 # SQLT_RDD
-                 "ROWID"
-               when 112 # SQLT_CLOB
-                 "CLOB"
-               when 113 # SQLT_BLOB
-                 "BLOB"
-               when 187 # SQLT_TIMESTAMP
-                 "TIMESTAMP"
-               when 188 # SQLT_TIMESTAMP_TZ
-                 "TIMESTAMP WITH TIME ZONE"
-               when 189 # SQLT_INTERVAL_YM
-                 "INTERVAL YEAR TO MONTH"
-               when 190 # SQLT_INTERVAL_DS
-                 "INTERVAL DAY TO SECOND"
-               when 232 # SQLT_TIMESTAMP_LTZ
-                 "TIMESTAMP WITH LOCAL TIME ZONE"
-               when 108 # SQLT_NTY
-                 "#{schema_name}.#{type_name}"
-               else
-                 "unknown(#{data_type})"
                end
+              ],
+        # SQLT_RDD
+        104 => [:rowid, "ROWID"],
+        # SQLT_NTY
+        108 => [:named_type,
+                Proc.new do |p|
+                  "#{p.schema_name}.#{p.type_name}"
+                end],
+        # SQLT_CLOB
+        112 => [:clob,
+                Proc.new do |p|
+                  if p.charset_form == 2
+                    "NCLOB"
+                  else
+                    "CLOB"
+                  end
+                end
+               ],
+        # SQLT_BLOB
+        113 => [:blob, "BLOB"],
+        # SQLT_BFILE
+        114 => [:bfile, "BFILE"],
+        # SQLT_TIMESTAMP
+        187 => [:timestamp,
+                Proc.new do |p|
+                  "TIMESTAMP(#{p.precision})"
+                end],
+        # SQLT_TIMESTAMP_TZ
+        188 => [:timestamp_tz,
+                Proc.new do |p|
+                  "TIMESTAMP(#{p.precision}) WITH TIME ZONE"
+                end],
+        # SQLT_INTERVAL_YM
+        189 => [:interval_ym,
+                Proc.new do |p|
+                  "INTERVAL YEAR(#{p.fsprecision}) TO MONTH"
+                end],
+        # SQLT_INTERVAL_DS
+        190 => [:interval_ds,
+                Proc.new do |p|
+                  "INTERVAL DAY(#{p.lfprecision}) TO SECOND(#{p.fsprecision})"
+                end],
+        # SQLT_TIMESTAMP_LTZ
+        232 => [:timestamp_ltz,
+                Proc.new do |p|
+                  "TIMESTAMP(#{p.precision}) WITH LOCAL TIME ZONE"
+                end],
+      }
+
+      def __data_type
+        return @data_type if @data_type
+        entry = DATA_TYPE_MAP[__ub2(2)]
+        @data_type = entry.nil? ? __ub2(2) : entry[0]
+      end
+
+      def __type_string
+        entry = DATA_TYPE_MAP[__ub2(2)]
+        type = entry.nil? ? "unknown(#{__ub2(2)})" : entry[1]
+        type = type.call(self) if type.is_a? Proc
         if respond_to?(:is_null?) && !is_null?
           name + ' ' + type + " NOT NULL"
         else
@@ -205,7 +262,7 @@ class OCI8
       # Table 6-8 Attributes Belonging to Type Attributes
       def data_size;    __ub2_nc(1); end
       def typecode;     __typecode(216); end # don't use.
-      def data_type;    __ub2(2); end
+      def data_type;    __data_type; end
       def name;         __text(4); end
       def precision;    @is_implicit ? __sb2(5) : __ub1(5); end
       def scale;        __sb1(6); end
@@ -250,7 +307,7 @@ class OCI8
       # Table 6-10 Attributes Belonging to Collection Types 
       def data_size;    __ub2_nc(1); end # don't use.
       def typecode;     __typecode(216); end # don't use.
-      def data_type;    __ub2(2); end # don't use.
+      def data_type;    __data_type; end # don't use.
       def num_elems;    __ub4(234); end # don't use.
       def name;         __text(4); end # don't use.
       def precision;    @is_implicit ? __sb2(5) : __ub1(5); end # don't use.
@@ -303,7 +360,7 @@ class OCI8
       def char_used;    __ub4(285); end # don't use.
       def char_size;    __ub2(286); end # don't use.
       def data_size;    __ub2_nc(1); end
-      def data_type;    __ub2(2); end
+      def data_type;    __data_type; end
       def name;         __text(4); end
       def precision;    @is_implicit ? __sb2(5) : __ub1(5); end
       def scale;        __sb1(6); end
@@ -313,6 +370,11 @@ class OCI8
       def ref_tdo;      __ref(110); end # not implemented
       def charset_id;   __ub2(31); end # don't use.
       def charset_form; __ub1(32); end # don't use.
+
+      # Table 6-8 Attributes Belonging to Type Attributes
+      # But Column also have these.
+      def fsprecision;  __ub1(16); end # don't use.
+      def lfprecision;  __ub1(17); end # don't use.
 
       def inspect
         "#<#{self.class.name}: #{__type_string}>"
@@ -324,7 +386,7 @@ class OCI8
       def name;         __text(4); end # don't use.
       def position;     __ub2(11); end # don't use.
       def typecode;     __typecode(216); end # don't use.
-      def data_type;    __ub2(2); end # don't use.
+      def data_type;    __data_type; end # don't use.
       def data_size;    __ub2_nc(1); end # don't use.
       def precision;    @is_implicit ? __sb2(5) : __ub1(5); end # don't use.
       def scale;        __sb1(6); end # don't use.

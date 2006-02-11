@@ -1,4 +1,13 @@
-2006-02-05  KUBO Takehiro  <kubo@jiubao.org>
+2006-02-11  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8.rb.in: require oci8/compat.rb also.
+	* lib/oci8/compat.rb: add a new file. Old version's features
+	    are moved from lib/oci8/oci8.rb.
+	* lib/oci8/metadata.rb: data_type's return value become symbol
+	    instead of number.
+	* lib/oci8/oci8.rb: Old version's features are moved to
+	     lib/oci8/compat.rb.
+
+2006-02-09  KUBO Takehiro  <kubo@jiubao.org>
 	add OCI8::Metadata module.
 	* ext/oci8/error.c: add oci8_get_error_code().
 	* ext/oci8/extconf.rb: delete param.o and add metadata.o.
