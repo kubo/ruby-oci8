@@ -37,8 +37,8 @@ have_func("OCIEnvCreate")
 have_func("OCITerminate")
 
 # OCIServerRelease
-#   8.0.5  - NG
-#   9.0.1  - OK
+#   8.1.5  - NG
+#   8.1.7  - OK
 have_func("OCIServerRelease")
 
 # OCILobOpen

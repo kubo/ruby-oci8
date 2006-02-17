@@ -13,6 +13,7 @@ static VALUE get_precision(oci8_handle_t *hp, ub4 attr);
 static VALUE get_string(oci8_handle_t *hp, ub4 attr);
 static VALUE get_rowid(oci8_handle_t *hp, ub4 attr);
 static VALUE get_oranum_as_int(oci8_handle_t *hp, ub4 attr);
+static VALUE get_server(oci8_handle_t *hp, ub4 attr);
 
 static void set_server(oci8_handle_t *hp, ub4 attr, VALUE value);
 static void set_session(oci8_handle_t *hp, ub4 attr, VALUE value);
@@ -25,7 +26,7 @@ static void set_string(oci8_handle_t *hp, ub4 attr, VALUE value);
 oci8_attr_t oci8_attr_list[] = {
   /* Attribute Types */
   ENTRY(NONBLOCKING_MODE,   ATTR_FOR_HNDL, get_boolean, set_no_arg), /* 3 */
-  ENTRY(SERVER,             ATTR_FOR_HNDL, NULL, set_server), /* 6 */
+  ENTRY(SERVER,             ATTR_FOR_HNDL, get_server, set_server), /* 6 */
   ENTRY(SESSION,            ATTR_FOR_HNDL, NULL, set_session), /* 7 */
   ENTRY(ROW_COUNT,          ATTR_FOR_HNDL, get_ub4, NULL), /* 9 */
   ENTRY(PREFETCH_ROWS,      ATTR_FOR_HNDL, NULL, set_ub4), /* 11 */
@@ -92,6 +93,7 @@ oci8_attr_t oci8_attr_list[] = {
 #ifdef OCI_ATTR_ROWS_FETCHED
   ENTRY(ROWS_FETCHED,       ATTR_FOR_HNDL, get_ub4, NULL), /* 197 */
 #endif
+  ENTRY(DESC_PUBLIC,        ATTR_FOR_HNDL, NULL, set_ub4), /* 250 */
 
   /* Describe Handle Parameter Attributes */
   ENTRY(DATA_SIZE,          ATTR_FOR_DESC, get_ub2, NULL), /* 1 */
@@ -277,6 +279,19 @@ static VALUE get_oranum_as_int(oci8_handle_t *h, ub4 attr) {
     oci8_raise(h->errhp, rv, NULL);
   ora_number_to_str(buf, &len, av, as);
   return rb_cstr2inum(buf, 10);
+}
+
+static VALUE get_server(oci8_handle_t *h, ub4 attr)
+{
+  oci8_handle_t *hv;
+  void *hp;
+  sword rv;
+
+  rv = OCIAttrGet(h->hp, h->type, &hp, 0, attr, h->errhp);
+  if (rv != OCI_SUCCESS)
+    oci8_raise(h->errhp, rv, NULL);
+  hv = oci8_make_handle(OCI_HTYPE_SERVER, hp, h->errhp, h, 0);
+  return hv->self;
 }
 
 static void set_server(oci8_handle_t *h, ub4 attr, VALUE value)

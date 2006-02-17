@@ -32,7 +32,9 @@ class OCIBind # :nodoc:
 end
 
 class OCI8
-  @@env = nil
+  OCIEnv.initialise()
+  @@env = OCIEnv.init()
+
   VERSION = '@@OCI8_MODULE_VERSION@@'
   CLIENT_VERSION = '@@OCI8_CLIENT_VERSION@@'
   # :stopdoc:
@@ -126,49 +128,54 @@ class OCI8
   include Util
 
   def initialize(uid, pswd, conn = nil, privilege = nil)
-    if @@env.nil?
-      if OCIEnv.respond_to?("create")
-	@@env = OCIEnv.create()
-      else
-	OCIEnv.initialise()
-	@@env = OCIEnv.init()
-      end
-    end
-
     case privilege
     when nil
-      privilege = OCI_DEFAULT
+      @privilege = nil
     when :SYSDBA
-      privilege = OCI_SYSDBA
+      @privilege = OCI_SYSDBA
     when :SYSOPER
-      privilege = OCI_SYSOPER
+      @privilege = OCI_SYSOPER
     else
       raise ArgumentError, "invalid privilege name #{privilege} (expect :SYSDBA, :SYSOPER or nil)"
     end
 
-    @svc = @@env.alloc(OCISvcCtx)
-    @srv = @@env.alloc(OCIServer)
-    @auth = @@env.alloc(OCISession)
     @ctx = [0, Mutex.new, nil]
+    if @privilege
+      @svc = @@env.alloc(OCISvcCtx)
+      @srv = @@env.alloc(OCIServer)
+      @auth = @@env.alloc(OCISession)
 
-    @auth.attrSet(OCI_ATTR_USERNAME, uid)
-    @auth.attrSet(OCI_ATTR_PASSWORD, pswd)
-    do_ocicall(@ctx) { @srv.attach(conn) }
-    @svc.attrSet(OCI_ATTR_SERVER, @srv)
-    do_ocicall(@ctx) { @auth.begin(@svc, OCI_CRED_RDBMS, privilege) }
-    @svc.attrSet(OCI_ATTR_SESSION, @auth)
+      @auth.attrSet(OCI_ATTR_USERNAME, uid)
+      @auth.attrSet(OCI_ATTR_PASSWORD, pswd)
+      do_ocicall(@ctx) { @srv.attach(conn) }
+      begin
+        @svc.attrSet(OCI_ATTR_SERVER, @srv)
+        do_ocicall(@ctx) { @auth.begin(@svc, OCI_CRED_RDBMS, @privilege) }
+        @svc.attrSet(OCI_ATTR_SESSION, @auth)
+      rescue
+        @srv.detach()
+        raise
+      end
+    else
+      @svc = @@env.logon(uid, pswd, conn)
+    end
   end # initialize
 
   def logoff
     rollback()
-    do_ocicall(@ctx) { @auth.end(@svc) }
-    do_ocicall(@ctx) { @srv.detach() }
+    if @privilege
+      do_ocicall(@ctx) { @auth.end(@svc) }
+      do_ocicall(@ctx) { @srv.detach() }
+    else
+      @svc.logoff
+    end
     @svc.free()
     true
   end # logoff
 
   def exec(sql, *bindvars)
     cursor = OCI8::Cursor.new(@@env, @svc, @ctx)
+    cursor.prefetch_rows = @prefetch_rows if @prefetch_rows
     cursor.parse(sql)
     if cursor.type == OCI_STMT_SELECT && ! block_given?
       cursor.exec(*bindvars)
@@ -197,6 +204,7 @@ class OCI8
 
   def parse(sql)
     cursor = OCI8::Cursor.new(@@env, @svc, @ctx)
+    cursor.prefetch_rows = @prefetch_rows if @prefetch_rows
     cursor.parse(sql)
     cursor
   end # parse
@@ -226,6 +234,10 @@ class OCI8
     ac
   end # autocommit=
 
+  def prefetch_rows=(rows)
+    @prefetch_rows = rows
+  end
+
   def non_blocking?
     @svc.attrGet(OCI_ATTR_NONBLOCKING_MODE)
   end # non_blocking?
@@ -234,7 +246,8 @@ class OCI8
     if nb && ! non_blocking?
       # If the argument and the current status are different,
       # toggle blocking / non-blocking.
-      @svc.attrSet(OCI_ATTR_NONBLOCKING_MODE, nil)
+      @srv = @svc.attrGet(OCI_ATTR_SERVER) unless @srv
+      @srv.attrSet(OCI_ATTR_NONBLOCKING_MODE, nil)
     end
   end # non_blocking=
 
@@ -611,6 +624,10 @@ class OCI8
 
     def rowid
       @stmt.attrGet(OCI_ATTR_ROWID)
+    end
+
+    def prefetch_rows=(rows)
+      @stmt.attrSet(OCI_ATTR_PREFETCH_ROWS, rows)
     end
 
     private

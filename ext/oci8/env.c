@@ -15,21 +15,6 @@ correspond native OCI datatype: ((|OCIEnv|))
 */
 #include "oci8.h"
 
-static dvoid *rb_oci8_maloc(dvoid *ctxp, size_t size)
-{
-  return ruby_xmalloc(size);
-}
-
-static dvoid *rb_oci8_raloc(dvoid *ctxp, dvoid *memptr, size_t newsize)
-{
-  return ruby_xrealloc(memptr, newsize);
-}
-
-static void rb_oci8_mfree(dvoid *ctxp, dvoid *memptr)
-{
-  ruby_xfree(memptr);
-}
-
 static VALUE oci8_env_s_initialize(int argc, VALUE *argv, VALUE klass)
 {
   VALUE vmode;
@@ -39,7 +24,7 @@ static VALUE oci8_env_s_initialize(int argc, VALUE *argv, VALUE klass)
   rb_scan_args(argc, argv, "01", &vmode);
   Get_Int_With_Default(argc, 1, vmode, mode, OCI_DEFAULT); /* 1 */
   
-  rv = OCIInitialize(mode, NULL, rb_oci8_maloc, rb_oci8_raloc, rb_oci8_mfree);
+  rv = OCIInitialize(mode, NULL, NULL, NULL, NULL);
   return INT2FIX(rv);
 }
 
@@ -101,7 +86,7 @@ static VALUE oci8_env_s_create(int argc, VALUE *argv, VALUE klass)
   rb_scan_args(argc, argv, "01", &vmode);
   Get_Int_With_Default(argc, 1, vmode, mode, OCI_DEFAULT); /* 1 */
   
-  rv = OCIEnvCreate(&envhp, mode, NULL, rb_oci8_maloc, rb_oci8_raloc, rb_oci8_mfree, 0, NULL);
+  rv = OCIEnvCreate(&envhp, mode, NULL, NULL, NULL, NULL, 0, NULL);
   if (rv != OCI_SUCCESS)
     oci8_env_raise(envhp, rv);
   rv = OCIHandleAlloc(envhp, (dvoid *)&errhp, OCI_HTYPE_ERROR, 0, NULL);

@@ -90,7 +90,7 @@ void  Init_oci8_handle(void)
 void oci8_handle_cleanup(oci8_handle_t *h)
 {
   oci8_handle_do_free(h);
-  free(h);
+  xfree(h);
 }
 
 VALUE oci8_s_new(VALUE self)

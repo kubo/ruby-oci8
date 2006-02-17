@@ -1,3 +1,15 @@
+2006-02-17  KUBO Takehiro  <kubo@jiubao.org>
+	* README: fix documentation bug.
+	* ext/oci8/attr.c: add attrGet(OCI_ATTR_SERVER) and attrSet(OCI_ATTR_DESC_PUBLIC, -1).
+	* ext/oci8/env.c: delete code to register malloc/realloc/free callbacks.
+	* ext/oci8/handle.c: free memory by calling xfree(), not by free()
+	   in oci8_handle_cleanup().
+	* lib/oci8.rb.in: use OCIEnv#logon for non-privilege login.
+	    add OCI8#prefetch_rows= and OCI8::Cursor#prefetch_rows=.
+	    use @srv instead of @svc in OCI8#non_blocking= for
+	    non-privilege login.
+	* lib/DBD/OCI8/OCI8.rb: fix to work with ruby-oci8 0.1 and ruby-oci8 0.2 either.
+
 2005-10-15  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/handle.c: fix memory leaks. 700k per 10000 queries.
 	  fixed by Nathaniel Talbott. Thank you!

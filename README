@@ -16,7 +16,8 @@
 3. make and install
    gzip -dc ruby-oci8-0.1.xx.tar.gz | tar xvf -
    cd ruby-oci8-0.1.xx
-   make    # or nmake on MSVC.
+   make          # or nmake on MSVC.
+   make install
 
 == Oracle Instant Client
 
