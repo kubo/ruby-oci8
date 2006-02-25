@@ -52,7 +52,7 @@ static VALUE metadata_s_register_ptype(VALUE klass, VALUE ptype)
 static VALUE metadata_get_ub1(VALUE self, VALUE idx)
 {
     oci8_base_t *base = DATA_PTR(self);
-    ub1 value;
+    ub1 value = 0;
     ub4 size = sizeof(value);
 
     oci_lc(OCIAttrGet(base->hp, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
@@ -65,7 +65,7 @@ static VALUE metadata_get_ub1(VALUE self, VALUE idx)
 static VALUE metadata_get_ub2(VALUE self, VALUE idx)
 {
     oci8_base_t *base = DATA_PTR(self);
-    ub2 value;
+    ub2 value = 0;
     ub4 size = sizeof(value);
 
     oci_lc(OCIAttrGet(base->hp, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
@@ -79,7 +79,7 @@ static VALUE metadata_get_ub2(VALUE self, VALUE idx)
 static VALUE metadata_get_ub2_nc(VALUE self, VALUE idx)
 {
     oci8_base_t *base = DATA_PTR(self);
-    ub2 value;
+    ub2 value = 0;
 
     oci_lc(OCIAttrGet(base->hp, OCI_DTYPE_PARAM, &value, 0, FIX2INT(idx), oci8_errhp));
     return INT2FIX(value);
@@ -88,7 +88,7 @@ static VALUE metadata_get_ub2_nc(VALUE self, VALUE idx)
 static VALUE metadata_get_ub4(VALUE self, VALUE idx)
 {
     oci8_base_t *base = DATA_PTR(self);
-    ub4 value;
+    ub4 value = 0;
     ub4 size = sizeof(value);
 
     oci_lc(OCIAttrGet(base->hp, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
@@ -105,7 +105,7 @@ static VALUE metadata_get_ub4(VALUE self, VALUE idx)
 static VALUE metadata_get_sb1(VALUE self, VALUE idx)
 {
     oci8_base_t *base = DATA_PTR(self);
-    sb1 value;
+    sb1 value = 0;
     ub4 size = sizeof(value);
 
     oci_lc(OCIAttrGet(base->hp, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
@@ -118,7 +118,7 @@ static VALUE metadata_get_sb1(VALUE self, VALUE idx)
 static VALUE metadata_get_sb2(VALUE self, VALUE idx)
 {
     oci8_base_t *base = DATA_PTR(self);
-    sb2 value;
+    sb2 value = 0;
     ub4 size = sizeof(value);
 
     oci_lc(OCIAttrGet(base->hp, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
@@ -131,7 +131,7 @@ static VALUE metadata_get_sb2(VALUE self, VALUE idx)
 static VALUE metadata_get_sb4(VALUE self, VALUE idx)
 {
     oci8_base_t *base = DATA_PTR(self);
-    sb4 value;
+    sb4 value = 0;
     ub4 size = sizeof(value);
 
     oci_lc(OCIAttrGet(base->hp, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
@@ -212,6 +212,19 @@ static VALUE metadata_get_param_at(VALUE self, VALUE idx)
     return oci8_metadata_create(value, rb_ivar_get(self, id_at_con), rb_ivar_get(self, id___desc__));
 }
 
+static VALUE metadata_get_charset_name(VALUE self, VALUE charset_id)
+{
+    char buf[OCI_NLS_MAXBUFSZ];
+    sword rv;
+
+    Check_Type(charset_id, T_FIXNUM);
+    rv = OCINlsCharSetIdToName(oci8_envhp, buf, sizeof(buf), FIX2INT(charset_id));
+    if (rv != OCI_SUCCESS) {
+        return Qnil;
+    }
+    return rb_str_new2(buf);
+}
+
 static void oci8_desc_free(OCIDescribe *dschp)
 {
     if (dschp != NULL)
@@ -290,6 +303,7 @@ void Init_oci8_metadata(VALUE cOCI8)
     rb_define_private_method(cOCI8MetadataBase, "__oraint", metadata_get_oraint, 1);
     rb_define_private_method(cOCI8MetadataBase, "__param", metadata_get_param, 1);
     rb_define_private_method(cOCI8MetadataBase, "__param_at", metadata_get_param_at, 1);
+    rb_define_private_method(cOCI8MetadataBase, "__charset_name", metadata_get_charset_name, 1);
 
     rb_define_private_method(cOCI8, "__describe", oci8_describe, 3);
 }

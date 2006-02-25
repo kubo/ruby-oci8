@@ -1,3 +1,10 @@
+2006-02-25  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/metadata.c: set default value zero in C of private method
+	    OCI::Metadata::Base#__get_*. add a private method 
+	    OCI::Metadata::Base#__charset_name.
+	* lib/DBD/OCI8/OCI8.rb: fix to work with ruby-oci8 0.1 also.
+	* lib/oci8/metadata.rb: refactor and add comments for rdoc.
+
 2006-02-11  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8.rb.in: require oci8/compat.rb also.
 	* lib/oci8/compat.rb: add a new file. Old version's features
