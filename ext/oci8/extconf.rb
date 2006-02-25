@@ -1,7 +1,7 @@
 require 'mkmf'
 require File.dirname(__FILE__) + '/oraconf'
 
-RUBY_OCI8_VERSION = '0.1.13'
+RUBY_OCI8_VERSION = '0.1.14'
 
 oraconf = OraConf.new()
 
@@ -21,7 +21,7 @@ end
 $objs = ["oci8.o", "handle.o", "const.o", "env.o", "error.o", "svcctx.o",
          "server.o", "session.o", "stmt.o", "define.o", "bind.o",
          "describe.o", "descriptor.o", "param.o", "lob.o",
-         "oradate.o", "oranumber.o", "attr.o"]
+         "oradate.o", "oranumber.o", "ocinumber.o", "attr.o"]
 
 $CFLAGS += oraconf.cflags
 $libs += oraconf.libs

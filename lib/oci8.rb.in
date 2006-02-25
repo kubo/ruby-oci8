@@ -32,7 +32,7 @@ class OCIBind # :nodoc:
 end
 
 class OCI8
-  OCIEnv.initialise()
+  OCIEnv.initialise(OCI_OBJECT)
   @@env = OCIEnv.init()
 
   VERSION = '@@OCI8_MODULE_VERSION@@'

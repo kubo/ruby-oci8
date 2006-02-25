@@ -1,3 +1,12 @@
+2006-02-25  KUBO Takehiro  <kubo@jiubao.org>
+	* Makefile: change version to 0.1.14.
+	* ext/oci8/bind.c: fix to accept OCIBind#set(aNumeric).
+	* ext/oci8/extconf.rb: change version to 0.1.14.
+	    fix to compile ocinumber.c also.
+	* ext/oci8/oci8.h: add set_oci_vnumber() prototype.
+	* ext/oci8/ocinumber.c: add a new file for set_oci_vnumber().
+	* lib/oci8.rb.in: setup OCI environment as an object mode.
+
 2006-02-17  KUBO Takehiro  <kubo@jiubao.org>
 	* README: fix documentation bug.
 	* ext/oci8/attr.c: add attrGet(OCI_ATTR_SERVER) and attrSet(OCI_ATTR_DESC_PUBLIC, -1).

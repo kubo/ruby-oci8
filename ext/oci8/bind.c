@@ -1,7 +1,7 @@
 /*
   define.c - part of ruby-oci8
 
-  Copyright (C) 2002 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002,2006 KUBO Takehiro <kubo@jiubao.org>
 
 =begin
 == OCIBind
@@ -158,13 +158,22 @@ void oci8_set_value(oci8_bind_handle_t *hp, VALUE val)
     Data_Get_Struct(val, ora_date_t, od);
     memcpy(&(hp->value.od), od, sizeof(ora_date_t));
     break;
+  case BIND_INTEGER_VIA_ORA_NUMBER:
   case BIND_ORA_NUMBER:
-    if (!rb_obj_is_instance_of(val, cOraNumber)) {
+    if (rb_obj_is_instance_of(val, cOraNumber)) {
+      Data_Get_Struct(val, ora_vnumber_t, ovn);
+      hp->rlen = ovn->size;
+      memcpy(&(hp->value.on), &(ovn->num), sizeof(ora_number_t));
+    } else if (rb_obj_is_kind_of(val, rb_cNumeric)) {
+      ora_vnumber_t ovn;
+      if (set_oci_vnumber(&ovn, val, hp->errhp) == 0) {
+	rb_raise(rb_eTypeError, "could not bind value.");
+      }
+      hp->rlen = ovn.size;
+      memcpy(&(hp->value.on), &(ovn.num), sizeof(ora_number_t));
+    } else {
       rb_raise(rb_eTypeError, "invalid argument (expect OraNumber)");
     }
-    Data_Get_Struct(val, ora_vnumber_t, ovn);
-    hp->rlen = ovn->size;
-    memcpy(&(hp->value.on), &(ovn->num), sizeof(ora_number_t));
     break;
   case BIND_HANDLE:
     rb_raise(rb_eRuntimeError, "it is not permitted to set to this handle.");

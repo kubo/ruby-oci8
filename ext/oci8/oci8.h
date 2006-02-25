@@ -275,6 +275,9 @@ void oci8_get_ora_date(ora_date_t *, int *year, int *month, int *day, int *hour,
 void Init_ora_number(void);
 void ora_number_to_str(unsigned char *buf, size_t *lenp, ora_number_t *on, unsigned char size);
 
+/* ocinumber.c */
+int set_oci_vnumber(ora_vnumber_t *result, VALUE num, OCIError *errhp);
+
 /* attr.c */
 void Init_oci8_attr(void);
 VALUE oci8_attr_get(VALUE self, VALUE vtype);
