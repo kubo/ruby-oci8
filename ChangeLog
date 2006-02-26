@@ -1,3 +1,7 @@
+2006-02-26  KUBO Takehiro  <kubo@jiubao.org>
+	release as 0.1.14.
+	* ext/oci8/const.c: add OCI_PTYPE_UNK.
+
 2006-02-25  KUBO Takehiro  <kubo@jiubao.org>
 	* Makefile: change version to 0.1.14.
 	* ext/oci8/bind.c: fix to accept OCIBind#set(aNumeric).

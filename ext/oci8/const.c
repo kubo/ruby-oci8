@@ -115,6 +115,7 @@ void  Init_oci8_const(void)
   rb_define_global_const("OCI_TYPECODE_NAMES", oci8_make_names(oci8_typecode, NUM_OF_OCI8_TYPECODE));
 
   /* OCI Parameter Types */
+  rb_define_global_const("OCI_PTYPE_UNK", INT2FIX(OCI_PTYPE_UNK));
   rb_define_global_const("OCI_PTYPE_TABLE", INT2FIX(OCI_PTYPE_TABLE));
   rb_define_global_const("OCI_PTYPE_VIEW", INT2FIX(OCI_PTYPE_VIEW));
   rb_define_global_const("OCI_PTYPE_PROC", INT2FIX(OCI_PTYPE_PROC));

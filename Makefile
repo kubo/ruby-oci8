@@ -31,7 +31,7 @@ site-install:
 dist:
 	-rm -rf ruby-oci8-$(VERSION)
 	mkdir ruby-oci8-$(VERSION)
-	tar cf - `cat MANIFEST` | (cd ruby-oci8-$(VERSION); tar xf - )
+	tar cf - `cat dist-files` | (cd ruby-oci8-$(VERSION); tar xf - )
 	tar cfz ruby-oci8-$(VERSION).tar.gz ruby-oci8-$(VERSION)
 
 dist-check: dist
