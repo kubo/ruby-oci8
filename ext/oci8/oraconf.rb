@@ -100,6 +100,7 @@ class OraConf
     begin
       @cc_is_gcc = get_cc_is_gcc_or_not()
       @lp64 = check_lp64()
+      check_ruby_header()
 
       # check Oracle instant client
       ic_dir = with_config('instant-client')
@@ -238,6 +239,29 @@ EOS
       false
     end
   end # check_lp64
+
+  def check_ruby_header
+    print "checking for ruby header... "
+    STDOUT.flush
+    unless File.exists?("#{Config::CONFIG['archdir']}/ruby.h")
+      puts "ng"
+      if RUBY_PLATFORM =~ /darwin/ and File.exists?("#{Config::CONFIG['archdir']}/../universal-darwin8.0/ruby.h")
+        raise <<EOS
+#{Config::CONFIG['archdir']}/ruby.h doesn't exist.
+Run the following commands to fix the problem.
+
+  cd #{Config::CONFIG['archdir']}
+  sudo ln -s ../universal-darwin8.0/* ./
+EOS
+      else
+        raise <<EOS
+#{Config::CONFIG['archdir']}/ruby.h doesn't exist.
+Install the ruby development library.
+EOS
+      end
+    end
+    puts "ok"
+  end
 
   def get_version
     print("Get the version of Oracle from SQL*Plus... ")
@@ -574,8 +598,9 @@ EOS
       unless ld_path.nil?
         raise <<EOS
 Could not compile with Oracle instant client.
-You may need to set:
+You may need to set a environment variable:
     #{ld_path}=#{lib_dir}
+    export #{ld_path}
 EOS
       end
       raise 'failed'

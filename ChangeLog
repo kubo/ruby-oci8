@@ -1,3 +1,8 @@
+2006-03-05  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: add check_ruby_header to warn when
+	    broken darwin ruby.
+	    add export #{ld_path} in check_instant_client().
+
 2006-02-26  KUBO Takehiro  <kubo@jiubao.org>
 	release as 0.1.14.
 	* ext/oci8/const.c: add OCI_PTYPE_UNK.
