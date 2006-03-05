@@ -1,3 +1,8 @@
+2006-03-05  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: add check_ruby_header to warn when
+	    broken darwin ruby.
+	    add export #{ld_path} in check_instant_client().
+
 2006-02-25  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/metadata.c: set default value zero in C of private method
 	    OCI::Metadata::Base#__get_*. add a private method 
