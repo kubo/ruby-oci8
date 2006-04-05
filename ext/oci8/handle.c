@@ -1,7 +1,7 @@
 /*
   handle.c - part of ruby-oci8
 
-  Copyright (C) 2002 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002-2006 KUBO Takehiro <kubo@jiubao.org>
 
 =begin
 == OCIHandle
@@ -151,7 +151,7 @@ oci8_handle_t *oci8_make_handle(ub4 type, dvoid *hp, OCIError *errhp, oci8_handl
   case OCI_HTYPE_STMT:
     obj = Data_Make_Struct(cOCIStmt, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
     rb_ivar_set(obj, oci8_id_define_array, Qnil);
-    rb_ivar_set(obj, oci8_id_bind_array, Qnil);
+    rb_ivar_set(obj, oci8_id_bind_hash, Qnil);
     break;
   case OCI_HTYPE_SERVER:
     obj = Data_Make_Struct(cOCIServer, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);

@@ -1,7 +1,7 @@
 /*
   oci8.h - part of ruby-oci8
 
-  Copyright (C) 2002 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002-2006 KUBO Takehiro <kubo@jiubao.org>
 */
 #ifndef _RUBY_OCI_H_
 #define _RUBY_OCI_H_ 1
@@ -201,7 +201,7 @@ extern VALUE cOraNumber;
 void  Init_oci8_const(void);
 extern ID oci8_id_code;
 extern ID oci8_id_define_array;
-extern ID oci8_id_bind_array;
+extern ID oci8_id_bind_hash;
 extern ID oci8_id_message;
 extern ID oci8_id_new;
 extern ID oci8_id_parse_error_offset;

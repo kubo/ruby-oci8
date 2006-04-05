@@ -2,7 +2,7 @@
   stmt.c - part of ruby-oci8
            implement the methods of OCIStmt.
 
-  Copyright (C) 2002 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002-2006 KUBO Takehiro <kubo@jiubao.org>
 
 =begin
 == OCIStmt
@@ -110,6 +110,11 @@ static void check_bind_type(ub4 type, oci8_handle_t *stmth, VALUE vtype, VALUE v
   *bhp = bh;
 }
 
+static VALUE oci8_each_value(VALUE hash)
+{
+  return rb_funcall(hash, rb_intern("each_value"), 0);
+}
+
 /*
 =begin
 --- OCIStmt#prepare(stmt [, language [, mode]])
@@ -137,6 +142,7 @@ static VALUE oci8_stmt_prepare(int argc, VALUE *argv, VALUE self)
   ub4 mode;
   sword rv;
   VALUE ary;
+  VALUE hash;
   int i;
 
   rb_scan_args(argc, argv, "12", &vsql, &vlanguage, &vmode);
@@ -159,13 +165,10 @@ static VALUE oci8_stmt_prepare(int argc, VALUE *argv, VALUE self)
     rb_ivar_set(self, oci8_id_define_array, Qnil);
   }
   /* free bind handles */
-  ary = rb_ivar_get(self, oci8_id_bind_array);
-  if (ary != Qnil) {
-    for (i = 0;i < RARRAY(ary)->len;i++) {
-      if (RARRAY(ary)->ptr[i] != Qnil)
-	oci8_handle_free(RARRAY(ary)->ptr[i]);
-    }
-    rb_ivar_set(self, oci8_id_bind_array, Qnil);
+  hash = rb_ivar_get(self, oci8_id_bind_hash);
+  if (hash != Qnil) {
+    rb_iterate(oci8_each_value, hash, oci8_handle_free, Qnil);
+    rb_ivar_set(self, oci8_id_bind_hash, Qnil);
   }
 
   rv = OCIStmtPrepare(h->hp, h->errhp, s.ptr, s.len, language, mode);
@@ -303,7 +306,7 @@ static VALUE oci8_bind_by_pos(int argc, VALUE *argv, VALUE self)
   dvoid *valuep;
   OCIBind *bindhp = NULL;
   sword status;
-  VALUE ary;
+  VALUE hash;
   VALUE obj;
 
   rb_scan_args(argc, argv, "22", &vposition, &vtype, &vlength, &vmode);
@@ -337,12 +340,12 @@ static VALUE oci8_bind_by_pos(int argc, VALUE *argv, VALUE self)
   bh->hp = bindhp;
   bh->errhp = h->errhp;
   obj = bh->self;
-  ary = rb_ivar_get(self, oci8_id_bind_array);
-  if (ary == Qnil) {
-    ary = rb_ary_new();
-    rb_ivar_set(self, oci8_id_bind_array, ary);
+  hash = rb_ivar_get(self, oci8_id_bind_hash);
+  if (hash == Qnil) {
+    hash = rb_hash_new();
+    rb_ivar_set(self, oci8_id_bind_hash, hash);
   }
-  rb_ary_push(ary, obj);
+  rb_hash_aset(hash, vposition, obj);
   return obj;
 }
 
@@ -398,7 +401,7 @@ static VALUE oci8_bind_by_name(int argc, VALUE *argv, VALUE self)
   dvoid *valuep;
   OCIBind *bindhp = NULL;
   sword status;
-  VALUE ary;
+  VALUE hash;
   VALUE obj;
 
   rb_scan_args(argc, argv, "22", &vplaceholder, &vtype, &vlength, &vmode);
@@ -432,12 +435,12 @@ static VALUE oci8_bind_by_name(int argc, VALUE *argv, VALUE self)
   bh->hp = bindhp;
   bh->errhp = h->errhp;
   obj = bh->self;
-  ary = rb_ivar_get(self, oci8_id_bind_array);
-  if (ary == Qnil) {
-    ary = rb_ary_new();
-    rb_ivar_set(self, oci8_id_bind_array, ary);
+  hash = rb_ivar_get(self, oci8_id_bind_hash);
+  if (hash == Qnil) {
+    hash = rb_hash_new();
+    rb_ivar_set(self, oci8_id_bind_hash, hash);
   }
-  rb_ary_push(ary, obj);
+  rb_hash_aset(hash, vplaceholder, obj);
   return obj;
 }
 

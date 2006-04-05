@@ -246,24 +246,21 @@ static VALUE get_rowid(oci8_handle_t *h, ub4 attr)
 {
   OCIRowid *rowidhp;
   oci8_handle_t *rowidh;
-  OCIEnv *envhp;
+  oci8_handle_t *envh;
   sword rv;
 
   /* get environment handle */
-  rv = OCIAttrGet(h->hp, h->type, &envhp, 0, OCI_ATTR_ENV, h->errhp);
+  for (envh = h; envh->type != OCI_HTYPE_ENV; envh = envh->parent);
+  rv = OCIDescriptorAlloc(envh->hp, (void *)&rowidhp, OCI_DTYPE_ROWID, 0, NULL);
   if (rv != OCI_SUCCESS) {
-    oci8_raise(h->errhp, rv, NULL);
-  }
-  rv = OCIDescriptorAlloc(envhp, (void *)&rowidhp, OCI_DTYPE_ROWID, 0, NULL);
-  if (rv != OCI_SUCCESS) {
-    oci8_env_raise(envhp, rv);
+    oci8_env_raise(envh->hp, rv);
   }
   rv = OCIAttrGet(h->hp, h->type, rowidhp, 0, attr, h->errhp);
   if (rv != OCI_SUCCESS) {
     OCIDescriptorFree(rowidhp, OCI_DTYPE_ROWID);
     oci8_raise(h->errhp, rv, NULL);
   }
-  rowidh = oci8_make_handle(OCI_DTYPE_ROWID, rowidhp, h->errhp, NULL, 0);
+  rowidh = oci8_make_handle(OCI_DTYPE_ROWID, rowidhp, h->errhp, envh, 0);
   return rowidh->self;
 }
 

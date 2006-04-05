@@ -139,6 +139,7 @@ class OCI8
       raise ArgumentError, "invalid privilege name #{privilege} (expect :SYSDBA, :SYSOPER or nil)"
     end
 
+    @prefetch_rows = nil
     @ctx = [0, Mutex.new, nil]
     if @privilege
       @svc = @@env.alloc(OCISvcCtx)

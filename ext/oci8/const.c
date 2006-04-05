@@ -1,7 +1,7 @@
 /*
   const.c - part of ruby-oci8
 
-  Copyright (C) 2002 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002-2006 KUBO Takehiro <kubo@jiubao.org>
 
   define constant values.
 */
@@ -9,7 +9,7 @@
 
 ID oci8_id_code;
 ID oci8_id_define_array;
-ID oci8_id_bind_array;
+ID oci8_id_bind_hash;
 ID oci8_id_message;
 ID oci8_id_new;
 ID oci8_id_parse_error_offset;
@@ -56,7 +56,7 @@ void  Init_oci8_const(void)
 
   oci8_id_code = rb_intern("code");
   oci8_id_define_array = rb_intern("define_array");
-  oci8_id_bind_array = rb_intern("bind_array");
+  oci8_id_bind_hash = rb_intern("bind_hash");
   oci8_id_message = rb_intern("message");
   oci8_id_new = rb_intern("new");
   oci8_id_parse_error_offset = rb_intern("parse_error_offset");

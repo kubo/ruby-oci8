@@ -1,3 +1,15 @@
+2006-04-05  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/attr.c: Fix segmentation fault while GC runs at exit.
+	    It was caused by freeing OCIEnv before freeing OCIRowid.
+	    Now when freeing OCIEnv, OCIRowid is freed in advance.
+	* ext/oci8/const.c, ext/oci8/handle.c, ext/oci8/oci8.h, ext/oci8/stmt.c:
+	    Fix a memory leak when binding a placeholder which is already
+	    bound. In C layer, bind handles were registered to an Array.
+	    There is no chance to unregister it except closing Cursor.
+	    Now bind handles are registered to a Hash. When already bound
+	    placeholder is bound, the old bind handle is unregistered.
+	* lib/oci8.rb.in: initialize @prefetch_rows.
+
 2006-03-05  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: add check_ruby_header to warn when
 	    broken darwin ruby.
