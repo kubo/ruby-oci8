@@ -172,11 +172,13 @@ If it could not be solved, send the following information to kubo@jiubao.org.
 * error messages except 'common error message'.
 * last 100 lines of 'ext/oci8/mkmf.log'.
 * results of the following commands:
+    ruby --version
     ruby -r rbconfig -e "p Config::CONFIG['host']"
     ruby -r rbconfig -e "p Config::CONFIG['CC']"
     ruby -r rbconfig -e "p Config::CONFIG['CFLAGS']"
     ruby -r rbconfig -e "p Config::CONFIG['LDSHARED']"
     ruby -r rbconfig -e "p Config::CONFIG['LDFLAGS']"
+    ruby -r rbconfig -e "p Config::CONFIG['DLDFLAGS']"
     ruby -r rbconfig -e "p Config::CONFIG['LIBS']"
     ruby -r rbconfig -e "p Config::CONFIG['GNU_LD']"
 * if you use gcc:

@@ -107,11 +107,13 @@
 
   * last 100 lines of 'ext/oci8/mkmf.log'.
   * the results of the following commands:
+      ruby --version
       ruby -r rbconfig -e "p Config::CONFIG['host']"
       ruby -r rbconfig -e "p Config::CONFIG['CC']"
       ruby -r rbconfig -e "p Config::CONFIG['CFLAGS']"
       ruby -r rbconfig -e "p Config::CONFIG['LDSHARED']"
       ruby -r rbconfig -e "p Config::CONFIG['LDFLAGS']"
+      ruby -r rbconfig -e "p Config::CONFIG['DLDLAGS']"
       ruby -r rbconfig -e "p Config::CONFIG['LIBS']"
       ruby -r rbconfig -e "p Config::CONFIG['GNU_LD']"
   * if you use gcc:
@@ -190,6 +192,44 @@
      LD_PRELOAD=/usr/lib/libpthread.1:/usr/lib/libcl.2
      export LD_PRELOAD
 
+=== Intel Mac
+
+Oracle intant client is still, when I write this, pcc.
+
+1. check whether the ruby is ppc bianry.
+
+     file `which ruby`
+
+   If it is universal bianry, use ditto to extract ppc binary.
+
+      http://blog.sven-tissot.de/daylist_html?year=2006&month=4&day=12
+
+   If it is i386 binary, compie it as ppc.
+
+2. fix compilation flags.
+
+      ruby -r rbconfig -e "p Config::CONFIG['CFLAGS']"
+      ruby -r rbconfig -e "p Config::CONFIG['DLDLAGS']"
+
+   If they have '-arch i386', delete it from:
+      /usr/lib/ruby/1.8/powerpc-darwin8.0/rbconfig.rb
+   or
+      /usr/lib/ruby/1.8/universal-darwin8.0/rbconfig.rb
+
+   If haven't '-arch ppc', add it.
+
+3. config, make and install
+
+     ruby setup.rb config -- --with-instant-client=/opt/oracle/instantclient10_1
+     make
+     make install
+
+4. rollback the changes in 2.
+
+***************************
+in progress.
+
+
 = How to run unit tests
 
 1. see "How to run"
@@ -209,7 +249,7 @@
 
    - grant the privilege to connect and execute.
 
-      SQL> GRANT connect, resource TO ruby;
+      SQL> GRANT connect, resource, create synonym TO ruby;
 
    - If the Oracle version is 8i or later:
 

@@ -1,3 +1,8 @@
+2006-04-23  KUBO Takehiro  <kubo@jiubao.org>
+	* Makefile: change version to 0.1.15.
+	* README: add note for Intel Mac.
+	* ext/oci8/extconf.rb: change version to 0.1.15.
+
 2006-04-05  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/attr.c: Fix segmentation fault while GC runs at exit.
 	    It was caused by freeing OCIEnv before freeing OCIRowid.

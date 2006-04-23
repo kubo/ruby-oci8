@@ -1,7 +1,7 @@
 require 'mkmf'
 require File.dirname(__FILE__) + '/oraconf'
 
-RUBY_OCI8_VERSION = '0.1.14'
+RUBY_OCI8_VERSION = '0.1.15'
 
 oraconf = OraConf.new()
 
