@@ -1,4 +1,15 @@
 2006-04-23  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb: disable OCIServerRelease checking.
+	    That's because mswin32 binary is for 8.1 or later, but 8.1.5
+	    doesn't have OCIServerRelease.
+	* ext/oci8/oci8.c: call ruby_setenv on loading oci8lib.so. This is
+	    a workaround for the following problem: OCIInitialize()
+	    implicitly set environment variables. But is make environment
+	    variables invalid when setting $0.
+	* ext/oci8/oraconf.rb: fix for OracleXE windows version. OracleXE's
+	    registry path is \\HKEY_LOCAL_MACHINE\SOFTWARE\ORACLE\KEY_XE.
+
+2006-04-23  KUBO Takehiro  <kubo@jiubao.org>
 	* Makefile: change version to 0.1.15.
 	* README: add note for Intel Mac.
 	* ext/oci8/extconf.rb: change version to 0.1.15.
