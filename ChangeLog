@@ -1,3 +1,32 @@
+2006-06-27  KUBO Takehiro  <kubo@jiubao.org>
+	Many method move to C layer. Add support of Timestamp, Interval
+	year to month and Interval day to second. Oracle's Date become
+	DateTime instead of OraDate.
+	* ext/oci8/env.c: 1. delete code registering ruby_xmalloc(),
+	    ruby_xrealloc() and ruby_xfree() to OCI library. These
+	    API cannot be called only in ruby VM's native thread.
+	    2. add workaround code to avoid breaking ENV.
+	* ext/oci8/oci8.c: move OCI8#parse from ruby to C layer.
+	* ext/oci8/oci8.h, ext/oci8/oci8lib.c: add oci8_id_* variables.
+	* ext/oci8/ocidatetime.c: delete OCIDateTime and OCIInterval.
+	    add OCI8::BindType::DateTime, OCI8::BindType::IntervalYM and
+	    OCI8::BindType::IntervalDS.
+	* ext/oci8/ocinumber.c: delete OCI8::Math::E, OCINumber#trunc
+	    and OCINumber#sign. add OCINumber#truncate and
+	    OCI8::BindType::Integer.
+	* ext/oci8/oraconf.rb:fix for OracleXE windows version. OracleXE's
+	    registry path is \\HKEY_LOCAL_MACHINE\SOFTWARE\ORACLE\KEY_XE.
+	* ext/oci8/oranumber.c: move OCI8::BindType::Integer to ocinumber.c
+	* ext/oci8/stmt.c: OCI8::Cursor#initialize become private.
+	    move OCI8::Cursor#fetch, OCI8::Cursor#[], OCI8::Cursor#[]=,
+	    OCI8::Cursor#keys from ruby to C layer. add a private method
+	    OCI8::Cursor#__defined?
+	* lib/oci8/oci8.rb: many methods move to C layer.
+	* lib/oci8/interval.rb: add OCI8::IntervalYM an OCI8::IntervalDS.
+	* lib/ocidatetime.rb: deleted.
+	* test/test_dbi.rb: fix test script which retrieving Date.
+	* test/test_oci8.rb: fix test script which retrieving Date.
+
 2006-03-05  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: add check_ruby_header to warn when
 	    broken darwin ruby.

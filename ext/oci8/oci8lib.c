@@ -16,6 +16,10 @@ oci8_base_class_t oci8_base_class = {
 };
 
 ID oci8_id_new;
+ID oci8_id_get;
+ID oci8_id_set;
+ID oci8_id_keys;
+int oci8_in_finalizer = 0;
 static ID id_oci8_class;
 
 static VALUE cOCIHandle;
@@ -85,6 +89,11 @@ static VALUE oci8_s_allocate(VALUE klass)
     return obj;
 }
 
+static void at_exit_func(VALUE val)
+{
+    oci8_in_finalizer = 1;
+}
+
 void
 Init_oci8lib()
 {
@@ -92,6 +101,10 @@ Init_oci8lib()
 
     id_oci8_class = rb_intern("__oci8_class__");
     oci8_id_new = rb_intern("new");
+    oci8_id_get = rb_intern("get");
+    oci8_id_set = rb_intern("set");
+    oci8_id_keys = rb_intern("keys");
+    rb_set_end_proc(at_exit_func, Qnil);
 
     /* following two constants will be deleted before release. */
     rb_define_global_const("OCI_DEFAULT", INT2FIX(OCI_DEFAULT));

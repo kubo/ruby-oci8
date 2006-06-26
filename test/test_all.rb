@@ -6,7 +6,6 @@ require './config'
 
 require "#{srcdir}/test_oradate"
 require "#{srcdir}/test_oranumber"
-require "#{srcdir}/test_ocinumber"
 require "#{srcdir}/test_bind_time"
 require "#{srcdir}/test_bind_raw"
 if $test_clob

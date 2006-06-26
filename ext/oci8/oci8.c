@@ -173,6 +173,15 @@ static VALUE oci8_svcctx_logoff(VALUE self)
 }
 
 /*
+ * Creates cursor, prepare to execute SQL statement and return the
+ * instance of OCI8::Cursor.
+ */
+static VALUE oci8_svcctx_parse(VALUE self, VALUE sql)
+{
+    return rb_funcall(cOCIStmt, oci8_id_new, 2, self, sql);
+}
+
+/*
 =begin
 --- OCISvcCtx#passwordChange(username, old_password, new_password [, mode])
      :username
@@ -365,6 +374,7 @@ VALUE Init_oci8(void)
 
     rb_define_method(cOCI8, "initialize", oci8_svcctx_initialize, -1);
     rb_define_method(cOCI8, "logoff", oci8_svcctx_logoff, 0);
+    rb_define_method(cOCI8, "parse", oci8_svcctx_parse, 1);
     rb_define_private_method(cOCI8, "__passwordChange", oci8_password_change, 4);
     rb_define_method(cOCI8, "commit", oci8_commit, 0);
     rb_define_method(cOCI8, "rollback", oci8_rollback, 0);

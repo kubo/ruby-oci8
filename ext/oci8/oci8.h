@@ -179,6 +179,10 @@ void Init_oci8_env(void);
 
 /* oci8lib.c */
 extern ID oci8_id_new;
+extern ID oci8_id_get;
+extern ID oci8_id_set;
+extern ID oci8_id_keys;
+extern int oci8_in_finalizer;
 void oci8_base_free(oci8_base_t *base);
 VALUE oci8_define_class(const char *name, oci8_base_class_t *klass);
 VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_class_t *klass);
@@ -202,6 +206,7 @@ OCISession *oci8_get_oci_session(VALUE obj);
 #define TO_SESSION oci8_get_oci_session
 
 /* stmt.c */
+extern VALUE cOCIStmt;
 void Init_oci8_stmt(VALUE cOCI8);
 
 /* bind.c */

@@ -183,34 +183,6 @@ static oci8_bind_class_t bind_oranumber_class = {
     SQLT_NUM
 };
 
-/*
- * bind_integer
- */
-static VALUE bind_integer_get(oci8_bind_t *bb)
-{
-    oci8_bind_oranumber_t *bo = (oci8_bind_oranumber_t *)bb;
-    unsigned char buf[ORA_NUMBER_BUF_SIZE];
-    ora_number_to_str(buf, NULL, &bo->on, bb->rlen);
-    return rb_cstr2inum(buf, 10);
-}
-
-static void bind_integer_set(oci8_bind_t *bb, VALUE val)
-{
-    rb_notimplement();
-}
-
-static oci8_bind_class_t bind_integer_class = {
-    {
-        NULL,
-        oci8_bind_free,
-        sizeof(oci8_bind_oranumber_t)
-    },
-    bind_integer_get,
-    bind_integer_set,
-    bind_oranumber_init,
-    SQLT_NUM,
-};
-
 void Init_ora_number(void)
 {
     cOraNumber = rb_define_class("OraNumber", rb_cObject);
@@ -222,7 +194,6 @@ void Init_ora_number(void)
     rb_define_method(cOraNumber, "-@", ora_number_uminus, 0);
 
     oci8_define_bind_class("OraNumber", &bind_oranumber_class);
-    oci8_define_bind_class("Integer", &bind_integer_class);
 }
 
 void ora_number_to_str(unsigned char *buf, size_t *lenp, ora_number_t *on, unsigned char size)

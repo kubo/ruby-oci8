@@ -32,6 +32,14 @@ module Logging
 end # module Logging
 
 module MiniRegistry
+  class MiniRegistryError < StandardError
+    attr_reader :api_name
+    attr_reader :code
+    def initialize(api_name, code)
+      @api_name = api_name
+      @code = code
+    end
+  end
   if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/
     # Windows
     require 'Win32API' # raise LoadError when UNIX.
@@ -50,7 +58,7 @@ module MiniRegistry
       result = [0].pack('L')
       code = RegOpenKeyExA.call(root, subkey, 0, 0x20019, result)
       if code != ERROR_SUCCESS
-        raise Win32APIException.new("Win32::RegOpenKeyExA",code)
+        raise MiniRegistryError.new("Win32::RegOpenKeyExA", code)
       end
       hkey = result.unpack('L')[0]
       begin
@@ -59,7 +67,7 @@ module MiniRegistry
         if code == ERROR_FILE_NOT_FOUND
           return nil
         elsif code != ERROR_SUCCESS
-          raise Win32APIException.new("Win32::RegQueryValueExA",code)
+          raise MiniRegistryError.new("Win32::RegQueryValueExA",code)
         end
         len = lpcbData.unpack('L')[0]
         lpType = "\0\0\0\0"
@@ -67,7 +75,7 @@ module MiniRegistry
         lpcbData = [len].pack('L')
         code = RegQueryValueExA.call(hkey, name, nil, lpType, lpData, lpcbData)
         if code != ERROR_SUCCESS
-          raise Win32APIException.new("Win32::RegQueryValueExA",code)
+          raise MiniRegistryError.new("Win32::RegQueryValueExA",code)
         end
         lpData.unpack('Z*')[0]
       ensure
@@ -172,11 +180,13 @@ If it could not be solved, send the following information to kubo@jiubao.org.
 * error messages except 'common error message'.
 * last 100 lines of 'ext/oci8/mkmf.log'.
 * results of the following commands:
+    ruby --version
     ruby -r rbconfig -e "p Config::CONFIG['host']"
     ruby -r rbconfig -e "p Config::CONFIG['CC']"
     ruby -r rbconfig -e "p Config::CONFIG['CFLAGS']"
     ruby -r rbconfig -e "p Config::CONFIG['LDSHARED']"
     ruby -r rbconfig -e "p Config::CONFIG['LDFLAGS']"
+    ruby -r rbconfig -e "p Config::CONFIG['DLDFLAGS']"
     ruby -r rbconfig -e "p Config::CONFIG['LIBS']"
     ruby -r rbconfig -e "p Config::CONFIG['GNU_LD']"
 * if you use gcc:
@@ -260,6 +270,12 @@ Install the ruby development library.
 EOS
       end
     end
+    if RUBY_PLATFORM =~ /linux/ and not File.exist?("/usr/include/sys/types.h")
+      raise <<EOS
+Do you install glibc-devel(redhat) or libc6-dev(debian)?
+You need /usr/include/sys/types.h to compile ruby-oci8.
+EOS
+    end
     puts "ok"
   end
 
@@ -313,13 +329,26 @@ EOS
       if oracle_home.nil?
         struct = Struct.new("OracleHome", :name, :path)
         oracle_homes = []
-        last_home = get_local_registry("SOFTWARE\\ORACLE\\ALL_HOMES", 'LAST_HOME')
-        0.upto last_home.to_i do |id|
-          name = get_local_registry("SOFTWARE\\ORACLE\\ALL_HOMES\\ID#{id}", 'NAME')
-          path = get_local_registry("SOFTWARE\\ORACLE\\ALL_HOMES\\ID#{id}", 'PATH')
-          path.chomp!("\\")
-          oracle_homes << struct.new(name, path) if is_valid_home?(path)
+        begin
+          last_home = get_local_registry("SOFTWARE\\ORACLE\\ALL_HOMES", 'LAST_HOME')
+          0.upto last_home.to_i do |id|
+             oracle_homes << "HOME#{id}"
+          end
+        rescue MiniRegistryError
         end
+        oracle_homes << "KEY_XE"
+        oracle_homes << "KEY_XEClient"
+        oracle_homes.collect! do |home|
+          begin
+            name = get_local_registry("SOFTWARE\\ORACLE\\#{home}", 'ORACLE_HOME_NAME')
+            path = get_local_registry("SOFTWARE\\ORACLE\\#{home}", 'ORACLE_HOME')
+            path.chomp!("\\")
+            struct.new(name, path) if is_valid_home?(path)
+          rescue MiniRegistryError
+            nil
+          end
+        end
+        oracle_homes.compact!
         raise 'Cannot get ORACLE_HOME. Please set the environment valiable ORACLE_HOME.' if oracle_homes.empty?
         if oracle_homes.length == 1
           oracle_home = oracle_homes[0].path
@@ -442,7 +471,7 @@ EOS
       ok = false
       original_CFLAGS = $CFLAGS
       begin
-        for i in ["rdbms/demo", "rdbms/public", "network/public", "plsql/public"]
+        for i in ["rdbms/public", "rdbms/demo", "network/public", "plsql/public"]
           cflags += " -I#{@oracle_home}/#{i}"
           $CFLAGS += " -I#{@oracle_home}/#{i}"
           print("try #{cflags}\n");

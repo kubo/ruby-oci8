@@ -69,8 +69,7 @@ class OCI8
   # same with that of bind variables.
   def exec(sql, *bindvars)
     begin
-      cursor = OCI8::Cursor.new(self)
-      cursor.parse(sql)
+      cursor = parse(sql)
       ret = cursor.exec(*bindvars)
       case cursor.type
       when :select_stmt
@@ -96,14 +95,6 @@ class OCI8
     end
   end # exec
 
-  # Creates cursor, prepare to execute SQL statement and return the
-  # instance of OCI8::Cursor.
-  def parse(sql)
-    cursor = OCI8::Cursor.new(self)
-    cursor.parse(sql)
-    cursor
-  end # parse
-
   module BindType
     Mapping = {}
 
@@ -127,16 +118,6 @@ class OCI8
       end
     end
 
-    # get/set DateTime
-    class DateTime < OCI8::BindType::OCITimestampTZ
-      def set(val)
-        super(val && ::OCITimestampTZ.new(val))
-      end
-      def get()
-        (val = super()) && val.to_datetime
-      end
-    end
-
     # get/set Number (for OCI8::SQLT_NUM)
     class Number
       def self.dispatch(val, length, precision, scale) # :nodoc:
@@ -154,11 +135,8 @@ class OCI8
             # or
             # NUMBER declared without its scale and precision. (Oracle 9.2.0.2 or below)
             bind_type = OCI8::Cursor.instance_eval do ::OCI8::Cursor.bind_unknown_number end
-          elsif precision <= 9
-            # NUMBER(p, 0); p is less than or equals to the precision of Fixnum
-            bind_type = OCI8::BindType::Fixnum
           else
-            # NUMBER(p, 0); p is greater than the precision of Fixnum
+            # NUMBER(p, 0)
             bind_type = OCI8::BindType::Integer
           end
         else
@@ -167,10 +145,110 @@ class OCI8
             bind_type = OCI8::BindType::Float
           else
             # use BigDecimal instead?
-            bind_type = OCI8::BindType::OraNumber
+            bind_type = OCI8::BindType::OCINumber
           end
         end
         bind_type
+      end
+    end
+
+    class IntervalYM
+      alias :get_orig :get
+      def get
+        ym = get_orig
+        ym && ::OCI8::IntervalYM.new(ym[0], ym[1])
+      end
+      alias :set_orig :set
+      def set(val)
+        unless val.nil?
+          v = val.to_i.abs
+          year, month = v.divmod 12
+          if val < 0
+            year = -year
+            month = -month
+          end
+          val = [year, month]
+        end
+        set_orig(val)
+      end
+    end
+
+    class IntervalDS
+      alias :get_orig :get
+      def get
+        ds = get_orig
+        ds && ::OCI8::IntervalDS.new(ds[0], ds[1], ds[2], ds[3], ds[4])
+      end
+      alias :set_orig :set
+      def set(val)
+        unless val.nil?
+          v = val.to_r.abs
+          day, v = v.divmod 1
+          v *= 24
+          hour, v = v.divmod 1
+          v *= 60
+          minute, v = v.divmod 1
+          v *= 60
+          sec, v = v.divmod 1
+          v *= 1000000000
+          fsec, v = v.divmod 1
+          if val < 0
+            day = -day
+            hour = -hour
+            minute = -minute
+            sec = -sec
+            fsec = -fsec
+          end
+          val = [day, hour, minute, sec, fsec]
+        end
+        set_orig(val)
+      end
+    end
+
+    # get/set DateTime
+    class DateTime
+      @@local_offset = (::Time.now.utc_offset / 60).divmod 60
+
+      alias :get_orig :get
+      def get
+        ts = get_orig
+        # ts[0] - year
+        # ts[1] - month
+        # ts[2] - day
+        # ts[3] - hour
+        # ts[4] - minute
+        # ts[5] - sec
+        # ts[6] - fsec
+        # ts[7] - tz_hour
+        # ts[8] - tz_minute
+        ts && ::DateTime.civil(ts[0], ts[1], ts[2], ts[3], ts[4], ts[5].to_r + ts[6].to_r / 1000000000, ts[7].to_r / 24 + ts[8].to_r / 1440)
+      end
+      alias :set_orig :set
+      def set(val)
+        unless val.nil?
+          year = val.year
+          if val.respond_to? :mon
+            mon = val.mon
+          elsif val.respond_to? :month
+            mon = val.month
+          end
+          if val.respond_to? :mday
+            mday = val.mday
+          elsif val.respond_to? :day
+            mday = val.day
+          end
+          hour = val.hour if val.respond_to? :hour
+          min = val.min if val.respond_to? :min
+          sec = val.sec if val.respond_to? :sec
+          fsec = (val.sec_fraction * 86400000000).to_i if val.respond_to? :sec_fraction
+          if val.respond_to? :of
+            tz_hour, tz_minute = (val.of * 1440).to_i.divmod(60)
+          else
+            tz_hour, tz_minute = @@local_offset
+          end
+          val = [year, mon, mday, hour, min, sec, fsec, tz_hour, tz_minute]
+        end
+        set_orig(val)
       end
     end
 
@@ -178,7 +256,7 @@ class OCI8
     Mapping[::String]       = ::OCI8::BindType::String
     Mapping[::OraNumber]    = ::OCI8::BindType::OraNumber
     Mapping[::OCINumber]    = ::OCI8::BindType::OCINumber
-    Mapping[::Fixnum]       = ::OCI8::BindType::Fixnum
+    Mapping[::Fixnum]       = ::OCI8::BindType::Integer
     Mapping[::Float]        = ::OCI8::BindType::Float
     Mapping[::Integer]      = ::OCI8::BindType::Integer
     Mapping[::Bignum]       = ::OCI8::BindType::Integer
@@ -236,7 +314,13 @@ class OCI8
     # datatype        type     size prec scale
     # -------------------------------------------------
     # DATE          SQLT_DAT      7    0    0
-    Mapping[:date] = ::OCI8::BindType::OraDate
+    Mapping[:date] = ::OCI8::BindType::DateTime
+
+    Mapping[:timestamp] = ::OCI8::BindType::DateTime
+    Mapping[:timestamp_tz] = ::OCI8::BindType::DateTime
+    Mapping[:timestamp_ltz] = ::OCI8::BindType::DateTime
+    Mapping[:interval_ym] = ::OCI8::BindType::IntervalYM
+    Mapping[:interval_ds] = ::OCI8::BindType::IntervalDS
 
     # datatype        type     size prec scale
     # -------------------------------------------------
@@ -271,11 +355,11 @@ class OCI8
   class Cursor
 
     # number column declared without its scale and precision. (Oracle 9.2.0.3 or above)
-    @@bind_default_number = OCI8::BindType::Float
+    @@bind_default_number = OCI8::BindType::OCINumber
     # number value whose scale and precision is unknown
     # or
     # number column declared without its scale and precision. (Oracle 9.2.0.2 or below)
-    @@bind_unknown_number = OCI8::BindType::Float
+    @@bind_unknown_number = OCI8::BindType::OCINumber
 
     def self.bind_default_number
       @@bind_default_number
@@ -293,12 +377,6 @@ class OCI8
       @@bind_unknown_number = val
     end
 
-    def parse(sql)
-      free_binds()
-      @names = []
-      __prepare(sql)
-    end # parse
-
     # explicitly indicate the date type of fetched value. run this
     # method within parse and exec. pos starts from 1. lentgh is used
     # when type is String.
@@ -309,13 +387,10 @@ class OCI8
     #  cursor.define(2, Time)       # fetch the second column as Time.
     #  cursor.exec()
     def define(pos, type, length = nil)
-      @defns ||= []
       if type == String and length.nil?
 	length = 4000
       end
       b = bind_or_define(:define, pos, nil, type, length, nil, nil, false)
-      @defns[pos - 1].nil? or @defns[pos - 1].free()
-      @defns[pos - 1] = b
       self
     end # define
 
@@ -361,87 +436,9 @@ class OCI8
     #   cursor.exec()
     #   cursor.close()
     def bind_param(key, val, type = nil, length = nil)
-      @binds = {} if @binds.nil?
       b = bind_or_define(:bind, key, val, type, length, nil, nil, false)
-      @binds[key].free() unless @binds[key].nil?
-      @binds[key] = b
       self
     end # bind_param
-
-    # Gets the value of the bind variable.
-    #
-    # In case of binding explicitly, use same key with that of
-    # OCI8::Cursor#bind_param. A placeholder can be bound by 
-    # name or position. If you bind by name, use that name. If you bind
-    # by position, use the position.
-    #
-    # example:
-    #   cursor = conn.parse("BEGIN :out := 'BAR'; END;")
-    #   cursor.bind_param(':out', 'FOO') # bind by name
-    #   p cursor[':out'] # => 'FOO'
-    #   p cursor[1] # => nil
-    #   cursor.exec()
-    #   p cursor[':out'] # => 'BAR'
-    #   p cursor[1] # => nil
-    #
-    # example:
-    #   cursor = conn.parse("BEGIN :out := 'BAR'; END;")
-    #   cursor.bind_param(1, 'FOO') # bind by position
-    #   p cursor[':out'] # => nil
-    #   p cursor[1] # => 'FOO'
-    #   cursor.exec()
-    #   p cursor[':out'] # => nil
-    #   p cursor[1] # => 'BAR'
-    #
-    # In case of binding by OCI8#exec or OCI8::Cursor#exec,
-    # get the value by position, which starts from 1.
-    #
-    # example:
-    #   cursor = conn.exec("BEGIN :out := 'BAR'; END;", 'FOO')
-    #   # 1st bind variable is bound as String with width 3. Its initial value is 'FOO'
-    #   # After execute, the value become 'BAR'.
-    #   p cursor[1] # => 'BAR'
-    def [](key)
-      if @binds.nil? or @binds[key].nil?
-	return nil 
-      end
-      @binds[key].get()
-    end
-
-    # Sets the value to the bind variable. The way to specify the
-    # +key+ is same with OCI8::Cursor#[]. This is available
-    # to replace the value and execute many times.
-    #
-    # example1:
-    #   cursor = conn.parse("INSERT INTO test(col1) VALUES(:1)")
-    #   cursor.bind_params(1, nil, String, 3)
-    #   ['FOO', 'BAR', 'BAZ'].each do |key|
-    #     cursor[1] = key
-    #     cursor.exec
-    #   end
-    #   cursor.close()
-    #
-    # example2:
-    #   ['FOO', 'BAR', 'BAZ'].each do |key|
-    #     conn.exec("INSERT INTO test(col1) VALUES(:1)", key)
-    #   end
-    #
-    # Both example's results are same. But the former will use less resources.
-    def []=(key, val)
-      if @binds.nil? or @binds[key].nil?
-	return nil 
-      end
-      @binds[key].set(val)
-    end
-
-    # Returns the keys of bind variables as array.
-    def keys
-      if @binds.nil?
-	[]
-      else
-	@binds.keys
-      end
-    end
 
     # Executes the SQL statement assigned the cursor. The type of
     # return value depends on the type of sql statement: select;
@@ -476,29 +473,8 @@ class OCI8
       @names
     end # get_col_names
 
-    # Gets fetched data as array. This is available for select
-    # statement only.
-    #
-    # example:
-    #   conn = OCI8.new('scott', 'tiger')
-    #   cursor = conn.exec('SELECT * FROM emp')
-    #   while r = cursor.fetch()
-    #     puts r.join(',')
-    #   end
-    #   cursor.close
-    #   conn.logoff
-    def fetch
-      if iterator?
-	while ret = fetch_a_row()
-	  yield(ret)
-	end
-      else
-	fetch_a_row()
-      end
-    end # fetch
-
     def fetch_hash
-      if rs = fetch_a_row()
+      if rs = fetch()
         ret = {}
         @names.each do |name|
           ret[name] = rs.shift
@@ -511,8 +487,6 @@ class OCI8
 
     # close the cursor.
     def close
-      free_defns()
-      free_binds()
       free()
       @names = nil
     end # close
@@ -553,10 +527,9 @@ class OCI8
 
     def define_columns
       num_cols = __param_count
-      @defns ||= Array.new(num_cols)
       1.upto(num_cols) do |i|
         parm = __paramGet(i)
-        @defns[i - 1] = define_a_column(i, parm) if @defns[i - 1].nil?
+        define_a_column(i, parm) unless __defiend?(i)
         @names[i - 1] = parm.name
         parm.free
       end
@@ -593,29 +566,6 @@ class OCI8
       end
     end # bind_params
 
-    def fetch_a_row
-      res = __fetch()
-      return nil if res.nil?
-      @defns.collect do |r| r.get() end
-    end # fetch_a_row
-
-    def free_defns
-      unless @defns.nil?
-	@defns.each do |b|
-	  b.free() unless b.nil?
-	end
-      end
-      @defns = nil
-    end # free_defns
-
-    def free_binds
-      unless @binds.nil?
-	@binds.each_value do |b|
-	  b.free()
-	end
-      end
-      @binds = nil
-    end # free_binds
   end # OCI8::Cursor
 end # OCI8
 
@@ -641,5 +591,17 @@ class OraDate
     def to_datetime
       DateTime.new(year, month, day, hour, minute, second, @@tz_offset)
     end
+  end
+end
+
+class Numeric
+  def to_onum
+    OCINumber.new(self)
+  end
+end
+
+class String
+  def to_onum(format = nil, nls_params = nil)
+    OCINumber.new(self, format, nls_params)
   end
 end

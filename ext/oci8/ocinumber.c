@@ -56,6 +56,20 @@ static VALUE make_oci_number(const OCINumber *s)
     return obj;
 }
 
+static VALUE make_integer(const OCINumber *s)
+{
+    signed long sl;
+    text buf[512];
+    ub4 buf_size = sizeof(buf);
+
+    if (OCINumberToInt(oci8_errhp, s, sizeof(sl), OCI_NUMBER_SIGNED, &sl) == OCI_SUCCESS) {
+        return LONG2NUM(sl);
+    }
+    oci_lc(OCINumberToText(oci8_errhp, s, NUMBER_FORMAT2, NUMBER_FORMAT2_LEN,
+                           NULL, 0, &buf_size, buf));
+    return rb_cstr2inum(buf, 10);
+}
+
 /* fill C structure (OCINumber) from a string. */
 static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VALUE nls_params)
 {
@@ -151,6 +165,13 @@ static const OCINumber *get_oci_number(OCINumber *result, VALUE self)
 }
 #define TO_OCINUM(on, val) get_oci_number((on), (val))
 
+/*
+ *  call-seq:
+ *     OCI8::Math.atan2(y, x) => ocinumber
+ *
+ *  Computes the arc tangent given <i>y</i> and <i>x</i>. Returns
+ *  -PI..PI.
+ */
 static VALUE omath_atan2(VALUE self, VALUE Ycoordinate, VALUE Xcoordinate)
 {
     OCINumber nY;
@@ -179,6 +200,13 @@ static VALUE omath_atan2(VALUE self, VALUE Ycoordinate, VALUE Xcoordinate)
     return make_oci_number(&rv);
 }
 
+/*
+ *  call-seq:
+ *     OCI8::Math.cos(x) => ocinumber
+ *
+ *  Computes the cosine of <i>x</i> (expressed in radians). Returns
+ *  -1..1.
+ */
 static VALUE omath_cos(VALUE obj, VALUE radian)
 {
     OCINumber r;
@@ -188,6 +216,13 @@ static VALUE omath_cos(VALUE obj, VALUE radian)
     return make_oci_number(&rv);
 }
 
+/*
+ *  call-seq:
+ *     OCI8::Math.sin(x)    => ocinumber
+ *  
+ *  Computes the sine of <i>x</i> (expressed in radians). Returns
+ *  -1..1.
+ */
 static VALUE omath_sin(VALUE obj, VALUE radian)
 {
     OCINumber r;
@@ -197,6 +232,12 @@ static VALUE omath_sin(VALUE obj, VALUE radian)
     return make_oci_number(&rv);
 }
 
+/*
+ *  call-seq:
+ *     OCI8::Math.tan(x)    => ocinumber
+ *  
+ *  Returns the tangent of <i>x</i> (expressed in radians).
+ */
 static VALUE omath_tan(VALUE obj, VALUE radian)
 {
     OCINumber r;
@@ -206,6 +247,12 @@ static VALUE omath_tan(VALUE obj, VALUE radian)
     return make_oci_number(&rv);
 }
 
+/*
+ *  call-seq:
+ *     OCI8::Math.acos(x)    => ocinumber
+ *  
+ *  Computes the arc cosine of <i>x</i>. Returns 0..PI.
+ */
 static VALUE omath_acos(VALUE obj, VALUE num)
 {
     OCINumber n;
@@ -226,6 +273,12 @@ static VALUE omath_acos(VALUE obj, VALUE num)
     return make_oci_number(&r);
 }
 
+/*
+ *  call-seq:
+ *     OCI8::Math.asin(x)    => ocinumber
+ *  
+ *  Computes the arc sine of <i>x</i>. Returns 0..PI.
+ */
 static VALUE omath_asin(VALUE obj, VALUE num)
 {
     OCINumber n;
@@ -246,6 +299,12 @@ static VALUE omath_asin(VALUE obj, VALUE num)
     return make_oci_number(&r);
 }
 
+/*
+ *  call-seq:
+ *     OCI8::Math.atan(x)    => ocinumber
+ *  
+ *  Computes the arc tangent of <i>x</i>. Returns -{PI/2} .. {PI/2}.
+ */
 static VALUE omath_atan(VALUE obj, VALUE num)
 {
     OCINumber n;
@@ -255,6 +314,12 @@ static VALUE omath_atan(VALUE obj, VALUE num)
     return make_oci_number(&r);
 }
 
+/*
+ *  call-seq:
+ *     OCI8::Math.cosh(x)    => ocinumber
+ *  
+ *  Computes the hyperbolic cosine of <i>x</i> (expressed in radians).
+ */
 static VALUE omath_cosh(VALUE obj, VALUE num)
 {
     OCINumber n;
@@ -264,6 +329,13 @@ static VALUE omath_cosh(VALUE obj, VALUE num)
     return make_oci_number(&r);
 }
 
+/*
+ *  call-seq:
+ *     OCI8::Math.sinh(x)    => ocinumber
+ *  
+ *  Computes the hyperbolic sine of <i>x</i> (expressed in
+ *  radians).
+ */
 static VALUE omath_sinh(VALUE obj, VALUE num)
 {
     OCINumber n;
@@ -273,6 +345,13 @@ static VALUE omath_sinh(VALUE obj, VALUE num)
     return make_oci_number(&r);
 }
 
+/*
+ *  call-seq:
+ *     OCI8::Math.tanh()    => ocinumber
+ *  
+ *  Computes the hyperbolic tangent of <i>x</i> (expressed in
+ *  radians).
+ */
 static VALUE omath_tanh(VALUE obj, VALUE num)
 {
     OCINumber n;
@@ -282,6 +361,12 @@ static VALUE omath_tanh(VALUE obj, VALUE num)
     return make_oci_number(&r);
 }
 
+/*
+ *  call-seq:
+ *     OCI8::Math.exp(x)    => ocinumber
+ *  
+ *  Returns e**x.
+ */
 static VALUE omath_exp(VALUE obj, VALUE num)
 {
     OCINumber n;
@@ -291,6 +376,14 @@ static VALUE omath_exp(VALUE obj, VALUE num)
     return make_oci_number(&r);
 }
 
+/*
+ *  call-seq:
+ *     OCI8::Math.log(numeric)    => ocinumber
+ *     OCI8::Math.log(numeric, base_num)  => ocinumber
+ *  
+ *  Returns the natural logarithm of <i>numeric</i> for one argument.
+ *  Returns the base <i>base_num</i> logarithm of <i>numeric</i> for two arguments.
+ */
 static VALUE omath_log(int argc, VALUE *argv, VALUE obj)
 {
     VALUE num, base;
@@ -299,7 +392,7 @@ static VALUE omath_log(int argc, VALUE *argv, VALUE obj)
     OCINumber r;
     sword sign;
 
-    rb_scan_args(argc, argv, "11", &num, &base /* OCI::Math::E */);
+    rb_scan_args(argc, argv, "11", &num, &base);
     set_oci_number_from_num(&n, num, 1);
     oci_lc(OCINumberSign(oci8_errhp, &n, &sign));
     if (sign <= 0)
@@ -319,6 +412,12 @@ static VALUE omath_log(int argc, VALUE *argv, VALUE obj)
     return make_oci_number(&r);
 }
 
+/*
+ *  call-seq:
+ *     OCI8::Math.log10(numeric)    => ocinumber
+ *  
+ *  Returns the base 10 logarithm of <i>numeric</i>.
+ */
 static VALUE omath_log10(VALUE obj, VALUE num)
 {
     OCINumber n;
@@ -333,6 +432,12 @@ static VALUE omath_log10(VALUE obj, VALUE num)
     return make_oci_number(&r);
 }
 
+/*
+ *  call-seq:
+ *     OCI8::Math.sqrt(numeric)    => ocinumber
+ *  
+ *  Returns the non-negative square root of <i>numeric</i>.
+ */
 static VALUE omath_sqrt(VALUE obj, VALUE num)
 {
     OCINumber n;
@@ -342,20 +447,13 @@ static VALUE omath_sqrt(VALUE obj, VALUE num)
     set_oci_number_from_num(&n, num, 1);
     /* check whether num is negative */
     oci_lc(OCINumberSign(oci8_errhp, &n, &sign));
-    if (sign < 0)
-        rb_raise(rb_eRangeError, "negative value for sqrt");
+    if (sign < 0) {
+        errno = EDOM;
+        rb_sys_fail("sqrt");
+    }
     oci_lc(OCINumberSqrt(oci8_errhp, &n, &r));
     return make_oci_number(&r);
 }
-
-#ifndef HAVE_RB_DEFINE_ALLOC_FUNC /* emulate allocation framework. */
-static VALUE onum_s_new(int argc, VALUE *argv, VALUE klass)
-{
-    VALUE obj = onum_s_alloc(klass);
-    rb_obj_call_init(obj, argc, argv);
-    return obj;
-}
-#endif
 
 static VALUE onum_initialize(int argc, VALUE *argv, VALUE self)
 {
@@ -384,6 +482,12 @@ static VALUE onum_coerce(VALUE self, VALUE other)
              rb_class2name(CLASS_OF(other)), rb_class2name(cOCINumber));
 }
 
+/*
+ *  call-seq:
+ *     -ocinumber   => ocinumber
+ *
+ *  Returns an <code>OCINumber</code>, negated.
+ */
 static VALUE onum_neg(VALUE self)
 {
     OCINumber r;
@@ -392,6 +496,13 @@ static VALUE onum_neg(VALUE self)
     return make_oci_number(&r);
 }
 
+/*
+ *  call-seq:
+ *    onum + other   => onum
+ *
+ *  Returns a new <code>OCINumber</code> which is the sum of <code>onum</code>
+ *  and <code>other</code>.
+ */
 static VALUE onum_add(VALUE lhs, VALUE rhs)
 {
     OCINumber n;
@@ -405,6 +516,13 @@ static VALUE onum_add(VALUE lhs, VALUE rhs)
     return make_oci_number(&r);
 }
 
+/*
+ *  call-seq:
+ *    onum - other   => onum
+ *
+ *  Returns a new <code>OCINumber</code> which is the difference of <code>onum</code>
+ *  and <code>other</code>.
+ */
 static VALUE onum_sub(VALUE lhs, VALUE rhs)
 {
     OCINumber n;
@@ -418,6 +536,13 @@ static VALUE onum_sub(VALUE lhs, VALUE rhs)
     return make_oci_number(&r);
 }
 
+/*
+ *  call-seq:
+ *    onum * other   => onum
+ *
+ *  Returns a new <code>OCINumber</code> which is the product of <code>onum</code>
+ *  and <code>other</code>.
+ */
 static VALUE onum_mul(VALUE lhs, VALUE rhs)
 {
     OCINumber n;
@@ -431,6 +556,13 @@ static VALUE onum_mul(VALUE lhs, VALUE rhs)
     return make_oci_number(&r);
 }
 
+/*
+ *  call-seq:
+ *    onum / other   => onum
+ *
+ *  Returns a new <code>OCINumber</code> which is the result of dividing
+ *  <code>onum</code> by <code>other</code>.
+ */
 static VALUE onum_div(VALUE lhs, VALUE rhs)
 {
     OCINumber n;
@@ -449,6 +581,12 @@ static VALUE onum_div(VALUE lhs, VALUE rhs)
     return make_oci_number(&r);
 }
 
+/*
+ *  call-seq:
+ *    onum % other   => onum
+ *
+ *  Returns the modulo after division of <code>onum</code> by <code>other</code>.
+ */
 static VALUE onum_mod(VALUE lhs, VALUE rhs)
 {
     OCINumber n;
@@ -467,6 +605,12 @@ static VALUE onum_mod(VALUE lhs, VALUE rhs)
     return make_oci_number(&r);
 }
 
+/*
+ *  call-seq:
+ *    onum ** other   => onum
+ *
+ *  Raises <code>onum</code> the <code>other</code> power.
+ */
 static VALUE onum_power(VALUE lhs, VALUE rhs)
 {
     OCINumber n;
@@ -491,6 +635,14 @@ static VALUE onum_power(VALUE lhs, VALUE rhs)
     return make_oci_number(&r); 
 }
 
+/*
+ *  call-seq:
+ *    onum <=> other   => -1, 0, +1
+ *
+ *  Returns -1, 0, or +1 depending on whether <i>onum</i> is less than,
+ *  equal to, or greater than <i>other</i>. This is the basis for the
+ *  tests in <code>Comparable</code>.
+ */
 static VALUE onum_cmp(VALUE lhs, VALUE rhs)
 {
     OCINumber n;
@@ -504,22 +656,43 @@ static VALUE onum_cmp(VALUE lhs, VALUE rhs)
     return INT2NUM(r);
 }
 
+/*
+ *  call-seq:
+ *     onum.floor   => integer
+ *  
+ *  Returns the largest <code>Integer</code> less than or equal to <i>onum</i>.
+ */
 static VALUE onum_floor(VALUE self)
 {
     OCINumber r;
 
     oci_lc(OCINumberFloor(oci8_errhp, _NUMBER(self), &r));
-    return make_oci_number(&r);
+    return make_integer(&r);
 }
 
+/*
+ *  call-seq:
+ *     onum.ceil    => integer
+ *  
+ *  Returns the smallest <code>Integer</code> greater than or equal to
+ *  <i>onum</i>.
+ */
 static VALUE onum_ceil(VALUE self)
 {
     OCINumber r;
 
     oci_lc(OCINumberCeil(oci8_errhp, _NUMBER(self), &r));
-    return make_oci_number(&r);
+    return make_integer(&r);
 }
 
+/*
+ *  call-seq:
+ *     onum.round      => integer
+ *     onum.round(decplace) => onum
+ *  
+ *  Rounds <i>onum</i> to the nearest <code>Integer</code> when no argument.
+ *  Rounds <i>onum</i> to a specified decimal place <i>decplace</i> when one argument.
+ */
 static VALUE onum_round(int argc, VALUE *argv, VALUE self)
 {
     VALUE decplace;
@@ -527,9 +700,21 @@ static VALUE onum_round(int argc, VALUE *argv, VALUE self)
 
     rb_scan_args(argc, argv, "01", &decplace /* 0 */);
     oci_lc(OCINumberRound(oci8_errhp, _NUMBER(self), NIL_P(decplace) ? 0 : NUM2INT(decplace), &r));
-    return make_oci_number(&r);
+    if (argc == 0) {
+        return make_integer(&r);
+    } else {
+        return make_oci_number(&r);
+    }
 }
 
+/*
+ *  call-seq:
+ *     onum.truncate     => integer
+ *     onum.truncate(decplace) => ocinumber
+ *  
+ *  Truncates <i>onum</i> to the <code>Integer</code> when no argument.
+ *  Truncates <i>onum</i> to a specified decimal place <i>decplace</i> when one argument.
+ */
 static VALUE onum_trunc(int argc, VALUE *argv, VALUE self)
 {
     VALUE decplace;
@@ -540,6 +725,16 @@ static VALUE onum_trunc(int argc, VALUE *argv, VALUE self)
     return make_oci_number(&r);
 }
 
+/*
+ *  call-seq:
+ *     onum.round_prec(digits) => ocinumber
+ *  
+ *  Rounds <i>onum</i> to a specified number of decimal digits.
+ *
+ *   OCINumber.new(1.234).round_prec(2)  #=> 1.2
+ *   OCINumber.new(12.34).round_prec(2)  #=> 12
+ *   OCINumber.new(123.4).round_prec(2)  #=> 120
+ */
 static VALUE onum_round_prec(VALUE self, VALUE ndigs)
 {
     OCINumber r;
@@ -548,6 +743,14 @@ static VALUE onum_round_prec(VALUE self, VALUE ndigs)
     return make_oci_number(&r);
 }
 
+/*
+ *  call-seq:
+ *     onum.to_char(fmt = nil, nls_params = nil)  => string
+ *  
+ *  Returns a string containing a representation of self.
+ *  <i>fmt</i> and <i>nls_params</i> are same meanings with
+ *  <code>TO_CHAR</code> of Oracle function.
+ */
 static VALUE onum_to_char(int argc, VALUE *argv, VALUE self)
 {
     VALUE fmt;
@@ -610,27 +813,38 @@ static VALUE onum_to_char(int argc, VALUE *argv, VALUE self)
     return rb_str_new(buf, buf_size);
 }
 
+/*
+ *  call-seq:
+ *     onum.to_s    => string
+ *  
+ *  Returns a string containing a representation of self.
+ */
 static VALUE onum_to_s(VALUE self)
 {
     return onum_to_char(0, NULL, self);
 }
 
+/*
+ *  call-seq:
+ *     onum.to_i       => integer
+ *  
+ *  Returns <i>onm</i> truncated to an <code>Integer</code>.
+ */
 static VALUE onum_to_i(VALUE self)
 {
     OCINumber num;
-    signed long sl;
-    text buf[512];
-    ub4 buf_size = sizeof(buf);
 
     oci_lc(OCINumberTrunc(oci8_errhp, _NUMBER(self), 0, &num));
-    if (OCINumberToInt(oci8_errhp, &num, sizeof(sl), OCI_NUMBER_SIGNED, &sl) == OCI_SUCCESS) {
-        return LONG2NUM(sl);
-    }
-    oci_lc(OCINumberToText(oci8_errhp, &num, NUMBER_FORMAT2, NUMBER_FORMAT2_LEN,
-                           NULL, 0, &buf_size, buf));
-    return rb_cstr2inum(buf, 10);
+    return make_integer(&num);
 }
 
+/*
+ *  call-seq:
+ *     onum.to_f -> float
+ *  
+ *  Converts <i>onum</i> to a <code>Float</code>.
+ *     
+ */
 static VALUE onum_to_f(VALUE self)
 {
     double dbl;
@@ -639,14 +853,23 @@ static VALUE onum_to_f(VALUE self)
     return rb_float_new(dbl);
 }
 
-static VALUE onum_sign(VALUE self)
+/*
+ *  call-seq:
+ *     onum.to_onum -> onum
+ *  
+ */
+static VALUE onum_to_onum(VALUE self)
 {
-    sword result;
-
-    oci_lc(OCINumberSign(oci8_errhp, _NUMBER(self), &result));
-    return INT2FIX(result);
+    return self;
 }
 
+/*
+ *  call-seq:
+ *     onum.zero?    => true or false
+ *  
+ *  Returns <code>true</code> if <i>onum</i> is zero.
+ *     
+ */
 static VALUE onum_zero_p(VALUE self)
 {
     boolean result;
@@ -655,6 +878,13 @@ static VALUE onum_zero_p(VALUE self)
     return result ? Qtrue : Qfalse;
 }
 
+/*
+ *  call-seq:
+ *     onum.abs -> ocinumber
+ *  
+ *  Returns the absolute value of <i>onum</i>.
+ *     
+ */
 static VALUE onum_abs(VALUE self)
 {
     OCINumber result;
@@ -663,6 +893,12 @@ static VALUE onum_abs(VALUE self)
     return make_oci_number(&result);
 }
 
+/*
+ *  call-seq:
+ *     onum.shift(fixnum)    => ocinumber
+ *  
+ *  Returns <i>onum</i> * 10**<i>fixnum</i>
+ */
 static VALUE onum_shift(VALUE self, VALUE exp)
 {
     OCINumber result;
@@ -690,25 +926,21 @@ static VALUE onum_hash(VALUE self)
 
 static VALUE onum_inspect(VALUE self)
 {
-    unsigned char *c  = DATA_PTR(self);
-    int size = c[0] + 1;
-    int i;
     char *name = rb_class2name(CLASS_OF(self));
-    VALUE s = onum_to_s(self);
-    VALUE rv = rb_str_new(0, strlen(name) + RSTRING(s)->len + size * 3 + 32);
-    char *ptr = RSTRING(rv)->ptr;
+    volatile VALUE s = onum_to_s(self);
+    volatile VALUE rv = rb_str_new(0, strlen(name) + RSTRING(s)->len + 5);
 
-    sprintf(ptr, "#<%s:%s(%u", name, RSTRING(s)->ptr, c[0]);
-    ptr += strlen(ptr);
-    for (i = 1; i < size; i++) {
-        sprintf(ptr, ".%u", c[i]);
-        ptr += strlen(ptr);
-    }
-    strcpy(ptr, ")>");
+    sprintf(RSTRING(rv)->ptr, "#<%s:%s>", name, RSTRING(s)->ptr);
     RSTRING(rv)->len = strlen(RSTRING(rv)->ptr);
     return rv;
 }
 
+/*
+ *  call-seq:
+ *    onum._dump   => string
+ *
+ *  Dump <i>onum</i>_ for marshaling.
+ */
 static VALUE onum_dump(int argc, VALUE *argv, VALUE self)
 {
     char *c  = DATA_PTR(self);
@@ -719,6 +951,12 @@ static VALUE onum_dump(int argc, VALUE *argv, VALUE self)
     return rb_str_new(c, size);
 }
 
+/*
+ *  call-seq:
+ *    OCINumber._load(string)   => ocinumber
+ *
+ *  Unmarshal a dumped <code>OCINumber</code> object.
+ */
 static VALUE
 onum_s_load(VALUE klass, VALUE str)
 {
@@ -751,10 +989,25 @@ static VALUE bind_ocinumber_get(oci8_bind_t *bb)
     return make_oci_number(&bo->on);
 }
 
+static VALUE bind_integer_get(oci8_bind_t *bb)
+{
+    oci8_bind_ocinumber_t *bo = (oci8_bind_ocinumber_t *)bb;
+    return make_integer(&bo->on);
+}
+
 static void bind_ocinumber_set(oci8_bind_t *bb, VALUE val)
 {
     oci8_bind_ocinumber_t *bo = (oci8_bind_ocinumber_t *)bb;
     set_oci_number_from_num(&bo->on, val, 1);
+}
+
+static void bind_integer_set(oci8_bind_t *bb, VALUE val)
+{
+    oci8_bind_ocinumber_t *bo = (oci8_bind_ocinumber_t *)bb;
+    OCINumber num;
+
+    set_oci_number_from_num(&num, val, 1);
+    oci_lc(OCINumberTrunc(oci8_errhp, &num, 0, &bo->on));
 }
 
 static void bind_ocinumber_init(oci8_bind_t *bb, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
@@ -776,14 +1029,29 @@ static oci8_bind_class_t bind_ocinumber_class = {
     SQLT_VNU,
 };
 
+static oci8_bind_class_t bind_integer_class = {
+    {
+        NULL,
+        oci8_bind_free,
+        sizeof(oci8_bind_ocinumber_t)
+    },
+    bind_integer_get,
+    bind_integer_set,
+    bind_ocinumber_init,
+    SQLT_VNU,
+};
+
 void
 Init_oci_number(VALUE cOCI8)
 {
     VALUE mMath;
     OCINumber num1, num2;
-    VALUE obj_PI, obj_E;
+    VALUE obj_PI;
     signed long sl;
 
+#if 0 /* for rdoc */
+    cOCI8 = rb_define_class("OCI8", rb_cObject);
+#endif
     cOCINumber = rb_define_class("OCINumber", rb_cNumeric);
     mMath = rb_define_module_under(cOCI8, "Math");
 
@@ -812,17 +1080,8 @@ Init_oci_number(VALUE cOCI8)
     OCINumberSetPi(oci8_errhp, &num1);
     obj_PI = make_oci_number(&num1);
 
-    /* E */
-    sl = 1;
-    OCINumberFromInt(oci8_errhp, &sl, sizeof(sl), OCI_NUMBER_SIGNED, &num1); /* num1 := 1 */
-    OCINumberExp(oci8_errhp, &num1, &num2); /* num2 := exp(1) */
-    obj_E = make_oci_number(&num2);
-
-    /*
-     * constans of OCI::Math.
-     */
+    /* The ratio of the circumference of a circle to its diameter. */
     rb_define_const(mMath, "PI", obj_PI);
-    rb_define_const(mMath, "E", obj_E);
 
     /*
      * module functions of OCI::Math.
@@ -846,17 +1105,13 @@ Init_oci_number(VALUE cOCI8)
     rb_define_module_function(mMath, "log10", omath_log10, 1);
     rb_define_module_function(mMath, "sqrt", omath_sqrt, 1);
 
-#ifdef HAVE_RB_DEFINE_ALLOC_FUNC
-    /* ruby 1.8 */
     rb_define_alloc_func(cOCINumber, onum_s_alloc);
-#else
-    /* ruby 1.6 */
-    rb_define_singleton_method(cOCINumber, "new", onum_s_new, -1);
-#endif
 
     /* methods of OCI::Number */
     rb_define_method_nodoc(cOCINumber, "initialize", onum_initialize, -1);
     rb_define_method_nodoc(cOCINumber, "coerce", onum_coerce, 1);
+
+    rb_include_module(cOCINumber, rb_mComparable);
 
     rb_define_method(cOCINumber, "-@", onum_neg, 0);
     rb_define_method(cOCINumber, "+", onum_add, 1);
@@ -870,15 +1125,15 @@ Init_oci_number(VALUE cOCI8)
     rb_define_method(cOCINumber, "floor", onum_floor, 0);
     rb_define_method(cOCINumber, "ceil", onum_ceil, 0);
     rb_define_method(cOCINumber, "round", onum_round, -1);
-    rb_define_method(cOCINumber, "trunc", onum_trunc, -1);
+    rb_define_method(cOCINumber, "truncate", onum_trunc, -1);
     rb_define_method(cOCINumber, "round_prec", onum_round_prec, 1);
 
     rb_define_method(cOCINumber, "to_s", onum_to_s, 0);
     rb_define_method(cOCINumber, "to_char", onum_to_char, -1);
     rb_define_method(cOCINumber, "to_i", onum_to_i, 0);
     rb_define_method(cOCINumber, "to_f", onum_to_f, 0);
+    rb_define_method_nodoc(cOCINumber, "to_onum", onum_to_onum, 0);
 
-    rb_define_method(cOCINumber, "sign", onum_sign, 0);
     rb_define_method(cOCINumber, "zero?", onum_zero_p, 0);
     rb_define_method(cOCINumber, "abs", onum_abs, 0);
     rb_define_method(cOCINumber, "shift", onum_shift, 1);
@@ -891,6 +1146,7 @@ Init_oci_number(VALUE cOCI8)
     rb_define_singleton_method(cOCINumber, "_load", onum_s_load, 1);
 
     oci8_define_bind_class("OCINumber", &bind_ocinumber_class);
+    oci8_define_bind_class("Integer", &bind_integer_class);
 }
 
 OCINumber *oci8_get_ocinumber(VALUE num)
