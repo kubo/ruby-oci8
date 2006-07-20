@@ -270,6 +270,12 @@ Install the ruby development library.
 EOS
       end
     end
+    if RUBY_PLATFORM =~ /linux/ and not File.exist?("/usr/include/sys/types.h")
+      raise <<EOS
+Do you install glibc-devel(redhat) or libc6-dev(debian)?
+You need /usr/include/sys/types.h to compile ruby-oci8.
+EOS
+    end
     puts "ok"
   end
 

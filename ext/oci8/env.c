@@ -14,12 +14,33 @@ correspond native OCI datatype: ((|OCIEnv|))
 =end
 */
 #include "oci8.h"
+#include <util.h> /* ruby_setenv */
 
 static VALUE oci8_env_s_initialize(int argc, VALUE *argv, VALUE klass)
 {
   VALUE vmode;
   ub4 mode;
   sword rv;
+
+#ifndef WIN32
+  /* workaround code.
+   *
+   * Some instant clients set the environment variables
+   * ORA_NLS_PROFILE33, ORA_NLS10 and ORACLE_HOME if they aren't
+   * set. It causes problems on some platforms.
+   */
+  if (RTEST(rb_eval_string("RUBY_VERSION == \"1.8.4\""))) {
+    if (getenv("ORA_NLS_PROFILE33") == NULL) {
+      ruby_setenv("ORA_NLS_PROFILE33", "");
+    }
+    if (getenv("ORA_NLS10") == NULL) {
+      ruby_setenv("ORA_NLS10", "");
+    }
+    if (getenv("ORACLE_HOME") == NULL) {
+      ruby_setenv("ORACLE_HOME", ".");
+    }
+  }
+#endif /* WIN32 */
 
   rb_scan_args(argc, argv, "01", &vmode);
   Get_Int_With_Default(argc, 1, vmode, mode, OCI_DEFAULT); /* 1 */

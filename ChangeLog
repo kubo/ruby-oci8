@@ -1,3 +1,12 @@
+2006-07-20  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c, ext/oci8/env.c: move workaround code for
+	    instant client environment variable problem from
+	    ext/oci8/oci8.c to ext/oci8/env.c.
+	* ext/oci8/oraconf.rb: check a c develop file when linux.
+	* VERSION, Makefile, ext/oci8/extconf.rb: read version string from
+	    the VERSION file.
+	* lib/oci8.rb.in: use OCIEnv.create when it exists.
+
 2006-04-23  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb: disable OCIServerRelease checking.
 	    That's because mswin32 binary is for 8.1 or later, but 8.1.5

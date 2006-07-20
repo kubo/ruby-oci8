@@ -43,7 +43,6 @@
 =end
 */
 #include "oci8.h"
-#include <util.h>
 
 /* #define DEBUG_CORE_FILE 1 */
 #ifdef DEBUG_CORE_FILE
@@ -80,10 +79,6 @@ VALUE cOraNumber;
 void
 Init_oci8lib()
 {
-#ifndef _WIN32
-  ruby_setenv("", NULL); /* duplicate environ vars */
-#endif
-
   /* Handle */
   cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
   cOCIEnv = rb_define_class("OCIEnv", cOCIHandle);

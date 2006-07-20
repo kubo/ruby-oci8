@@ -1,6 +1,7 @@
 ChangeLog
 Makefile
 README
+VERSION
 metaconfig
 pre-distclean.rb
 setup.rb

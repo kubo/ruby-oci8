@@ -1,4 +1,4 @@
-VERSION = 0.1.15
+VERSION = `cat VERSION`
 RUBY = ruby
 CONFIG_OPT = 
 

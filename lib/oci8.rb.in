@@ -32,8 +32,12 @@ class OCIBind # :nodoc:
 end
 
 class OCI8
-  OCIEnv.initialise(OCI_OBJECT)
-  @@env = OCIEnv.init()
+  if OCIEnv.respond_to?("create")
+    @@env = OCIEnv.create(OCI_OBJECT)
+  else
+    OCIEnv.initialise(OCI_OBJECT)
+    @@env = OCIEnv.init()
+  end
 
   VERSION = '@@OCI8_MODULE_VERSION@@'
   CLIENT_VERSION = '@@OCI8_CLIENT_VERSION@@'
