@@ -1,3 +1,10 @@
+2006-07-20  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.h, ext/oci8/rowid.c, ext/oci8/oci8lib.c: change
+	    Rowid's internal structure when OCIRowidToChar is available.
+	    The new structure can be passed to Marshal.
+	* VERSION, Makefile, ext/oci8/extconf.rb: 
+	    read version string from the VERSION file.
+
 2006-06-27  KUBO Takehiro  <kubo@jiubao.org>
 	Many method move to C layer. Add support of Timestamp, Interval
 	year to month and Interval day to second. Oracle's Date become

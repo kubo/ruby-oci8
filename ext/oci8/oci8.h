@@ -32,6 +32,10 @@ extern "C" {
 #define ASSERT(v)
 #endif
 
+#ifdef _WIN32
+#define RUNTIME_API_CHECK
+#endif
+
 #define IS_OCI_ERROR(v) (((v) != OCI_SUCCESS) && ((v) != OCI_SUCCESS_WITH_INFO))
 
 #define rb_define_method_nodoc rb_define_method
@@ -188,6 +192,11 @@ VALUE oci8_define_class(const char *name, oci8_base_class_t *klass);
 VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_class_t *klass);
 VALUE oci8_define_bind_class(const char *name, oci8_bind_class_t *oci8_bind_class);
 extern oci8_base_class_t oci8_base_class;
+#ifdef RUNTIME_API_CHECK
+typedef sword (*rboci8_OCIRowidToChar_t)(OCIRowid *, OraText *, ub2 *, OCIError *);
+extern rboci8_OCIRowidToChar_t rboci8_OCIRowidToChar;
+#define OCIRowidToChar rboci8_OCIRowidToChar
+#endif
 
 /* error.c */
 extern VALUE eOCIException;

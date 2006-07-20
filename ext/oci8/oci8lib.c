@@ -9,6 +9,10 @@
 #include <signal.h>
 #endif
 
+#ifdef RUNTIME_API_CHECK
+rboci8_OCIRowidToChar_t rboci8_OCIRowidToChar;
+#endif
+
 oci8_base_class_t oci8_base_class = {
     NULL,
     NULL,
@@ -98,6 +102,14 @@ void
 Init_oci8lib()
 {
     VALUE cOCI8;
+
+#ifdef RUNTIME_API_CHECK
+#ifdef _WIN32
+    rboci8_OCIRowidToChar = (rboci8_OCIRowidToChar_t)GetProcAddress(GetModuleHandle("OCI.DLL"), "OCIRowidToChar");
+#else
+#error RUNTIME_API_CHECK is not supported on this platform.
+#endif
+#endif
 
     id_oci8_class = rb_intern("__oci8_class__");
     oci8_id_new = rb_intern("new");

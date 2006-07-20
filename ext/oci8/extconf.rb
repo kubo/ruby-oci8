@@ -1,7 +1,7 @@
 require 'mkmf'
 require File.dirname(__FILE__) + '/oraconf'
 
-RUBY_OCI8_VERSION = '0.2.0-alpha'
+RUBY_OCI8_VERSION = File.read("#{File.dirname(__FILE__)}/../../VERSION").chomp
 
 oraconf = OraConf.new()
 
@@ -53,6 +53,8 @@ have_func("OCILobClose")
 
 have_func("OCILobLocatorAssign")
 $defs.push("-DHAVE_OCIRESET") unless /80./ =~ oraconf.version
+
+have_func("OCIRowidToChar")
 
 # Checking gcc or not
 if oraconf.cc_is_gcc
