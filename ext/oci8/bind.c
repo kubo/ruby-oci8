@@ -14,6 +14,11 @@ static ID id_set;
 
 static VALUE cOCIBind;
 
+typedef struct {
+    sb4 size;
+    char buf[1];
+} vstr_t;
+
 /*
  * bind_string
  */
@@ -33,22 +38,26 @@ static void bind_string_free(oci8_base_t *base)
 
 static VALUE bind_string_get(oci8_bind_t *base)
 {
-    return rb_str_new(base->valuep, base->rlen);
+    vstr_t *vstr = base->valuep;
+    return rb_str_new(vstr->buf, vstr->size);
 }
 
 static void bind_string_set(oci8_bind_t *base, VALUE val)
 {
+    vstr_t *vstr = base->valuep;
+
     StringValue(val);
-    if (RSTRING(val)->len > base->value_sz) {
-        rb_raise(rb_eArgError, "too long String to set. (%d for %d)", RSTRING(val)->len, base->value_sz);
+    if (RSTRING(val)->len > base->value_sz - sizeof(vstr->size)) {
+        rb_raise(rb_eArgError, "too long String to set. (%d for %d)", RSTRING(val)->len, base->value_sz - sizeof(vstr->size));
     }
-    memcpy(base->valuep, RSTRING(val)->ptr, RSTRING(val)->len);
-    base->rlen = RSTRING(val)->len;
+    memcpy(vstr->buf, RSTRING(val)->ptr, RSTRING(val)->len);
+    vstr->size = RSTRING(val)->len;
 }
 
 static void bind_string_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
     sb4 sz = 0;
+    vstr_t *vstr;
 
     if (NIL_P(length)) {
         if (NIL_P(*val)) {
@@ -62,8 +71,11 @@ static void bind_string_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE len
     if (sz <= 0) {
         rb_raise(rb_eArgError, "invalid bind length %d", sz);
     }
-    base->valuep = xmalloc(sz);
-    base->value_sz = sz;
+    base->valuep = xmalloc(sizeof(vstr->size) + sz);
+    base->value_sz = sizeof(vstr->size) + sz;
+    base->use_rlen = 0;
+    vstr = base->valuep;
+    vstr->size = sz;
 }
 
 static oci8_bind_class_t bind_string_class = {
@@ -75,7 +87,7 @@ static oci8_bind_class_t bind_string_class = {
     bind_string_get,
     bind_string_set,
     bind_string_init,
-    SQLT_CHR
+    SQLT_LVC
 };
 
 /*
@@ -90,7 +102,7 @@ static oci8_bind_class_t bind_raw_class = {
     bind_string_get,
     bind_string_set,
     bind_string_init,
-    SQLT_BIN
+    SQLT_LVB
 };
 
 /*
@@ -210,6 +222,7 @@ static VALUE oci8_bind_initialize(VALUE self, VALUE svc, VALUE val, VALUE length
 
     base->next = base;
     base->prev = base;
+    base->use_rlen = 1;
     bind_class->init(base, svc, &val, length, prec, scale);
     base->rlen = base->value_sz;
     base->ind = -1;

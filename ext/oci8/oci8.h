@@ -73,6 +73,7 @@ struct oci8_bind {
     oci8_bind_t *prev;
     void *valuep;
     sb4 value_sz;
+    ub2 use_rlen;
     ub2 rlen;
     sb2 ind;
 };
@@ -86,6 +87,7 @@ typedef struct  {
     OCISession *authhp;
     OCIServer *srvhp;
     int is_autocommit;
+    VALUE long_read_len;
 } oci8_svcctx_t;
 
 #define Check_Handle(obj, klass, hp) do { \

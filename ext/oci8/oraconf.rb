@@ -411,7 +411,7 @@ EOS
 
     def get_cflags
       unless File.exist?("#{oci_base_dir}/INCLUDE/OCI.H")
-        raise "'#{oci_base_dir}/INCLUDE/OCI.H' does not exits. Please install 'Oracle Call Interface'."
+        raise "'#{oci_base_dir}/INCLUDE/OCI.H' does not exists. Please install 'Oracle Call Interface'."
       end
       if RUBY_PLATFORM =~ /cygwin/
         " -I#{oci_base_dir}/INCLUDE -D_int64=\"long long\""

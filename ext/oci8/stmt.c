@@ -86,6 +86,7 @@ static VALUE oci8_stmt_initialize(int argc, VALUE *argv, VALUE self)
     stmt->binds = rb_hash_new();
     stmt->defns = rb_ary_new();
     rb_iv_set(stmt->base.self, "@names", rb_ary_new());
+    rb_iv_set(stmt->base.self, "@con", svc);
 
     if (argc > 1) {
         rv = OCIStmtPrepare(stmt->base.hp, oci8_errhp, RSTRING(sql)->ptr, RSTRING(sql)->len, OCI_NTV_SYNTAX, OCI_DEFAULT);
@@ -137,7 +138,7 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
         oci8_base_free(&bind->base); /* TODO: OK? */
     }
     bind_class = (oci8_bind_class_t *)bind->base.klass;
-    status = OCIDefineByPos(stmt->base.hp, (OCIDefine**)&bind->base.hp, oci8_errhp, position, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, &bind->rlen, 0, OCI_DEFAULT);
+    status = OCIDefineByPos(stmt->base.hp, (OCIDefine**)&bind->base.hp, oci8_errhp, position, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, bind->use_rlen ? &bind->rlen : NULL, 0, OCI_DEFAULT);
     if (status != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, status, stmt->base.hp);
     }
@@ -196,9 +197,9 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     bind_class = (oci8_bind_class_t *)bind->base.klass;
 
     if (placeholder_ptr == (char*)-1) {
-        status = OCIBindByPos(stmt->base.hp, (OCIBind**)&bind->base.hp, oci8_errhp, position, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, &bind->rlen, 0, 0, 0, OCI_DEFAULT);
+        status = OCIBindByPos(stmt->base.hp, (OCIBind**)&bind->base.hp, oci8_errhp, position, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, bind->use_rlen ? &bind->rlen : NULL, 0, 0, 0, OCI_DEFAULT);
     } else {
-        status = OCIBindByName(stmt->base.hp, (OCIBind**)&bind->base.hp, oci8_errhp, placeholder_ptr, placeholder_len, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, &bind->rlen, 0, 0, 0, OCI_DEFAULT);
+        status = OCIBindByName(stmt->base.hp, (OCIBind**)&bind->base.hp, oci8_errhp, placeholder_ptr, placeholder_len, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, bind->use_rlen ? &bind->rlen : NULL, 0, 0, 0, OCI_DEFAULT);
     }
     if (status != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, status, stmt->base.hp);

@@ -549,8 +549,7 @@ class OCI8
         # three in UTF-8.
         datasize *= 3
       when :long, :long_raw
-        # TODO: use OCI_DYNAMIC_FETCH
-        datasize = 65535
+        datasize = @con.long_read_len
       end
 
       bind_or_define(:define, i, nil, datatype, datasize, precision, scale, true)

@@ -316,6 +316,20 @@ static VALUE oci8_set_autocommit(VALUE self, VALUE val)
     return val;
 }
 
+static VALUE oci8_long_read_len(VALUE self)
+{
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    return svcctx->long_read_len;
+}
+
+static VALUE oci8_set_long_read_len(VALUE self, VALUE val)
+{
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    Check_Type(val, T_FIXNUM);
+    svcctx->long_read_len = val;
+    return val;
+}
+
 static VALUE oci8_server_version(VALUE self)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
@@ -382,6 +396,8 @@ VALUE Init_oci8(void)
     rb_define_method(cOCI8, "non_blocking=", oci8_set_non_blocking, 1);
     rb_define_method(cOCI8, "autocommit?", oci8_autocommit_p, 0);
     rb_define_method(cOCI8, "autocommit=", oci8_set_autocommit, 1);
+    rb_define_method(cOCI8, "long_read_len", oci8_long_read_len, 0);
+    rb_define_method(cOCI8, "long_read_len=", oci8_set_long_read_len, 1);
     rb_define_method(cOCI8, "version", oci8_server_version, 0);
 #ifdef HAVE_OCISERVERRELEASE
     rb_define_method(cOCI8, "release", oci8_server_release, 0);
