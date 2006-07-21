@@ -106,6 +106,7 @@ class OCI8
     CTX_EXECFLAG = 0
     CTX_MUTEX = 1
     CTX_THREAD = 2
+    CTX_LONG_READ_LEN = 3
 
     def do_ocicall(ctx)
       sleep_time = 0.01
@@ -144,7 +145,7 @@ class OCI8
     end
 
     @prefetch_rows = nil
-    @ctx = [0, Mutex.new, nil]
+    @ctx = [0, Mutex.new, nil, 65535]
     if @privilege
       @svc = @@env.alloc(OCISvcCtx)
       @srv = @@env.alloc(OCIServer)
@@ -272,6 +273,14 @@ class OCI8
       end
     end
   end # break
+
+  def long_read_len
+    @ctx[OCI8::Util::CTX_LONG_READ_LEN]
+  end
+
+  def long_read_len=(len)
+    @ctx[OCI8::Util::CTX_LONG_READ_LEN] = len
+  end
 
   module BindType
     # get/set String
@@ -711,8 +720,7 @@ class OCI8
         # three in UTF-8.
         datasize *= 3
       when SQLT_LNG, SQLT_LBI
-        # TODO: use OCI_DYNAMIC_FETCH
-        datasize = 65535
+        datasize = @ctx[OCI8::Util::CTX_LONG_READ_LEN]
       end
 
       bind_or_define(:define, i, nil, datatype, datasize, precision, scale, true)

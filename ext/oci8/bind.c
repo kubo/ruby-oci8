@@ -74,7 +74,7 @@ VALUE oci8_get_value(oci8_bind_handle_t *hp)
     return Qnil;
   switch (hp->bind_type) {
   case BIND_STRING:
-    return rb_str_new(hp->value.str, hp->rlen);
+    return rb_str_new(hp->value.str.buf, hp->value.str.len);
   case BIND_FIXNUM:
     return INT2FIX(hp->value.sw);
   case BIND_INTEGER_VIA_ORA_NUMBER:
@@ -125,11 +125,11 @@ void oci8_set_value(oci8_bind_handle_t *hp, VALUE val)
     break;
   case BIND_STRING:
     Check_Type(val, T_STRING);
-    if (hp->value_sz < RSTRING(val)->len) {
-      rb_raise(rb_eArgError, "Assigned string is too long. %d (max %d)", RSTRING(val)->len, hp->value_sz);
+    if (hp->value_sz - 4 < RSTRING(val)->len) {
+      rb_raise(rb_eArgError, "Assigned string is too long. %d (max %d)", RSTRING(val)->len, hp->value_sz - 4);
     }
-    memcpy(hp->value.str, RSTRING(val)->ptr, RSTRING(val)->len);
-    hp->rlen = RSTRING(val)->len;
+    memcpy(hp->value.str.buf, RSTRING(val)->ptr, RSTRING(val)->len);
+    hp->value.str.len = RSTRING(val)->len;
     break;
   case BIND_TIME_VIA_ORA_DATE:
     if (!rb_obj_is_instance_of(val, rb_cTime)) {

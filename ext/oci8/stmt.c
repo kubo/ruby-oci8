@@ -29,18 +29,18 @@ static void check_bind_type(ub4 type, oci8_handle_t *stmth, VALUE vtype, VALUE v
     switch (FIX2INT(vtype)) {
     case SQLT_CHR: /* OCI_TYPECODE_VARCHAR */
       bind_type = BIND_STRING;
-      *dty = SQLT_CHR;
+      *dty = SQLT_LVC;
       if (NIL_P(vlength))
 	rb_raise(rb_eArgError, "the length of String is not specified.");
-      value_sz = NUM2INT(vlength);
+      value_sz = NUM2INT(vlength) + 4;
       break;
     case SQLT_LVB: /* OCI_TYPECODE_RAW */
     case SQLT_BIN: /* OCI_TYPECODE_UNSIGNED8 */
       bind_type = BIND_STRING;
-      *dty = SQLT_BIN;
+      *dty = SQLT_LVB;
       if (NIL_P(vlength))
 	rb_raise(rb_eArgError, "the length of String is not specified.");
-      value_sz = NUM2INT(vlength);
+      value_sz = NUM2INT(vlength) + 4;
       break;
     case SQLT_DAT:
       bind_type = BIND_ORA_DATE;
@@ -86,10 +86,10 @@ static void check_bind_type(ub4 type, oci8_handle_t *stmth, VALUE vtype, VALUE v
     value_sz = sizeof(ora_date_t);
   } else if (vtype == rb_cString) {
     bind_type = BIND_STRING;
-    *dty = SQLT_CHR;
+    *dty = SQLT_LVC;
     if (NIL_P(vlength))
       rb_raise(rb_eArgError, "the length of String is not specified.");
-    value_sz = NUM2INT(vlength);
+    value_sz = NUM2INT(vlength) + 4;
   } else if (vtype == rb_cFloat) {
     bind_type = BIND_FLOAT;
     *dty = SQLT_FLT;
@@ -235,7 +235,7 @@ static VALUE oci8_define_by_pos(int argc, VALUE *argv, VALUE self)
     rlenp = NULL;
   } else {
     indp = &(bh->ind);
-    rlenp = &(bh->rlen);
+    rlenp = (bh->bind_type == BIND_STRING) ? NULL : &bh->rlen;
   }
   if (bh->bind_type == BIND_HANDLE) {
     oci8_handle_t *h;
@@ -320,7 +320,7 @@ static VALUE oci8_bind_by_pos(int argc, VALUE *argv, VALUE self)
     rlenp = NULL;
   } else {
     indp = &(bh->ind);
-    rlenp = &(bh->rlen);
+    rlenp = (bh->bind_type == BIND_STRING) ? NULL : &bh->rlen;
   }
   if (bh->bind_type == BIND_HANDLE) {
     oci8_handle_t *h;
@@ -415,7 +415,7 @@ static VALUE oci8_bind_by_name(int argc, VALUE *argv, VALUE self)
     rlenp = NULL;
   } else {
     indp = &(bh->ind);
-    rlenp = &(bh->rlen);
+    rlenp = (bh->bind_type == BIND_STRING) ? NULL : &bh->rlen;
   }
   if (bh->bind_type == BIND_HANDLE) {
     oci8_handle_t *h;

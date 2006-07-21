@@ -107,7 +107,10 @@ struct oci8_bind_handle {
   ub2 rlen;
   sb4 value_sz; /* sizeof value */
   union {
-    char str[1];
+    struct {
+      sb4 len;
+      char buf[1];
+    } str;
     sword sw;
     double dbl;
     ora_date_t od;
