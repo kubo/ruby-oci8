@@ -269,7 +269,6 @@ class OCI8
         __ub1(idx) == 0 ? false : true
       end
       alias __word __sb4
-      def __ref(idx); raise NotImplementedError; end
       def __anydata(idx); raise NotImplementedError; end
 
       # SQLT values to name
@@ -283,7 +282,7 @@ class OCI8
                             else
                               name = "VARCHAR2"
                             end
-                            if p.char_semantics == :char
+                            if (p.respond_to? :char_semantics) && (p.char_semantics == :char)
                               "#{name}(#{p.char_size} CHAR)"
                             else
                               "#{name}(#{p.data_size})"
@@ -330,7 +329,7 @@ class OCI8
                              else
                                name = "CHAR"
                              end
-                             if p.char_semantics == :char
+                             if (p.respond_to? :char_semantics) && (p.char_semantics == :char)
                                "#{name}(#{p.char_size} CHAR)"
                              else
                                "#{name}(#{p.data_size})"
@@ -453,7 +452,7 @@ class OCI8
         when 105; :mlslabel    # OCI_TYPECODE_MLSLABEL
         when 247; :varray      # OCI_TYPECODE_VARRAY
         when 248; :table       # OCI_TYPECODE_TABLE
-        when 108; :object      # OCI_TYPECODE_OBJECT
+        when 108; :named_type  # OCI_TYPECODE_OBJECT
         when  58; :opaque      # OCI_TYPECODE_OPAQUE
         when 122; :named_collection # OCI_TYPECODE_NAMEDCOLLECTION
         when 113; :blob        # OCI_TYPECODE_BLOB
@@ -513,9 +512,9 @@ class OCI8
       end
       private :list_columns
 
-      # not implemented yet.
-      def ref_tdo
-        __ref(OCI_ATTR_REF_TDO)
+      # to type metadata if possible
+      def type_metadata
+        __type_metadata(OCI8::Metadata::Type)
       end
 
       # indicates the table is temporary.
@@ -595,9 +594,9 @@ class OCI8
       end
       private :list_columns
 
-      # not implemented yet.
-      def ref_tdo
-        __ref(OCI_ATTR_REF_TDO)
+      # to type metadata if possible
+      def type_metadata
+        __type_metadata(OCI8::Metadata::Type)
       end
 
       # indicates the table is temporary.
@@ -741,10 +740,10 @@ class OCI8
 
       ## Table 6-7 Attributes Belonging to Types
 
-      # not implemented
-      def ref_tdo
-        __ref(OCI_ATTR_REF_TDO)
-      end
+      # to type metadata if possible
+      #def type_metadata
+      #  __type_metadata(OCI8::Metadata::Type)
+      #end
 
       # typecode. :object or :named_collection
       def typecode
@@ -882,6 +881,10 @@ class OCI8
       def type_methods
         @type_methods ||= list_type_methods.to_a
       end
+
+      def inspect # :nodoc:
+        "#<#{self.class.name}:(#{obj_id}) #{schema_name}.#{name}>"
+      end
     end
 
     # Metadata for a type attribute.
@@ -946,9 +949,9 @@ class OCI8
         __text(OCI_ATTR_SCHEMA_NAME)
       end
 
-      # not implemented
-      def ref_tdo
-        __ref(OCI_ATTR_REF_TDO)
+      # to type metadata if possible
+      def type_metadata
+        __type_metadata(OCI8::Metadata::Type)
       end
 
       # character set id if the type attribute is of a string/character type.
@@ -1155,9 +1158,9 @@ class OCI8
         __text(OCI_ATTR_SCHEMA_NAME)
       end
 
-      # not implemented
-      def ref_tdo
-        __ref(OCI_ATTR_REF_TDO)
+      # to type metadata if possible
+      def type_metadata
+        __type_metadata(OCI8::Metadata::Type)
       end
 
       # character set id if the type attribute is of a string/character type.
@@ -1351,9 +1354,9 @@ class OCI8
         __text(OCI_ATTR_SCHEMA_NAME)
       end
 
-      # not implemented
-      def ref_tdo
-        __ref(OCI_ATTR_REF_TDO)
+      # to type metadata if possible
+      def type_metadata
+        __type_metadata(OCI8::Metadata::Type)
       end
 
       # The character set id, if the column is of a string/character type
@@ -1504,9 +1507,9 @@ class OCI8
         __text(OCI_ATTR_LINK)
       end
 
-      # not implemented
-      def ref_tdo
-        __ref(OCI_ATTR_REF_TDO)
+      # to type metadata if possible
+      def type_metadata
+        __type_metadata(OCI8::Metadata::Type)
       end
 
       # Returns the character set ID if the argument is of a

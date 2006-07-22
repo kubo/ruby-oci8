@@ -1,3 +1,9 @@
+2006-07-22  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/metadata.c, lib/oci8/metadata.rb: add a type_metadata method
+	    to OCI8::Metadata::Table, OCI8::Metadata::View, OCI8::Metadata::TypeAttr,
+	    OCI8::Metadata::Collection, OCI8::Metadata::Column, OCI8::Metadata::Argument
+	    OCI8::Metadata::TypeArgument and OCI8::Metadata::TypeResult.
+
 2006-07-21  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/bind.c, ext/oci8/stmt.c,
 	    lib/oci8/oci8.rb: Support LONG and LONG RAW longer than 65535 bytes.
