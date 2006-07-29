@@ -134,6 +134,18 @@ static VALUE ora_date_initialize(int argc, VALUE *argv, VALUE self)
     return Qnil;
 }
 
+
+static VALUE ora_date_initialize_copy(VALUE lhs, VALUE rhs)
+{
+    ora_date_t *l, *r;
+
+    rb_obj_init_copy(lhs, rhs);
+    Data_Get_Struct(lhs, ora_date_t, l);
+    Data_Get_Struct(rhs, ora_date_t, r);
+    memcpy(r, l, sizeof(ora_date_t));
+    return lhs;
+}  
+
 /*
 =begin
 --- OraDate.now()
@@ -314,6 +326,27 @@ static VALUE ora_date_cmp(VALUE self, VALUE val)
     return INT2FIX(0);
 }
 
+static VALUE ora_date_dump(int argc, VALUE *argv, VALUE self)
+{
+    ora_date_t *od;
+    Data_Get_Struct(self, ora_date_t, od);
+    return rb_str_new((const char*)od, sizeof(ora_date_t));
+}  
+
+static VALUE ora_date_s_load(VALUE klass, VALUE str)
+{
+    ora_date_t *od;
+    VALUE obj;
+
+    Check_Type(str, T_STRING);
+    if (RSTRING(str)->len != sizeof(ora_date_t)) {
+        rb_raise(rb_eTypeError, "marshaled OraDate format differ");
+    }
+    obj = Data_Make_Struct(cOraDate, ora_date_t, NULL, xfree, od);
+    memcpy(od, RSTRING(str)->ptr, sizeof(ora_date_t));
+    return obj;
+}  
+
 /*
  * bind_oradate
  */
@@ -366,6 +399,7 @@ void Init_ora_date(void)
 
     rb_define_alloc_func(cOraDate, ora_date_s_allocate);
     rb_define_method(cOraDate, "initialize", ora_date_initialize, -1);
+    rb_define_method(cOraDate, "initialize_copy", ora_date_initialize_copy, 1);
     rb_define_singleton_method(cOraDate, "now", ora_date_s_now, 0);
     rb_define_method(cOraDate, "to_s", ora_date_to_s, 0);
     rb_define_method(cOraDate, "to_a", ora_date_to_a, 0);
@@ -392,6 +426,9 @@ void Init_ora_date(void)
 
     rb_define_method(cOraDate, "<=>", ora_date_cmp, 1);
     rb_include_module(cOraDate, rb_mComparable);
+
+    rb_define_method(cOraDate, "_dump", ora_date_dump, -1);
+    rb_define_singleton_method(cOraDate, "_load", ora_date_s_load, 1);
 
     oci8_define_bind_class("OraDate", &bind_oradate_class);
 }

@@ -88,6 +88,31 @@ class TestOraNumber < Test::Unit::TestCase
     end
   end
 
+  def test_dup
+    cursor = @conn.parse("BEGIN :number := TO_NUMBER(:str); END;")
+    cursor.bind_param(:number, OraNumber)
+    cursor.bind_param(:str, nil, String, 40)
+    NUMBER_CHECK_TARGET.each do |val|
+      cursor[:str] = val
+      cursor.exec
+      n = cursor[:number]
+      assert_equal(n.to_s, n.dup.to_s)
+      assert_equal(n.to_s, n.clone.to_s)
+    end
+  end
+
+  def test_marshal
+    cursor = @conn.parse("BEGIN :number := TO_NUMBER(:str); END;")
+    cursor.bind_param(:number, OraNumber)
+    cursor.bind_param(:str, nil, String, 40)
+    NUMBER_CHECK_TARGET.each do |val|
+      cursor[:str] = val
+      cursor.exec
+      n = cursor[:number]
+      assert_equal(n.to_s, Marshal.load(Marshal.dump(n)).to_s)
+    end
+  end
+
   def teardown
     @conn.logoff
   end

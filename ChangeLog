@@ -1,3 +1,15 @@
+2006-07-29  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oradate.c: add OraDate#dup, OraDate#clone, OraDate#_dump
+	    and OraDate._load.
+	* ext/oci8/oranumber.c: add OraNumber#dup, OraNumber#clone,
+	    OraNumber#_dump and OraNumber._load.
+	* ext/oci8/rowid.c: add OCIRowid#dup, OCIRowid#clone.
+	    These methods raise an error when using Oracle 8.x.
+	* test/test_oradate.rb: add tests for OraDate#dup, OraDate#clone,
+	    OraDate#_dump and OraDate._load.
+	* test/test_oranumber.rb: add tests for OraNumber#dup,
+	    OraNumber#clone, OraNumber#_dump and OraNumber._load.
+
 2006-07-22  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/metadata.c, lib/oci8/metadata.rb: add a type_metadata method
 	    to OCI8::Metadata::Table, OCI8::Metadata::View, OCI8::Metadata::TypeAttr,

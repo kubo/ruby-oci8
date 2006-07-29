@@ -63,6 +63,17 @@ static VALUE oci8_rowid1_initialize(VALUE self, VALUE val)
     return Qnil;
 }
 
+static VALUE oci8_rowid1_initialize_copy(VALUE lhs, VALUE rhs)
+{
+    oci8_rowid1_t *l, *r;
+
+    rb_obj_init_copy(lhs, rhs);
+    l = DATA_PTR(lhs);
+    r = DATA_PTR(rhs);
+    memcpy(l->id, r->id, sizeof(l->id));
+    return lhs;
+}
+
 /*
  * bind_rowid
  */
@@ -196,7 +207,7 @@ void Init_oci8_rowid1(void)
     rb_define_method(cOCIRowid, "to_s", oci8_rowid1_to_s, 0);
     rb_define_method(cOCIRowid, "inspect", oci8_rowid1_inspect, 0);
 
-    /* marshaling */
+    rb_define_method(cOCIRowid, "initialize_copy", oci8_rowid1_initialize_copy, 1);
     rb_define_method(cOCIRowid, "_dump", oci8_rowid1_dump, -1);
     rb_define_singleton_method(cOCIRowid, "_load", oci8_rowid1_s_load, 1);
 }
@@ -225,6 +236,11 @@ static VALUE oci8_rowid2_initialize(VALUE self)
         oci8_env_raise(oci8_envhp, rv);
     rowid->base.type = OCI_DTYPE_ROWID;
     return Qnil;
+}
+
+static VALUE oci8_rowid2_initialize_copy(VALUE lhs, VALUE rhs)
+{
+    rb_notimplement();
 }
 
 /*
@@ -282,7 +298,8 @@ VALUE oci8_get_rowid2_attr(oci8_base_t *base, ub4 attrtype)
 void Init_oci8_rowid2(void)
 {
     cOCIRowid = oci8_define_class("OCIRowid", &oci8_rowid2_class);
-    rb_define_private_method(cOCIRowid, "initialize", oci8_rowid2_initialize, 0);
+    rb_define_method(cOCIRowid, "initialize", oci8_rowid2_initialize, 0);
+    rb_define_method(cOCIRowid, "initialize_copy", oci8_rowid2_initialize_copy, 1);
     oci8_define_bind_class("OCIRowid", &bind_rowid2_class);
 }
 #endif /* USE_ROWID2 */
