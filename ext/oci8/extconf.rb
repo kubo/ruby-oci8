@@ -1,7 +1,7 @@
 require 'mkmf'
 require File.dirname(__FILE__) + '/oraconf'
 
-RUBY_OCI8_VERSION = File.read("#{File.dirname(__FILE__)}/../../VERSION").chomp
+RUBY_OCI8_VERSION = open("#{File.dirname(__FILE__)}/../../VERSION") {|f| f.read}.chomp
 
 oraconf = OraConf.new()
 

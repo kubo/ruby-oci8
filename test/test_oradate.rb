@@ -236,6 +236,21 @@ class TestOraDate < RUNIT::TestCase
     end
   end
 
+  def test_dup
+    [[2003,03,15], [1900,1,1], [-4712, 1, 1]].each do |year, month, day|
+      dt = OraDate.new(year, month, day)
+      assert_equal(dt, dt.dup)
+      assert_equal(dt, dt.clone)
+    end
+  end
+
+  def test_marshal
+    [[2003,03,15], [1900,1,1], [-4712, 1, 1]].each do |year, month, day|
+      dt = OraDate.new(year, month, day)
+      assert_equal(dt, Marshal.load(Marshal.dump(dt)))
+    end
+  end
+
   def teardown
     @stmt.free()
     @svc.logoff()

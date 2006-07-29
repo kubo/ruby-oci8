@@ -44,16 +44,32 @@ date and time between 4712 B.C. and 9999 A.D.
   if (sec < 0 || 59 < sec) \
     rb_raise(rb_eRangeError, "Out of range for second %d (expect 0 .. 59)", sec)
 
+
+static VALUE ora_date_s_allocate(klass)
+{
+  ora_date_t *od;
+  return Data_Make_Struct(klass, ora_date_t, NULL, xfree, od);
+}
+
+#ifndef HAVE_RB_DEFINE_ALLOC_FUNC
+/* ruby 1.6 */
+static VALUE ora_date_s_new(int argc, VALUE *argv, VALUE klass)
+{
+  VALUE obj = ora_date_s_allocate(klass);
+  rb_obj_call_init(obj, argc, argv);
+  return obj;
+}
+#endif
+
 /*
 =begin
 --- OraDate.new([year [, month [, day [, hour [, min [,sec]]]]]])
 =end
 */
-static VALUE ora_date_s_new(int argc, VALUE *argv, VALUE klass)
+static VALUE ora_date_initialize(int argc, VALUE *argv, VALUE self)
 {
   VALUE vyear, vmonth, vday, vhour, vmin, vsec;
   ora_date_t *od;
-  VALUE obj;
   int year, month, day, hour, min, sec;
 
   rb_scan_args(argc, argv, "06", &vyear, &vmonth, &vday, &vhour, &vmin, &vsec);
@@ -100,10 +116,33 @@ static VALUE ora_date_s_new(int argc, VALUE *argv, VALUE klass)
     sec = 0;
   }
 
-  obj = Data_Make_Struct(cOraDate, ora_date_t, NULL, xfree, od);
+  Data_Get_Struct(self, ora_date_t, od);
   oci8_set_ora_date(od, year, month, day, hour, min, sec);
-  return obj;
+  return Qnil;
 }
+
+static VALUE ora_date_initialize_copy(VALUE lhs, VALUE rhs)
+{
+  ora_date_t *l, *r;
+
+#ifdef HAVE_RB_DEFINE_ALLOC_FUNC
+  /* ruby 1.8 */
+  rb_obj_init_copy(lhs, rhs);
+#endif
+  Data_Get_Struct(lhs, ora_date_t, l);
+  Data_Get_Struct(rhs, ora_date_t, r);
+  memcpy(l, r, sizeof(ora_date_t));
+  return lhs;
+}  
+
+#ifndef HAVE_RB_DEFINE_ALLOC_FUNC
+/* ruby 1.6 */
+static VALUE ora_date_clone(VALUE self)
+{
+  VALUE obj = ora_date_s_allocate(CLASS_OF(self));
+  return ora_date_initialize_copy(obj, self);
+}
+#endif
 
 /*
 =begin
@@ -281,9 +320,42 @@ static VALUE ora_date_cmp(VALUE self, VALUE val)
   return INT2FIX(0);
 }
 
+static VALUE ora_date_dump(int argc, VALUE *argv, VALUE self)
+{
+  ora_date_t *od;
+  Data_Get_Struct(self, ora_date_t, od);
+  return rb_str_new((const char*)od, sizeof(ora_date_t));
+}  
+
+static VALUE ora_date_s_load(VALUE klass, VALUE str)
+{
+  ora_date_t *od;
+  VALUE obj;
+
+  Check_Type(str, T_STRING);
+  if (RSTRING(str)->len != sizeof(ora_date_t)) {
+    rb_raise(rb_eTypeError, "marshaled OraDate format differ");
+  }
+  obj = Data_Make_Struct(cOraDate, ora_date_t, NULL, xfree, od);
+  memcpy(od, RSTRING(str)->ptr, sizeof(ora_date_t));
+  return obj;
+}  
+
 void Init_ora_date(void)
 {
+#ifdef HAVE_RB_DEFINE_ALLOC_FUNC
+  /* ruby 1.8 */
+  rb_define_alloc_func(cOraDate, ora_date_s_allocate);
+  rb_define_method(cOraDate, "initialize", ora_date_initialize, -1);
+  rb_define_method(cOraDate, "initialize_copy", ora_date_initialize_copy, 1);
+#else
+  /* ruby 1.6 */
   rb_define_singleton_method(cOraDate, "new", ora_date_s_new, -1);
+  rb_define_method(cOraDate, "initialize", ora_date_initialize, -1);
+  rb_define_method(cOraDate, "clone", ora_date_clone, 0);
+  rb_define_method(cOraDate, "dup", ora_date_clone, 0);
+#endif
+
   rb_define_singleton_method(cOraDate, "now", ora_date_s_now, 0);
   rb_define_method(cOraDate, "to_s", ora_date_to_s, 0);
   rb_define_method(cOraDate, "to_a", ora_date_to_a, 0);
@@ -310,6 +382,9 @@ void Init_ora_date(void)
 
   rb_define_method(cOraDate, "<=>", ora_date_cmp, 1);
   rb_include_module(cOraDate, rb_mComparable);
+
+  rb_define_method(cOraDate, "_dump", ora_date_dump, -1);
+  rb_define_singleton_method(cOraDate, "_load", ora_date_s_load, 1);
 }
 
 void oci8_set_ora_date(ora_date_t *od, int year, int month, int day, int hour, int minute, int second)
@@ -331,4 +406,3 @@ void oci8_get_ora_date(ora_date_t *od, int *year, int *month, int *day, int *hou
   *minute = Get_minute(od);
   *second = Get_second(od);
 }
-

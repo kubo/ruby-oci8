@@ -22,6 +22,10 @@
 #define NUMBER_FORMAT_INT "FM99999999999999999999999999999999999990"
 #define NUMBER_FORMAT_INT_LEN (sizeof(NUMBER_FORMAT_INT) - 1)
 
+#ifndef StringValue
+#define StringValue(s) ((s) = (TYPE(s) == T_STRING) ? (s) : rb_str_to_str(s))
+#endif
+
 /* fill C structure (OCINumber) from a string. */
 static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VALUE nls_params, OCIError *errhp)
 {

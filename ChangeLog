@@ -1,3 +1,16 @@
+2006-07-29  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oradate.c: add OraDate#dup, OraDate#clone, OraDate#_dump
+	    and OraDate._load.
+	* ext/oci8/oranumber.c: add OraNumber#dup, OraNumber#clone,
+	    OraNumber#_dump and OraNumber._load.
+	* test/test_oradate.rb: add tests for OraDate#dup, OraDate#clone,
+	    OraDate#_dump and OraDate._load.
+	* test/test_oranumber.rb: add tests for OraNumber#dup,
+	    OraNumber#clone, OraNumber#_dump and OraNumber._load.
+	* test/test_dbi.rb, test/test_oci8.rb, ext/oci8/oraconf.rb,
+	  ext/oci8/extconf.rb, lib/oci8.rb.in, ext/oci8/ocinumber.c:
+	    fix for ruby 1.6.
+
 2006-07-21  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.h, ext/oci8/bind.c, ext/oci8/stmt.c, lib/oci8.rb.in:
 	    Support LONG and LONG RAW longer than 65535 bytes.

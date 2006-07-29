@@ -89,6 +89,31 @@ class TestOraNumber < RUNIT::TestCase
     end
   end
 
+  def test_dup
+    @stmt.prepare("BEGIN :number := TO_NUMBER(:str); END;")
+    number = @stmt.bindByName(":number", OraNumber)
+    str = @stmt.bindByName(":str", String, 40)
+    NUMBER_CHECK_TARGET.each do |val|
+      str.set(val)
+      @stmt.execute(@svc)
+      n = number.get
+      assert_equal(n.to_s, n.dup.to_s)
+      assert_equal(n.to_s, n.clone.to_s)
+    end
+  end
+
+  def test_marshal
+    @stmt.prepare("BEGIN :number := TO_NUMBER(:str); END;")
+    number = @stmt.bindByName(":number", OraNumber)
+    str = @stmt.bindByName(":str", String, 40)
+    NUMBER_CHECK_TARGET.each do |val|
+      str.set(val)
+      @stmt.execute(@svc)
+      n = number.get
+      assert_equal(n.to_s, Marshal.load(Marshal.dump(n)).to_s)
+    end
+  end
+
   def teardown
     @stmt.free()
     @svc.logoff()

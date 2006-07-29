@@ -28,34 +28,55 @@ static ora_vnumber_t *get_ora_number(VALUE self)
   return ovn;
 }
 
-static VALUE make_ora_number(const ora_vnumber_t *ovn)
+static VALUE ora_number_s_allocate(klass)
 {
-  VALUE obj;
-  ora_vnumber_t *newovn;
+  ora_vnumber_t *ovn;
+  return Data_Make_Struct(klass, ora_vnumber_t, NULL, xfree, ovn);
+}
 
-  obj = Data_Make_Struct(cOraNumber, ora_vnumber_t, NULL, xfree, newovn);
-  memcpy(newovn, ovn, sizeof(ora_vnumber_t));
+#ifndef HAVE_RB_DEFINE_ALLOC_FUNC
+/* ruby 1.6 */
+static VALUE ora_number_s_new(int argc, VALUE *argv, VALUE klass)
+{
+  VALUE obj = ora_number_s_allocate(klass);
+  rb_obj_call_init(obj, argc, argv);
   return obj;
 }
+#endif
 
 /*
 =begin
 --- OraNumber.new()
 =end
 */
-static VALUE ora_number_s_new(int argc, VALUE *argv, VALUE klass)
+static VALUE ora_number_initialize(int argc, VALUE *argv, VALUE self)
 {
-  ora_vnumber_t ovn;
+  ora_vnumber_t *ovn = get_ora_number(self);
 
-  ovn.size = 1;
-  ovn.num.exponent = 0x80;
-  memset(ovn.num.mantissa, 0, sizeof(ovn.num.mantissa));
-  return make_ora_number(&ovn);
+  ovn->size = 1;
+  ovn->num.exponent = 0x80;
+  memset(ovn->num.mantissa, 0, sizeof(ovn->num.mantissa));
+  return Qnil;
 }
+
+static VALUE ora_number_initialize_copy(VALUE lhs, VALUE rhs)
+{
+  ora_vnumber_t *l, *r;
+
+#ifdef HAVE_RB_DEFINE_ALLOC_FUNC
+  /* ruby 1.8 */
+  rb_obj_init_copy(lhs, rhs);
+#endif
+  Data_Get_Struct(lhs, ora_vnumber_t, l);
+  Data_Get_Struct(rhs, ora_vnumber_t, r);
+  memcpy(l, r, sizeof(ora_vnumber_t));
+  return lhs;
+}  
 
 static VALUE ora_number_clone(VALUE self)
 {
-  return make_ora_number(get_ora_number(self));
+  VALUE obj = ora_number_s_allocate(CLASS_OF(self));
+  return ora_number_initialize_copy(obj, self);
 }
 
 /*
@@ -127,13 +148,49 @@ static VALUE ora_number_uminus(VALUE self)
   return obj;
 }
 
+static VALUE ora_number_dump(int argc, VALUE *argv, VALUE self)
+{
+  ora_vnumber_t *ovn = get_ora_number(self);
+  return rb_str_new((const char*)ovn, sizeof(ora_vnumber_t));
+}  
+
+static VALUE ora_number_s_load(VALUE klass, VALUE str)
+{
+  ora_vnumber_t *ovn;
+  VALUE obj;
+
+  Check_Type(str, T_STRING);
+  if (RSTRING(str)->len != sizeof(ora_vnumber_t)) {
+    rb_raise(rb_eTypeError, "marshaled OraNumber format differ");
+  }
+  obj = ora_number_s_allocate(klass);
+  ovn = get_ora_number(obj);
+  memcpy(ovn, RSTRING(str)->ptr, sizeof(ora_vnumber_t));
+  return obj;
+}  
+
 void Init_ora_number(void)
 {
+#ifdef HAVE_RB_DEFINE_ALLOC_FUNC
+  /* ruby 1.8 */
+  rb_define_alloc_func(cOraNumber, ora_number_s_allocate);
+  rb_define_method(cOraNumber, "initialize", ora_number_initialize, -1);
+  rb_define_method(cOraNumber, "initialize_copy", ora_number_initialize_copy, 1);
+#else
+  /* ruby 1.6 */
   rb_define_singleton_method(cOraNumber, "new", ora_number_s_new, -1);
+  rb_define_method(cOraNumber, "initialize", ora_number_initialize, -1);
+  rb_define_method(cOraNumber, "clone", ora_number_clone, 0);
+  rb_define_method(cOraNumber, "dup", ora_number_clone, 0);
+#endif
+
   rb_define_method(cOraNumber, "to_i", ora_number_to_i, 0);
   rb_define_method(cOraNumber, "to_f", ora_number_to_f, 0);
   rb_define_method(cOraNumber, "to_s", ora_number_to_s, 0);
   rb_define_method(cOraNumber, "-@", ora_number_uminus, 0);
+
+  rb_define_method(cOraNumber, "_dump", ora_number_dump, -1);
+  rb_define_singleton_method(cOraNumber, "_load", ora_number_s_load, 1);
 }
 
 void ora_number_to_str(unsigned char *buf, size_t *lenp, ora_number_t *on, unsigned char size)

@@ -866,7 +866,7 @@ class OCI8
   BindType::Mapping[::OraDate]      = BindType::OraDate
   BindType::Mapping[::Time]         = BindType::Time
   BindType::Mapping[::Date]         = BindType::Date
-  BindType::Mapping[::DateTime]     = BindType::DateTime
+  BindType::Mapping[::DateTime]     = BindType::DateTime if defined? DateTime
   BindType::Mapping[::OCIRowid]     = BindType::OCIRowid
   BindType::Mapping[::OCI8::BLOB]   = BindType::BLOB
   BindType::Mapping[::OCI8::CLOB]   = BindType::CLOB

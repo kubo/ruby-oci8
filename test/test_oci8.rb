@@ -47,7 +47,7 @@ EOS
     cursor = @conn.parse("SELECT * FROM test_table ORDER BY c")
     cursor.define(5, Time) # define 5th column as Time
     cursor.define(6, Date) # define 6th column as Date
-    cursor.define(7, DateTime) # define 7th column as DateTime
+    cursor.define(7, DateTime) if defined? DateTime # define 7th column as DateTime
     cursor.define(8, Integer) # define 8th column as Integer
     cursor.define(9, Bignum) # define 9th column as Bignum
     cursor.exec
@@ -67,7 +67,7 @@ EOS
 	assert_equal(dt, rv[3])
 	assert_equal(dt.to_time, rv[4])
 	assert_equal(dt.to_date, rv[5])
-	assert_equal(dt.to_datetime, rv[6])
+	assert_equal(dt.to_datetime, rv[6]) if defined? DateTime
       end
       assert_equal(i, rv[7])
       assert_equal(i, rv[8])

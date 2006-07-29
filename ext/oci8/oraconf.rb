@@ -139,11 +139,11 @@ class OraConf
         end
         case RUBY_PLATFORM
         when /solaris/
-          @libs = "-L#{lib_dir} -R#{lib_dir} -lclntsh"
+          @libs = " -L#{lib_dir} -R#{lib_dir} -lclntsh"
         when /linux/
-          @libs = "-L#{lib_dir} -Wl,-rpath,#{lib_dir} -lclntsh"
+          @libs = " -L#{lib_dir} -Wl,-rpath,#{lib_dir} -lclntsh"
         else
-          @libs = "-L#{lib_dir} -lclntsh"
+          @libs = " -L#{lib_dir} -lclntsh"
         end
         return if try_link_oci()
       end
