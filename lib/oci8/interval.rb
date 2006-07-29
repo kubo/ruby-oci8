@@ -119,7 +119,7 @@ end
 
 # :stopdoc:
 class Date
-  alias :pre_add_interval :"+"
+  alias :pre_add_interval :+
   def + (n)
     case n
     when OCI8::IntervalYM
@@ -130,7 +130,7 @@ class Date
       pre_add_interval(n)
     end
   end
-  alias :pre_sub_interval :"-"
+  alias :pre_sub_interval :-
   def - (n)
     case n
     when OCI8::IntervalYM

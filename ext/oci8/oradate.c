@@ -142,7 +142,7 @@ static VALUE ora_date_initialize_copy(VALUE lhs, VALUE rhs)
     rb_obj_init_copy(lhs, rhs);
     Data_Get_Struct(lhs, ora_date_t, l);
     Data_Get_Struct(rhs, ora_date_t, r);
-    memcpy(r, l, sizeof(ora_date_t));
+    memcpy(l, r, sizeof(ora_date_t));
     return lhs;
 }  
 
