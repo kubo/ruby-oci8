@@ -1,3 +1,9 @@
+2006-08-03  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8.rb.in: add a workaround code on cygwin version.
+	    Cygwin manages environment variables by itself. They don't
+	    synchroize with Win32's ones. set some Oracle's environment
+	    variables to win32.
+
 2006-07-29  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oradate.c: add OraDate#dup, OraDate#clone, OraDate#_dump
 	    and OraDate._load.
