@@ -1,3 +1,8 @@
+2006-08-17  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.h, ext/oci8/bind.c, ext/oci8/stmt.c:
+	    Use long instead of int to bind Fixnum.
+	    http://rubyforge.org/forum/forum.php?thread_id=7955&forum_id=1078
+
 2006-08-03  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8.rb.in: add a workaround code on cygwin version.
 	    Cygwin manages environment variables by itself. They don't

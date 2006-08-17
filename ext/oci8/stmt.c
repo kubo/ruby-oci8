@@ -75,7 +75,7 @@ static void check_bind_type(ub4 type, oci8_handle_t *stmth, VALUE vtype, VALUE v
   } else if (vtype == rb_cFixnum) {
     bind_type = BIND_FIXNUM;
     *dty = SQLT_INT;
-    value_sz = sizeof(sword);
+    value_sz = sizeof(long);
   } else if (vtype == rb_cInteger || vtype == rb_cBignum) {
     bind_type = BIND_INTEGER_VIA_ORA_NUMBER;
     *dty = SQLT_NUM;
@@ -520,6 +520,7 @@ static VALUE oci8_stmt_execute(int argc, VALUE *argv, VALUE self)
     ub4 errcode;
     OCIErrorGet(h->errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
     if (errcode == 1000) {
+      /* run GC to close unreferred cursors when ORA-01000 (maximum open cursors exceeded). */
       rb_gc();
       rv = OCIStmtExecute(svch->hp, h->hp, h->errhp, iters, 0, NULL, NULL, mode);
     }

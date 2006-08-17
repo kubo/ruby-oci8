@@ -76,7 +76,7 @@ VALUE oci8_get_value(oci8_bind_handle_t *hp)
   case BIND_STRING:
     return rb_str_new(hp->value.str.buf, hp->value.str.len);
   case BIND_FIXNUM:
-    return INT2FIX(hp->value.sw);
+    return LONG2NUM(hp->value.lng);
   case BIND_INTEGER_VIA_ORA_NUMBER:
     ora_number_to_str(buf, NULL, &(hp->value.on), hp->rlen);
     return rb_cstr2inum(buf, 10);
@@ -121,7 +121,7 @@ void oci8_set_value(oci8_bind_handle_t *hp, VALUE val)
   switch (hp->bind_type) {
   case BIND_FIXNUM:
     Check_Type(val, T_FIXNUM);
-    hp->value.sw = FIX2INT(val);
+    hp->value.lng = FIX2LONG(val);
     break;
   case BIND_STRING:
     Check_Type(val, T_STRING);

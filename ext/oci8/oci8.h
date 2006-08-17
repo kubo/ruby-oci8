@@ -111,7 +111,7 @@ struct oci8_bind_handle {
       sb4 len;
       char buf[1];
     } str;
-    sword sw;
+    long lng;
     double dbl;
     ora_date_t od;
     ora_number_t on;
