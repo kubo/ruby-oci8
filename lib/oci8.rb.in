@@ -1,9 +1,22 @@
+
 #   --*- ruby -*--
 # This is based on yoshidam's oracle.rb.
 #
 # sample one liner:
 #  ruby -r oci8 -e 'OCI8.new("scott", "tiger", nil).exec("select * from emp") do |r| puts r.join(","); end'
 #  # select all data from emp and print them as CVS format.
+
+if RUBY_PLATFORM =~ /cygwin/
+  # Cygwin manages environment variables by itself.
+  # They don't synchroize with Win32's ones.
+  # This set some Oracle's environment variables to win32's enviroment.
+  require 'Win32API'
+  win32setenv = Win32API.new('Kernel32.dll', 'SetEnvironmentVariableA', 'PP', 'I')
+  ['NLS_LANG', 'ORA_NLS10', 'ORA_NLS32', 'ORA_NLS33', 'ORACLE_BASE', 'ORACLE_HOME', 'ORACLE_SID', 'TNS_ADMIN', 'LOCAL'].each do |name|
+    val = ENV[name]
+    win32setenv.call(name, val && val.dup)
+  end
+end
 
 require 'oci8lib'
 require 'oci8/oci8.rb'

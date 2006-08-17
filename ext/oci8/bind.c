@@ -110,14 +110,14 @@ static oci8_bind_class_t bind_raw_class = {
  */
 typedef struct {
     oci8_bind_t base;
-    sword val;
+    long val;
 } oci8_bind_fixnum_t;
 
 static VALUE bind_fixnum_get(oci8_bind_t *base)
 {
     oci8_bind_fixnum_t *fixnum = (oci8_bind_fixnum_t *)base;
 
-    return INT2FIX(fixnum->val);
+    return LONG2NUM(fixnum->val);
 }
 
 static void bind_fixnum_set(oci8_bind_t *base, VALUE val)
@@ -125,7 +125,7 @@ static void bind_fixnum_set(oci8_bind_t *base, VALUE val)
     oci8_bind_fixnum_t *fixnum = (oci8_bind_fixnum_t *)base;
 
     Check_Type(val, T_FIXNUM);
-    fixnum->val = FIX2INT(val);
+    fixnum->val = FIX2LONG(val);
 }
 
 static void bind_fixnum_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
