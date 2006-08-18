@@ -39,6 +39,18 @@ class TestOraNumber < RUNIT::TestCase
     "-1",
     "-20",
     "-300",
+    "1.123",
+    "12.123",
+    "123.123",
+    "1.1",
+    "1.12",
+    "1.123",
+    "-1.123",
+    "-12.123",
+    "-123.123",
+    "-1.1",
+    "-1.12",
+    "-1.123",
   ]
 
   def setup
@@ -111,6 +123,17 @@ class TestOraNumber < RUNIT::TestCase
       @stmt.execute(@svc)
       n = number.get
       assert_equal(n.to_s, Marshal.load(Marshal.dump(n)).to_s)
+    end
+  end
+
+  def test_new_from_string
+    @stmt.prepare("BEGIN :number := TO_NUMBER(:str); END;")
+    number = @stmt.bindByName(":number", OraNumber)
+    str = @stmt.bindByName(":str", String, 40)
+    (NUMBER_CHECK_TARGET + ["1.230", "1.2300", "1.23000"]).each do |val|
+      str.set(val)
+      @stmt.execute(@svc)
+      assert_equal(number.get.to_s, OraNumber.new(val).to_s)
     end
   end
 

@@ -21,6 +21,8 @@ for example, ((<OCIStmt#attrGet|OCIHandle#attrGet>))(((<OCI_ATTR_MIN>))).
 #define Get_Exponent(on) (Get_Sign(on) ? (Get_Exp_Part(on) - 65) : (~(Get_Exp_Part(on)) + 63))
 #define Get_Mantissa_At(on, i) (Get_Sign(on) ? (on)->mantissa[i] - 1 : 101 - (on)->mantissa[i])
 
+static int ora_number_from_str(ora_vnumber_t *ovn, unsigned char *buf, size_t len);
+
 static ora_vnumber_t *get_ora_number(VALUE self)
 {
   ora_vnumber_t *ovn;
@@ -52,10 +54,20 @@ static VALUE ora_number_s_new(int argc, VALUE *argv, VALUE klass)
 static VALUE ora_number_initialize(int argc, VALUE *argv, VALUE self)
 {
   ora_vnumber_t *ovn = get_ora_number(self);
+  volatile VALUE arg;
 
+  rb_scan_args(argc, argv, "01", &arg);
   ovn->size = 1;
   ovn->num.exponent = 0x80;
   memset(ovn->num.mantissa, 0, sizeof(ovn->num.mantissa));
+  if (argc == 1) {
+    if (TYPE(arg) != T_STRING) {
+      arg = rb_obj_as_string(arg);
+    }
+    if (ora_number_from_str(ovn, RSTRING(arg)->ptr, RSTRING(arg)->len) != 0) {
+      rb_raise(rb_eArgError, "could not convert '%s' to OraNumber", RSTRING(arg)->ptr);
+    }
+  }
   return Qnil;
 }
 
@@ -151,6 +163,10 @@ static VALUE ora_number_uminus(VALUE self)
 static VALUE ora_number_dump(int argc, VALUE *argv, VALUE self)
 {
   ora_vnumber_t *ovn = get_ora_number(self);
+  unsigned char i;
+  for (i = ovn->size - 1; i < 20; i++) {
+    ovn->num.mantissa[i] = 0;
+  }
   return rb_str_new((const char*)ovn, sizeof(ora_vnumber_t));
 }  
 
@@ -249,4 +265,181 @@ void ora_number_to_str(unsigned char *buf, size_t *lenp, ora_number_t *on, unsig
   buf[len] = '\0';
   if (lenp != NULL)
     *lenp = len;
+}
+
+static int ora_number_from_str(ora_vnumber_t *ovn, unsigned char *buf, size_t len)
+{
+  unsigned char work[80];
+  int sign = 1;
+  int state = 0;
+  int i, j;
+  int iidx; /* index of integer part */
+  int fidx; /* index of fraction part */
+  unsigned char *p;
+  int mantissa_size;
+  int exponent;
+
+  if (len > ORA_NUMBER_BUF_SIZE) {
+    return 1;
+  }
+  /* [ \t]*(+|-)[0-9]*(.[0-9]*) */
+  for (i = iidx = fidx = 0; i < len; i++) {
+    unsigned char uc = buf[i];
+    switch (state) {
+    case 0:
+      /* [ \t]*(+|-)[0-9]*(.[0-9]*) */
+      /* ^                          */
+      switch (uc) {
+      case ' ':
+      case '\t':
+        /* [ \t]*(+|-)[0-9]*(.[0-9]*) */
+        /* ^                          */
+        break;
+      case '-':
+        sign = -1;
+        state = 1;
+        /* [ \t]*(+|-)[0-9]*(.[0-9]*) */
+        /*            ^               */
+        break;
+      case '+':
+      case '0':
+        state = 1;
+        /* [ \t]*(+|-)[0-9]*(.[0-9]*) */
+        /*            ^               */
+        break;
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+        work[iidx++] = uc - '0';
+        state = 1;
+        /* [ \t]*(+|-)[0-9]*(.[0-9]*) */
+        /*            ^               */
+        break;
+      case '.':
+        state = 2;
+        /* [ \t]*(+|-)[0-9]*(.[0-9]*) */
+        /*                    ^       */
+        break;
+      default:
+        return 1;
+      }
+      break;
+    case 1:
+      /* [ \t]*(+|-)[0-9]*(.[0-9]*) */
+      /*            ^               */
+      switch (uc) {
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+        if (iidx > sizeof(work))
+          return 1;
+        work[iidx++] = uc - '0';
+        /* [ \t]*(+|-)[0-9]*(.[0-9]*) */
+        /*            ^               */
+        break;
+      case '.':
+        state = 2;
+        /* [ \t]*(+|-)[0-9]*(.[0-9]*) */
+        /*                    ^       */
+        break;
+      default:
+        return 1;
+      }
+      break;
+    case 2:
+      /* [ \t]*(+|-)[0-9]*(.[0-9]*) */
+      /*                    ^       */
+      switch (uc) {
+      case '0':
+      case '1':
+      case '2':
+      case '3':
+      case '4':
+      case '5':
+      case '6':
+      case '7':
+      case '8':
+      case '9':
+        if (iidx + fidx > sizeof(work))
+          return 1;
+        work[iidx + fidx++] = uc - '0';
+        /* [ \t]*(+|-)[0-9]*(.[0-9]*) */
+        /*                    ^       */
+        break;
+      default:
+        return 1;
+      }
+      break;
+    }
+  }
+  /* convert to 100-base number */
+  if (iidx & 1) {
+    i = j = 1;
+  } else {
+    i = j = 0;
+  }
+  if (fidx & 1) {
+    if (iidx + fidx > sizeof(work))
+      return 1;
+    work[iidx + fidx++] = 0;
+  }
+  while (i < iidx + fidx) {
+    work[j++] = work[i] * 10 + work[i + 1];
+    i += 2;
+  }
+  iidx = (iidx + 1) >> 1;
+  fidx >>= 1;
+  /* ... */
+  p = work;
+  mantissa_size = iidx + fidx;
+  exponent = (int)iidx - 1;
+  /* delete leading zeros */
+  while (mantissa_size > 0 && p[0] == 0) {
+    mantissa_size--;
+    exponent--;
+    p++;
+  }
+  /* delete trailing zeros */
+  while (mantissa_size > 0 && p[mantissa_size - 1] == 0) {
+    mantissa_size--;
+  }
+  /* check size */
+  if (mantissa_size > sizeof(ovn->num.mantissa))
+    return 1;
+  if (mantissa_size == 0) {
+    ovn->size = 1;
+    ovn->num.exponent = 0x80;
+    return 0;
+  }
+  if (sign > 0) {
+    ovn->size = mantissa_size + 1;
+    ovn->num.exponent = 0x80 + exponent + 65;
+    for (i = 0; i < mantissa_size; i++) {
+      ovn->num.mantissa[i] = p[i] + 1;
+    }
+  } else {
+    ovn->size = mantissa_size + 1;
+    ovn->num.exponent = 62 - exponent;
+    for (i = 0; i < mantissa_size; i++) {
+      ovn->num.mantissa[i] = 101 - p[i];
+    }
+    if (mantissa_size < 20) {
+      ovn->size++;
+      ovn->num.mantissa[i] = 102;
+    }
+  }
+  return 0;
 }
