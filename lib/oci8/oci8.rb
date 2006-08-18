@@ -591,6 +591,28 @@ class OraDate
       DateTime.new(year, month, day, hour, minute, second, @@tz_offset)
     end
   end
+
+  def yaml_initialize(type, val) # :nodoc:
+    initialize(*val.split(/[ -\/:]+/).collect do |i| i.to_i end)
+  end
+
+  def to_yaml(opts = {}) # :nodoc:
+    YAML.quick_emit(object_id, opts) do |out|
+      out.scalar(taguri, self.to_s, :plain)
+    end
+  end
+end
+
+class OraNumber
+  def yaml_initialize(type, val) # :nodoc:
+    initialize(val)
+  end
+
+  def to_yaml(opts = {}) # :nodoc:
+    YAML.quick_emit(object_id, opts) do |out|
+      out.scalar(taguri, self.to_s, :plain)
+    end
+  end
 end
 
 class Numeric

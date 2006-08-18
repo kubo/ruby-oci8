@@ -38,6 +38,18 @@ class TestOraNumber < Test::Unit::TestCase
     "-1",
     "-20",
     "-300",
+    "1.123",
+    "12.123",
+    "123.123",
+    "1.1",
+    "1.12",
+    "1.123",
+    "-1.123",
+    "-12.123",
+    "-123.123",
+    "-1.1",
+    "-1.12",
+    "-1.123",
   ]
 
   def setup
@@ -110,6 +122,17 @@ class TestOraNumber < Test::Unit::TestCase
       cursor.exec
       n = cursor[:number]
       assert_equal(n.to_s, Marshal.load(Marshal.dump(n)).to_s)
+    end
+  end
+
+  def test_new_from_string
+    cursor = @conn.parse("BEGIN :number := TO_NUMBER(:str); END;")
+    cursor.bind_param(:number, OraNumber)
+    cursor.bind_param(:str, nil, String, 40)
+    (NUMBER_CHECK_TARGET + ["1.230", "1.2300", "1.23000"]).each do |val|
+      cursor[:str] = val
+      cursor.exec
+      assert_equal(cursor[:number].to_s, OraNumber.new(val).to_s)
     end
   end
 

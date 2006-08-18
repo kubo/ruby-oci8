@@ -326,6 +326,22 @@ static VALUE ora_date_cmp(VALUE self, VALUE val)
     return INT2FIX(0);
 }
 
+static VALUE ora_date_hash(VALUE self)
+{
+    ora_date_t *od;
+    unsigned int v;
+
+    Data_Get_Struct(self, ora_date_t, od);
+    v = (od->century <<  8)
+        + (od->year    << 15)
+        + (od->month   << 22)
+        + (od->day     << 26)
+        + (od->hour    << 12)
+        + (od->minute  <<  6)
+        + (od->second  <<  0);
+    return INT2FIX(v);
+}
+
 static VALUE ora_date_dump(int argc, VALUE *argv, VALUE self)
 {
     ora_date_t *od;
@@ -426,6 +442,8 @@ void Init_ora_date(void)
 
     rb_define_method(cOraDate, "<=>", ora_date_cmp, 1);
     rb_include_module(cOraDate, rb_mComparable);
+
+    rb_define_method(cOraDate, "hash", ora_date_hash, 0);
 
     rb_define_method(cOraDate, "_dump", ora_date_dump, -1);
     rb_define_singleton_method(cOraDate, "_load", ora_date_s_load, 1);
