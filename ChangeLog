@@ -1,5 +1,6 @@
 2006-08-20  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: add error code for intel mac.
+	* NEWS: add a new file.
 
 2006-08-18  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oradate.c: add OraDate.hash().

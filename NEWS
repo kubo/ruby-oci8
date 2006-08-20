@@ -1,0 +1,99 @@
+0.1.16:
+
+1. Add LONG and LONG RAW support longer than 65535 bytes.
+
+   Use OCI8#long_read_len and OCI8#long_read_len= to set max long length.
+   The default value is 65535.
+
+2. OraDate and OraNumber can be serialized by Marshal now.
+
+3. OraDate and OraNumber can be serialized by YAML now.
+
+4. Fix bug on OraDate#dup, OraDate#clone, OraNumber#dup and OraNumber#clone.
+   (reported by Daniel Berger.)
+
+   These methods had not duplicated their contents, which caused segmentation
+   fault. Now they duplicate their contents also by adding initialize_copy
+   method.
+
+5. Add a workaround code on cygwin environment variables problem.
+
+   Cygwin manages environment variables by itself. They don't synchroize
+   with Win32's ones. When setting Oracle's environment variables, they
+   are set to cygwin's environment. But Oracle client library read
+   Win32's. Now Oracle-related variables are forcedly set to Win32.
+
+6. Accept all Fixnum values when binding as a Fixnum on 64-bit ruby.
+
+   A Fixnum is a 31-bit integer on 32-bit ruby, 63-bit integer on 64-bit
+   ruby. But it had been bound to 32-bit integer on ruby-oci8. Now it is
+   bound to integer whose bit width is same with ruby.
+
+0.1.15:
+
+1. no new features. :-<
+
+2. suppress memory usage when binding a placeholder which is already bound.
+
+     require 'oci8'
+     conn = OCI8.new('ruby', 'oci8')
+     cursor = conn.parse('select * from foo where key = :key')
+     0.upto(10000) do |key|
+       # bind values had not freed until cursor.close.
+       # Now they are freed when GC is run.
+       cursor.bind_param('key', key)
+       cursor.exec
+       .... fetch ....
+     end
+
+3. fix potentially segmentation fault while exiting process.
+   When exiting process, ruby's objects are GCed with unexpectable
+   order. If an OCIEnv instance was GCed in prior to OCIRowid objects,
+   it caused segmentation fault. 
+
+4. add a workaround code when setting $0.
+   The following code made enviroment variables empty strings on
+   Unix when using ruby 1.8.4, ruby-oci8 0.1.14 and Oracle 10.1.0.
+   (Oracle 10.2.0 and ruby 1.8.2 doesn't have this problem.)
+
+     require 'oci8'
+     ENV['HOME'] # --> valid value
+     $0 = 'foo'
+     ENV['HOME'] # --> ''
+
+5. fix registry search path on compilation.
+   (OracleXE Windows version)
+
+0.1.14:
+
+1. add OCI8#prefetch_rows=.
+    
+   This specifies the number of rows in a single round trip.
+   See: http://www.easysoft.com/products/data_access/odbc_oracle_driver/performance_tuning_guide.html#multiple_rows 
+   In addition, setting zero may become a workaround
+   of some Oracle internal problems.
+   The default value is one.
+
+2. fix bug when binding a Bignum.
+3. (low-level API) add attrSet(OCI_ATTR_DESC_PUBLIC, -1).
+4. (low-level API) add a constant OCI_PTYPE_UNK.
+5. (internal) use OCIEnv.logon when no priviledge login.
+6. (internal) delete code to register malloc/realloc/free callbacks to OCI.
+
+0.1.13:
+
+1. fix a memory leak.
+   (fixed by Nathaniel Talbott.)
+
+   It is recommended to update to 0.1.13 if a program executes many
+   queries. That's bacause 0.1.12 cause 70-byte memory leak per a
+   query.
+
+2. ruby's DateTime support is added.
+   (suggested by Daniel Berger.)
+
+   To fetch Oracle's DATE datatype as ruby's DateTime by default, add
+   the following code to your program.
+
+     OCI8::BindType::Mapping[OCI8::SQLT_DAT] = OCI8::BindType::DateTime
+     OCI8::BindType::Mapping[OCI8::SQLT_TIMESTAMP] = OCI8::BindType::DateTime
