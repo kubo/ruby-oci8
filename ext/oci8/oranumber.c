@@ -190,7 +190,7 @@ static VALUE bind_oranumber_get(oci8_bind_t *bb)
 {
     ora_vnumber_t *ovn;
     VALUE obj = Data_Make_Struct(cOraNumber, ora_vnumber_t, NULL, xfree, ovn);
-    ovn->size = bb->rlen;
+    ovn->size = bb->len.rlen;
     memcpy(&(ovn->num), bb->valuep, sizeof(ora_number_t));
     return obj;
 }
@@ -200,7 +200,7 @@ static void bind_oranumber_set(oci8_bind_t *bb, VALUE val)
     ora_vnumber_t *ovn;
     Check_Object(val, cOraNumber);
     Data_Get_Struct(val, ora_vnumber_t, ovn);
-    bb->rlen = ovn->size;
+    bb->len.rlen = ovn->size;
     memcpy(bb->valuep, &ovn->num, sizeof(ora_number_t));
 }
 
@@ -220,6 +220,8 @@ static oci8_bind_class_t bind_oranumber_class = {
     bind_oranumber_get,
     bind_oranumber_set,
     bind_oranumber_init,
+    NULL,
+    NULL,
     SQLT_NUM
 };
 

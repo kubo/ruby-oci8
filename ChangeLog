@@ -1,3 +1,16 @@
+2006-11-04  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.h: add callbacks for piecewise operations.
+	* ext/oci8/oraconf.rb: add an error message for intel mac.
+	* ext/oci8/bind.c: add OCI8::BindType::Long and
+	    OCI8::BindType::LongRaw.
+	* ext/oci8/stmt.c: fix OCI8::Cursor#define, OCI8::Cursor#bind_param,
+	    OCI8::Cursor#exec and OCI8::Cursor#fetch for piecewise operations.
+	* ext/oci8/lob.c, ext/oci8/oradate.c, ext/oci8/ocinumber.c,
+	  ext/oci8/rowid.c, ext/oci8/ocidatetime.c, ext/oci8/oranumber.c:
+	    follow up the change of piecewise operations.
+	* lib/oci8/oci8.rb: use OCI8::BindType::Long and
+	    OCI8::BindType::LongRaw for LONG and LONG RAW respectively.
+
 2006-08-18  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oradate.c: add OraDate.hash().
 	* ext/oci8/oranumber.c: OraNumber.new() now accepts a String.

@@ -406,6 +406,8 @@ static oci8_bind_class_t bind_oradate_class = {
     bind_oradate_get,
     bind_oradate_set,
     bind_oradate_init,
+    NULL,
+    NULL,
     SQLT_DAT,
 };
 

@@ -294,12 +294,12 @@ class OCI8
     # datatype        type     size prec scale
     # -------------------------------------------------
     # LONG          SQLT_LNG      0    0    0
-    Mapping[:long] = ::OCI8::BindType::String
+    Mapping[:long] = ::OCI8::BindType::Long
 
     # datatype        type     size prec scale
     # -------------------------------------------------
     # LONG RAW      SQLT_LBI      0    0    0
-    Mapping[:long_raw] = ::OCI8::BindType::RAW
+    Mapping[:long_raw] = ::OCI8::BindType::LongRaw
 
     # datatype        type     size prec scale
     # -------------------------------------------------

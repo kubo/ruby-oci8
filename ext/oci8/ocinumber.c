@@ -1026,6 +1026,8 @@ static oci8_bind_class_t bind_ocinumber_class = {
     bind_ocinumber_get,
     bind_ocinumber_set,
     bind_ocinumber_init,
+    NULL,
+    NULL,
     SQLT_VNU,
 };
 
@@ -1038,6 +1040,8 @@ static oci8_bind_class_t bind_integer_class = {
     bind_integer_get,
     bind_integer_set,
     bind_ocinumber_init,
+    NULL,
+    NULL,
     SQLT_VNU,
 };
 

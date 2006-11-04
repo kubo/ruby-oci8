@@ -57,6 +57,8 @@ struct oci8_bind_class {
     VALUE (*get)(oci8_bind_t *bh);
     void (*set)(oci8_bind_t *bh, VALUE val);
     void (*init)(oci8_bind_t *bh, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale);
+    ub1 (*in)(oci8_bind_t *bh, ub1 piece);
+    void (*out)(oci8_bind_t *bh, ub1 piece);
     ub2 dty;
 };
 
@@ -73,8 +75,11 @@ struct oci8_bind {
     oci8_bind_t *prev;
     void *valuep;
     sb4 value_sz;
+    union {
+        ub2 rlen;
+        ub4 alen;
+    } len;
     ub2 use_rlen;
-    ub2 rlen;
     sb2 ind;
 };
 

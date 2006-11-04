@@ -366,6 +366,8 @@ static oci8_bind_lob_class_t bind_clob_class = {
         bind_lob_get,
         bind_lob_set,
         bind_lob_init,
+        NULL,
+        NULL,
         SQLT_CLOB
     },
     &cOCI8CLOB
@@ -381,6 +383,8 @@ static oci8_bind_lob_class_t bind_blob_class = {
         bind_lob_get,
         bind_lob_set,
         bind_lob_init,
+        NULL,
+        NULL,
         SQLT_BLOB
     },
     &cOCI8BLOB

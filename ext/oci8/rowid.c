@@ -90,7 +90,7 @@ static void bind_rowid1_free(oci8_base_t *base)
 static VALUE bind_rowid1_get(oci8_bind_t *base)
 {
     VALUE rowid = rb_funcall(cOCIRowid, oci8_id_new, 1, Qnil);
-    oci8_rowid1_set(rowid, base->valuep, base->rlen);
+    oci8_rowid1_set(rowid, base->valuep, base->len.rlen);
     return rowid;
 }
 
@@ -101,7 +101,7 @@ static void bind_rowid1_set(oci8_bind_t *base, VALUE val)
         rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIRowid)", rb_class2name(CLASS_OF(val)));
     rowid = DATA_PTR(val);
     strcpy(base->valuep, rowid->id);
-    base->rlen = strlen(rowid->id);
+    base->len.rlen = strlen(rowid->id);
 }
 
 static void bind_rowid1_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
@@ -119,6 +119,8 @@ static oci8_bind_class_t bind_rowid1_class = {
     bind_rowid1_get,
     bind_rowid1_set,
     bind_rowid1_init,
+    NULL,
+    NULL,
     SQLT_CHR
 };
 

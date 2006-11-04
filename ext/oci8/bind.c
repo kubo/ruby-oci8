@@ -87,6 +87,8 @@ static oci8_bind_class_t bind_string_class = {
     bind_string_get,
     bind_string_set,
     bind_string_init,
+    NULL,
+    NULL,
     SQLT_LVC
 };
 
@@ -102,7 +104,128 @@ static oci8_bind_class_t bind_raw_class = {
     bind_string_get,
     bind_string_set,
     bind_string_init,
+    NULL,
+    NULL,
     SQLT_LVB
+};
+
+/*
+ * bind_long
+ */
+typedef struct {
+    oci8_bind_t base;
+    VALUE obj;
+    ub4 bufsiz;
+    char *buf;
+} oci8_bind_long_t;
+
+static void bind_long_free(oci8_base_t *base)
+{
+    oci8_bind_long_t *bind_long = (oci8_bind_long_t *)base;
+    oci8_bind_free(base);
+    if (bind_long->buf != NULL) {
+        xfree(bind_long->buf);
+        bind_long->buf = NULL;
+    }
+}
+
+static void bind_long_mark(oci8_base_t *base)
+{
+    oci8_bind_long_t *bind_long = (oci8_bind_long_t *)base;
+    rb_gc_mark(bind_long->obj);
+}
+
+static VALUE bind_long_get(oci8_bind_t *base)
+{
+    oci8_bind_long_t *bind_long = (oci8_bind_long_t*)base;
+    return rb_str_dup(bind_long->obj);
+}
+
+static void bind_long_set(oci8_bind_t *base, VALUE val)
+{
+    oci8_bind_long_t *bind_long = (oci8_bind_long_t*)base;
+    bind_long->obj = rb_str_dup(val);
+}
+
+static void bind_long_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+{
+    oci8_bind_long_t *bind_long = (oci8_bind_long_t*)base;
+    sb4 sz = 0;
+
+    if (!NIL_P(length)) {
+        sz = NUM2INT(length);
+    }
+    if (sz < 4000) {
+        sz = 4000;
+    }
+    base->value_sz = INT_MAX;
+    base->use_rlen = 0;
+    bind_long->bufsiz = sz;
+    bind_long->buf = xmalloc(sz);
+    bind_long->obj = Qnil;
+}
+
+static ub1 bind_long_in(oci8_bind_t *base, ub1 piece)
+{
+    oci8_bind_long_t *bind_long = (oci8_bind_long_t*)base;
+    if (NIL_P(bind_long->obj)) {
+        base->valuep = NULL;
+        base->len.alen = 0;
+        base->ind = -1;
+    } else {
+        StringValue(bind_long->obj);
+        base->valuep = RSTRING(bind_long->obj)->ptr;
+        base->len.alen = RSTRING(bind_long->obj)->len;
+        base->ind = 0;
+    }
+    return OCI_ONE_PIECE;
+}
+
+static void bind_long_out(oci8_bind_t *base, ub1 piece)
+{
+    oci8_bind_long_t *bind_long = (oci8_bind_long_t*)base;
+
+    if (piece == OCI_FIRST_PIECE) {
+        bind_long->obj = Qnil;
+    } else {
+        if (NIL_P(bind_long->obj)) {
+            bind_long->obj = rb_str_buf_new(base->len.alen);
+        }
+        rb_str_buf_cat(bind_long->obj, base->valuep, base->len.alen);
+    }
+    base->valuep = bind_long->buf;
+    base->len.alen = bind_long->bufsiz;
+}
+
+static oci8_bind_class_t bind_long_class = {
+    {
+        bind_long_mark,
+        bind_string_free,
+        sizeof(oci8_bind_long_t)
+    },
+    bind_long_get,
+    bind_long_set,
+    bind_long_init,
+    bind_long_in,
+    bind_long_out,
+    SQLT_CHR
+};
+
+/*
+ * bind_long_raw
+ */
+static oci8_bind_class_t bind_long_raw_class = {
+    {
+        bind_long_mark,
+        bind_long_free,
+        sizeof(oci8_bind_long_t)
+    },
+    bind_long_get,
+    bind_long_set,
+    bind_long_init,
+    bind_long_in,
+    bind_long_out,
+    SQLT_BIN
 };
 
 /*
@@ -145,6 +268,8 @@ static oci8_bind_class_t bind_fixnum_class = {
     bind_fixnum_get,
     bind_fixnum_set,
     bind_fixnum_init,
+    NULL,
+    NULL,
     SQLT_INT
 };
 
@@ -188,6 +313,8 @@ static oci8_bind_class_t bind_float_class = {
     bind_float_get,
     bind_float_set,
     bind_float_init,
+    NULL,
+    NULL,
     SQLT_FLT
 };
 
@@ -224,7 +351,7 @@ static VALUE oci8_bind_initialize(VALUE self, VALUE svc, VALUE val, VALUE length
     base->prev = base;
     base->use_rlen = 1;
     bind_class->init(base, svc, &val, length, prec, scale);
-    base->rlen = base->value_sz;
+    base->len.rlen = base->value_sz;
     base->ind = -1;
     if (!NIL_P(val)) {
         rb_funcall(self, id_set, 1, val);
@@ -265,6 +392,8 @@ void Init_oci8_bind(VALUE klass)
     /* register primitive data types. */
     oci8_define_bind_class("String", &bind_string_class);
     oci8_define_bind_class("RAW", &bind_raw_class);
+    oci8_define_bind_class("Long", &bind_long_class);
+    oci8_define_bind_class("LongRaw", &bind_long_raw_class);
     oci8_define_bind_class("Fixnum", &bind_fixnum_class);
     oci8_define_bind_class("Float", &bind_float_class);
 }

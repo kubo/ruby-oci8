@@ -131,6 +131,7 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
     oci8_bind_t *bind;
     oci8_bind_class_t *bind_class;
     sword status;
+    ub4 mode;
 
     position = NUM2INT(vposition); /* 1 */
     bind = oci8_get_bind(vbindobj); /* 2 */
@@ -138,7 +139,12 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
         oci8_base_free(&bind->base); /* TODO: OK? */
     }
     bind_class = (oci8_bind_class_t *)bind->base.klass;
-    status = OCIDefineByPos(stmt->base.hp, (OCIDefine**)&bind->base.hp, oci8_errhp, position, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, bind->use_rlen ? &bind->rlen : NULL, 0, OCI_DEFAULT);
+    if (bind_class->out == NULL) {
+        mode = OCI_DEFAULT;
+    } else {
+        mode = OCI_DYNAMIC_FETCH;
+    }
+    status = OCIDefineByPos(stmt->base.hp, (OCIDefine**)&bind->base.hp, oci8_errhp, position, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, bind->use_rlen ? &bind->len.rlen : NULL, 0, mode);
     if (status != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, status, stmt->base.hp);
     }
@@ -172,6 +178,7 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     oci8_bind_class_t *bind_class;
     sword status;
     VALUE old_value;
+    ub4 mode;
 
     if (NIL_P(vplaceholder)) { /* 1 */
         placeholder_ptr = NULL;
@@ -195,11 +202,16 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
         oci8_base_free(&bind->base); /* TODO: OK? */
     }
     bind_class = (oci8_bind_class_t *)bind->base.klass;
+    if (bind_class->in != NULL || bind_class->out != NULL) {
+        mode = OCI_DATA_AT_EXEC;
+    } else {
+        mode = OCI_DEFAULT;
+    }
 
     if (placeholder_ptr == (char*)-1) {
-        status = OCIBindByPos(stmt->base.hp, (OCIBind**)&bind->base.hp, oci8_errhp, position, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, bind->use_rlen ? &bind->rlen : NULL, 0, 0, 0, OCI_DEFAULT);
+        status = OCIBindByPos(stmt->base.hp, (OCIBind**)&bind->base.hp, oci8_errhp, position, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, bind->use_rlen ? &bind->len.rlen : NULL, 0, 0, 0, mode);
     } else {
-        status = OCIBindByName(stmt->base.hp, (OCIBind**)&bind->base.hp, oci8_errhp, placeholder_ptr, placeholder_len, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, bind->use_rlen ? &bind->rlen : NULL, 0, 0, 0, OCI_DEFAULT);
+        status = OCIBindByName(stmt->base.hp, (OCIBind**)&bind->base.hp, oci8_errhp, placeholder_ptr, placeholder_len, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, bind->use_rlen ? &bind->len.rlen : NULL, 0, 0, 0, mode);
     }
     if (status != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, status, stmt->base.hp);
@@ -222,6 +234,25 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     return bind->base.self;
 }
 
+static sword oci8_call_stmt_execute(oci8_svcctx_t *svcctx, oci8_stmt_t *stmt, ub4 iters, ub4 mode)
+{
+    sword rv;
+
+    oci_rc2(rv, svcctx, OCIStmtExecute(svcctx->base.hp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode));
+    if (rv == OCI_ERROR) {
+        ub4 errcode;
+        OCIErrorGet(oci8_errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
+        if (errcode == 1000) {
+            /* run GC to close unreferred cursors
+             * when ORA-01000 (maximum open cursors exceeded).
+             */
+            rb_gc();
+            oci_rc2(rv, svcctx, OCIStmtExecute(svcctx->base.hp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode));
+        }
+    }
+    return rv;
+}
+
 static VALUE oci8_stmt_execute(VALUE self)
 {
     oci8_stmt_t *stmt = DATA_PTR(self);
@@ -237,14 +268,45 @@ static VALUE oci8_stmt_execute(VALUE self)
         iters = 1;
         mode = svcctx->is_autocommit ? OCI_COMMIT_ON_SUCCESS : OCI_DEFAULT;
     }
-    oci_rc2(rv, svcctx, OCIStmtExecute(svcctx->base.hp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode));
-    if (rv == OCI_ERROR) {
-        ub4 errcode;
-        OCIErrorGet(oci8_errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
-        if (errcode == 1000) {
-            rb_gc();
-            oci_rc2(rv, svcctx, OCIStmtExecute(svcctx->base.hp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode));
+    rv = oci8_call_stmt_execute(svcctx, stmt, iters, mode);
+    while (rv == OCI_NEED_DATA) {
+        oci8_bind_t *bind;
+        oci8_bind_class_t *bind_class;
+        dvoid *hp;
+        ub4 type;
+        ub1 in_out;
+        ub4 iter;
+        ub4 idx;
+        ub1 piece;
+
+        oci_lc(OCIStmtGetPieceInfo(stmt->base.hp, oci8_errhp, &hp, &type, &in_out, &iter, &idx, &piece));
+        for (bind = stmt->next; bind != (oci8_bind_t*)stmt; bind = bind->next) {
+            if (bind->base.hp == hp) {
+                if (type != OCI_HTYPE_BIND)
+                    rb_bug("ruby-oci8: expect OCI_HTYPE_BIND but %d", type);
+                bind_class = (oci8_bind_class_t *)bind->base.klass;
+                switch (in_out) {
+                case OCI_PARAM_IN:
+                    if (bind_class->in == NULL)
+                        rb_bug("....");
+                    piece = bind_class->in(bind, piece);
+                    break;
+                case OCI_PARAM_OUT:
+                    if (bind_class->out == NULL)
+                        rb_bug("....");
+                    bind_class->out(bind, piece);
+                    break;
+                default:
+                    rb_bug("ruby-oci8: expect OCI_PARAM_IN or OCI_PARAM_OUT but %d", in_out);
+                }
+                oci_lc(OCIStmtSetPieceInfo(bind->base.hp, OCI_HTYPE_BIND, oci8_errhp, bind->valuep, &bind->len.alen, 0, &bind->ind, NULL));
+                break;
+            }
         }
+        if (bind == (oci8_bind_t*)stmt) {
+            rb_bug("ruby-oci8: No bind handle is found.");
+        }
+        rv = oci8_call_stmt_execute(svcctx, stmt, iters, mode);
     }
     if (IS_OCI_ERROR(rv)) {
         oci8_raise(oci8_errhp, rv, stmt->base.hp);
@@ -257,13 +319,55 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
     VALUE ary;
     sword rv;
     long idx;
+    oci8_bind_t *bind;
+    oci8_bind_class_t *bind_class;
 
     oci_rc2(rv, svcctx, OCIStmtFetch(stmt->base.hp, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT));
+    while (rv == OCI_NEED_DATA) {
+        dvoid *hp;
+        ub4 type;
+        ub1 in_out;
+        ub4 iter;
+        ub4 idx;
+        ub1 piece;
+
+        oci_lc(OCIStmtGetPieceInfo(stmt->base.hp, oci8_errhp, &hp, &type, &in_out, &iter, &idx, &piece));
+        for (bind = stmt->next; bind != (oci8_bind_t*)stmt; bind = bind->next) {
+            if (bind->base.hp == hp) {
+                if (type != OCI_HTYPE_DEFINE)
+                    rb_bug("ruby-oci8: expect OCI_HTYPE_DEFINE but %d", type);
+                bind_class = (oci8_bind_class_t *)bind->base.klass;
+                switch (in_out) {
+                case OCI_PARAM_OUT:
+                    if (bind_class->out == NULL)
+                        rb_bug("....");
+                    bind_class->out(bind, piece == OCI_FIRST_PIECE);
+                    break;
+                default:
+                    rb_bug("ruby-oci8: expect OCI_PARAM_OUT but %d", in_out);
+                }
+                oci_lc(OCIStmtSetPieceInfo(bind->base.hp, OCI_HTYPE_DEFINE, oci8_errhp, bind->valuep, &bind->len.alen, 0, &bind->ind, NULL));
+                break;
+            }
+        }
+        if (bind == (oci8_bind_t*)stmt) {
+            rb_bug("ruby-oci8: No define handle is found.");
+        }
+        oci_rc2(rv, svcctx, OCIStmtFetch(stmt->base.hp, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT));
+    }
     if (rv == OCI_NO_DATA) {
         return Qnil;
     }
     if (IS_OCI_ERROR(rv)) {
         oci8_raise(oci8_errhp, rv, stmt->base.hp);
+    }
+    for (bind = stmt->next; bind != (oci8_bind_t*)stmt; bind = bind->next) {
+        if (bind->base.type != OCI_HTYPE_DEFINE)
+            continue;
+        bind_class = (oci8_bind_class_t *)bind->base.klass;
+        if (bind_class->out != NULL) {
+            bind_class->out(bind, 0);
+        }
     }
     ary = rb_ary_new2(RARRAY(stmt->defns)->len);
     for (idx = 0; idx < RARRAY(stmt->defns)->len; idx++) {
@@ -525,6 +629,8 @@ static oci8_bind_class_t bind_stmt_class = {
     oci8_stmt_get,
     bind_stmt_set,
     bind_stmt_init,
+    NULL,
+    NULL,
     SQLT_RSET
 };
 

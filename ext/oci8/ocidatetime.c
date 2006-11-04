@@ -187,6 +187,8 @@ static oci8_bind_class_t bind_datetime_class = {
     bind_datetime_get,
     bind_datetime_set,
     bind_datetime_init,
+    NULL,
+    NULL,
     SQLT_TIMESTAMP_TZ
 };
 
@@ -199,6 +201,8 @@ static oci8_bind_class_t bind_interval_ym_class = {
     bind_interval_ym_get,
     bind_interval_ym_set,
     bind_interval_ym_init,
+    NULL,
+    NULL,
     SQLT_INTERVAL_YM
 };
 
@@ -211,6 +215,8 @@ static oci8_bind_class_t bind_interval_ds_class = {
     bind_interval_ds_get,
     bind_interval_ds_set,
     bind_interval_ds_init,
+    NULL,
+    NULL,
     SQLT_INTERVAL_DS
 };
 

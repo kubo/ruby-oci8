@@ -139,11 +139,11 @@ class OraConf
         end
         case RUBY_PLATFORM
         when /solaris/
-          @libs = "-L#{lib_dir} -R#{lib_dir} -lclntsh"
+          @libs = " -L#{lib_dir} -R#{lib_dir} -lclntsh"
         when /linux/
-          @libs = "-L#{lib_dir} -Wl,-rpath,#{lib_dir} -lclntsh"
+          @libs = " -L#{lib_dir} -Wl,-rpath,#{lib_dir} -lclntsh"
         else
-          @libs = "-L#{lib_dir} -lclntsh"
+          @libs = " -L#{lib_dir} -lclntsh"
         end
         return if try_link_oci()
       end
@@ -159,6 +159,25 @@ class OraConf
         @libs = get_libs()
       end
       return if try_link_oci()
+
+      if RUBY_PLATFORM =~ /darwin/
+        open('mkmf.log', 'r') do |f|
+          while line = f.gets
+            if line.include? 'cputype (18, architecture ppc) does not match cputype (7)'
+              raise <<EOS
+Oracle instant client is still pcc.
+  http://forums.oracle.com/forums/thread.jspa?messageID=1303271&#1303271
+
+There are three solutions:
+1. Compile ruby as ppc binary.
+2. Wait until Oracle releases mac intel binary.
+3. Use a third-party ODBC driver and ruby-odbc instead.
+     http://www.actualtechnologies.com/
+EOS
+            end
+          end
+        end
+      end
 
       raise 'cannot compile OCI'
     rescue
