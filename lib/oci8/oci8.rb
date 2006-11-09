@@ -153,11 +153,6 @@ class OCI8
     end
 
     class IntervalYM
-      alias :get_orig :get
-      def get
-        ym = get_orig
-        ym && ::OCI8::IntervalYM.new(ym[0], ym[1])
-      end
       alias :set_orig :set
       def set(val)
         unless val.nil?
@@ -174,11 +169,6 @@ class OCI8
     end
 
     class IntervalDS
-      alias :get_orig :get
-      def get
-        ds = get_orig
-        ds && ::OCI8::IntervalDS.new(ds[0], ds[1], ds[2], ds[3], ds[4])
-      end
       alias :set_orig :set
       def set(val)
         unless val.nil?
@@ -209,20 +199,6 @@ class OCI8
     class DateTime
       @@local_offset = (::Time.now.utc_offset / 60).divmod 60
 
-      alias :get_orig :get
-      def get
-        ts = get_orig
-        # ts[0] - year
-        # ts[1] - month
-        # ts[2] - day
-        # ts[3] - hour
-        # ts[4] - minute
-        # ts[5] - sec
-        # ts[6] - fsec
-        # ts[7] - tz_hour
-        # ts[8] - tz_minute
-        ts && ::DateTime.civil(ts[0], ts[1], ts[2], ts[3], ts[4], ts[5].to_r + ts[6].to_r / 1000000000, ts[7].to_r / 24 + ts[8].to_r / 1440)
-      end
       alias :set_orig :set
       def set(val)
         unless val.nil?

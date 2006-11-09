@@ -260,9 +260,16 @@ void ora_number_to_str(unsigned char *buf, size_t *lenp, ora_number_t *on, unsig
 /* ocinumber.c */
 void Init_oci_number(VALUE mOCI);
 OCINumber *oci8_get_ocinumber(VALUE num);
+VALUE oci8_make_ocinumber(OCINumber *s);
+VALUE oci8_make_integer(OCINumber *s);
+VALUE oci8_make_float(OCINumber *s);
 
 /* ocidatetim.c */
 void Init_oci_datetime(void);
+VALUE oci8_make_datetime_from_ocidate(OCIDate *s);
+VALUE oci8_make_datetime_from_ocidatetime(OCIDateTime *s);
+VALUE oci8_make_interval_ym(OCIInterval *s);
+VALUE oci8_make_interval_ds(OCIInterval *s);
 
 /* attr.c */
 VALUE oci8_get_sb1_attr(oci8_base_t *base, ub4 attrtype);

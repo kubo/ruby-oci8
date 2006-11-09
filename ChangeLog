@@ -1,3 +1,14 @@
+2006-11-09  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.h, ext/oci8/ocinumber.c: rename make_oci_number()
+	    and make_integer to oci8_make_ocinumber() and oci8_make_integer().
+	    add oci8_make_float().
+	* ext/oci8/oci8.h, ext/oci8/ocidatetime.c, lib/oci8/oci8.rb: add
+	    oci8_make_datetime_from_ocidate(), oci8_make_datetime_from_ocidatetime(),
+	    oci8_make_interval_ym() and oci8_make_interval_ds().
+	    OCI8::BindType::IntervalYM#get return an OCI8::IntervalYM instead of an array.
+	    OCI8::BindType::IntervalDS#get return an OCI8::IntervalDS instead of an array.
+	    OCI8::BindType::DateTime#get return a DateTime instead of an array.
+
 2006-11-04  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.h: add callbacks for piecewise operations.
 	* ext/oci8/oraconf.rb: add an error message for intel mac.
