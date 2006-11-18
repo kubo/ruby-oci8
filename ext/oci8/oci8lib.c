@@ -74,14 +74,13 @@ static VALUE oci8_s_allocate(VALUE klass)
     VALUE superklass;
     VALUE obj;
 
-    obj = rb_ivar_get(klass, id_oci8_class);
     superklass = klass;
-    while (NIL_P(obj)) {
+    while (!RTEST(rb_ivar_defined(superklass, id_oci8_class))) {
         superklass = RCLASS(superklass)->super;
         if (superklass == rb_cObject)
             rb_raise(rb_eRuntimeError, "private method `new' called for %s:Class", rb_class2name(klass));
-        obj = rb_ivar_get(superklass, id_oci8_class);
     }
+    obj = rb_ivar_get(superklass, id_oci8_class);
     base_class = DATA_PTR(obj);
 
     base = xmalloc(base_class->size);
@@ -151,6 +150,7 @@ Init_oci8lib()
     Init_ora_number();
     Init_oci_number(cOCI8);
     Init_oci_datetime();
+    Init_oci_tdo(cOCI8);
 
 #ifdef DEBUG_CORE_FILE
     signal(SIGSEGV, SIG_DFL);

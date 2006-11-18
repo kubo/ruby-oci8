@@ -1,4 +1,17 @@
 2006-11-18  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/tdo.c: add a new class OCI8::TDO to fetch Oracle's
+	    object types.
+	* ext/oci8/bind.c, ext/oci8/extconf.rb, ext/oci8/lob.c,
+	    ext/oci8/oci8.h, ext/oci8/oci8lib.c, ext/oci8/stmt.c,
+	    lib/oci8/oci8.rb: use OCI8::TDO to fetch Oracle's object
+	    types.
+	* ext/oci8/lob.c: add oci8_make_clob() and oci8_make_blob()
+	    for OCI8::TDO.
+	* ext/oci8/metadata.c: export cOCI8MetadataBase for OCI8::TDO.
+	* ext/oci8/error.c: prepend error line in C to the exception's
+	    backtrace for debug.
+
+2006-11-18  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: add check code whether oci.h exists.
 
 2006-11-09  KUBO Takehiro  <kubo@jiubao.org>

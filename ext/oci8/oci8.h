@@ -79,6 +79,8 @@ struct oci8_bind {
         ub2 rlen;
         ub4 alen;
     } len;
+    VALUE tdo;
+    void *null_struct;
     ub2 use_rlen;
     sb2 ind;
 };
@@ -116,6 +118,9 @@ typedef struct  {
     cval = def; \
   } \
 } while (0)
+
+#define oci8_raise(err, status, stmt) oci8_do_raise(err, status, stmt, __FILE__, __LINE__)
+#define oci8_env_raise(err, status) oci8_do_env_raise(err, status, __FILE__, __LINE__)
 
 /* use for local call */
 #define oci_lc(rv) do { \
@@ -209,8 +214,8 @@ extern rboci8_OCIRowidToChar_t rboci8_OCIRowidToChar;
 extern VALUE eOCIException;
 extern VALUE eOCIBreak;
 void Init_oci8_error(void);
-NORETURN(void oci8_raise(OCIError *, sword status, OCIStmt *));
-NORETURN(void oci8_env_raise(OCIEnv *, sword status));
+NORETURN(void oci8_do_raise(OCIError *, sword status, OCIStmt *, const char *file, int line));
+NORETURN(void oci8_do_env_raise(OCIEnv *, sword status, const char *file, int line));
 ub4 oci8_get_error_code(OCIError *errhp);
 
 /* oci8.c */
@@ -242,11 +247,14 @@ void Init_oci8_rowid(void);
 VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype);
 
 /* metadata.c */
+extern VALUE cOCI8MetadataBase;
 void Init_oci8_metadata(VALUE cOCI8);
 VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE desc);
 
 /* lob.c */
 void Init_oci8_lob(VALUE cOCI8);
+VALUE oci8_make_clob(oci8_svcctx_t *svcctx, OCILobLocator *s);
+VALUE oci8_make_blob(oci8_svcctx_t *svcctx, OCILobLocator *s);
 
 /* oradate.c */
 void Init_ora_date(void);
@@ -270,6 +278,9 @@ VALUE oci8_make_datetime_from_ocidate(OCIDate *s);
 VALUE oci8_make_datetime_from_ocidatetime(OCIDateTime *s);
 VALUE oci8_make_interval_ym(OCIInterval *s);
 VALUE oci8_make_interval_ds(OCIInterval *s);
+
+/* tdo.c */
+void Init_oci_tdo(VALUE mOCI);
 
 /* attr.c */
 VALUE oci8_get_sb1_attr(oci8_base_t *base, ub4 attrtype);

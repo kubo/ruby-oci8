@@ -21,7 +21,7 @@ end
 $objs = ["oci8lib.o", "env.o", "error.o", "oci8.o",
          "stmt.o", "bind.o", "metadata.o", "attr.o",
          "rowid.o", "lob.o", "oradate.o", "oranumber.o",
-         "ocinumber.o", "ocidatetime.o"]
+         "ocinumber.o", "ocidatetime.o", "tdo.o"]
 
 $CFLAGS += oraconf.cflags
 $libs += oraconf.libs

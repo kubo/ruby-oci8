@@ -11,7 +11,7 @@
 #include "oci8.h"
 
 static VALUE mOCI8Metadata;
-static VALUE cOCI8MetadataBase;
+VALUE cOCI8MetadataBase;
 static VALUE ptype_to_class;
 static VALUE class_to_ptype;
 static ID id_at_is_implicit;

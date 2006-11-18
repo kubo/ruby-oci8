@@ -323,8 +323,13 @@ static VALUE oci8_get_data(VALUE self)
     oci8_bind_t *base = DATA_PTR(self);
     oci8_bind_class_t *bind_class = (oci8_bind_class_t *)base->base.klass;
 
-    if (base->ind != 0)
-        return Qnil;
+    if (RTEST(base->tdo)) {
+        if (*(OCIInd*)base->null_struct != 0)
+            return Qnil;
+    } else {
+        if (base->ind != 0)
+            return Qnil;
+    }
     return bind_class->get(base);
 }
 
@@ -334,10 +339,18 @@ static VALUE oci8_set_data(VALUE self, VALUE val)
     oci8_bind_class_t *bind_class = (oci8_bind_class_t *)base->base.klass;
 
     if (NIL_P(val)) {
-        base->ind = -1;
+        if (RTEST(base->tdo)) {
+            *(OCIInd*)base->null_struct = -1;
+        } else {
+            base->ind = -1;
+        }
     } else {
         bind_class->set(base, val);
-        base->ind = 0;
+        if (RTEST(base->tdo)) {
+            *(OCIInd*)base->null_struct = 0;
+        } else {
+            base->ind = 0;
+        }
     }
     return self;
 }

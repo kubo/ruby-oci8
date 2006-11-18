@@ -320,6 +320,9 @@ class OCI8
     # INTEGER          SQLT_NUM     22   38    0
     # SMALLINT         SQLT_NUM     22   38    0
     Mapping[:number] = ::OCI8::BindType::Number
+
+    # NamedType
+    Mapping[:named_type]    = ::OCI8::BindType::TDO
   end # BindType
 
   # The instance of this class corresponds to cursor in the term of
@@ -526,6 +529,9 @@ class OCI8
         datasize *= 3
       when :long, :long_raw
         datasize = @con.long_read_len
+      when :named_type
+        # FIX LATER
+        datasize = OCI8::TDO.new(p.type_metadata)
       end
 
       bind_or_define(:define, i, nil, datatype, datasize, precision, scale, true)

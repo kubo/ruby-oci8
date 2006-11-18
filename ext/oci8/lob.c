@@ -18,6 +18,37 @@ typedef struct {
     enum state state;
 } oci8_lob_t;
 
+static VALUE oci8_make_lob(VALUE klass, oci8_svcctx_t *svcctx, OCILobLocator *s)
+{
+    oci8_lob_t *lob;
+    VALUE lob_obj;
+    sword rv;
+
+    lob_obj = rb_funcall(klass, oci8_id_new, 1, svcctx->base.self);
+    lob = DATA_PTR(lob_obj);
+#ifdef HAVE_OCILOBLOCATORASSIGN
+    /* Oracle 8.1 or upper */
+    rv = OCILobLocatorAssign(svcctx->base.hp, oci8_errhp, s, (OCILobLocator**)&lob->base.hp);
+#else
+    /* Oracle 8.0 */
+    rv = OCILobAssign(oci8_envhp, oci8_errhp, s, (OCILobLocator**)&lob->base.hp);
+#endif
+    if (rv != OCI_SUCCESS) {
+        oci8_raise(oci8_errhp, rv, NULL);
+    }
+    return lob_obj;
+}
+
+VALUE oci8_make_clob(oci8_svcctx_t *svcctx, OCILobLocator *s)
+{
+    return oci8_make_lob(cOCI8CLOB, svcctx, s);
+}
+
+VALUE oci8_make_blob(oci8_svcctx_t *svcctx, OCILobLocator *s)
+{
+    return oci8_make_lob(cOCI8BLOB, svcctx, s);
+}
+
 static void oci8_lob_mark(oci8_base_t *base)
 {
     oci8_lob_t *lob = (oci8_lob_t *)base;
