@@ -149,7 +149,11 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
         oci8_raise(oci8_errhp, status, stmt->base.hp);
     }
     bind->base.type = OCI_HTYPE_DEFINE;
-
+    if (RTEST(bind->tdo)) {
+        oci8_base_t *tdo = DATA_PTR(bind->tdo);
+        oci_lc(OCIDefineObject(bind->base.hp, oci8_errhp, tdo->hp,
+                               &bind->valuep, 0, &bind->null_struct, 0));
+    }
     if (position - 1 < RARRAY(stmt->defns)->len) {
         VALUE old_value = RARRAY(stmt->defns)->ptr[position - 1];
         if (!NIL_P(old_value)) {
