@@ -165,8 +165,8 @@ class OraConf
           while line = f.gets
             if line.include? 'cputype (18, architecture ppc) does not match cputype (7)'
               raise <<EOS
-Oracle instant client is still pcc.
-  http://forums.oracle.com/forums/thread.jspa?messageID=1303271&#1303271
+Oracle doesn't support intel mac.
+  http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-talk/223854
 
 There are three solutions:
 1. Compile ruby as ppc binary.
@@ -182,7 +182,10 @@ EOS
       raise 'cannot compile OCI'
     rescue
       print <<EOS
---------------- common error message --------------
+---------------------------------------------------
+error messages:
+#{$!.to_str}
+---------------------------------------------------
 If you use Oracle instant client, try with --with-instant-client.
 
 zip package:
@@ -192,11 +195,12 @@ rpm package:
   ruby setup.rb config -- --with-instant-client
 
 The latest version of oraconf.rb may solve the problem.
-  http://rubyforge.org/cgi-bin/viewcvs.cgi/ruby-oci8/ext/oci8/oraconf.rb?cvsroot=ruby-oci8&only_with_tag=MAIN
+   http://rubyforge.org/viewvc/trunk/ruby-oci8/ext/oci8/oraconf.rb?root=ruby-oci8&view=log
 
 If it could not be solved, send the following information to kubo@jiubao.org.
 
-* error messages except 'common error message'.
+* following error messages:
+#{$!.to_str.gsub(/^/, '  | ')}
 * last 100 lines of 'ext/oci8/mkmf.log'.
 * results of the following commands:
     ruby --version
@@ -217,8 +221,6 @@ If it could not be solved, send the following information to kubo@jiubao.org.
     echo $LD_LIBRARY_PATH
     echo $LIBPATH      # AIX
     echo $SHLIB_PATH   # HP-UX
------------------- error message ------------------
-#{$!.to_str}
 ---------------------------------------------------
 EOS
       exc = RuntimeError.new
@@ -499,7 +501,17 @@ EOS
             break
           end
         end
-        raise 'Cannot get proper cflags.' unless ok
+        unless ok
+          if @version.to_i >= 1000
+            oci_h = "#{@oracle_home}/rdbms/public/oci.h"
+          else
+            oci_h = "#{@oracle_home}/rdbms/demo/oci.h"
+          end
+          unless File.exist?(oci_h)
+            raise "'#{oci_h}' does not exists. Install 'Oracle Call Interface' component."
+          end
+          raise 'Cannot get proper cflags.'
+        end
         cflags
       ensure
         $CFLAGS = original_CFLAGS
@@ -640,6 +652,12 @@ EOS
         raise 'failed'
       end
       @libs = " -L#{lib_dir} -lclntsh "
+    end
+    unless File.exists?("#{inc_dir}/oci.h")
+          raise <<EOS
+'#{inc_dir}/oci.h' doesn't exist.
+Install 'Instant Client SDK'.
+EOS
     end
     $CFLAGS += @cflags
     unless try_link_oci()

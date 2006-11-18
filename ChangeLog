@@ -1,3 +1,6 @@
+2006-11-18  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: add check code whether oci.h exists.
+
 2006-11-09  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.h, ext/oci8/ocinumber.c: rename make_oci_number()
 	    and make_integer to oci8_make_ocinumber() and oci8_make_integer().
