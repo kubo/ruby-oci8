@@ -17,6 +17,7 @@ static VALUE oci8_sym_drop_stmt;
 static VALUE oci8_sym_alter_stmt;
 static VALUE oci8_sym_begin_stmt;
 static VALUE oci8_sym_declare_stmt;
+static VALUE oci8_sym_other;
 
 VALUE cOCIStmt;
 
@@ -460,6 +461,8 @@ static VALUE oci8_stmt_get_stmt_type(VALUE self)
         return oci8_sym_begin_stmt;
     case INT2FIX(OCI_STMT_DECLARE):
         return oci8_sym_declare_stmt;
+    case INT2FIX(0):
+        return oci8_sym_other;
     default:
         rb_bug("unexcepted statement type %d in OCIStmt#stmt_type", FIX2INT(stmt_type));
     }
@@ -651,6 +654,7 @@ void Init_oci8_stmt(VALUE cOCI8)
     oci8_sym_alter_stmt = ID2SYM(rb_intern("alter_stmt"));
     oci8_sym_begin_stmt = ID2SYM(rb_intern("begin_stmt"));
     oci8_sym_declare_stmt = ID2SYM(rb_intern("declare_stmt"));
+    oci8_sym_other = ID2SYM(rb_intern("other"));
 
     rb_define_private_method(cOCIStmt, "initialize", oci8_stmt_initialize, -1);
     rb_define_private_method(cOCIStmt, "__defineByPos", oci8_define_by_pos, 2);

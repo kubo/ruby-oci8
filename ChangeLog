@@ -1,3 +1,9 @@
+2006-11-19  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c: fix the default value of OCI8#long_read_len.
+	* ext/oci8/stmt.c: fix bug when execute RENAME statement.
+	* test/test_oci8.rb: add testcases for above two problems.
+	    The testcases are contributed by Pete Schwamb.
+
 2006-11-18  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/tdo.c: add a new class OCI8::TDO to fetch Oracle's
 	    object types.

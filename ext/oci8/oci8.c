@@ -133,6 +133,7 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
     }
     svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
     svcctx->is_autocommit = 0;
+    svcctx->long_read_len = INT2FIX(65535);
     return Qnil;
 }
 

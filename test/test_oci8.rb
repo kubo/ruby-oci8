@@ -12,6 +12,35 @@ class TestOCI8 < Test::Unit::TestCase
     @conn.logoff
   end
 
+  def test_rename
+    begin
+      @conn.exec("DROP TABLE test_table")
+      @conn.exec("DROP TABLE test_rename_table")
+    rescue OCIError
+      raise if $!.code != 942 # table or view does not exist
+    end
+    sql = <<-EOS
+CREATE TABLE test_rename_table
+  (C CHAR(10) NOT NULL)
+EOS
+    @conn.exec(sql)
+    @conn.exec("RENAME test_rename_table TO test_table")
+  end
+
+  def test_long_type
+    begin
+      @conn.exec("DROP TABLE test_table")
+    rescue OCIError
+      raise if $!.code != 942 # table or view does not exist
+    end
+    sql = <<-EOS
+CREATE TABLE test_table
+  (C CHAR(10) NOT NULL)
+EOS
+    @conn.exec(sql)
+    @conn.exec("SELECT column_name, data_default FROM all_tab_columns where owner = '#{$dbuser}' and table_name = 'TEST_TABLE'")
+  end
+
   def test_select
     begin
       @conn.exec("DROP TABLE test_table")
