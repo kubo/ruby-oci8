@@ -11,8 +11,6 @@
 #include "oci8.h"
 
 static VALUE cDateTime;
-static VALUE cOCI8IntervalYM;
-static VALUE cOCI8IntervalDS;
 static ID id_parse;
 static ID id_civil;
 static ID id_to_r;
@@ -447,11 +445,8 @@ static oci8_bind_class_t bind_interval_ds_class = {
 void Init_oci_datetime(void)
 {
     rb_require("date");
-    rb_require("oci8/interval");
 
     cDateTime = rb_eval_string("DateTime");
-    cOCI8IntervalYM = rb_eval_string("OCI8::IntervalYM");
-    cOCI8IntervalDS = rb_eval_string("OCI8::IntervalDS");
     id_civil = rb_intern("civil");
     id_parse = rb_intern("parse");
     id_to_r = rb_intern("to_r");
