@@ -1,3 +1,11 @@
+2006-11-22  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/ocidatetime.c: bind types for interval_ym and interval_ds
+	    are now Rational instread of OCI8::IntervalYM and OCI8::IntervalDS.
+	* lib/oci8/interval.rb: delete OCI8::IntervalYM and OCI8::IntervalDS.
+	* lib/oci8/oci8.rb: delete OCI8::IntervalYM and OCI8::IntervalDS.
+	* test/test_all.rb: call testcases for timestamps and intervals.
+	* test/test_datetime.rb: add testcases for timestamps and intervals.
+
 2006-11-19  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c: fix the default value of OCI8#long_read_len.
 	* ext/oci8/stmt.c: fix bug when execute RENAME statement.
