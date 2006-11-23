@@ -479,6 +479,16 @@ static VALUE onum_initialize(int argc, VALUE *argv, VALUE self)
     return Qnil;
 }
 
+static VALUE onum_initialize_copy(VALUE lhs, VALUE rhs)
+{
+    if (!RTEST(rb_obj_is_instance_of(rhs, CLASS_OF(lhs)))) {
+        rb_raise(rb_eTypeError, "invalid type: expected %s but %s",
+                 rb_class_name(CLASS_OF(lhs)), rb_class_name(CLASS_OF(rhs)));
+    }
+    oci_lc(OCINumberAssign(oci8_errhp, _NUMBER(rhs), _NUMBER(lhs)));
+    return lhs;
+}
+
 static VALUE onum_coerce(VALUE self, VALUE other)
 {
     OCINumber n;
@@ -1121,6 +1131,7 @@ Init_oci_number(VALUE cOCI8)
 
     /* methods of OCI::Number */
     rb_define_method_nodoc(cOCINumber, "initialize", onum_initialize, -1);
+    rb_define_method_nodoc(cOCINumber, "initialize_copy", onum_initialize_copy, 1);
     rb_define_method_nodoc(cOCINumber, "coerce", onum_coerce, 1);
 
     rb_include_module(cOCINumber, rb_mComparable);

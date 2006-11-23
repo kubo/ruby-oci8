@@ -154,7 +154,6 @@ class OCI8
 
     # bind or explicitly define
     Mapping[::String]       = ::OCI8::BindType::String
-    Mapping[::OraNumber]    = ::OCI8::BindType::OraNumber
     Mapping[::OCINumber]    = ::OCI8::BindType::OCINumber
     Mapping[::Fixnum]       = ::OCI8::BindType::Integer
     Mapping[::Float]        = ::OCI8::BindType::Float
@@ -500,18 +499,6 @@ class OraDate
 
   def yaml_initialize(type, val) # :nodoc:
     initialize(*val.split(/[ -\/:]+/).collect do |i| i.to_i end)
-  end
-
-  def to_yaml(opts = {}) # :nodoc:
-    YAML.quick_emit(object_id, opts) do |out|
-      out.scalar(taguri, self.to_s, :plain)
-    end
-  end
-end
-
-class OraNumber
-  def yaml_initialize(type, val) # :nodoc:
-    initialize(val)
   end
 
   def to_yaml(opts = {}) # :nodoc:

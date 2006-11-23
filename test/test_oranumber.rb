@@ -85,7 +85,7 @@ class TestOraNumber < Test::Unit::TestCase
     NUMBER_CHECK_TARGET.each do |val|
       cursor[:str] = val
       cursor.exec
-      assert_equal(val.to_f, cursor[:number].to_f)
+      assert_in_delta(val.to_f, cursor[:number].to_f, val.to_f.abs * 1e-14)
     end
   end
 

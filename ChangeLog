@@ -1,3 +1,14 @@
+2006-11-23  KUBO Takehiro  <kubo@jiubao.org>
+	* dist-files, ext/oci8/extconf.rb, ext/oci8/oci8.h, ext/oci8/oci8lib.c,
+	    ext/oci8/oranumber.c: delete OraNumber implemented by C.
+	* ext/oci8/metadata.c: use oci8_make_integer() instead of ora_number_to_str()
+	    which was implemented in oranumber.c.
+	* ext/oci8/ocinumber.c: add OCINumber#initialize_copy for OCINumber#copy.
+	* lib/oci8.rb.in: delete "require 'oci8/interval.rb'".
+	* lib/oci8/oci8.rb: remove OraNumber-related code.
+	* lib/oci8/compat.rb: add emulation code of OraNumber by using OCINumber.
+	* test_oranumber.rb: use assert_in_delta when comparing Float value.
+
 2006-11-22  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocidatetime.c: bind types for interval_ym and interval_ds
 	    are now Rational instread of OCI8::IntervalYM and OCI8::IntervalDS.

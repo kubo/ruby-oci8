@@ -180,15 +180,16 @@ static VALUE metadata_get_oraint(VALUE self, VALUE idx)
     oci8_base_t *base = DATA_PTR(self);
     ub1 *value;
     ub4 size = 21;
-    unsigned char buf[ORA_NUMBER_BUF_SIZE];
-    size_t len;
+    OCINumber on;
 
     oci_lc(OCIAttrGet(base->hp, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
     if (size >= 22) {
         rb_raise(rb_eRuntimeError, "Invalid attribute size. expect less than 22, but %d", size);
     }
-    ora_number_to_str(buf, &len, (ora_number_t*)value, size);
-    return rb_cstr2inum(buf, 10);
+    memset(&on, 0, sizeof(on));
+    on.OCINumberPart[0] = size;
+    memcpy(&on.OCINumberPart[1], value, size);
+    return oci8_make_integer(&on);
 }
 
 static VALUE metadata_get_param(VALUE self, VALUE idx)

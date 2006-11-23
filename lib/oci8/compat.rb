@@ -100,3 +100,23 @@ class OCI8
     alias getColNames get_col_names
   end
 end
+
+class OraNumber < OCINumber
+  def yaml_initialize(type, val) # :nodoc:
+    initialize(val)
+  end
+
+  def to_yaml(opts = {}) # :nodoc:
+    YAML.quick_emit(object_id, opts) do |out|
+      out.scalar(taguri, self.to_s, :plain)
+    end
+  end
+end
+
+class OCI8
+  module BindType
+    OraNumber = OCINumber
+  end
+end
+
+OCI8::BindType::Mapping[OraNumber] = OCI8::BindType::OraNumber

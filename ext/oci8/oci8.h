@@ -259,12 +259,6 @@ VALUE oci8_make_blob(oci8_svcctx_t *svcctx, OCILobLocator *s);
 /* oradate.c */
 void Init_ora_date(void);
 
-/* oranumber.c */
-void Init_ora_number(void);
-#define ORA_NUMBER_BUF_SIZE (128 /* max scale */ + 38 /* max precision */ + 1 /* sign */ + 1 /* comma */ + 1 /* nul */)
-typedef struct ora_number ora_number_t;
-void ora_number_to_str(unsigned char *buf, size_t *lenp, ora_number_t *on, unsigned char size);
-
 /* ocinumber.c */
 void Init_oci_number(VALUE mOCI);
 OCINumber *oci8_get_ocinumber(VALUE num);

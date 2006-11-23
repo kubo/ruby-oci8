@@ -147,7 +147,6 @@ Init_oci8lib()
     Init_oci8_lob(cOCI8);
 
     Init_ora_date();
-    Init_ora_number();
     Init_oci_number(cOCI8);
     Init_oci_datetime();
     Init_oci_tdo(cOCI8);

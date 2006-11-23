@@ -25,15 +25,13 @@ ext/oci8/ocidatetime.c
 ext/oci8/ocinumber.c
 ext/oci8/oraconf.rb
 ext/oci8/oradate.c
-ext/oci8/oranumber.c
 ext/oci8/post-config.rb
 ext/oci8/rowid.c
 ext/oci8/stmt.c
-ext/oci8/extconf.h
+ext/oci8/tdo.c
 lib/oci8.rb.in
 lib/DBD/OCI8/OCI8.rb
 lib/oci8/compat.rb
-lib/oci8/interval.rb
 lib/oci8/metadata.rb
 lib/oci8/oci8.rb
 test/README
@@ -48,3 +46,4 @@ test/test_dbi_clob.rb
 test/test_oci8.rb
 test/test_oradate.rb
 test/test_oranumber.rb
+test/test_datetime.rb

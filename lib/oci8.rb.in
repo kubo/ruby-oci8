@@ -20,7 +20,6 @@ end
 
 require 'oci8lib'
 require 'oci8/oci8.rb'
-require 'oci8/interval.rb'
 require 'oci8/metadata.rb'
 require 'oci8/compat.rb'
 
