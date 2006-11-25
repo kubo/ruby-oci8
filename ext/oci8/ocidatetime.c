@@ -323,7 +323,7 @@ static void bind_datetime_set(oci8_bind_t *b, VALUE val)
             rb_raise(rb_eRangeError, "sec_fraction is less then zero.");
         }
         fs = rb_funcall(fs, id_mul, 1, fsec_base);
-        if (RTEST(rb_funcall(INT2FIX(1000000000, id_less, 1, fs)))) {
+        if (RTEST(rb_funcall(INT2FIX(1000000000), id_less, 1, fs))) {
             /* if 1000000000 < fs */
             rb_raise(rb_eRangeError, "sec_fraction is greater than or equals to one second.");
         }
