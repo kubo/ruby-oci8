@@ -29,7 +29,8 @@ static ID id_hour;
 static ID id_min;
 static ID id_sec;
 static ID id_sec_fraction;
-static ID id_of;
+static ID id_offset;
+static ID id_utc_offset;
 static VALUE hour_base;
 static VALUE minute_base;
 static VALUE sec_base;
@@ -154,6 +155,85 @@ VALUE oci8_make_interval_ds(OCIInterval *s)
     return days;
 }
 
+/*
+ * Document-class: OCI8::BindType::DateTime
+ *
+ * This is a helper class to bind ruby's
+ * DateTime[http://www.ruby-doc.org/core/classes/DateTime.html]
+ * object as Oracle's <tt>TIMESTAMP WITH TIME ZONE</tt> datatype.
+ *
+ * == Select
+ *
+ * The fetched value for a <tt>DATE</tt>, <tt>TIMESTAMP</tt>, <tt>TIMESTAMP WITH
+ * TIME ZONE</tt> or <tt>TIMESTAMP WITH LOCAL TIME ZONE</tt> column
+ * is a DateTime[http://www.ruby-doc.org/core/classes/DateTime.html].
+ * The time zone part is a session time zone if the Oracle datatype doesn't
+ * have time zone information. The session time zone is the client machine's
+ * time zone by default.
+ *
+ * You can change the session time zone by executing the following SQL.
+ *
+ *   ALTER SESSION SET TIME_ZONE='-05:00'
+ *
+ * == Bind
+ *
+ * To bind a DateTime[http://www.ruby-doc.org/core/classes/DateTime.html]
+ * value implicitly:
+ *
+ *   conn.exec("INSERT INTO lunar_landings(ship_name, landing_time) VALUES(:1, :2)",
+ *             'Apollo 11',
+ *             DateTime.parse('1969-7-20 20:17:40 00:00'))
+ *
+ * The bind variable <code>:2</code> is bound as <tt>TIMESTAMP WITH TIME ZONE</tt> on Oracle.
+ *
+ * To bind explicitly:
+ *
+ *   cursor = conn.exec("INSERT INTO lunar_landings(ship_name, landing_time) VALUES(:1, :2)")
+ *   cursor.bind_param(':1', nil, String, 60)
+ *   cursor.bind_param(':2', nil, DateTime)
+ *   [['Apollo 11', DateTime.parse('1969-07-20 20:17:40 00:00'))],
+ *    ['Apollo 12', DateTime.parse('1969-11-19 06:54:35 00:00'))],
+ *    ['Apollo 14', DateTime.parse('1971-02-05 09:18:11 00:00'))],
+ *    ['Apollo 15', DateTime.parse('1971-07-30 22:16:29 00:00'))],
+ *    ['Apollo 16', DateTime.parse('1972-04-21 02:23:35 00:00'))],
+ *    ['Apollo 17', DateTime.parse('1972-12-11 19:54:57 00:00'))]
+ *   ].each do |ship_name, landing_time|
+ *     cursor[':1'] = ship_name
+ *     cursor[':2'] = landing_time
+ *     cursor.exec
+ *   end
+ *   cursor.close
+ *
+ * On setting a object to the bind variable, you can use any object
+ * which has at least three instance methods _year_, _mon_ (or _month_)
+ * and _mday_ (or _day_). If the object responses to _hour_, _min_,
+ * _sec_ or _sec_fraction_, the responsed values are used for hour,
+ * minute, second or fraction of a second respectively.
+ * If not, zeros are set. If the object responses to _offset_ or
+ * _utc_offset_, it is used for time zone. If not, the session time
+ * zone is used.
+ *
+ * The acceptable value are listed below.
+ * _year_:: -4712 to 9999 [excluding year 0]
+ * _mon_ (or _month_):: 0 to 12
+ * _mday_ (or _day_):: 0 to 31 [depends on the month]
+ * _hour_:: 0 to 23
+ * _min_:: 0 to 59
+ * _sec_:: 0 to 59
+ * _sec_fraction_:: 0 to (999_999_999.to_r / (24*60*60* 1_000_000_000)) [999,999,999 nanoseconds]
+ * _offset_:: (-12.to_r / 24) to (14.to_r / 24) [-12:00 to +14:00]
+ * _utc_offset_:: -12*3600 <= utc_offset <= 24*3600 [-12:00 to +14:00]
+ *
+ * The output value of the bind varible is always a
+ * DateTime[http://www.ruby-doc.org/core/classes/DateTime.html].
+ *
+ *   cursor = conn.exec("BEGIN :ts := current_timestamp; END")
+ *   cursor.bind_param(:ts, nil, DateTime)
+ *   cursor.exec
+ *   cursor[:ts] # => a DateTime.
+ *   cursor.close
+ *
+ */
 static VALUE bind_datetime_get(oci8_bind_t *b)
 {
     oci8_bind_dsc_t *bd = (oci8_bind_dsc_t*)b;
@@ -238,13 +318,22 @@ static void bind_datetime_set(oci8_bind_t *b, VALUE val)
     /* sec_fraction */
     if (rb_respond_to(val, id_sec_fraction)) {
         VALUE fs = rb_funcall(val, id_sec_fraction, 0);
-        fsec = NUM2UINT(rb_funcall(fs, id_mul, 1, fsec_base));
+        if (RTEST(rb_funcall(fs, id_less, 1, INT2FIX(0)))) {
+            /* if fs < 0 */
+            rb_raise(rb_eRangeError, "sec_fraction is less then zero.");
+        }
+        fs = rb_funcall(fs, id_mul, 1, fsec_base);
+        if (RTEST(rb_funcall(INT2FIX(1000000000, id_less, 1, fs)))) {
+            /* if 1000000000 < fs */
+            rb_raise(rb_eRangeError, "sec_fraction is greater than or equals to one second.");
+        }
+        fsec = NUM2UINT(fs);
     } else {
         fsec = 0;
     }
     /* time zone */
-    if (rb_respond_to(val, id_of)) {
-        VALUE of = rb_funcall(val, id_of, 0);
+    if (rb_respond_to(val, id_offset)) {
+        VALUE of = rb_funcall(val, id_offset, 0);
         char sign = '+';
         ival = NUM2INT(rb_funcall(of, id_mul, 1, INT2FIX(1440)));
         if (ival < 0) {
@@ -252,8 +341,18 @@ static void bind_datetime_set(oci8_bind_t *b, VALUE val)
             ival = - ival;
         }
         sprintf(tz_str, "%c%02d:%02d", sign, ival / 60, ival % 60);
+    } else if (rb_respond_to(val, id_utc_offset)) {
+        char sign = '+';
+        ival = NUM2INT(rb_funcall(val, id_utc_offset, 0));
+        if (ival < 0) {
+            sign = '-';
+            ival = -ival;
+        }
+        ival /= 60;
+        sprintf(tz_str, "%c%02d:%02d", sign, ival / 60, ival % 60);
     } else {
-        strcpy(tz_str, "+00:00");
+        /* use session timezone. */
+        tz_str[0] = '\0';
     }
     oci_lc(OCIDateTimeConstruct(oci8_envhp, oci8_errhp, bd->hp,
                                 year,
@@ -274,12 +373,57 @@ static void bind_datetime_init(oci8_bind_t *b, VALUE svc, VALUE *val, VALUE leng
 
     b->valuep = &bd->hp;
     b->value_sz = sizeof(bd->hp);
-	rv = OCIDescriptorAlloc(oci8_envhp, (void*)&bd->hp, OCI_DTYPE_TIMESTAMP_TZ, 0, 0);
-	if (rv != OCI_SUCCESS)
-	    oci8_env_raise(oci8_envhp, rv);
+    rv = OCIDescriptorAlloc(oci8_envhp, (void*)&bd->hp, OCI_DTYPE_TIMESTAMP_TZ, 0, 0);
+    if (rv != OCI_SUCCESS)
+        oci8_env_raise(oci8_envhp, rv);
     bd->type = OCI_DTYPE_TIMESTAMP_TZ;
 }
 
+/*
+ * Document-class: OCI8::BindType::IntervalYM
+ *
+ * This is a helper class to bind ruby's
+ * Integer[http://www.ruby-doc.org/core/classes/Integer.html]
+ * object as Oracle's <tt>INTERVAL YEAR TO MONTH</tt> datatype.
+ *
+ * == Select
+ *
+ * The fetched value for a <tt>INTERVAL YEAR TO MONTH</tt> column
+ * is an Integer[http://www.ruby-doc.org/core/classes/Integer.html]
+ * which means the months between two timestamps.
+ *
+ * == Bind
+ *
+ * You cannot bind as <tt>INTERVAL YEAR TO MONTH</tt> implicitly.
+ * It must be bound explicitly with :interval_ym.
+ *
+ *   # output bind variable
+ *   cursor = conn.parse(<<-EOS)
+ *     BEGIN
+ *       :interval := (:ts1 - :ts2) YEAR TO MONTH;
+ *     END;
+ *   EOS
+ *   cursor.bind_param(:interval, nil, :interval_ym)
+ *   cursor.bind_param(:ts1, DateTime.parse('1969-11-19 06:54:35 00:00'))
+ *   cursor.bind_param(:ts2, DateTime.parse('1969-07-20 20:17:40 00:00'))
+ *   cursor.exec
+ *   cursor[:interval] # => 4 (months)
+ *   cursor.close
+ *
+ *   # input bind variable
+ *   cursor = conn.parse(<<-EOS)
+ *     BEGIN
+ *       :ts1 := :ts2 + :interval;
+ *     END;
+ *   EOS
+ *   cursor.bind_param(:ts1, nil, DateTime)
+ *   cursor.bind_param(:ts2, Date.parse('1969-11-19'))
+ *   cursor.bind_param(:interval, 4, :interval_ym)
+ *   cursor.exec
+ *   cursor[:ts1].strftime('%Y-%m-%d') # => 1970-03-19
+ *   cursor.close
+ *
+ */
 static VALUE bind_interval_ym_get(oci8_bind_t *b)
 {
     oci8_bind_dsc_t *bd = (oci8_bind_dsc_t*)b;
@@ -316,6 +460,58 @@ static void bind_interval_ym_init(oci8_bind_t *b, VALUE svc, VALUE *val, VALUE l
     bd->type = OCI_DTYPE_INTERVAL_YM;
 }
 
+/*
+ * Document-class: OCI8::BindType::IntervalDS
+ *
+ * This is a helper class to bind ruby's
+ * Rational[http://www.ruby-doc.org/core/classes/Rational.html]
+ * object as Oracle's <tt>INTERVAL DAY TO SECOND</tt> datatype.
+ *
+ * == Select
+ *
+ * The fetched value for a <tt>INTERVAL DAY TO SECOND</tt> column
+ * is a Rational[http://www.ruby-doc.org/core/classes/Rational.html]
+ * or an Integer[http://www.ruby-doc.org/core/classes/Integer.html].
+ * The value is usable to apply to
+ * DateTime[http://www.ruby-doc.org/core/classes/DateTime.html]#+ and
+ * DateTime[http://www.ruby-doc.org/core/classes/DateTime.html]#-.
+ *
+ * == Bind
+ *
+ * You cannot bind as <tt>INTERVAL YEAR TO MONTH</tt> implicitly.
+ * It must be bound explicitly with :interval_ds.
+ *
+ *   # output
+ *   ts1 = DateTime.parse('1969-11-19 06:54:35 00:00')
+ *   ts2 = DateTime.parse('1969-07-20 20:17:40 00:00')
+ *   cursor = conn.parse(<<-EOS)
+ *     BEGIN
+ *       :itv := (:ts1 - :ts2) DAY TO SECOND;
+ *     END;
+ *   EOS
+ *   cursor.bind_param(:itv, nil, :interval_ds)
+ *   cursor.bind_param(:ts1, ts1)
+ *   cursor.bind_param(:ts2, ts2)
+ *   cursor.exec
+ *   cursor[:itv] # == ts1 - ts2
+ *   cursor.close
+ *
+ *   # input
+ *   ts2 = DateTime.parse('1969-07-20 20:17:40 00:00')
+ *   itv = 121 + 10.to_r/24 + 36.to_r/(24*60) + 55.to_r/(24*60*60)
+ *   # 121 days, 10 hours,    36 minutes,       55 seconds
+ *   cursor = conn.parse(<<-EOS)
+ *     BEGIN
+ *       :ts1 := :ts2 + :itv;
+ *     END;
+ *   EOS
+ *   cursor.bind_param(:ts1, nil, DateTime)
+ *   cursor.bind_param(:ts2, ts2)
+ *   cursor.bind_param(:itv, itv, :interval_ds)
+ *   cursor.exec
+ *   cursor[:ts1].strftime('%Y-%m-%d %H:%M:%S') # => 1969-11-19 06:54:35
+ *   cursor.close
+ */
 static VALUE bind_interval_ds_get(oci8_bind_t *b)
 {
     oci8_bind_dsc_t *bd = (oci8_bind_dsc_t*)b;
@@ -394,9 +590,9 @@ static void bind_interval_ds_init(oci8_bind_t *b, VALUE svc, VALUE *val, VALUE l
 
     b->valuep = &bd->hp;
     b->value_sz = sizeof(bd->hp);
-	rv = OCIDescriptorAlloc(oci8_envhp, (void*)&bd->hp, OCI_DTYPE_INTERVAL_DS, 0, 0);
-	if (rv != OCI_SUCCESS)
-	    oci8_env_raise(oci8_envhp, rv);
+    rv = OCIDescriptorAlloc(oci8_envhp, (void*)&bd->hp, OCI_DTYPE_INTERVAL_DS, 0, 0);
+    if (rv != OCI_SUCCESS)
+        oci8_env_raise(oci8_envhp, rv);
     bd->type = OCI_DTYPE_INTERVAL_DS;
 }
 
@@ -444,6 +640,12 @@ static oci8_bind_class_t bind_interval_ds_class = {
 
 void Init_oci_datetime(void)
 {
+#if 0 /* for rdoc */
+    cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
+    cOCI8 = rb_define_class("OCI8", cOCIHandle);
+    mOCI8BindType = rb_define_module_under(cOCI8, "BindType");
+    cOCI8BindTypeBase = rb_define_class_under(mOCI8BindType, "Base", cOCIHandle);
+#endif
     rb_require("date");
 
     cDateTime = rb_eval_string("DateTime");
@@ -465,7 +667,8 @@ void Init_oci_datetime(void)
     id_min = rb_intern("min");
     id_sec = rb_intern("sec");
     id_sec_fraction = rb_intern("sec_fraction");
-    id_of = rb_intern("of");
+    id_offset = rb_intern("offset");
+    id_utc_offset = rb_intern("utc_offset");
 
     hour_base = rb_funcall(INT2FIX(24), id_to_r, 0);
     minute_base = rb_funcall(hour_base, id_mul, 1, INT2FIX(60));
@@ -479,4 +682,9 @@ void Init_oci_datetime(void)
     oci8_define_bind_class("DateTime", &bind_datetime_class);
     oci8_define_bind_class("IntervalYM", &bind_interval_ym_class);
     oci8_define_bind_class("IntervalDS", &bind_interval_ds_class);
+#if 0 /* for rdoc */
+    cOCI8BindTypeDateTime = rb_define_class_under(mOCI8BindType, "DateTime", cOCI8BindTypeBase);
+    cOCI8BindTypeIntervalYS = rb_define_class_under(mOCI8BindType, "IntervalYM", cOCI8BindTypeBase);
+    cOCI8BindTypeIntervalDS = rb_define_class_under(mOCI8BindType, "IntervalDS", cOCI8BindTypeBase);
+#endif
 }
