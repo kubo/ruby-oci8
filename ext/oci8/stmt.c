@@ -158,9 +158,9 @@ static VALUE oci8_stmt_prepare(int argc, VALUE *argv, VALUE self)
   /* free define handles */
   ary = rb_ivar_get(self, oci8_id_define_array);
   if (ary != Qnil) {
-    for (i = 0;i < RARRAY(ary)->len;i++) {
-      if (RARRAY(ary)->ptr[i] != Qnil)
-	oci8_handle_free(RARRAY(ary)->ptr[i]);
+    for (i = 0;i < RARRAY_LEN(ary);i++) {
+      if (RARRAY_PTR(ary)[i] != Qnil)
+	oci8_handle_free(RARRAY_PTR(ary)[i]);
     }
     rb_ivar_set(self, oci8_id_define_array, Qnil);
   }

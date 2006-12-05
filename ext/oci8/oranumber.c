@@ -64,8 +64,8 @@ static VALUE ora_number_initialize(int argc, VALUE *argv, VALUE self)
     if (TYPE(arg) != T_STRING) {
       arg = rb_obj_as_string(arg);
     }
-    if (ora_number_from_str(ovn, RSTRING(arg)->ptr, RSTRING(arg)->len) != 0) {
-      rb_raise(rb_eArgError, "could not convert '%s' to OraNumber", RSTRING(arg)->ptr);
+    if (ora_number_from_str(ovn, RSTRING_PTR(arg), RSTRING_LEN(arg)) != 0) {
+      rb_raise(rb_eArgError, "could not convert '%s' to OraNumber", RSTRING_PTR(arg));
     }
   }
   return Qnil;
@@ -176,12 +176,12 @@ static VALUE ora_number_s_load(VALUE klass, VALUE str)
   VALUE obj;
 
   Check_Type(str, T_STRING);
-  if (RSTRING(str)->len != sizeof(ora_vnumber_t)) {
+  if (RSTRING_LEN(str) != sizeof(ora_vnumber_t)) {
     rb_raise(rb_eTypeError, "marshaled OraNumber format differ");
   }
   obj = ora_number_s_allocate(klass);
   ovn = get_ora_number(obj);
-  memcpy(ovn, RSTRING(str)->ptr, sizeof(ora_vnumber_t));
+  memcpy(ovn, RSTRING_PTR(str), sizeof(ora_vnumber_t));
   return obj;
 }  
 

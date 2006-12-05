@@ -30,6 +30,20 @@ extern "C" {
 #define rb_cstr_to_dbl(p, ignore) strtod((p), 0)
 #endif
 
+#ifndef RSTRING_PTR
+#define RSTRING_PTR(obj) RSTRING(obj)->ptr
+#endif
+#ifndef RSTRING_LEN
+#define RSTRING_LEN(obj) RSTRING(obj)->len
+#endif
+
+#ifndef RARRAY_PTR
+#define RARRAY_PTR(obj) RARRAY(obj)->ptr
+#endif
+#ifndef RARRAY_LEN
+#define RARRAY_LEN(obj) RARRAY(obj)->len
+#endif
+
 #define IS_OCI_ERROR(v) (((v) != OCI_SUCCESS) && ((v) != OCI_SUCCESS_WITH_INFO))
 
 enum oci8_bind_type {
@@ -140,8 +154,8 @@ typedef struct oci8_string oci8_string_t;
 #define Get_String(obj, s) do { \
   if (!NIL_P(obj)) { \
     Check_Type(obj, T_STRING); \
-    s.ptr = RSTRING(obj)->ptr; \
-    s.len = RSTRING(obj)->len; \
+    s.ptr = RSTRING_PTR(obj); \
+    s.len = RSTRING_LEN(obj); \
   } else { \
     s.ptr = NULL; \
     s.len = 0; \

@@ -38,11 +38,11 @@ static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VAL
     /* set from string. */
     if (NIL_P(fmt)) {
         int i, cnt = 0;
-        for (i = RSTRING(str)->len - 1; i >= 0; i--) {
-            if (RSTRING(str)->ptr[i] != ' ')
+        for (i = RSTRING_LEN(str) - 1; i >= 0; i--) {
+            if (RSTRING_PTR(str)[i] != ' ')
                 cnt++;
-            if (RSTRING(str)->ptr[i] == '.') {
-                i = RSTRING(str)->len - i;
+            if (RSTRING_PTR(str)[i] == '.') {
+                i = RSTRING_LEN(str) - i;
                 break;
             }
         }
@@ -57,19 +57,19 @@ static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VAL
         }
     } else {
         StringValue(fmt);
-        fmt_ptr = RSTRING(fmt)->ptr;
-        fmt_len = RSTRING(fmt)->len;
+        fmt_ptr = RSTRING_PTR(fmt);
+        fmt_len = RSTRING_LEN(fmt);
     }
     if (NIL_P(nls_params)) {
         nls_params_ptr = NULL;
         nls_params_len = 0;
     } else {
         StringValue(nls_params);
-        nls_params_ptr = RSTRING(nls_params)->ptr;
-        nls_params_len = RSTRING(nls_params)->len;
+        nls_params_ptr = RSTRING_PTR(nls_params);
+        nls_params_len = RSTRING_LEN(nls_params);
     }
     oci_lc(OCINumberFromText(errhp,
-                             RSTRING(str)->ptr, RSTRING(str)->len,
+                             RSTRING_PTR(str), RSTRING_LEN(str),
                              fmt_ptr, fmt_len, nls_params_ptr, nls_params_len,
                              result));
 }

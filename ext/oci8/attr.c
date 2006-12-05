@@ -346,7 +346,7 @@ static void set_string(oci8_handle_t *h, ub4 attr, VALUE value)
   sword rv;
 
   Check_Type(value, T_STRING);
-  rv = OCIAttrSet(h->hp, h->type, RSTRING(value)->ptr, RSTRING(value)->len, attr, h->errhp);
+  rv = OCIAttrSet(h->hp, h->type, RSTRING_PTR(value), RSTRING_LEN(value), attr, h->errhp);
   if (rv != OCI_SUCCESS)
     oci8_raise(h->errhp, rv, NULL);
 }

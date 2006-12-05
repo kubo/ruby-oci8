@@ -125,11 +125,11 @@ void oci8_set_value(oci8_bind_handle_t *hp, VALUE val)
     break;
   case BIND_STRING:
     Check_Type(val, T_STRING);
-    if (hp->value_sz - 4 < RSTRING(val)->len) {
-      rb_raise(rb_eArgError, "Assigned string is too long. %d (max %d)", RSTRING(val)->len, hp->value_sz - 4);
+    if (hp->value_sz - 4 < RSTRING_LEN(val)) {
+      rb_raise(rb_eArgError, "Assigned string is too long. %ld (max %d)", RSTRING_LEN(val), hp->value_sz - 4);
     }
-    memcpy(hp->value.str.buf, RSTRING(val)->ptr, RSTRING(val)->len);
-    hp->value.str.len = RSTRING(val)->len;
+    memcpy(hp->value.str.buf, RSTRING_PTR(val), RSTRING_LEN(val));
+    hp->value.str.len = RSTRING_LEN(val);
     break;
   case BIND_TIME_VIA_ORA_DATE:
     if (!rb_obj_is_instance_of(val, rb_cTime)) {
