@@ -90,11 +90,11 @@ static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VAL
     /* set from string. */
     if (NIL_P(fmt)) {
         int i, cnt = 0;
-        for (i = RSTRING(str)->len - 1; i >= 0; i--) {
-            if (RSTRING(str)->ptr[i] != ' ')
+        for (i = RSTRING_LEN(str) - 1; i >= 0; i--) {
+            if (RSTRING_PTR(str)[i] != ' ')
                 cnt++;
-            if (RSTRING(str)->ptr[i] == '.') {
-                i = RSTRING(str)->len - i;
+            if (RSTRING_PTR(str)[i] == '.') {
+                i = RSTRING_LEN(str) - i;
                 break;
             }
         }
@@ -109,19 +109,19 @@ static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VAL
         }
     } else {
         StringValue(fmt);
-        fmt_ptr = RSTRING(fmt)->ptr;
-        fmt_len = RSTRING(fmt)->len;
+        fmt_ptr = RSTRING_PTR(fmt);
+        fmt_len = RSTRING_LEN(fmt);
     }
     if (NIL_P(nls_params)) {
         nls_params_ptr = NULL;
         nls_params_len = 0;
     } else {
         StringValue(nls_params);
-        nls_params_ptr = RSTRING(nls_params)->ptr;
-        nls_params_len = RSTRING(nls_params)->len;
+        nls_params_ptr = RSTRING_PTR(nls_params);
+        nls_params_len = RSTRING_LEN(nls_params);
     }
     oci_lc(OCINumberFromText(oci8_errhp,
-                             RSTRING(str)->ptr, RSTRING(str)->len,
+                             RSTRING_PTR(str), RSTRING_LEN(str),
                              fmt_ptr, fmt_len, nls_params_ptr, nls_params_len,
                              result));
 }
@@ -804,16 +804,16 @@ static VALUE onum_to_char(int argc, VALUE *argv, VALUE self)
         }
     } else {
         StringValue(fmt);
-        fmt_ptr = RSTRING(fmt)->ptr;
-        fmt_len = RSTRING(fmt)->len;
+        fmt_ptr = RSTRING_PTR(fmt);
+        fmt_len = RSTRING_LEN(fmt);
     }
     if (NIL_P(nls_params)) {
         nls_params_ptr = NULL;
         nls_params_len = 0;
     } else {
         StringValue(nls_params);
-        nls_params_ptr = RSTRING(nls_params)->ptr;
-        nls_params_len = RSTRING(nls_params)->len;
+        nls_params_ptr = RSTRING_PTR(nls_params);
+        nls_params_len = RSTRING_LEN(nls_params);
     }
     rv = OCINumberToText(oci8_errhp, _NUMBER(self),
                          fmt_ptr, fmt_len, nls_params_ptr, nls_params_len,
@@ -946,11 +946,12 @@ static VALUE onum_inspect(VALUE self)
 {
     char *name = rb_class2name(CLASS_OF(self));
     volatile VALUE s = onum_to_s(self);
-    volatile VALUE rv = rb_str_new(0, strlen(name) + RSTRING(s)->len + 5);
+    size_t len = strlen(name) + RSTRING_LEN(s) + 5;
+    char *str = ALLOCA_N(char, len);
 
-    sprintf(RSTRING(rv)->ptr, "#<%s:%s>", name, RSTRING(s)->ptr);
-    RSTRING(rv)->len = strlen(RSTRING(rv)->ptr);
-    return rv;
+    snprintf(str, len, "#<%s:%s>", name, RSTRING_PTR(s));
+    str[len - 1] = '\0';
+    return rb_str_new2(str);
 }
 
 /*
@@ -983,8 +984,8 @@ onum_s_load(VALUE klass, VALUE str)
     OCINumber num;
 
     Check_Type(str, T_STRING);
-    c = RSTRING(str)->ptr;
-    size = RSTRING(str)->len;
+    c = RSTRING_PTR(str);
+    size = RSTRING_LEN(str);
     if (size == 0 || size != c[0] + 1 || size > sizeof(num)) {
         rb_raise(rb_eTypeError, "marshaled OCI::Number format differ");
     }

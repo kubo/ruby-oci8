@@ -134,8 +134,8 @@ static VALUE oci8_tdo_init(VALUE self, oci8_svcctx_t *svcctx, OCIParam *param)
     name = ALLOCA_N(char, name_max + 2);
     name[0] = '@';
     for (idx = 0; idx < num_type_attrs; idx++) {
-        VALUE name_obj = RARRAY(attrs)->ptr[idx];
-        OCIMultiByteStrCaseConversion(oci8_envhp, name + 1, RSTRING(name_obj)->ptr, OCI_NLS_LOWERCASE);
+        VALUE name_obj = RARRAY_PTR(attrs)[idx];
+        OCIMultiByteStrCaseConversion(oci8_envhp, name + 1, RSTRING_PTR(name_obj), OCI_NLS_LOWERCASE);
         rb_ary_store(attr_syms, idx, ID2SYM(rb_intern(name)));
     }
     rb_ivar_set(self, id_at_schema_name, schema_name);
@@ -225,12 +225,12 @@ static VALUE oraobject_to_rubyobj(VALUE tdo_obj, dvoid *instance, dvoid *null_st
     Check_Type(klass, T_CLASS);
 
     obj = rb_obj_alloc(klass);
-    num_attrs = RARRAY(attrs)->len;
+    num_attrs = RARRAY_LEN(attrs);
     for (i = 0; i < num_attrs; i++) {
-        VALUE attr = RARRAY(attrs)->ptr[i];
-        VALUE type = RARRAY(types)->ptr[i];
-        CONST OraText *name = (OraText *)RSTRING(attr)->ptr;
-        ub4 namelen = RSTRING(attr)->len;
+        VALUE attr = RARRAY_PTR(attrs)[i];
+        VALUE type = RARRAY_PTR(types)[i];
+        CONST OraText *name = (OraText *)RSTRING_PTR(attr);
+        ub4 namelen = RSTRING_LEN(attr);
         OCIInd attr_null_status;
         dvoid *attr_null_struct;
         dvoid *attr_value;
@@ -260,7 +260,7 @@ static VALUE oraobject_to_rubyobj(VALUE tdo_obj, dvoid *instance, dvoid *null_st
                 break;
             }
         }
-        rb_ivar_set(obj, SYM2ID(RARRAY(attr_syms)->ptr[i]), attr_obj);
+        rb_ivar_set(obj, SYM2ID(RARRAY_PTR(attr_syms)[i]), attr_obj);
     }
     rb_obj_call_init(obj, 0, NULL);
     return obj;

@@ -51,9 +51,9 @@ VALUE oci8_get_ub4_attr(oci8_base_t *base, ub4 attrtype)
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);
 #if SIZEOF_LONG > 4
-    return INT2FIX(val);
+    return LONG2FIX(val);
 #else
-    return UINT2NUM(val);
+    return ULONG2NUM(val);
 #endif
 }
 

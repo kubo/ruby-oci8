@@ -90,7 +90,7 @@ static VALUE oci8_stmt_initialize(int argc, VALUE *argv, VALUE self)
     rb_iv_set(stmt->base.self, "@con", svc);
 
     if (argc > 1) {
-        rv = OCIStmtPrepare(stmt->base.hp, oci8_errhp, RSTRING(sql)->ptr, RSTRING(sql)->len, OCI_NTV_SYNTAX, OCI_DEFAULT);
+        rv = OCIStmtPrepare(stmt->base.hp, oci8_errhp, RSTRING_PTR(sql), RSTRING_LEN(sql), OCI_NTV_SYNTAX, OCI_DEFAULT);
         if (IS_OCI_ERROR(rv)) {
             oci8_raise(oci8_errhp, rv, stmt->base.hp);
         }
@@ -155,8 +155,8 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
         oci_lc(OCIDefineObject(bind->base.hp, oci8_errhp, tdo->hp,
                                &bind->valuep, 0, &bind->null_struct, 0));
     }
-    if (position - 1 < RARRAY(stmt->defns)->len) {
-        VALUE old_value = RARRAY(stmt->defns)->ptr[position - 1];
+    if (position - 1 < RARRAY_LEN(stmt->defns)) {
+        VALUE old_value = RARRAY_PTR(stmt->defns)[position - 1];
         if (!NIL_P(old_value)) {
             oci8_base_free((oci8_base_t*)oci8_get_bind(old_value));
         }
@@ -199,8 +199,8 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
         position = NUM2INT(vplaceholder);
     } else {
         StringValue(vplaceholder);
-        placeholder_ptr = RSTRING(vplaceholder)->ptr;
-        placeholder_len = RSTRING(vplaceholder)->len;
+        placeholder_ptr = RSTRING_PTR(vplaceholder);
+        placeholder_len = RSTRING_LEN(vplaceholder);
     }
     bind = oci8_get_bind(vbindobj); /* 2 */
     if (bind->base.hp != NULL) {
@@ -374,9 +374,9 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
             bind_class->out(bind, 0);
         }
     }
-    ary = rb_ary_new2(RARRAY(stmt->defns)->len);
-    for (idx = 0; idx < RARRAY(stmt->defns)->len; idx++) {
-        rb_ary_store(ary, idx, rb_funcall(RARRAY(stmt->defns)->ptr[idx], oci8_id_get, 0));
+    ary = rb_ary_new2(RARRAY_LEN(stmt->defns));
+    for (idx = 0; idx < RARRAY_LEN(stmt->defns); idx++) {
+        rb_ary_store(ary, idx, rb_funcall(RARRAY_PTR(stmt->defns)[idx], oci8_id_get, 0));
     }
     return ary;
 }
@@ -587,8 +587,8 @@ static VALUE oci8_stmt_defined_p(VALUE self, VALUE pos)
     oci8_stmt_t *stmt = DATA_PTR(self);
     long position = NUM2INT(pos);
 
-    if (position - 1 < RARRAY(stmt->defns)->len) {
-        VALUE value = RARRAY(stmt->defns)->ptr[position - 1];
+    if (position - 1 < RARRAY_LEN(stmt->defns)) {
+        VALUE value = RARRAY_PTR(stmt->defns)[position - 1];
         if (!NIL_P(value)) {
             return Qtrue;
         }

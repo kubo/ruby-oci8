@@ -273,8 +273,8 @@ static VALUE oci8_lob_write(VALUE self, VALUE data)
 
     lob_open(lob);
     StringValue(data);
-    amt = RSTRING(data)->len;
-    rv = OCILobWrite(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp, &amt, lob->pos + 1, RSTRING(data)->ptr, amt, OCI_ONE_PIECE, NULL, NULL, 0, SQLCS_IMPLICIT);
+    amt = RSTRING_LEN(data);
+    rv = OCILobWrite(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp, &amt, lob->pos + 1, RSTRING_PTR(data), amt, OCI_ONE_PIECE, NULL, NULL, 0, SQLCS_IMPLICIT);
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);
     lob->pos += amt;

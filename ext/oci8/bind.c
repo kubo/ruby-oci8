@@ -47,11 +47,11 @@ static void bind_string_set(oci8_bind_t *base, VALUE val)
     vstr_t *vstr = base->valuep;
 
     StringValue(val);
-    if (RSTRING(val)->len > base->value_sz - sizeof(vstr->size)) {
-        rb_raise(rb_eArgError, "too long String to set. (%d for %d)", RSTRING(val)->len, base->value_sz - sizeof(vstr->size));
+    if (RSTRING_LEN(val) > base->value_sz - sizeof(vstr->size)) {
+        rb_raise(rb_eArgError, "too long String to set. (%d for %d)", RSTRING_LEN(val), base->value_sz - sizeof(vstr->size));
     }
-    memcpy(vstr->buf, RSTRING(val)->ptr, RSTRING(val)->len);
-    vstr->size = RSTRING(val)->len;
+    memcpy(vstr->buf, RSTRING_PTR(val), RSTRING_LEN(val));
+    vstr->size = RSTRING_LEN(val);
 }
 
 static void bind_string_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
@@ -64,7 +64,7 @@ static void bind_string_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE len
             rb_raise(rb_eArgError, "value and length are both null.");
         }
         StringValue(*val);
-        sz = RSTRING(*val)->len;
+        sz = RSTRING_LEN(*val);
     } else {
         sz = NUM2INT(length);
     }
@@ -174,8 +174,8 @@ static ub1 bind_long_in(oci8_bind_t *base, ub1 piece)
         base->ind = -1;
     } else {
         StringValue(bind_long->obj);
-        base->valuep = RSTRING(bind_long->obj)->ptr;
-        base->len.alen = RSTRING(bind_long->obj)->len;
+        base->valuep = RSTRING_PTR(bind_long->obj);
+        base->len.alen = RSTRING_LEN(bind_long->obj);
         base->ind = 0;
     }
     return OCI_ONE_PIECE;

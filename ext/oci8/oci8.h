@@ -23,6 +23,20 @@ extern "C" {
 #endif
 #include "extconf.h"
 
+#ifndef RSTRING_PTR
+#define RSTRING_PTR(obj) RSTRING(obj)->ptr
+#endif
+#ifndef RSTRING_LEN
+#define RSTRING_LEN(obj) RSTRING(obj)->len
+#endif
+
+#ifndef RARRAY_PTR
+#define RARRAY_PTR(obj) RARRAY(obj)->ptr
+#endif
+#ifndef RARRAY_LEN
+#define RARRAY_LEN(obj) RARRAY(obj)->len
+#endif
+
 #define DEBUG_CORE_FILE 1
 #define OCI8_DEBUG 1
 #ifdef OCI8_DEBUG

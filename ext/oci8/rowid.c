@@ -56,7 +56,7 @@ static VALUE oci8_rowid1_initialize(VALUE self, VALUE val)
     rowid->base.type = 0;
     if (!NIL_P(val)) {
         StringValue(val);
-        oci8_rowid1_set(self, RSTRING(val)->ptr, RSTRING(val)->len);
+        oci8_rowid1_set(self, RSTRING_PTR(val), RSTRING_LEN(val));
     } else {
         rowid->id[0] = '\0';
     }
@@ -196,7 +196,7 @@ static VALUE oci8_rowid1_s_load(VALUE klass, VALUE str)
     StringValue(str);
 
     rowid = rb_funcall(klass, oci8_id_new, 1, Qnil);
-    oci8_rowid1_set(rowid, RSTRING(str)->ptr, RSTRING(str)->len);
+    oci8_rowid1_set(rowid, RSTRING_PTR(str), RSTRING_LEN(str));
     return rowid;
 }
 

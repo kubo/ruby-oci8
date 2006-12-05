@@ -67,10 +67,10 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
 #error TODO
 #else
         rv = OCILogon(oci8_envhp, oci8_errhp, (OCISvcCtx **)&svcctx->base.hp,
-                      RSTRING(vusername)->ptr, RSTRING(vusername)->len,
-                      RSTRING(vpassword)->ptr, RSTRING(vpassword)->len,
-                      NIL_P(vdbname) ? NULL : RSTRING(vdbname)->ptr,
-                      NIL_P(vdbname) ? 0 : RSTRING(vdbname)->len);
+                      RSTRING_PTR(vusername), RSTRING_LEN(vusername),
+                      RSTRING_PTR(vpassword), RSTRING_LEN(vpassword),
+                      NIL_P(vdbname) ? NULL : RSTRING_PTR(vdbname),
+                      NIL_P(vdbname) ? 0 : RSTRING_LEN(vdbname));
         if (rv != OCI_SUCCESS) {
             oci8_raise(oci8_errhp, rv, NULL);
         }
@@ -102,20 +102,20 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
 
         /* set username and password to OCISession. */
         rv = OCIAttrSet(svcctx->authhp, OCI_HTYPE_SESSION,
-                        RSTRING(vusername)->ptr, RSTRING(vusername)->len,
+                        RSTRING_PTR(vusername), RSTRING_LEN(vusername),
                         OCI_ATTR_USERNAME, oci8_errhp);
         if (rv != OCI_SUCCESS)
             oci8_raise(oci8_errhp, rv, NULL);
         rv = OCIAttrSet(svcctx->authhp, OCI_HTYPE_SESSION,
-                        RSTRING(vpassword)->ptr, RSTRING(vpassword)->len,
+                        RSTRING_PTR(vpassword), RSTRING_LEN(vpassword),
                         OCI_ATTR_PASSWORD, oci8_errhp);
         if (rv != OCI_SUCCESS)
             oci8_raise(oci8_errhp, rv, NULL);
 
         /* attach to server and set to OCISvcCtx. */
         rv = OCIServerAttach(svcctx->srvhp, oci8_errhp,
-                             NIL_P(vdbname) ? NULL : RSTRING(vdbname)->ptr,
-                             NIL_P(vdbname) ? 0 : RSTRING(vdbname)->len, OCI_DEFAULT);
+                             NIL_P(vdbname) ? NULL : RSTRING_PTR(vdbname),
+                             NIL_P(vdbname) ? 0 : RSTRING_LEN(vdbname), OCI_DEFAULT);
         if (rv != OCI_SUCCESS)
             oci8_raise(oci8_errhp, rv, NULL);
         rv = OCIAttrSet(svcctx->base.hp, OCI_HTYPE_SVCCTX, svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp);

@@ -84,8 +84,8 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, c
             rb_ary_push(vcodes, INT2FIX(errcode));
             rb_ary_push(vmessages, rb_str_new2(errmsg));
         }
-        if (RARRAY(vmessages)->len > 0) {
-            msg = RARRAY(vmessages)->ptr[0];
+        if (RARRAY_LEN(vmessages) > 0) {
+            msg = RARRAY_PTR(vmessages)[0];
         } else {
             msg = rb_str_new2("ERROR");
         }
@@ -175,10 +175,10 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, c
 static VALUE oci8_error_code(VALUE self)
 {
     VALUE ary = rb_ivar_get(self, oci8_id_code);
-    if (RARRAY(ary)->len == 0) {
+    if (RARRAY_LEN(ary) == 0) {
         return Qnil;
     }
-    return RARRAY(ary)->ptr[0];
+    return RARRAY_PTR(ary)[0];
 }
 
 /*

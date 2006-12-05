@@ -355,11 +355,11 @@ static VALUE ora_date_s_load(VALUE klass, VALUE str)
     VALUE obj;
 
     Check_Type(str, T_STRING);
-    if (RSTRING(str)->len != sizeof(ora_date_t)) {
+    if (RSTRING_LEN(str) != sizeof(ora_date_t)) {
         rb_raise(rb_eTypeError, "marshaled OraDate format differ");
     }
     obj = Data_Make_Struct(cOraDate, ora_date_t, NULL, xfree, od);
-    memcpy(od, RSTRING(str)->ptr, sizeof(ora_date_t));
+    memcpy(od, RSTRING_PTR(str), sizeof(ora_date_t));
     return obj;
 }  
 

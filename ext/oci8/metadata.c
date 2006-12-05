@@ -276,10 +276,10 @@ static VALUE oci8_do_describe(VALUE self, void *objptr, ub4 objlen, ub1 objtype,
 static VALUE oci8_describe(VALUE self, VALUE name, VALUE klass, VALUE check_public)
 {
     StringValue(name);
-    if (RSTRING(name)->len == 0) {
+    if (RSTRING_LEN(name) == 0) {
         rb_raise(rb_eArgError, "empty string is set.");
     }
-    return oci8_do_describe(self, RSTRING(name)->ptr, RSTRING(name)->len, OCI_OTYPE_NAME, klass, check_public);
+    return oci8_do_describe(self, RSTRING_PTR(name), RSTRING_LEN(name), OCI_OTYPE_NAME, klass, check_public);
 }
 
 static VALUE metadata_get_type_metadata(VALUE self, VALUE klass)

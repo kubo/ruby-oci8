@@ -1,3 +1,10 @@
+2006-12-05  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/attr.c, ext/oci8/bind.c, ext/oci8/error.c, ext/oci8/lob.c,
+	  ext/oci8/metadata.c, ext/oci8/oci8.c, ext/oci8/oci8.h,
+	  ext/oci8/ocidatetime.c, ext/oci8/ocinumber.c, ext/oci8/oradate.c,
+	  ext/oci8/rowid.c, ext/oci8/stmt.c, ext/oci8/tdo.c:
+	    use RSTRING_LEN, RSTRING_PTR, RARRAY_LEN and RARRAY_PTR macros.
+
 2006-11-25  KUBO Takehiro  <kubo@jiubao.org>
 	* doc/oci8-ja.rb: add a new file for Japanese rdoc document.
 	* ext/oci8/ocidatetime.c: add comments for rdoc.

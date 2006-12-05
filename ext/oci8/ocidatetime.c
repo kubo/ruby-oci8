@@ -541,36 +541,36 @@ static void bind_interval_ds_set(oci8_bind_t *b, VALUE val)
     /* day */
     ary = rb_funcall(val, id_divmod, 1, INT2FIX(1));
     Check_Type(ary, T_ARRAY);
-    if (RARRAY(ary)->len != 2) {
+    if (RARRAY_LEN(ary) != 2) {
         rb_raise(rb_eRuntimeError, "invalid array size");
     }
-    day = NUM2INT(RARRAY(ary)->ptr[0]);
+    day = NUM2INT(RARRAY_PTR(ary)[0]);
     /* hour */
-    val = rb_funcall(RARRAY(ary)->ptr[1], id_mul, 1, INT2FIX(24));
+    val = rb_funcall(RARRAY_PTR(ary)[1], id_mul, 1, INT2FIX(24));
     ary = rb_funcall(val, id_divmod, 1, INT2FIX(1));
     Check_Type(ary, T_ARRAY);
-    if (RARRAY(ary)->len != 2) {
+    if (RARRAY_LEN(ary) != 2) {
         rb_raise(rb_eRuntimeError, "invalid array size");
     }
-    hour = NUM2INT(RARRAY(ary)->ptr[0]);
+    hour = NUM2INT(RARRAY_PTR(ary)[0]);
     /* minute */
-    val = rb_funcall(RARRAY(ary)->ptr[1], id_mul, 1, INT2FIX(60));
+    val = rb_funcall(RARRAY_PTR(ary)[1], id_mul, 1, INT2FIX(60));
     ary = rb_funcall(val, id_divmod, 1, INT2FIX(1));
     Check_Type(ary, T_ARRAY);
-    if (RARRAY(ary)->len != 2) {
+    if (RARRAY_LEN(ary) != 2) {
         rb_raise(rb_eRuntimeError, "invalid array size");
     }
-    minute = NUM2INT(RARRAY(ary)->ptr[0]);
+    minute = NUM2INT(RARRAY_PTR(ary)[0]);
     /* second */
-    val = rb_funcall(RARRAY(ary)->ptr[1], id_mul, 1, INT2FIX(60));
+    val = rb_funcall(RARRAY_PTR(ary)[1], id_mul, 1, INT2FIX(60));
     ary = rb_funcall(val, id_divmod, 1, INT2FIX(1));
     Check_Type(ary, T_ARRAY);
-    if (RARRAY(ary)->len != 2) {
+    if (RARRAY_LEN(ary) != 2) {
         rb_raise(rb_eRuntimeError, "invalid array size");
     }
-    sec = NUM2INT(RARRAY(ary)->ptr[0]);
+    sec = NUM2INT(RARRAY_PTR(ary)[0]);
     /* fsec */
-    val = rb_funcall(RARRAY(ary)->ptr[1], id_mul, 1, INT2FIX(1000000000));
+    val = rb_funcall(RARRAY_PTR(ary)[1], id_mul, 1, INT2FIX(1000000000));
     fsec = NUM2INT(val);
     if (is_negative) {
         day = - day;
