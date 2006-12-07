@@ -90,24 +90,29 @@ static void bind_rowid1_free(oci8_base_t *base)
 static VALUE bind_rowid1_get(oci8_bind_t *base)
 {
     VALUE rowid = rb_funcall(cOCIRowid, oci8_id_new, 1, Qnil);
-    oci8_rowid1_set(rowid, base->valuep, base->len.rlen);
+    oci8_vstr_t *vstr = (oci8_vstr_t *)base->valuep;
+    oci8_rowid1_set(rowid, vstr->buf, vstr->size);
     return rowid;
 }
 
 static void bind_rowid1_set(oci8_bind_t *base, VALUE val)
 {
     oci8_rowid1_t *rowid;
+    oci8_vstr_t *vstr = (oci8_vstr_t *)base->valuep;
     if (!rb_obj_is_instance_of(val, cOCIRowid))
         rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIRowid)", rb_class2name(CLASS_OF(val)));
     rowid = DATA_PTR(val);
-    strcpy(base->valuep, rowid->id);
-    base->len.rlen = strlen(rowid->id);
+    memcpy(vstr->buf, rowid->id, sizeof(rowid->id));
+    vstr->size = strlen(rowid->id);
 }
 
+#define BIND_ROWID1_SIZE (sizeof(oci8_vstr_t) + MAX_ROWID_LEN)
 static void bind_rowid1_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
-    base->valuep = xmalloc(MAX_ROWID_LEN);
-    base->value_sz = MAX_ROWID_LEN;
+    oci8_vstr_t *vstr = xmalloc(BIND_ROWID1_SIZE);
+    base->valuep = vstr;
+    base->value_sz = BIND_ROWID1_SIZE;
+    vstr->size = 0;
 }
 
 static oci8_bind_class_t bind_rowid1_class = {
@@ -121,7 +126,7 @@ static oci8_bind_class_t bind_rowid1_class = {
     bind_rowid1_init,
     NULL,
     NULL,
-    SQLT_CHR
+    SQLT_LVC
 };
 
 VALUE oci8_get_rowid1_attr(oci8_base_t *base, ub4 attrtype)

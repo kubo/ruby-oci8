@@ -54,6 +54,12 @@ extern "C" {
 
 #define rb_define_method_nodoc rb_define_method
 
+/* data structure for SQLT_LVC and SQLT_LVB. */
+typedef struct {
+    sb4 size;
+    char buf[1];
+} oci8_vstr_t;
+
 typedef struct oci8_base_class oci8_base_class_t;
 typedef struct oci8_bind_class oci8_bind_class_t;
 
@@ -89,13 +95,9 @@ struct oci8_bind {
     oci8_bind_t *prev;
     void *valuep;
     sb4 value_sz;
-    union {
-        ub2 rlen;
-        ub4 alen;
-    } len;
+    ub4 alen;
     VALUE tdo;
     void *null_struct;
-    ub2 use_rlen;
     sb2 ind;
 };
 

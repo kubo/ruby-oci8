@@ -14,11 +14,6 @@ static ID id_set;
 
 static VALUE cOCIBind;
 
-typedef struct {
-    sb4 size;
-    char buf[1];
-} vstr_t;
-
 /*
  * bind_string
  */
@@ -38,13 +33,13 @@ static void bind_string_free(oci8_base_t *base)
 
 static VALUE bind_string_get(oci8_bind_t *base)
 {
-    vstr_t *vstr = base->valuep;
+    oci8_vstr_t *vstr = base->valuep;
     return rb_str_new(vstr->buf, vstr->size);
 }
 
 static void bind_string_set(oci8_bind_t *base, VALUE val)
 {
-    vstr_t *vstr = base->valuep;
+    oci8_vstr_t *vstr = base->valuep;
 
     StringValue(val);
     if (RSTRING_LEN(val) > base->value_sz - sizeof(vstr->size)) {
@@ -57,7 +52,7 @@ static void bind_string_set(oci8_bind_t *base, VALUE val)
 static void bind_string_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
 {
     sb4 sz = 0;
-    vstr_t *vstr;
+    oci8_vstr_t *vstr;
 
     if (NIL_P(length)) {
         if (NIL_P(*val)) {
@@ -73,7 +68,6 @@ static void bind_string_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE len
     }
     base->valuep = xmalloc(sizeof(vstr->size) + sz);
     base->value_sz = sizeof(vstr->size) + sz;
-    base->use_rlen = 0;
     vstr = base->valuep;
     vstr->size = sz;
 }
@@ -159,7 +153,6 @@ static void bind_long_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE lengt
         sz = 4000;
     }
     base->value_sz = INT_MAX;
-    base->use_rlen = 0;
     bind_long->bufsiz = sz;
     bind_long->buf = xmalloc(sz);
     bind_long->obj = Qnil;
@@ -170,12 +163,12 @@ static ub1 bind_long_in(oci8_bind_t *base, ub1 piece)
     oci8_bind_long_t *bind_long = (oci8_bind_long_t*)base;
     if (NIL_P(bind_long->obj)) {
         base->valuep = NULL;
-        base->len.alen = 0;
+        base->alen = 0;
         base->ind = -1;
     } else {
         StringValue(bind_long->obj);
         base->valuep = RSTRING_PTR(bind_long->obj);
-        base->len.alen = RSTRING_LEN(bind_long->obj);
+        base->alen = RSTRING_LEN(bind_long->obj);
         base->ind = 0;
     }
     return OCI_ONE_PIECE;
@@ -189,12 +182,12 @@ static void bind_long_out(oci8_bind_t *base, ub1 piece)
         bind_long->obj = Qnil;
     } else {
         if (NIL_P(bind_long->obj)) {
-            bind_long->obj = rb_str_buf_new(base->len.alen);
+            bind_long->obj = rb_str_buf_new(base->alen);
         }
-        rb_str_buf_cat(bind_long->obj, base->valuep, base->len.alen);
+        rb_str_buf_cat(bind_long->obj, base->valuep, base->alen);
     }
     base->valuep = bind_long->buf;
-    base->len.alen = bind_long->bufsiz;
+    base->alen = bind_long->bufsiz;
 }
 
 static oci8_bind_class_t bind_long_class = {
@@ -362,9 +355,7 @@ static VALUE oci8_bind_initialize(VALUE self, VALUE svc, VALUE val, VALUE length
 
     base->next = base;
     base->prev = base;
-    base->use_rlen = 1;
     bind_class->init(base, svc, &val, length, prec, scale);
-    base->len.rlen = base->value_sz;
     base->ind = -1;
     if (!NIL_P(val)) {
         rb_funcall(self, id_set, 1, val);

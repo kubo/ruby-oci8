@@ -325,7 +325,6 @@ static void bind_tdo_init(oci8_bind_t *bind, VALUE svc, VALUE *val, VALUE length
     oci8_svcctx_t *svcctx;
     oci8_tdo_t *tdo;
 
-    bind->use_rlen = 0;
     svcctx = oci8_get_svcctx(svc);
     if (!rb_obj_is_kind_of(tdo_obj, cOCITDO)) {
         rb_raise(rb_eTypeError, "invalid argument %s (expect %s)", rb_class2name(CLASS_OF(length)), rb_class2name(cOCITDO));

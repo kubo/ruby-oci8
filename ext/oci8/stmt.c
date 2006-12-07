@@ -145,7 +145,7 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
     } else {
         mode = OCI_DYNAMIC_FETCH;
     }
-    status = OCIDefineByPos(stmt->base.hp, (OCIDefine**)&bind->base.hp, oci8_errhp, position, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, bind->use_rlen ? &bind->len.rlen : NULL, 0, mode);
+    status = OCIDefineByPos(stmt->base.hp, (OCIDefine**)&bind->base.hp, oci8_errhp, position, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, NULL, 0, mode);
     if (status != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, status, stmt->base.hp);
     }
@@ -214,9 +214,9 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     }
 
     if (placeholder_ptr == (char*)-1) {
-        status = OCIBindByPos(stmt->base.hp, (OCIBind**)&bind->base.hp, oci8_errhp, position, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, bind->use_rlen ? &bind->len.rlen : NULL, 0, 0, 0, mode);
+        status = OCIBindByPos(stmt->base.hp, (OCIBind**)&bind->base.hp, oci8_errhp, position, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, NULL, 0, 0, 0, mode);
     } else {
-        status = OCIBindByName(stmt->base.hp, (OCIBind**)&bind->base.hp, oci8_errhp, placeholder_ptr, placeholder_len, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, bind->use_rlen ? &bind->len.rlen : NULL, 0, 0, 0, mode);
+        status = OCIBindByName(stmt->base.hp, (OCIBind**)&bind->base.hp, oci8_errhp, placeholder_ptr, placeholder_len, bind->valuep, bind->value_sz, bind_class->dty, &bind->ind, NULL, 0, 0, 0, mode);
     }
     if (status != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, status, stmt->base.hp);
@@ -304,7 +304,7 @@ static VALUE oci8_stmt_execute(VALUE self)
                 default:
                     rb_bug("ruby-oci8: expect OCI_PARAM_IN or OCI_PARAM_OUT but %d", in_out);
                 }
-                oci_lc(OCIStmtSetPieceInfo(bind->base.hp, OCI_HTYPE_BIND, oci8_errhp, bind->valuep, &bind->len.alen, 0, &bind->ind, NULL));
+                oci_lc(OCIStmtSetPieceInfo(bind->base.hp, OCI_HTYPE_BIND, oci8_errhp, bind->valuep, &bind->alen, 0, &bind->ind, NULL));
                 break;
             }
         }
@@ -351,7 +351,7 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
                 default:
                     rb_bug("ruby-oci8: expect OCI_PARAM_OUT but %d", in_out);
                 }
-                oci_lc(OCIStmtSetPieceInfo(bind->base.hp, OCI_HTYPE_DEFINE, oci8_errhp, bind->valuep, &bind->len.alen, 0, &bind->ind, NULL));
+                oci_lc(OCIStmtSetPieceInfo(bind->base.hp, OCI_HTYPE_DEFINE, oci8_errhp, bind->valuep, &bind->alen, 0, &bind->ind, NULL));
                 break;
             }
         }
