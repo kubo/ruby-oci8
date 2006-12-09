@@ -168,6 +168,12 @@ oci8_handle_t *oci8_make_handle(ub4 type, dvoid *hp, OCIError *errhp, oci8_handl
     h->u.lob_locator.char_width = 1;
 #endif
     break;
+  case OCI_DTYPE_FILE:
+    obj = Data_Make_Struct(cOCIFileLocator, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
+#ifndef OCI8_USE_CALLBACK_LOB_READ
+    h->u.lob_locator.char_width = 1;
+#endif
+    break;
   case OCI_DTYPE_ROWID:
     obj = Data_Make_Struct(cOCIRowid, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
     break;

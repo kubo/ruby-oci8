@@ -55,6 +55,14 @@ static void check_bind_type(ub4 type, oci8_handle_t *stmth, VALUE vtype, VALUE v
       if (!rb_obj_is_instance_of(vlength, cOCILobLocator))
 	rb_raise(rb_eArgError, "Invalid argument: %s (expect OCILobLocator)", rb_class2name(CLASS_OF(vlength)));
       break;
+    case SQLT_BFILE:
+    case SQLT_CFILE:
+      bind_type = BIND_HANDLE;
+      *dty = FIX2INT(vtype);
+      value_sz = sizeof(OCILobLocator *);
+      if (!rb_obj_is_instance_of(vlength, cOCIFileLocator))
+	rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIFileLocator)", rb_class2name(CLASS_OF(vlength)));
+      break;
     case SQLT_RDD:
       bind_type = BIND_HANDLE;
       *dty = SQLT_RDD;

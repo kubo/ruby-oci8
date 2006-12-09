@@ -62,6 +62,7 @@ VALUE cOCIDescribe;
 VALUE cOCIDescriptor;
 VALUE cOCIParam;
 VALUE cOCILobLocator;
+VALUE cOCIFileLocator;
 VALUE cOCIRowid;
 
 VALUE eOCIException;
@@ -93,6 +94,7 @@ Init_oci8lib()
   /* Descriptor */
   cOCIDescriptor = rb_define_class("OCIDescriptor", rb_cObject);
   cOCILobLocator = rb_define_class("OCILobLocator", cOCIDescriptor);
+  cOCIFileLocator = rb_define_class("OCIFileLocator", cOCILobLocator);
   cOCIParam = rb_define_class("OCIParam", cOCIDescriptor);
   cOCIRowid = rb_define_class("OCIRowid", cOCIDescriptor);
 

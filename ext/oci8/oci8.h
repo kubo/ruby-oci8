@@ -197,6 +197,7 @@ extern VALUE cOCIDescribe;
 /* Descriptor */
 extern VALUE cOCIDescriptor;
 extern VALUE cOCILobLocator;
+extern VALUE cOCIFileLocator;
 extern VALUE cOCIParam;
 extern VALUE cOCIRowid;
 

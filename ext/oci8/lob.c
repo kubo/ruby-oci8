@@ -1,5 +1,7 @@
 #include "oci8.h"
 
+static VALUE sym_file_readonly;
+
 #ifndef OCI8_USE_CALLBACK_LOB_READ
 static VALUE oci8_lob_set_char_width(VALUE self, VALUE vsize)
 {
@@ -209,7 +211,7 @@ static VALUE oci8_lob_clone(VALUE self, VALUE vsvc)
 
   /* get environment handle */
   for (envh = h; envh->type != OCI_HTYPE_ENV; envh = envh->parent);
-  rv = OCIDescriptorAlloc(envh->hp, (void *)&hp, OCI_DTYPE_LOB, 0, NULL);
+  rv = OCIDescriptorAlloc(envh->hp, (void *)&hp, h->type, 0, NULL);
   if (rv != OCI_SUCCESS) {
     oci8_env_raise(envh->hp, rv);
   }
@@ -221,25 +223,35 @@ static VALUE oci8_lob_clone(VALUE self, VALUE vsvc)
   rv = OCILobAssign(envh->hp, h->errhp, h->hp, &hp);
 #endif
   if (rv != OCI_SUCCESS) {
+    OCIDescriptorFree(hp, h->type);
     oci8_raise(h->errhp, rv, NULL);
   }
-  newh = oci8_make_handle(OCI_DTYPE_LOB, hp, h->errhp, h->parent, 0);
+  newh = oci8_make_handle(h->type, hp, h->errhp, h->parent, 0);
   if (rv != OCI_SUCCESS)
     oci8_raise(h->errhp, rv, NULL);
   return newh->self;
 }
 
 #ifdef HAVE_OCILOBOPEN
-static VALUE oci8_lob_open(VALUE self, VALUE vsvc)
+static VALUE oci8_lob_open(int argc, VALUE *argv, VALUE self)
 {
+  VALUE vsvc;
+  VALUE vmode = Qnil;
   oci8_handle_t *h;
   oci8_handle_t *svch;
+  ub1 mode;
   sword rv;
 
+  rb_scan_args(argc, argv, "11", &vsvc, &vmode);
   Get_Handle(self, h); /* 0 */
   Check_Handle(vsvc, OCISvcCtx, svch); /* 1 */
-  
-  rv = OCILobOpen(svch->hp, h->errhp, h->hp, OCI_DEFAULT);
+  if (vmode == Qnil)
+    mode = OCI_DEFAULT;
+  else if (vmode == sym_file_readonly)
+    mode = OCI_FILE_READONLY;
+  else
+    rb_raise(rb_eArgError, "expect nil or :file_readonly");
+  rv = OCILobOpen(svch->hp, h->errhp, h->hp, mode);
   if (rv != OCI_SUCCESS)
     oci8_raise(h->errhp, rv, NULL);
   return self;
@@ -263,8 +275,63 @@ static VALUE oci8_lob_close(VALUE self, VALUE vsvc)
 }
 #endif
 
+static VALUE oci8_lobfile_name(VALUE self, VALUE venv)
+{
+  oci8_handle_t *h;
+  oci8_handle_t *envh;
+  char dir_alias[31];
+  ub2 d_length = sizeof(dir_alias);
+  char filename[256];
+  ub2 f_length = sizeof(filename);
+  sword rv;
+
+  Get_Handle(self, h); /* 0 */
+  Check_Handle(venv, OCIEnv, envh); /* 1 */
+
+  rv = OCILobFileGetName(envh->hp, h->errhp, h->hp, (OraText*)dir_alias, &d_length, (OraText*)filename, &f_length);
+  if (rv != OCI_SUCCESS)
+    oci8_raise(h->errhp, rv, NULL);
+  return rb_ary_new3(2, rb_str_new(dir_alias, d_length), rb_str_new(filename, f_length));
+}
+
+static VALUE oci8_lobfile_set_name(VALUE self, VALUE venv, VALUE vdir, VALUE vfile)
+{
+  oci8_handle_t *h;
+  oci8_handle_t *envh;
+  sword rv;
+
+  Get_Handle(self, h); /* 0 */
+  Check_Handle(venv, OCIEnv, envh); /* 1 */
+  StringValue(vdir); /* 2 */
+  StringValue(vfile); /* 3 */
+
+  rv = OCILobFileSetName(envh->hp, h->errhp, (OCILobLocator **)&h->hp,
+			 RSTRING_PTR(vdir), RSTRING_LEN(vdir),
+			 RSTRING_PTR(vfile), RSTRING_LEN(vfile));
+  if (rv != OCI_SUCCESS)
+    oci8_raise(h->errhp, rv, NULL);
+  return self;
+}
+
+static VALUE oci8_lobfile_exist_p(VALUE self, VALUE vsvc)
+{
+  oci8_handle_t *h;
+  oci8_handle_t *svch;
+  boolean flag;
+  sword rv;
+
+  Get_Handle(self, h); /* 0 */
+  Check_Handle(vsvc, OCISvcCtx, svch); /* 1 */
+
+  rv = OCILobFileExists(svch->hp, h->errhp, h->hp, &flag);
+  if (rv != OCI_SUCCESS)
+    oci8_raise(h->errhp, rv, NULL);
+  return flag ? Qtrue : Qfalse;
+}
+
 void Init_oci8_lob(void)
 {
+  sym_file_readonly = ID2SYM(rb_intern("file_readonly"));
 #ifndef OCI8_USE_CALLBACK_LOB_READ
   rb_define_method(cOCILobLocator, "char_width=", oci8_lob_set_char_width, 1);
 #endif
@@ -278,9 +345,12 @@ void Init_oci8_lob(void)
   rb_define_method(cOCILobLocator, "trim", oci8_lob_trim, 2);
   rb_define_method(cOCILobLocator, "clone", oci8_lob_clone, 1);
 #ifdef HAVE_OCILOBOPEN
-  rb_define_method(cOCILobLocator, "open", oci8_lob_open, 1);
+  rb_define_method(cOCILobLocator, "open", oci8_lob_open, -1);
 #endif
 #ifdef HAVE_OCILOBCLOSE
   rb_define_method(cOCILobLocator, "close", oci8_lob_close, 1);
 #endif
+  rb_define_method(cOCIFileLocator, "name", oci8_lobfile_name, 1);
+  rb_define_method(cOCIFileLocator, "set_name", oci8_lobfile_set_name, 3);
+  rb_define_method(cOCIFileLocator, "exists?", oci8_lobfile_exist_p, 1);
 }

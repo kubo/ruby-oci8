@@ -167,6 +167,19 @@ static VALUE oci8_describe_any(VALUE self, VALUE vdsc, VALUE vname, VALUE vtype)
   return self;
 }
 
+static VALUE oci8_close_all_files(VALUE self)
+{
+  oci8_handle_t *h;
+  sword rv;
+
+  Get_Handle(self, h); /* 0 */
+  rv = OCILobFileCloseAll(h->hp, h->errhp);
+  if (rv != OCI_SUCCESS) {
+    oci8_raise(h->errhp, rv, NULL);
+  }
+  return self;
+}
+
 void Init_oci8_svcctx(void)
 {
   rb_define_method(cOCISvcCtx, "logoff", oci8_svcctx_logoff, 0);
@@ -182,6 +195,7 @@ void Init_oci8_svcctx(void)
 #ifdef HAVE_OCIRESET
   rb_define_method(cOCISvcCtx, "reset", oci8_reset, 0);
 #endif
+  rb_define_method(cOCISvcCtx, "close_all_files", oci8_close_all_files, 0);
 }
 
 /*

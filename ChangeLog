@@ -1,3 +1,12 @@
+2006-12-09  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/env.c, ext/oci8/handle.c, ext/oci8/oci8.c, ext/oci8/oci8.h,
+	  ext/oci8/stmt.c: add OCIFileLocator.
+	* ext/oci8/lob.c: fix OCILobLocator#open to accept a second argument.
+	    add OCIFileLocator#name, OCIFileLocator#set_name and
+	    OCIFileLocator#exists?
+	* ext/oci8/svcctx.c: add OCISvcCtx#close_all_files.
+	* lib/oci8.rb.in: add OCI8::BFILE and OCI8::BindType::BFILE.
+
 2006-12-05  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/attr.c, ext/oci8/bind.c, ext/oci8/error.c, ext/oci8/oci8.h,
 	  ext/oci8/ocinumber.c, ext/oci8/oradate.c, ext/oci8/oranumber.c, 
