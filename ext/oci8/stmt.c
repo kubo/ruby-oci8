@@ -153,7 +153,7 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
     if (RTEST(bind->tdo)) {
         oci8_base_t *tdo = DATA_PTR(bind->tdo);
         oci_lc(OCIDefineObject(bind->base.hp, oci8_errhp, tdo->hp,
-                               &bind->valuep, 0, &bind->null_struct, 0));
+                               bind->valuep, 0, &bind->null_struct, 0));
     }
     if (position - 1 < RARRAY_LEN(stmt->defns)) {
         VALUE old_value = RARRAY_PTR(stmt->defns)[position - 1];
@@ -613,15 +613,14 @@ static void bind_stmt_set(oci8_bind_t *bind, VALUE val)
     if (!rb_obj_is_instance_of(val, cOCIStmt))
         rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIStmt)", rb_class2name(CLASS_OF(val)));
     h = DATA_PTR(val);
-    handle->hp = h->hp;
+    *(void**)bind->valuep = h->hp;
     handle->obj = val;
 }
 
 static void bind_stmt_init(oci8_bind_t *bind, VALUE svc, VALUE *val, VALUE length)
 {
-    oci8_bind_handle_t *handle = (oci8_bind_handle_t *)bind;
-    bind->valuep = &handle->hp;
-    bind->value_sz = sizeof(handle->hp);
+    bind->value_sz = sizeof(void *);
+    bind->alloc_sz = sizeof(void *);
     if (NIL_P(*val)) {
         *val = rb_funcall(cOCIStmt, oci8_id_new, 1, svc);
     }
@@ -636,6 +635,7 @@ static oci8_bind_class_t bind_stmt_class = {
     oci8_stmt_get,
     bind_stmt_set,
     bind_stmt_init,
+    NULL,
     NULL,
     NULL,
     SQLT_RSET

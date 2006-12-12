@@ -39,17 +39,18 @@ static VALUE fsec_base;
 typedef struct {
     oci8_bind_t bind;
     ub4 type;
-    void *hp;
 } oci8_bind_dsc_t;
 
 void oci8_bind_dsc_free(oci8_base_t *base)
 {
     oci8_bind_dsc_t *bd = (oci8_bind_dsc_t *)base;
-    oci8_bind_free(base);
-    if (bd->type != 0) {
-        OCIDescriptorFree(bd->hp, bd->type);
-        bd->type = 0;
+    if (bd->bind.valuep != NULL) {
+        if (bd->type != 0) {
+            OCIDescriptorFree(*(void**)bd->bind.valuep, bd->type);
+            bd->type = 0;
+        }
     }
+    oci8_bind_free(base);
 }
 
 static VALUE make_datetime(sb2 year, ub1 month, ub1 day, ub1 hour, ub1 minute, ub1 sec, ub4 fsec, sb1 tz_hour, sb1 tz_minute)
@@ -237,7 +238,7 @@ VALUE oci8_make_interval_ds(OCIInterval *s)
 static VALUE bind_datetime_get(oci8_bind_t *b)
 {
     oci8_bind_dsc_t *bd = (oci8_bind_dsc_t*)b;
-    return oci8_make_datetime_from_ocidatetime(bd->hp);
+    return oci8_make_datetime_from_ocidatetime(*(OCIDateTime**)bd->bind.valuep);
 }
 
 static void bind_datetime_set(oci8_bind_t *b, VALUE val)
@@ -354,7 +355,7 @@ static void bind_datetime_set(oci8_bind_t *b, VALUE val)
         /* use session timezone. */
         tz_str[0] = '\0';
     }
-    oci_lc(OCIDateTimeConstruct(oci8_envhp, oci8_errhp, bd->hp,
+    oci_lc(OCIDateTimeConstruct(oci8_envhp, oci8_errhp, *(OCIDateTime**)bd->bind.valuep,
                                 year,
                                 month,
                                 day,
@@ -368,15 +369,20 @@ static void bind_datetime_set(oci8_bind_t *b, VALUE val)
 
 static void bind_datetime_init(oci8_bind_t *b, VALUE svc, VALUE *val, VALUE length)
 {
-    oci8_bind_dsc_t *bd = (oci8_bind_dsc_t*)b;
+    oci8_bind_dsc_t *bd = (oci8_bind_dsc_t *)b;
+
+    b->value_sz = sizeof(OCIDateTime *);
+    b->alloc_sz = sizeof(OCIDateTime *);
+    bd->type = OCI_DTYPE_TIMESTAMP_TZ;
+}
+
+static void bind_datetime_init_elem(oci8_bind_t *b, VALUE svc)
+{
     sword rv;
 
-    b->valuep = &bd->hp;
-    b->value_sz = sizeof(bd->hp);
-    rv = OCIDescriptorAlloc(oci8_envhp, (void*)&bd->hp, OCI_DTYPE_TIMESTAMP_TZ, 0, 0);
+    rv = OCIDescriptorAlloc(oci8_envhp, b->valuep, OCI_DTYPE_TIMESTAMP_TZ, 0, 0);
     if (rv != OCI_SUCCESS)
         oci8_env_raise(oci8_envhp, rv);
-    bd->type = OCI_DTYPE_TIMESTAMP_TZ;
 }
 
 /*
@@ -426,14 +432,11 @@ static void bind_datetime_init(oci8_bind_t *b, VALUE svc, VALUE *val, VALUE leng
  */
 static VALUE bind_interval_ym_get(oci8_bind_t *b)
 {
-    oci8_bind_dsc_t *bd = (oci8_bind_dsc_t*)b;
-
-    return oci8_make_interval_ym(bd->hp);
+    return oci8_make_interval_ym(*(OCIInterval**)b->valuep);
 }
 
 static void bind_interval_ym_set(oci8_bind_t *b, VALUE val)
 {
-    oci8_bind_dsc_t *bd = (oci8_bind_dsc_t*)b;
     int months = NUM2INT(val);
     int sign = 1;
 
@@ -444,20 +447,25 @@ static void bind_interval_ym_set(oci8_bind_t *b, VALUE val)
     oci_lc(OCIIntervalSetYearMonth(oci8_envhp, oci8_errhp,
                                    (months / 12) * sign,
                                    (months % 12) * sign,
-                                   bd->hp));
+                                   *(OCIInterval**)b->valuep));
 }
 
 static void bind_interval_ym_init(oci8_bind_t *b, VALUE svc, VALUE *val, VALUE length)
 {
     oci8_bind_dsc_t *bd = (oci8_bind_dsc_t *)b;
+
+    b->value_sz = sizeof(OCIInterval*);
+    b->alloc_sz = sizeof(OCIInterval*);
+    bd->type = OCI_DTYPE_INTERVAL_YM;
+}
+
+static void bind_interval_ym_init_elem(oci8_bind_t *b, VALUE svc)
+{
     sword rv;
 
-    b->valuep = &bd->hp;
-    b->value_sz = sizeof(bd->hp);
-    rv = OCIDescriptorAlloc(oci8_envhp, (void*)&bd->hp, OCI_DTYPE_INTERVAL_YM, 0, 0);
+    rv = OCIDescriptorAlloc(oci8_envhp, b->valuep, OCI_DTYPE_INTERVAL_YM, 0, 0);
     if (rv != OCI_SUCCESS)
         oci8_env_raise(oci8_envhp, rv);
-    bd->type = OCI_DTYPE_INTERVAL_YM;
 }
 
 /*
@@ -516,7 +524,7 @@ static VALUE bind_interval_ds_get(oci8_bind_t *b)
 {
     oci8_bind_dsc_t *bd = (oci8_bind_dsc_t*)b;
 
-    return oci8_make_interval_ds(bd->hp);
+    return oci8_make_interval_ds(*(OCIInterval**)bd->bind.valuep);
 }
 
 static void bind_interval_ds_set(oci8_bind_t *b, VALUE val)
@@ -580,20 +588,25 @@ static void bind_interval_ds_set(oci8_bind_t *b, VALUE val)
         fsec = - fsec;
     }
     oci_lc(OCIIntervalSetDaySecond(oci8_envhp, oci8_errhp,
-                                   day, hour, minute, sec, fsec, bd->hp));
+                                   day, hour, minute, sec, fsec, *(void**)bd->bind.valuep));
 }
 
 static void bind_interval_ds_init(oci8_bind_t *b, VALUE svc, VALUE *val, VALUE length)
 {
     oci8_bind_dsc_t *bd = (oci8_bind_dsc_t *)b;
+
+    b->value_sz = sizeof(OCIInterval *);
+    b->alloc_sz = sizeof(OCIInterval *);
+    bd->type = OCI_DTYPE_INTERVAL_DS;
+}
+
+static void bind_interval_ds_init_elem(oci8_bind_t *b, VALUE svc)
+{
     sword rv;
 
-    b->valuep = &bd->hp;
-    b->value_sz = sizeof(bd->hp);
-    rv = OCIDescriptorAlloc(oci8_envhp, (void*)&bd->hp, OCI_DTYPE_INTERVAL_DS, 0, 0);
+    rv = OCIDescriptorAlloc(oci8_envhp, b->valuep, OCI_DTYPE_INTERVAL_DS, 0, 0);
     if (rv != OCI_SUCCESS)
         oci8_env_raise(oci8_envhp, rv);
-    bd->type = OCI_DTYPE_INTERVAL_DS;
 }
 
 static oci8_bind_class_t bind_datetime_class = {
@@ -605,6 +618,7 @@ static oci8_bind_class_t bind_datetime_class = {
     bind_datetime_get,
     bind_datetime_set,
     bind_datetime_init,
+    bind_datetime_init_elem,
     NULL,
     NULL,
     SQLT_TIMESTAMP_TZ
@@ -619,6 +633,7 @@ static oci8_bind_class_t bind_interval_ym_class = {
     bind_interval_ym_get,
     bind_interval_ym_set,
     bind_interval_ym_init,
+    bind_interval_ym_init_elem,
     NULL,
     NULL,
     SQLT_INTERVAL_YM
@@ -633,6 +648,7 @@ static oci8_bind_class_t bind_interval_ds_class = {
     bind_interval_ds_get,
     bind_interval_ds_set,
     bind_interval_ds_init,
+    bind_interval_ds_init_elem,
     NULL,
     NULL,
     SQLT_INTERVAL_DS

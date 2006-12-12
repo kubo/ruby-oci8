@@ -188,8 +188,10 @@ static void bind_tdo_free(oci8_base_t *base)
 {
     oci8_bind_t *bind = (oci8_bind_t*)base;
     if (bind->valuep != NULL) {
-        OCIObjectFree(oci8_envhp, oci8_errhp, bind->valuep, OCI_DEFAULT);
-        bind->valuep = NULL;
+        if (*(void**)bind->valuep != NULL) {
+            OCIObjectFree(oci8_envhp, oci8_errhp, *(void**)bind->valuep, OCI_DEFAULT);
+            *(void**)bind->valuep = NULL;
+        }
     }
     oci8_bind_free(base);
 }
@@ -201,7 +203,7 @@ static VALUE orascalar_to_rubyobj(oci8_svcctx_t *svcctx, OCITypeCode typecode, d
 static VALUE bind_tdo_get(oci8_bind_t *bind)
 {
     bind_tdo_t *bind_tdo = (bind_tdo_t*)bind;
-    return oraobject_to_rubyobj(bind_tdo->bind.tdo, bind_tdo->bind.valuep, bind_tdo->bind.null_struct);
+    return oraobject_to_rubyobj(bind_tdo->bind.tdo, *(void**)bind_tdo->bind.valuep, bind_tdo->bind.null_struct);
 }
 
 static VALUE oraobject_to_rubyobj(VALUE tdo_obj, dvoid *instance, dvoid *null_struct)
@@ -321,18 +323,23 @@ static void bind_tdo_set(oci8_bind_t *base, VALUE val)
 
 static void bind_tdo_init(oci8_bind_t *bind, VALUE svc, VALUE *val, VALUE length)
 {
-    VALUE tdo_obj = length;
+    bind->value_sz = sizeof(void*);
+    bind->alloc_sz = sizeof(void*);
+    bind->tdo = length;
+    if (!rb_obj_is_kind_of(bind->tdo, cOCITDO)) {
+        rb_raise(rb_eTypeError, "invalid argument %s (expect %s)", rb_class2name(CLASS_OF(bind->tdo)), rb_class2name(cOCITDO));
+    }
+}
+
+static void bind_tdo_init_elem(oci8_bind_t *bind, VALUE svc)
+{
     oci8_svcctx_t *svcctx;
     oci8_tdo_t *tdo;
 
     svcctx = oci8_get_svcctx(svc);
-    if (!rb_obj_is_kind_of(tdo_obj, cOCITDO)) {
-        rb_raise(rb_eTypeError, "invalid argument %s (expect %s)", rb_class2name(CLASS_OF(length)), rb_class2name(cOCITDO));
-    }
-    Data_Get_Struct(length, oci8_tdo_t, tdo);
-    oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->base.hp, OCI_TYPECODE_OBJECT, tdo->base.hp, NULL, OCI_DURATION_SESSION, 0, (dvoid*)&bind->valuep));
+    Data_Get_Struct(bind->tdo, oci8_tdo_t, tdo);
+    oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->base.hp, OCI_TYPECODE_OBJECT, tdo->base.hp, NULL, OCI_DURATION_SESSION, 0, bind->valuep));
     oci_lc(OCIObjectGetInd(oci8_envhp, oci8_errhp, bind->valuep, &bind->null_struct));
-    bind->tdo = tdo_obj;
 }
 
 static oci8_bind_class_t bind_tdo_class = {
@@ -344,6 +351,7 @@ static oci8_bind_class_t bind_tdo_class = {
     bind_tdo_get,
     bind_tdo_set,
     bind_tdo_init,
+    bind_tdo_init_elem,
     NULL,
     NULL,
     SQLT_NTY

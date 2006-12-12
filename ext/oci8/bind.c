@@ -17,20 +17,6 @@ static VALUE cOCIBind;
 /*
  * bind_string
  */
-typedef struct {
-    oci8_bind_t base;
-} oci8_bind_string_t;
-
-static void bind_string_free(oci8_base_t *base)
-{
-    oci8_bind_t *bind_base = (oci8_bind_t *)base;
-    oci8_bind_free(base);
-    if (bind_base->valuep != NULL) {
-        xfree(bind_base->valuep);
-        bind_base->valuep = NULL;
-    }
-}
-
 static VALUE bind_string_get(oci8_bind_t *base)
 {
     oci8_vstr_t *vstr = base->valuep;
@@ -51,9 +37,7 @@ static void bind_string_set(oci8_bind_t *base, VALUE val)
 
 static void bind_string_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length)
 {
-    sb4 sz = 0;
-    oci8_vstr_t *vstr;
-
+    sb4 sz;
     if (NIL_P(length)) {
         if (NIL_P(*val)) {
             rb_raise(rb_eArgError, "value and length are both null.");
@@ -66,21 +50,20 @@ static void bind_string_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE len
     if (sz <= 0) {
         rb_raise(rb_eArgError, "invalid bind length %d", sz);
     }
-    base->valuep = xmalloc(sizeof(vstr->size) + sz);
-    base->value_sz = sizeof(vstr->size) + sz;
-    vstr = base->valuep;
-    vstr->size = sz;
+    base->value_sz = sizeof(sb4) + sz;
+    base->alloc_sz = sizeof(sb4) + sz;
 }
 
 static oci8_bind_class_t bind_string_class = {
     {
         NULL,
-        bind_string_free,
-        sizeof(oci8_bind_string_t)
+        oci8_bind_free,
+        sizeof(oci8_bind_t)
     },
     bind_string_get,
     bind_string_set,
     bind_string_init,
+    NULL,
     NULL,
     NULL,
     SQLT_LVC
@@ -92,12 +75,13 @@ static oci8_bind_class_t bind_string_class = {
 static oci8_bind_class_t bind_raw_class = {
     {
         NULL,
-        bind_string_free,
-        sizeof(oci8_bind_string_t)
+        oci8_bind_free,
+        sizeof(oci8_bind_t)
     },
     bind_string_get,
     bind_string_set,
     bind_string_init,
+    NULL,
     NULL,
     NULL,
     SQLT_LVB
@@ -143,7 +127,6 @@ static void bind_long_set(oci8_bind_t *base, VALUE val)
 
 static void bind_long_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length)
 {
-    oci8_bind_long_t *bind_long = (oci8_bind_long_t*)base;
     sb4 sz = 0;
 
     if (!NIL_P(length)) {
@@ -153,8 +136,15 @@ static void bind_long_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE lengt
         sz = 4000;
     }
     base->value_sz = INT_MAX;
-    bind_long->bufsiz = sz;
-    bind_long->buf = xmalloc(sz);
+    base->alloc_sz = sz;
+}
+
+static void bind_long_init_elem(oci8_bind_t *base, VALUE svc)
+{
+    oci8_bind_long_t *bind_long = (oci8_bind_long_t*)base;
+
+    bind_long->bufsiz = base->alloc_sz;
+    bind_long->buf = xmalloc(base->alloc_sz);
     bind_long->obj = Qnil;
 }
 
@@ -193,12 +183,13 @@ static void bind_long_out(oci8_bind_t *base, ub1 piece)
 static oci8_bind_class_t bind_long_class = {
     {
         bind_long_mark,
-        bind_string_free,
+        bind_long_free,
         sizeof(oci8_bind_long_t)
     },
     bind_long_get,
     bind_long_set,
     bind_long_init,
+    bind_long_init_elem,
     bind_long_in,
     bind_long_out,
     SQLT_CHR
@@ -216,6 +207,7 @@ static oci8_bind_class_t bind_long_raw_class = {
     bind_long_get,
     bind_long_set,
     bind_long_init,
+    bind_long_init_elem,
     bind_long_in,
     bind_long_out,
     SQLT_BIN
@@ -231,25 +223,19 @@ typedef struct {
 
 static VALUE bind_fixnum_get(oci8_bind_t *base)
 {
-    oci8_bind_fixnum_t *fixnum = (oci8_bind_fixnum_t *)base;
-
-    return LONG2NUM(fixnum->val);
+    return LONG2NUM(*(long*)base->valuep);
 }
 
 static void bind_fixnum_set(oci8_bind_t *base, VALUE val)
 {
-    oci8_bind_fixnum_t *fixnum = (oci8_bind_fixnum_t *)base;
-
     Check_Type(val, T_FIXNUM);
-    fixnum->val = FIX2LONG(val);
+    *(long*)base->valuep = FIX2LONG(val);
 }
 
 static void bind_fixnum_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length)
 {
-    oci8_bind_fixnum_t *fixnum = (oci8_bind_fixnum_t *)base;
-
-    base->valuep = &fixnum->val;
-    base->value_sz = sizeof(fixnum->val);
+    base->value_sz = sizeof(long);
+    base->alloc_sz = sizeof(long);
 }
 
 static oci8_bind_class_t bind_fixnum_class = {
@@ -261,6 +247,7 @@ static oci8_bind_class_t bind_fixnum_class = {
     bind_fixnum_get,
     bind_fixnum_set,
     bind_fixnum_init,
+    NULL,
     NULL,
     NULL,
     SQLT_INT
@@ -276,25 +263,19 @@ typedef struct {
 
 static VALUE bind_float_get(oci8_bind_t *base)
 {
-    oci8_bind_float_t *flt = (oci8_bind_float_t *)base;
-
-    return rb_float_new(flt->val);
+    return rb_float_new(*(double*)base->valuep);
 }
 
 static void bind_float_set(oci8_bind_t *base, VALUE val)
 {
-    oci8_bind_float_t *flt = (oci8_bind_float_t *)base;
-
     Check_Type(val, T_FLOAT);
-    flt->val = RFLOAT(val)->value;
+    *(double*)base->valuep = RFLOAT(val)->value;
 }
 
 static void bind_float_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length)
 {
-    oci8_bind_float_t *flt = (oci8_bind_float_t *)base;
-
-    base->valuep = &flt->val;
-    base->value_sz = sizeof(flt->val);
+    base->value_sz = sizeof(double);
+    base->alloc_sz = sizeof(double);
 }
 
 static oci8_bind_class_t bind_float_class = {
@@ -306,6 +287,7 @@ static oci8_bind_class_t bind_float_class = {
     bind_float_get,
     bind_float_set,
     bind_float_init,
+    NULL,
     NULL,
     NULL,
     SQLT_FLT
@@ -356,6 +338,15 @@ static VALUE oci8_bind_initialize(VALUE self, VALUE svc, VALUE val, VALUE length
     base->next = base;
     base->prev = base;
     bind_class->init(base, svc, &val, length);
+    if (base->alloc_sz > 0) {
+        base->valuep = xmalloc(base->alloc_sz);
+        memset(base->valuep, 0, base->alloc_sz);
+    } else {
+        base->valuep = NULL;
+    }
+    if (bind_class->init_elem != NULL) {
+        bind_class->init_elem(base, svc);
+    }
     base->ind = -1;
     if (!NIL_P(val)) {
         rb_funcall(self, id_set, 1, val);
@@ -369,6 +360,10 @@ void oci8_bind_free(oci8_base_t *base)
     bind->next->prev = bind->prev;
     bind->prev->next = bind->next;
     bind->next = bind->prev = bind;
+    if (bind->valuep != NULL) {
+        xfree(bind->valuep);
+        bind->valuep = NULL;
+    }
 }
 
 void oci8_bind_handle_mark(oci8_base_t *base)

@@ -997,54 +997,50 @@ onum_s_load(VALUE klass, VALUE str)
 /*
  * bind_ocinumber
  */
-typedef struct {
-    oci8_bind_t base;
-    OCINumber on;
-} oci8_bind_ocinumber_t;
-
 static VALUE bind_ocinumber_get(oci8_bind_t *bb)
 {
-    oci8_bind_ocinumber_t *bo = (oci8_bind_ocinumber_t *)bb;
-    return oci8_make_ocinumber(&bo->on);
+    return oci8_make_ocinumber((OCINumber*)bb->valuep);
 }
 
 static VALUE bind_integer_get(oci8_bind_t *bb)
 {
-    oci8_bind_ocinumber_t *bo = (oci8_bind_ocinumber_t *)bb;
-    return oci8_make_integer(&bo->on);
+    return oci8_make_integer((OCINumber*)bb->valuep);
 }
 
 static void bind_ocinumber_set(oci8_bind_t *bb, VALUE val)
 {
-    oci8_bind_ocinumber_t *bo = (oci8_bind_ocinumber_t *)bb;
-    set_oci_number_from_num(&bo->on, val, 1);
+    set_oci_number_from_num((OCINumber*)bb->valuep, val, 1);
 }
 
 static void bind_integer_set(oci8_bind_t *bb, VALUE val)
 {
-    oci8_bind_ocinumber_t *bo = (oci8_bind_ocinumber_t *)bb;
     OCINumber num;
 
     set_oci_number_from_num(&num, val, 1);
-    oci_lc(OCINumberTrunc(oci8_errhp, &num, 0, &bo->on));
+    oci_lc(OCINumberTrunc(oci8_errhp, &num, 0, (OCINumber*)bb->valuep));
 }
 
 static void bind_ocinumber_init(oci8_bind_t *bb, VALUE svc, VALUE *val, VALUE length)
 {
-    oci8_bind_ocinumber_t *bo = (oci8_bind_ocinumber_t *)bb;
-    bb->valuep = &bo->on;
     bb->value_sz = sizeof(OCINumber);
+    bb->alloc_sz = sizeof(OCINumber);
+}
+
+static void bind_ocinumber_init_elem(oci8_bind_t *bb, VALUE svc)
+{
+    OCINumberSetZero(oci8_errhp, (OCINumber*)bb->valuep);
 }
 
 static oci8_bind_class_t bind_ocinumber_class = {
     {
         NULL,
         oci8_bind_free,
-        sizeof(oci8_bind_ocinumber_t)
+        sizeof(oci8_bind_t)
     },
     bind_ocinumber_get,
     bind_ocinumber_set,
     bind_ocinumber_init,
+    bind_ocinumber_init_elem,
     NULL,
     NULL,
     SQLT_VNU,
@@ -1054,11 +1050,12 @@ static oci8_bind_class_t bind_integer_class = {
     {
         NULL,
         oci8_bind_free,
-        sizeof(oci8_bind_ocinumber_t)
+        sizeof(oci8_bind_t)
     },
     bind_integer_get,
     bind_integer_set,
     bind_ocinumber_init,
+    bind_ocinumber_init_elem,
     NULL,
     NULL,
     SQLT_VNU,

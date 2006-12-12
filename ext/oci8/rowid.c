@@ -77,16 +77,6 @@ static VALUE oci8_rowid1_initialize_copy(VALUE lhs, VALUE rhs)
 /*
  * bind_rowid
  */
-static void bind_rowid1_free(oci8_base_t *base)
-{
-    oci8_bind_t *bind_base = (oci8_bind_t *)base;
-    oci8_bind_free(base);
-    if (bind_base->valuep != NULL) {
-        xfree(bind_base->valuep);
-        bind_base->valuep = NULL;
-    }
-}
-
 static VALUE bind_rowid1_get(oci8_bind_t *base)
 {
     VALUE rowid = rb_funcall(cOCIRowid, oci8_id_new, 1, Qnil);
@@ -109,21 +99,20 @@ static void bind_rowid1_set(oci8_bind_t *base, VALUE val)
 #define BIND_ROWID1_SIZE (sizeof(oci8_vstr_t) + MAX_ROWID_LEN)
 static void bind_rowid1_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length)
 {
-    oci8_vstr_t *vstr = xmalloc(BIND_ROWID1_SIZE);
-    base->valuep = vstr;
     base->value_sz = BIND_ROWID1_SIZE;
-    vstr->size = 0;
+    base->alloc_sz = BIND_ROWID1_SIZE;
 }
 
 static oci8_bind_class_t bind_rowid1_class = {
     {
         NULL,
-        bind_rowid1_free,
+        oci8_bind_free,
         sizeof(oci8_bind_t)
     },
     bind_rowid1_get,
     bind_rowid1_set,
     bind_rowid1_init,
+    NULL,
     NULL,
     NULL,
     SQLT_LVC
@@ -260,15 +249,14 @@ static void bind_rowid2_set(oci8_bind_t *base, VALUE val)
     if (!rb_obj_is_instance_of(val, cOCIRowid))
         rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIRowid)", rb_class2name(CLASS_OF(val)));
     h = DATA_PTR(val);
-    handle->hp = h->hp;
+    *(void**)base->valuep = h->hp;
     handle->obj = val;
 }
 
 static void bind_rowid2_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length)
 {
-    oci8_bind_handle_t *handle = (oci8_bind_handle_t *)base;
-    base->valuep = &handle->hp;
-    base->value_sz = sizeof(handle->hp);
+    base->value_sz = sizeof(void *);
+    base->alloc_sz = sizeof(void *);
     if (NIL_P(*val)) {
         *val = rb_funcall(cOCIRowid, oci8_id_new, 0);
     }
@@ -283,6 +271,9 @@ static oci8_bind_class_t bind_rowid2_class = {
     oci8_bind_handle_get,
     bind_rowid2_set,
     bind_rowid2_init,
+    NULL,
+    NULL,
+    NULL,
     SQLT_RDD
 };
 

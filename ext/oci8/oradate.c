@@ -366,11 +366,6 @@ static VALUE ora_date_s_load(VALUE klass, VALUE str)
 /*
  * bind_oradate
  */
-typedef struct {
-    oci8_bind_t base;
-    ora_date_t od;
-} oci8_bind_oradate_t;
-
 static VALUE bind_oradate_get(oci8_bind_t *bb)
 {
     ora_date_t *od;
@@ -391,21 +386,26 @@ static void bind_oradate_set(oci8_bind_t *bb, VALUE val)
 
 static void bind_oradate_init(oci8_bind_t *bb, VALUE svc, VALUE *val, VALUE length)
 {
-    oci8_bind_oradate_t *bo = (oci8_bind_oradate_t *)bb;
-
-    bb->valuep = &bo->od;
     bb->value_sz = sizeof(ora_date_t);
+    bb->alloc_sz = sizeof(ora_date_t);
+}
+
+static void bind_oradate_init_elem(oci8_bind_t *bb, VALUE svc)
+{
+    static const ora_date_t julian_day_0 = {100-47, 100-12, 1, 1, 1, 1, 1};
+    memcpy(bb->valuep, &julian_day_0, sizeof(ora_date_t));
 }
 
 static oci8_bind_class_t bind_oradate_class = {
     {
         NULL,
         oci8_bind_free,
-        sizeof(oci8_bind_oradate_t)
+        sizeof(oci8_bind_t)
     },
     bind_oradate_get,
     bind_oradate_set,
     bind_oradate_init,
+    bind_oradate_init_elem,
     NULL,
     NULL,
     SQLT_DAT,

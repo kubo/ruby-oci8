@@ -372,16 +372,16 @@ static void bind_lob_set(oci8_bind_t *base, VALUE val)
     if (!rb_obj_is_kind_of(val, *klass->klass))
         rb_raise(rb_eArgError, "Invalid argument: %s (expect %s)", rb_class2name(CLASS_OF(val)), rb_class2name(*klass->klass));
     h = DATA_PTR(val);
-    handle->hp = h->hp;
+    *(void**)base->valuep = h->hp;
     handle->obj = val;
 }
 
 static void bind_lob_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length)
 {
-    oci8_bind_handle_t *handle = (oci8_bind_handle_t *)base;
     oci8_bind_lob_class_t *klass = (oci8_bind_lob_class_t *)base->base.klass;
-    base->valuep = &handle->hp;
-    base->value_sz = sizeof(handle->hp);
+
+    base->value_sz = sizeof(void *);
+    base->alloc_sz = sizeof(void *);
     if (NIL_P(*val)) {
         *val = rb_funcall(*klass->klass, oci8_id_new, 1, svc);
     }
@@ -399,6 +399,7 @@ static oci8_bind_lob_class_t bind_clob_class = {
         bind_lob_init,
         NULL,
         NULL,
+        NULL,
         SQLT_CLOB
     },
     &cOCI8CLOB
@@ -414,6 +415,7 @@ static oci8_bind_lob_class_t bind_blob_class = {
         bind_lob_get,
         bind_lob_set,
         bind_lob_init,
+        NULL,
         NULL,
         NULL,
         SQLT_BLOB
