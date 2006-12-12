@@ -76,7 +76,7 @@ struct oci8_bind_class {
     oci8_base_class_t base;
     VALUE (*get)(oci8_bind_t *bh);
     void (*set)(oci8_bind_t *bh, VALUE val);
-    void (*init)(oci8_bind_t *bh, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale);
+    void (*init)(oci8_bind_t *bh, VALUE svc, VALUE *val, VALUE length);
     ub1 (*in)(oci8_bind_t *bh, ub1 piece);
     void (*out)(oci8_bind_t *bh, ub1 piece);
     ub2 dty;

@@ -1029,7 +1029,7 @@ static void bind_integer_set(oci8_bind_t *bb, VALUE val)
     oci_lc(OCINumberTrunc(oci8_errhp, &num, 0, &bo->on));
 }
 
-static void bind_ocinumber_init(oci8_bind_t *bb, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_ocinumber_init(oci8_bind_t *bb, VALUE svc, VALUE *val, VALUE length)
 {
     oci8_bind_ocinumber_t *bo = (oci8_bind_ocinumber_t *)bb;
     bb->valuep = &bo->on;

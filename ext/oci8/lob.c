@@ -376,7 +376,7 @@ static void bind_lob_set(oci8_bind_t *base, VALUE val)
     handle->obj = val;
 }
 
-static void bind_lob_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_lob_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length)
 {
     oci8_bind_handle_t *handle = (oci8_bind_handle_t *)base;
     oci8_bind_lob_class_t *klass = (oci8_bind_lob_class_t *)base->base.klass;

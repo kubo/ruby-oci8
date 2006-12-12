@@ -617,7 +617,7 @@ static void bind_stmt_set(oci8_bind_t *bind, VALUE val)
     handle->obj = val;
 }
 
-static void bind_stmt_init(oci8_bind_t *bind, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_stmt_init(oci8_bind_t *bind, VALUE svc, VALUE *val, VALUE length)
 {
     oci8_bind_handle_t *handle = (oci8_bind_handle_t *)bind;
     bind->valuep = &handle->hp;

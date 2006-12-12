@@ -319,7 +319,7 @@ static void bind_tdo_set(oci8_bind_t *base, VALUE val)
     rb_notimplement();
 }
 
-static void bind_tdo_init(oci8_bind_t *bind, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_tdo_init(oci8_bind_t *bind, VALUE svc, VALUE *val, VALUE length)
 {
     VALUE tdo_obj = length;
     oci8_svcctx_t *svcctx;

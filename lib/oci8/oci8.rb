@@ -416,7 +416,7 @@ class OCI8
       if bindclass.respond_to?(:dispatch)
         bindclass = bindclass.dispatch(val, length, precision, scale)
       end
-      bindobj = bindclass.new(__connection, val, length, precision, scale)
+      bindobj = bindclass.new(__connection, val, length)
 
       case bind_type
       when :bind

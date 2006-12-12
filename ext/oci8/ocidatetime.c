@@ -366,7 +366,7 @@ static void bind_datetime_set(oci8_bind_t *b, VALUE val)
                                 strlen(tz_str)));
 }
 
-static void bind_datetime_init(oci8_bind_t *b, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_datetime_init(oci8_bind_t *b, VALUE svc, VALUE *val, VALUE length)
 {
     oci8_bind_dsc_t *bd = (oci8_bind_dsc_t*)b;
     sword rv;
@@ -447,7 +447,7 @@ static void bind_interval_ym_set(oci8_bind_t *b, VALUE val)
                                    bd->hp));
 }
 
-static void bind_interval_ym_init(oci8_bind_t *b, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_interval_ym_init(oci8_bind_t *b, VALUE svc, VALUE *val, VALUE length)
 {
     oci8_bind_dsc_t *bd = (oci8_bind_dsc_t *)b;
     sword rv;
@@ -583,7 +583,7 @@ static void bind_interval_ds_set(oci8_bind_t *b, VALUE val)
                                    day, hour, minute, sec, fsec, bd->hp));
 }
 
-static void bind_interval_ds_init(oci8_bind_t *b, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_interval_ds_init(oci8_bind_t *b, VALUE svc, VALUE *val, VALUE length)
 {
     oci8_bind_dsc_t *bd = (oci8_bind_dsc_t *)b;
     sword rv;

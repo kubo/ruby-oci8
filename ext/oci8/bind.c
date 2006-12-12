@@ -49,7 +49,7 @@ static void bind_string_set(oci8_bind_t *base, VALUE val)
     vstr->size = RSTRING_LEN(val);
 }
 
-static void bind_string_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_string_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length)
 {
     sb4 sz = 0;
     oci8_vstr_t *vstr;
@@ -141,7 +141,7 @@ static void bind_long_set(oci8_bind_t *base, VALUE val)
     bind_long->obj = rb_str_dup(val);
 }
 
-static void bind_long_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_long_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length)
 {
     oci8_bind_long_t *bind_long = (oci8_bind_long_t*)base;
     sb4 sz = 0;
@@ -244,7 +244,7 @@ static void bind_fixnum_set(oci8_bind_t *base, VALUE val)
     fixnum->val = FIX2LONG(val);
 }
 
-static void bind_fixnum_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_fixnum_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length)
 {
     oci8_bind_fixnum_t *fixnum = (oci8_bind_fixnum_t *)base;
 
@@ -289,7 +289,7 @@ static void bind_float_set(oci8_bind_t *base, VALUE val)
     flt->val = RFLOAT(val)->value;
 }
 
-static void bind_float_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length, VALUE prec, VALUE scale)
+static void bind_float_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length)
 {
     oci8_bind_float_t *flt = (oci8_bind_float_t *)base;
 
@@ -348,14 +348,14 @@ static VALUE oci8_set_data(VALUE self, VALUE val)
     return self;
 }
 
-static VALUE oci8_bind_initialize(VALUE self, VALUE svc, VALUE val, VALUE length, VALUE prec, VALUE scale)
+static VALUE oci8_bind_initialize(VALUE self, VALUE svc, VALUE val, VALUE length)
 {
     oci8_bind_t *base = DATA_PTR(self);
     oci8_bind_class_t *bind_class = (oci8_bind_class_t *)base->base.klass;
 
     base->next = base;
     base->prev = base;
-    bind_class->init(base, svc, &val, length, prec, scale);
+    bind_class->init(base, svc, &val, length);
     base->ind = -1;
     if (!NIL_P(val)) {
         rb_funcall(self, id_set, 1, val);
@@ -389,7 +389,7 @@ void Init_oci8_bind(VALUE klass)
     id_bind_type = rb_intern("bind_type");
     id_set = rb_intern("set");
 
-    rb_define_method(cOCIBind, "initialize", oci8_bind_initialize, 5);
+    rb_define_method(cOCIBind, "initialize", oci8_bind_initialize, 3);
     rb_define_method(cOCIBind, "get", oci8_get_data, 0);
     rb_define_method(cOCIBind, "set", oci8_set_data, 1);
 
