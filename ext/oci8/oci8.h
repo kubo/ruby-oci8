@@ -78,8 +78,8 @@ struct oci8_bind_class {
     void (*set)(oci8_bind_t *bh, VALUE val);
     void (*init)(oci8_bind_t *bh, VALUE svc, VALUE *val, VALUE length);
     void (*init_elem)(oci8_bind_t *bh, VALUE svc);
-    ub1 (*in)(oci8_bind_t *bh, ub1 piece);
-    void (*out)(oci8_bind_t *bh, ub1 piece);
+    ub1 (*in)(oci8_bind_t *bh, ub1 piece, void **valuepp, ub4 **alenpp, void **indpp);
+    void (*out)(oci8_bind_t *bh, ub1 piece, void **valuepp, ub4 **alenpp, void **indpp);
     ub2 dty;
 };
 
@@ -97,7 +97,6 @@ struct oci8_bind {
     void *valuep;
     sb4 value_sz;
     sb4 alloc_sz;
-    ub4 alen;
     VALUE tdo;
     void *null_struct;
     sb2 ind;

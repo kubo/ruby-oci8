@@ -91,38 +91,28 @@ static oci8_bind_class_t bind_raw_class = {
  * bind_long
  */
 typedef struct {
-    oci8_bind_t base;
     VALUE obj;
-    ub4 bufsiz;
-    char *buf;
-} oci8_bind_long_t;
-
-static void bind_long_free(oci8_base_t *base)
-{
-    oci8_bind_long_t *bind_long = (oci8_bind_long_t *)base;
-    oci8_bind_free(base);
-    if (bind_long->buf != NULL) {
-        xfree(bind_long->buf);
-        bind_long->buf = NULL;
-    }
-}
+    ub4 alen;
+    char buf[1];
+} bind_long_t;
+#define bind_long_offset ((size_t)((bind_long_t*)0)->buf)
 
 static void bind_long_mark(oci8_base_t *base)
 {
-    oci8_bind_long_t *bind_long = (oci8_bind_long_t *)base;
-    rb_gc_mark(bind_long->obj);
+    bind_long_t *bl = ((oci8_bind_t*)base)->valuep;
+    rb_gc_mark(bl->obj);
 }
 
 static VALUE bind_long_get(oci8_bind_t *base)
 {
-    oci8_bind_long_t *bind_long = (oci8_bind_long_t*)base;
-    return rb_str_dup(bind_long->obj);
+    bind_long_t *bl = ((oci8_bind_t*)base)->valuep;
+    return RTEST(bl->obj) ? rb_str_dup(bl->obj) : Qnil;
 }
 
 static void bind_long_set(oci8_bind_t *base, VALUE val)
 {
-    oci8_bind_long_t *bind_long = (oci8_bind_long_t*)base;
-    bind_long->obj = rb_str_dup(val);
+    bind_long_t *bl = ((oci8_bind_t*)base)->valuep;
+    bl->obj = rb_str_dup(val);
 }
 
 static void bind_long_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length)
@@ -136,55 +126,58 @@ static void bind_long_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE lengt
         sz = 4000;
     }
     base->value_sz = INT_MAX;
-    base->alloc_sz = sz;
+    base->alloc_sz = sz + bind_long_offset;
 }
 
 static void bind_long_init_elem(oci8_bind_t *base, VALUE svc)
 {
-    oci8_bind_long_t *bind_long = (oci8_bind_long_t*)base;
-
-    bind_long->bufsiz = base->alloc_sz;
-    bind_long->buf = xmalloc(base->alloc_sz);
-    bind_long->obj = Qnil;
+    bind_long_t *bl = base->valuep;
+    bl->obj = Qnil;
 }
 
-static ub1 bind_long_in(oci8_bind_t *base, ub1 piece)
+static ub1 bind_long_in(oci8_bind_t *base, ub1 piece, void **valuepp, ub4 **alenpp, void **indpp)
 {
-    oci8_bind_long_t *bind_long = (oci8_bind_long_t*)base;
-    if (NIL_P(bind_long->obj)) {
-        base->valuep = NULL;
-        base->alen = 0;
+    bind_long_t *bl = base->valuep;
+
+    *alenpp = &bl->alen;
+    *indpp = &base->ind;
+    if (NIL_P(bl->obj)) {
+        *valuepp = NULL;
+        bl->alen = 0;
         base->ind = -1;
     } else {
-        StringValue(bind_long->obj);
-        base->valuep = RSTRING_PTR(bind_long->obj);
-        base->alen = RSTRING_LEN(bind_long->obj);
+        StringValue(bl->obj);
+        *valuepp = RSTRING_PTR(bl->obj);
+        bl->alen = RSTRING_LEN(bl->obj);
         base->ind = 0;
     }
     return OCI_ONE_PIECE;
 }
 
-static void bind_long_out(oci8_bind_t *base, ub1 piece)
+static void bind_long_out(oci8_bind_t *base, ub1 piece, void **valuepp, ub4 **alenpp, void **indpp)
 {
-    oci8_bind_long_t *bind_long = (oci8_bind_long_t*)base;
+    bind_long_t *bl = base->valuep;
 
     if (piece == OCI_FIRST_PIECE) {
-        bind_long->obj = Qnil;
+        bl->obj = Qnil;
     } else {
-        if (NIL_P(bind_long->obj)) {
-            bind_long->obj = rb_str_buf_new(base->alen);
+        if (!RTEST(bl->obj)) {
+            bl->obj = rb_str_buf_new(bl->alen);
         }
-        rb_str_buf_cat(bind_long->obj, base->valuep, base->alen);
+        rb_str_buf_cat(bl->obj, bl->buf, bl->alen);
     }
-    base->valuep = bind_long->buf;
-    base->alen = bind_long->bufsiz;
+    *valuepp = bl->buf;
+    *alenpp = &bl->alen;
+    *indpp = &base->ind;
+    bl->alen = base->alloc_sz - bind_long_offset;
+    base->ind = 0;
 }
 
 static oci8_bind_class_t bind_long_class = {
     {
         bind_long_mark,
-        bind_long_free,
-        sizeof(oci8_bind_long_t)
+        oci8_bind_free,
+        sizeof(oci8_bind_t)
     },
     bind_long_get,
     bind_long_set,
@@ -201,8 +194,8 @@ static oci8_bind_class_t bind_long_class = {
 static oci8_bind_class_t bind_long_raw_class = {
     {
         bind_long_mark,
-        bind_long_free,
-        sizeof(oci8_bind_long_t)
+        oci8_bind_free,
+        sizeof(oci8_bind_t)
     },
     bind_long_get,
     bind_long_set,

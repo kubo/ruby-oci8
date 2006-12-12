@@ -277,12 +277,17 @@ static VALUE oci8_stmt_execute(VALUE self)
     while (rv == OCI_NEED_DATA) {
         oci8_bind_t *bind;
         oci8_bind_class_t *bind_class;
+        /* get piece info. */
         dvoid *hp;
         ub4 type;
         ub1 in_out;
         ub4 iter;
         ub4 idx;
         ub1 piece;
+        /* set piece info. */
+        void *valuep;
+        ub4 *alenp;
+        void *indp;
 
         oci_lc(OCIStmtGetPieceInfo(stmt->base.hp, oci8_errhp, &hp, &type, &in_out, &iter, &idx, &piece));
         for (bind = stmt->next; bind != (oci8_bind_t*)stmt; bind = bind->next) {
@@ -294,17 +299,17 @@ static VALUE oci8_stmt_execute(VALUE self)
                 case OCI_PARAM_IN:
                     if (bind_class->in == NULL)
                         rb_bug("....");
-                    piece = bind_class->in(bind, piece);
+                    piece = bind_class->in(bind, piece, &valuep, &alenp, &indp);
                     break;
                 case OCI_PARAM_OUT:
                     if (bind_class->out == NULL)
                         rb_bug("....");
-                    bind_class->out(bind, piece);
+                    bind_class->out(bind, piece, &valuep, &alenp, &indp);
                     break;
                 default:
                     rb_bug("ruby-oci8: expect OCI_PARAM_IN or OCI_PARAM_OUT but %d", in_out);
                 }
-                oci_lc(OCIStmtSetPieceInfo(bind->base.hp, OCI_HTYPE_BIND, oci8_errhp, bind->valuep, &bind->alen, 0, &bind->ind, NULL));
+                oci_lc(OCIStmtSetPieceInfo(bind->base.hp, OCI_HTYPE_BIND, oci8_errhp, valuep, alenp, 0, indp, NULL));
                 break;
             }
         }
@@ -329,12 +334,17 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
 
     oci_rc2(rv, svcctx, OCIStmtFetch(stmt->base.hp, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT));
     while (rv == OCI_NEED_DATA) {
+        /* get piece info. */
         dvoid *hp;
         ub4 type;
         ub1 in_out;
         ub4 iter;
         ub4 idx;
         ub1 piece;
+        /* set piece info. */
+        void *valuep;
+        ub4 *alenp;
+        void *indp;
 
         oci_lc(OCIStmtGetPieceInfo(stmt->base.hp, oci8_errhp, &hp, &type, &in_out, &iter, &idx, &piece));
         for (bind = stmt->next; bind != (oci8_bind_t*)stmt; bind = bind->next) {
@@ -346,12 +356,12 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
                 case OCI_PARAM_OUT:
                     if (bind_class->out == NULL)
                         rb_bug("....");
-                    bind_class->out(bind, piece == OCI_FIRST_PIECE);
+                    bind_class->out(bind, piece == OCI_FIRST_PIECE, &valuep, &alenp, &indp);
                     break;
                 default:
                     rb_bug("ruby-oci8: expect OCI_PARAM_OUT but %d", in_out);
                 }
-                oci_lc(OCIStmtSetPieceInfo(bind->base.hp, OCI_HTYPE_DEFINE, oci8_errhp, bind->valuep, &bind->alen, 0, &bind->ind, NULL));
+                oci_lc(OCIStmtSetPieceInfo(bind->base.hp, OCI_HTYPE_DEFINE, oci8_errhp, valuep, alenp, 0, indp, NULL));
                 break;
             }
         }
@@ -367,11 +377,16 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
         oci8_raise(oci8_errhp, rv, stmt->base.hp);
     }
     for (bind = stmt->next; bind != (oci8_bind_t*)stmt; bind = bind->next) {
+        /* set piece info. */
+        void *valuep;
+        ub4 *alenp;
+        void *indp;
+
         if (bind->base.type != OCI_HTYPE_DEFINE)
             continue;
         bind_class = (oci8_bind_class_t *)bind->base.klass;
         if (bind_class->out != NULL) {
-            bind_class->out(bind, 0);
+            bind_class->out(bind, 0, &valuep, &alenp, &indp);
         }
     }
     ary = rb_ary_new2(RARRAY_LEN(stmt->defns));
