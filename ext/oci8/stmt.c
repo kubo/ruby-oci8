@@ -616,26 +616,26 @@ static VALUE oci8_stmt_defined_p(VALUE self, VALUE pos)
  */
 VALUE oci8_stmt_get(oci8_bind_t *bind)
 {
-    oci8_bind_handle_t *bind_handle = (oci8_bind_handle_t *)bind;
-    rb_funcall(bind_handle->obj, rb_intern("define_columns"), 0);
-    return bind_handle->obj;
+    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)bind->valuep;
+    rb_funcall(oho->obj, rb_intern("define_columns"), 0);
+    return oho->obj;
 }
 
 static void bind_stmt_set(oci8_bind_t *bind, VALUE val)
 {
-    oci8_bind_handle_t *handle = (oci8_bind_handle_t *)bind;
+    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)bind->valuep;
     oci8_base_t *h;
     if (!rb_obj_is_instance_of(val, cOCIStmt))
         rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIStmt)", rb_class2name(CLASS_OF(val)));
     h = DATA_PTR(val);
-    *(void**)bind->valuep = h->hp;
-    handle->obj = val;
+    oho->hp = h->hp;
+    oho->obj = val;
 }
 
 static void bind_stmt_init(oci8_bind_t *bind, VALUE svc, VALUE *val, VALUE length)
 {
     bind->value_sz = sizeof(void *);
-    bind->alloc_sz = sizeof(void *);
+    bind->alloc_sz = sizeof(oci8_hp_obj_t);
     if (NIL_P(*val)) {
         *val = rb_funcall(cOCIStmt, oci8_id_new, 1, svc);
     }
@@ -643,9 +643,9 @@ static void bind_stmt_init(oci8_bind_t *bind, VALUE svc, VALUE *val, VALUE lengt
 
 static oci8_bind_class_t bind_stmt_class = {
     {
-        oci8_bind_handle_mark,
+        oci8_bind_hp_obj_mark,
         oci8_bind_free,
-        sizeof(oci8_bind_handle_t)
+        sizeof(oci8_bind_t)
     },
     oci8_stmt_get,
     bind_stmt_set,

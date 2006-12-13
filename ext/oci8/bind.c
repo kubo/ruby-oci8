@@ -50,8 +50,9 @@ static void bind_string_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE len
     if (sz <= 0) {
         rb_raise(rb_eArgError, "invalid bind length %d", sz);
     }
-    base->value_sz = sizeof(sb4) + sz;
-    base->alloc_sz = sizeof(sb4) + sz;
+    sz += sizeof(sb4);
+    base->value_sz = sz;
+    base->alloc_sz = (sz + (sizeof(sb4) - 1)) & ~(sizeof(sb4) - 1);
 }
 
 static oci8_bind_class_t bind_string_class = {
@@ -125,8 +126,9 @@ static void bind_long_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE lengt
     if (sz < 4000) {
         sz = 4000;
     }
+    sz += bind_long_offset;
     base->value_sz = INT_MAX;
-    base->alloc_sz = sz + bind_long_offset;
+    base->alloc_sz = (sz + (sizeof(VALUE) - 1)) & ~(sizeof(VALUE) - 1);
 }
 
 static void bind_long_init_elem(oci8_bind_t *base, VALUE svc)
@@ -359,16 +361,19 @@ void oci8_bind_free(oci8_base_t *base)
     }
 }
 
-void oci8_bind_handle_mark(oci8_base_t *base)
+void oci8_bind_hp_obj_mark(oci8_base_t *base)
 {
-    oci8_bind_handle_t *bind_handle = (oci8_bind_handle_t *)base;
-    rb_gc_mark(bind_handle->obj);
+    oci8_bind_t *ob = (oci8_bind_t *)base;
+    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)ob->valuep;
+    if (oho != NULL) {
+        rb_gc_mark(oho->obj);
+    }
 }
 
 VALUE oci8_bind_handle_get(oci8_bind_t *bind)
 {
-    oci8_bind_handle_t *bind_handle = (oci8_bind_handle_t *)bind;
-    return bind_handle->obj;
+    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)bind->valuep;
+    return oho->obj;
 }
 
 void Init_oci8_bind(VALUE klass)

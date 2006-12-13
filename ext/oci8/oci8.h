@@ -249,11 +249,11 @@ void Init_oci8_stmt(VALUE cOCI8);
 
 /* bind.c */
 typedef struct {
-    oci8_bind_t bind;
+    void *hp;
     VALUE obj;
-} oci8_bind_handle_t;
+} oci8_hp_obj_t;
 void oci8_bind_free(oci8_base_t *base);
-void oci8_bind_handle_mark(oci8_base_t *base);
+void oci8_bind_hp_obj_mark(oci8_base_t *base);
 VALUE oci8_bind_handle_get(oci8_bind_t *bind);
 void Init_oci8_bind(VALUE cOCIBind);
 oci8_bind_t *oci8_get_bind(VALUE obj);

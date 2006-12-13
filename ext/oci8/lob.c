@@ -360,20 +360,20 @@ typedef struct {
 
 static VALUE bind_lob_get(oci8_bind_t *base)
 {
-    oci8_bind_handle_t *handle = (oci8_bind_handle_t *)base;
-    return oci8_lob_clone(handle->obj);
+    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)base->valuep;
+    return oci8_lob_clone(oho->obj);
 }
 
 static void bind_lob_set(oci8_bind_t *base, VALUE val)
 {
-    oci8_bind_handle_t *handle = (oci8_bind_handle_t *)base;
+    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)base->valuep;
     oci8_bind_lob_class_t *klass = (oci8_bind_lob_class_t *)base->base.klass;
     oci8_base_t *h;
     if (!rb_obj_is_kind_of(val, *klass->klass))
         rb_raise(rb_eArgError, "Invalid argument: %s (expect %s)", rb_class2name(CLASS_OF(val)), rb_class2name(*klass->klass));
     h = DATA_PTR(val);
-    *(void**)base->valuep = h->hp;
-    handle->obj = val;
+    oho->hp = h->hp;
+    oho->obj = val;
 }
 
 static void bind_lob_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length)
@@ -381,7 +381,7 @@ static void bind_lob_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length
     oci8_bind_lob_class_t *klass = (oci8_bind_lob_class_t *)base->base.klass;
 
     base->value_sz = sizeof(void *);
-    base->alloc_sz = sizeof(void *);
+    base->alloc_sz = sizeof(oci8_hp_obj_t);
     if (NIL_P(*val)) {
         *val = rb_funcall(*klass->klass, oci8_id_new, 1, svc);
     }
@@ -390,9 +390,9 @@ static void bind_lob_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length
 static oci8_bind_lob_class_t bind_clob_class = {
     {
         {
-            oci8_bind_handle_mark,
+            oci8_bind_hp_obj_mark,
             oci8_bind_free,
-            sizeof(oci8_bind_handle_t)
+            sizeof(oci8_bind_t)
         },
         bind_lob_get,
         bind_lob_set,
@@ -408,9 +408,9 @@ static oci8_bind_lob_class_t bind_clob_class = {
 static oci8_bind_lob_class_t bind_blob_class = {
     {
         {
-            oci8_bind_handle_mark,
+            oci8_bind_hp_obj_mark,
             oci8_bind_free,
-            sizeof(oci8_bind_handle_t)
+            sizeof(oci8_bind_t)
         },
         bind_lob_get,
         bind_lob_set,
