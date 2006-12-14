@@ -74,12 +74,12 @@ struct oci8_base_class {
 
 struct oci8_bind_class {
     oci8_base_class_t base;
-    VALUE (*get)(oci8_bind_t *bh);
-    void (*set)(oci8_bind_t *bh, VALUE val);
-    void (*init)(oci8_bind_t *bh, VALUE svc, VALUE *val, VALUE length);
-    void (*init_elem)(oci8_bind_t *bh, VALUE svc);
-    ub1 (*in)(oci8_bind_t *bh, ub1 piece, void **valuepp, ub4 **alenpp, void **indpp);
-    void (*out)(oci8_bind_t *bh, ub1 piece, void **valuepp, ub4 **alenpp, void **indpp);
+    VALUE (*get)(oci8_bind_t *obind, void *data, void *null_struct);
+    void (*set)(oci8_bind_t *obind, void *data, void *null_struct, VALUE val);
+    void (*init)(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length);
+    void (*init_elem)(oci8_bind_t *obind, VALUE svc);
+    ub1 (*in)(oci8_bind_t *obind, ub4 idx, ub1 piece, void **valuepp, ub4 **alenpp, void **indpp);
+    void (*out)(oci8_bind_t *obind, ub4 idx, ub1 piece, void **valuepp, ub4 **alenpp, void **indpp);
     ub2 dty;
 };
 
@@ -95,11 +95,15 @@ struct oci8_bind {
     oci8_bind_t *next;
     oci8_bind_t *prev;
     void *valuep;
-    sb4 value_sz;
-    sb4 alloc_sz;
+    sb4 value_sz; /* size to define or bind. */
+    sb4 alloc_sz; /* size of a element. */
+    ub4 maxar_sz; /* maximum array size. */
+    ub4 curar_sz; /* current array size. */
     VALUE tdo;
-    void *null_struct;
-    sb2 ind;
+    union {
+        void **null_structs;
+        sb2 *inds;
+    } u;
 };
 
 enum logon_type_t {T_IMPLICIT, T_EXPLICIT};
@@ -254,7 +258,6 @@ typedef struct {
 } oci8_hp_obj_t;
 void oci8_bind_free(oci8_base_t *base);
 void oci8_bind_hp_obj_mark(oci8_base_t *base);
-VALUE oci8_bind_handle_get(oci8_bind_t *bind);
 void Init_oci8_bind(VALUE cOCIBind);
 oci8_bind_t *oci8_get_bind(VALUE obj);
 

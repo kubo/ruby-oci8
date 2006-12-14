@@ -176,22 +176,20 @@ static VALUE oci8_tdo_eq(VALUE lhs, VALUE rhs)
     return l->hp == r->hp ? Qtrue : Qfalse;
 }
 
-typedef struct {
-    oci8_bind_t bind;
-} bind_tdo_t;
-
-static void bind_tdo_mark(oci8_base_t *base)
-{
-}
-
 static void bind_tdo_free(oci8_base_t *base)
 {
-    oci8_bind_t *bind = (oci8_bind_t*)base;
-    if (bind->valuep != NULL) {
-        if (*(void**)bind->valuep != NULL) {
-            OCIObjectFree(oci8_envhp, oci8_errhp, *(void**)bind->valuep, OCI_DEFAULT);
-            *(void**)bind->valuep = NULL;
-        }
+    oci8_bind_t *obind = (oci8_bind_t*)base;
+
+    if (obind->valuep != NULL) {
+        void **instancepp = (void**)obind->valuep;
+        ub4 idx = 0;
+
+        do {
+            if (instancepp[idx] != NULL) {
+                OCIObjectFree(oci8_envhp, oci8_errhp, instancepp[idx], OCI_DEFAULT);
+                instancepp[idx] = NULL;
+            }
+        } while (++idx < obind->maxar_sz);
     }
     oci8_bind_free(base);
 }
@@ -200,10 +198,10 @@ static VALUE oraobject_to_rubyobj(VALUE tdo_obj, dvoid *instance, dvoid *null_st
 static VALUE oraopaque_to_rubyobj(VALUE tdo_obj, dvoid *instance, dvoid *null_struct);
 static VALUE orascalar_to_rubyobj(oci8_svcctx_t *svcctx, OCITypeCode typecode, dvoid *instance);
 
-static VALUE bind_tdo_get(oci8_bind_t *bind)
+static VALUE bind_tdo_get(oci8_bind_t *obind, void *data, void *null_struct)
 {
-    bind_tdo_t *bind_tdo = (bind_tdo_t*)bind;
-    return oraobject_to_rubyobj(bind_tdo->bind.tdo, *(void**)bind_tdo->bind.valuep, bind_tdo->bind.null_struct);
+    void **instancepp = (void **)data;
+    return oraobject_to_rubyobj(obind->tdo, *instancepp, null_struct);
 }
 
 static VALUE oraobject_to_rubyobj(VALUE tdo_obj, dvoid *instance, dvoid *null_struct)
@@ -309,44 +307,48 @@ static VALUE orascalar_to_rubyobj(oci8_svcctx_t *svcctx, OCITypeCode typecode, d
     case OCI_TYPECODE_INTERVAL_DS:
         return oci8_make_interval_ds(*(OCIInterval**)instance);
     case OCI_TYPECODE_BFLOAT:
-      return rb_float_new((double)*(float*)instance);
+        return rb_float_new((double)*(float*)instance);
     case OCI_TYPECODE_BDOUBLE:
-      return rb_float_new(*(double*)instance);
+        return rb_float_new(*(double*)instance);
     }
     rb_raise(rb_eRuntimeError, "unsupported typecode %d", typecode);
 }
 
-static void bind_tdo_set(oci8_bind_t *base, VALUE val)
+static void bind_tdo_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
 {
     rb_notimplement();
 }
 
-static void bind_tdo_init(oci8_bind_t *bind, VALUE svc, VALUE *val, VALUE length)
+static void bind_tdo_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
 {
-    bind->value_sz = sizeof(void*);
-    bind->alloc_sz = sizeof(void*);
-    bind->tdo = length;
-    if (!rb_obj_is_kind_of(bind->tdo, cOCITDO)) {
-        rb_raise(rb_eTypeError, "invalid argument %s (expect %s)", rb_class2name(CLASS_OF(bind->tdo)), rb_class2name(cOCITDO));
+    obind->value_sz = sizeof(void*);
+    obind->alloc_sz = sizeof(void*);
+    obind->tdo = length;
+    if (!rb_obj_is_kind_of(obind->tdo, cOCITDO)) {
+        rb_raise(rb_eTypeError, "invalid argument %s (expect %s)", rb_class2name(CLASS_OF(obind->tdo)), rb_class2name(cOCITDO));
     }
 }
 
-static void bind_tdo_init_elem(oci8_bind_t *bind, VALUE svc)
+static void bind_tdo_init_elem(oci8_bind_t *obind, VALUE svc)
 {
     oci8_svcctx_t *svcctx;
     oci8_tdo_t *tdo;
+    void **instancepp = (void**)obind->valuep;
+    ub4 idx = 0;
 
     svcctx = oci8_get_svcctx(svc);
-    Data_Get_Struct(bind->tdo, oci8_tdo_t, tdo);
-    oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->base.hp, OCI_TYPECODE_OBJECT, tdo->base.hp, NULL, OCI_DURATION_SESSION, 0, bind->valuep));
-    oci_lc(OCIObjectGetInd(oci8_envhp, oci8_errhp, bind->valuep, &bind->null_struct));
+    Data_Get_Struct(obind->tdo, oci8_tdo_t, tdo);
+    do {
+        oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->base.hp, OCI_TYPECODE_OBJECT, tdo->base.hp, NULL, OCI_DURATION_SESSION, 0, &instancepp[idx]));
+        oci_lc(OCIObjectGetInd(oci8_envhp, oci8_errhp, instancepp[idx], &obind->u.null_structs[idx]));
+    } while (++idx < obind->maxar_sz);
 }
 
 static oci8_bind_class_t bind_tdo_class = {
     {
-        bind_tdo_mark,
+        NULL,
         bind_tdo_free,
-        sizeof(bind_tdo_t)
+        sizeof(oci8_bind_t)
     },
     bind_tdo_get,
     bind_tdo_set,

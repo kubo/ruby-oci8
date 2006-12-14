@@ -292,7 +292,7 @@ class OCI8
       if type == String and length.nil?
 	length = 4000
       end
-      b = bind_or_define(:define, pos, nil, type, length, nil, nil, false)
+      b = bind_or_define(:define, pos, nil, type, length, nil, nil, false, nil)
       self
     end # define
 
@@ -337,8 +337,21 @@ class OCI8
     #   cursor.bind_param(1, 'RAW_STRING', OCI8::RAW)
     #   cursor.exec()
     #   cursor.close()
-    def bind_param(key, val, type = nil, length = nil)
-      b = bind_or_define(:bind, key, val, type, length, nil, nil, false)
+    def bind_param(key, param, type = nil, length = nil)
+      case param
+      when Hash
+        value = param[:value];
+        type = param[:type]
+        length = param[:length]
+        max_array_size = param[:max_array_size]
+      when Class
+        value = nil
+        type = param
+      else
+        value = param
+        type ||= value.class
+      end
+      b = bind_or_define(:bind, key, value, type, length, nil, nil, false, max_array_size)
       self
     end # bind_param
 
@@ -395,7 +408,7 @@ class OCI8
 
     private
 
-    def bind_or_define(bind_type, key, val, type, length, precision, scale, strict_check)
+    def bind_or_define(bind_type, key, val, type, length, precision, scale, strict_check, max_array_size)
       if type.nil?
 	if val.nil?
 	  raise "bind type is not given." if type.nil?
@@ -416,7 +429,7 @@ class OCI8
       if bindclass.respond_to?(:dispatch)
         bindclass = bindclass.dispatch(val, length, precision, scale)
       end
-      bindobj = bindclass.new(__connection, val, length)
+      bindobj = bindclass.new(__connection, val, length, max_array_size)
 
       case bind_type
       when :bind
@@ -457,7 +470,7 @@ class OCI8
         datasize = OCI8::TDO.new(p.type_metadata)
       end
 
-      bind_or_define(:define, i, nil, datatype, datasize, precision, scale, true)
+      bind_or_define(:define, i, nil, datatype, datasize, precision, scale, true, nil)
     end # define_a_column
 
     def bind_params(*bindvars)

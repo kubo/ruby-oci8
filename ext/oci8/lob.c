@@ -358,16 +358,16 @@ typedef struct {
     VALUE *klass;
 } oci8_bind_lob_class_t;
 
-static VALUE bind_lob_get(oci8_bind_t *base)
+static VALUE bind_lob_get(oci8_bind_t *obind, void *data, void *null_struct)
 {
-    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)base->valuep;
+    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)data;
     return oci8_lob_clone(oho->obj);
 }
 
-static void bind_lob_set(oci8_bind_t *base, VALUE val)
+static void bind_lob_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
 {
-    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)base->valuep;
-    oci8_bind_lob_class_t *klass = (oci8_bind_lob_class_t *)base->base.klass;
+    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)data;
+    oci8_bind_lob_class_t *klass = (oci8_bind_lob_class_t *)obind->base.klass;
     oci8_base_t *h;
     if (!rb_obj_is_kind_of(val, *klass->klass))
         rb_raise(rb_eArgError, "Invalid argument: %s (expect %s)", rb_class2name(CLASS_OF(val)), rb_class2name(*klass->klass));
@@ -376,15 +376,24 @@ static void bind_lob_set(oci8_bind_t *base, VALUE val)
     oho->obj = val;
 }
 
-static void bind_lob_init(oci8_bind_t *base, VALUE svc, VALUE *val, VALUE length)
+static void bind_lob_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
 {
-    oci8_bind_lob_class_t *klass = (oci8_bind_lob_class_t *)base->base.klass;
+    obind->value_sz = sizeof(void *);
+    obind->alloc_sz = sizeof(oci8_hp_obj_t);
+}
 
-    base->value_sz = sizeof(void *);
-    base->alloc_sz = sizeof(oci8_hp_obj_t);
-    if (NIL_P(*val)) {
-        *val = rb_funcall(*klass->klass, oci8_id_new, 1, svc);
-    }
+static void bind_lob_init_elem(oci8_bind_t *obind, VALUE svc)
+{
+    oci8_bind_lob_class_t *klass = (oci8_bind_lob_class_t *)obind->base.klass;
+    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)obind->valuep;
+    oci8_base_t *h;
+    ub4 idx = 0;
+
+    do {
+        oho[idx].obj = rb_funcall(*klass->klass, oci8_id_new, 1, svc);
+        h = DATA_PTR(oho[idx].obj);
+        oho[idx].hp = h->hp;
+    } while (++idx < obind->maxar_sz);
 }
 
 static oci8_bind_lob_class_t bind_clob_class = {
@@ -397,7 +406,7 @@ static oci8_bind_lob_class_t bind_clob_class = {
         bind_lob_get,
         bind_lob_set,
         bind_lob_init,
-        NULL,
+        bind_lob_init_elem,
         NULL,
         NULL,
         SQLT_CLOB
@@ -415,7 +424,7 @@ static oci8_bind_lob_class_t bind_blob_class = {
         bind_lob_get,
         bind_lob_set,
         bind_lob_init,
-        NULL,
+        bind_lob_init_elem,
         NULL,
         NULL,
         SQLT_BLOB

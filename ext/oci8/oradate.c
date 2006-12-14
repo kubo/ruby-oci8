@@ -366,34 +366,37 @@ static VALUE ora_date_s_load(VALUE klass, VALUE str)
 /*
  * bind_oradate
  */
-static VALUE bind_oradate_get(oci8_bind_t *bb)
+static VALUE bind_oradate_get(oci8_bind_t *obind, void *data, void *null_struct)
 {
     ora_date_t *od;
 
     VALUE obj = Data_Make_Struct(cOraDate, ora_date_t, NULL, xfree, od);
-    memcpy(od, bb->valuep, sizeof(ora_date_t));
+    memcpy(od, data, sizeof(ora_date_t));
     return obj;
 }
 
-static void bind_oradate_set(oci8_bind_t *bb, VALUE val)
+static void bind_oradate_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
 {
     ora_date_t *od;
 
     Check_Object(val, cOraDate);
     Data_Get_Struct(val, ora_date_t, od);
-    memcpy(bb->valuep, od, sizeof(ora_date_t));
+    memcpy(data, od, sizeof(ora_date_t));
 }
 
-static void bind_oradate_init(oci8_bind_t *bb, VALUE svc, VALUE *val, VALUE length)
+static void bind_oradate_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
 {
-    bb->value_sz = sizeof(ora_date_t);
-    bb->alloc_sz = sizeof(ora_date_t);
+    obind->value_sz = sizeof(ora_date_t);
+    obind->alloc_sz = sizeof(ora_date_t);
 }
 
-static void bind_oradate_init_elem(oci8_bind_t *bb, VALUE svc)
+static void bind_oradate_init_elem(oci8_bind_t *obind, VALUE svc)
 {
     static const ora_date_t julian_day_0 = {100-47, 100-12, 1, 1, 1, 1, 1};
-    memcpy(bb->valuep, &julian_day_0, sizeof(ora_date_t));
+    ub4 idx = 0;
+    do {
+        memcpy((ora_date_t*)obind->valuep + idx, &julian_day_0, sizeof(ora_date_t));
+    } while (++idx < obind->maxar_sz);
 }
 
 static oci8_bind_class_t bind_oradate_class = {

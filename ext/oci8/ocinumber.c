@@ -997,38 +997,42 @@ onum_s_load(VALUE klass, VALUE str)
 /*
  * bind_ocinumber
  */
-static VALUE bind_ocinumber_get(oci8_bind_t *bb)
+static VALUE bind_ocinumber_get(oci8_bind_t *obind, void *data, void *null_struct)
 {
-    return oci8_make_ocinumber((OCINumber*)bb->valuep);
+    return oci8_make_ocinumber((OCINumber*)data);
 }
 
-static VALUE bind_integer_get(oci8_bind_t *bb)
+static VALUE bind_integer_get(oci8_bind_t *obind, void *data, void *null_struct)
 {
-    return oci8_make_integer((OCINumber*)bb->valuep);
+    return oci8_make_integer((OCINumber*)data);
 }
 
-static void bind_ocinumber_set(oci8_bind_t *bb, VALUE val)
+static void bind_ocinumber_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
 {
-    set_oci_number_from_num((OCINumber*)bb->valuep, val, 1);
+    set_oci_number_from_num((OCINumber*)data, val, 1);
 }
 
-static void bind_integer_set(oci8_bind_t *bb, VALUE val)
+static void bind_integer_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
 {
     OCINumber num;
 
     set_oci_number_from_num(&num, val, 1);
-    oci_lc(OCINumberTrunc(oci8_errhp, &num, 0, (OCINumber*)bb->valuep));
+    oci_lc(OCINumberTrunc(oci8_errhp, &num, 0, (OCINumber*)data));
 }
 
-static void bind_ocinumber_init(oci8_bind_t *bb, VALUE svc, VALUE *val, VALUE length)
+static void bind_ocinumber_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
 {
-    bb->value_sz = sizeof(OCINumber);
-    bb->alloc_sz = sizeof(OCINumber);
+    obind->value_sz = sizeof(OCINumber);
+    obind->alloc_sz = sizeof(OCINumber);
 }
 
-static void bind_ocinumber_init_elem(oci8_bind_t *bb, VALUE svc)
+static void bind_ocinumber_init_elem(oci8_bind_t *obind, VALUE svc)
 {
-    OCINumberSetZero(oci8_errhp, (OCINumber*)bb->valuep);
+    ub4 idx = 0;
+
+    do {
+        OCINumberSetZero(oci8_errhp, (OCINumber*)obind->valuep + idx);
+    } while (++idx < obind->maxar_sz);
 }
 
 static oci8_bind_class_t bind_ocinumber_class = {
