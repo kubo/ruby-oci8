@@ -1,3 +1,9 @@
+2006-12-19  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/tdo.c: fix a GC problem.
+	* ext/oci8/stmt.c: add OCI8::Cursor#prefetch_rows=
+	* ext/oci8/oci8.c: add OCI8#prefetch_rows=. add comments for rdoc.
+	* doc/oci8-ja.rb: add comments for rdoc.
+
 2006-12-14  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c, ext/oci8/lob.c, ext/oci8/oci8.h,
 	  ext/oci8/ocidatetime.c ext/oci8/ocinumber.c, ext/oci8/oradate.c,

@@ -1,7 +1,7 @@
 # Japanese Rdoc document
 #
-# $Author: kubo $
-# $Date: 2006-11-22 20:45:34 +0900 (Wed, 22 Nov 2006) $
+# $Author$
+# $Date$
 #
 # Copyright (C) 2006 KUBO Takehiro <kubo@jiubao.org>
 
@@ -9,7 +9,250 @@
 class OCIHandle
 end
 
+#--
+# class: OCI8
+# file:  ext/oci8/oci8.c
+#++
+# Oracle サーバへ接続するためのクラスです。
+#
+# 例:
+#   # emp テーブルの中身を CSV フォーマットで出力する。
+#   conn = OCI8.new(ユーザ名, パスワード)
+#   conn.exec('select# from emp') do |row|
+#     puts row.join(',')
+#   end
+#
+#   # バインド変数を使用しつつ PL/SQL ブロックを実行する。
+#   conn = OCI8.new(ユーザ名, パスワード)
+#   conn.exec('BEGIN procedure_name(:1, :2); END;',
+#              1番目のパラメータの値,
+#              2番目のパラメータの値)
 class OCI8 < OCIHandle
+
+  #--
+  # class: OCI8
+  # file:  ext/oci8/oci8.c
+  #++
+  # call-seq:
+  #   new(username, password, dbname = nil, privilege = nil)
+  #
+  # username と password でもって Oracle へ接続します。ローカルのデータ
+  # ベースへ接続するときは dbname を nil とし、ネットワーク経由で接続する
+  # ときは dbname に TNS 名を指定してください。クライアントライブラリが
+  # Oracle 10g 以上の場合は以下の書式でも接続できます。
+  #
+  #   //DBのホスト名またはIP:TNSリスナーのポート番号/ORACLE_SID
+  #
+  # 接続するのにDBA権限が必要な場合は、privilege に :SYSDBA もしくは :SYSOPER
+  # を指定してください。
+  #
+  # 例:
+  #   # ローカルのデータベースへ接続
+  #   # sqlplus scott/tiger
+  #   conn = OCI8.new("scott", "tiger")
+  #
+  #   # TNS名を指定して、ネットワーク経由で接続
+  #   # sqlplus scott/tiger@orcl.world
+  #   conn = OCI8.new("scott", "tiger", "orcl.world")
+  #
+  #   # データベースのホスト・ポート・SID名を指定して、ネットワーク経由で接続
+  #   # sqlplus scott/tiger@//localhost:1521/XE
+  #   conn = OCI8.new("scott", "tiger", "//localhost:1521/XE")
+  #
+  #   # SYSDBA権限で接続
+  #   # sqlplus 'sys/change_on_install as sysdba'
+  #   conn = OCI8.new("sys", "change_on_install", nil, :SYSDBA)
+  #
+  def initialize(username, password, dbname = nil, privilege = nil)
+  end
+
+  #--
+  # class: OCI8
+  # file:  ext/oci8/oci8.c
+  #++
+  # call-seq:
+  #   logoff
+  #
+  # Oracleとの接続を切ります。コミットされてないトランザクションは
+  # ロールバックされます。
+  #
+  # 例:
+  #   conn = OCI8.new("scott", "tiger")
+  #   ... do something ...
+  #   conn.logoff
+  def logoff
+  end
+
+  #--
+  # class: OCI8
+  # file:  ext/oci8/oci8.c
+  #++
+  # call-seq:
+  #   parse(sql_text) -> OCI8::Cursor のインスタンス
+  #
+  # SQL 文の準備を行い、OCI8::Cursor のインスタンスが返します。
+  def parse(sql_stmt)
+  end
+
+  #--
+  # class: OCI8
+  # file:  ext/oci8/oci8.c
+  #++
+  # call-seq:
+  #   commit
+  #
+  # トランザクションをコミットします。
+  #
+  # 例:
+  #   conn = OCI8.new("scott", "tiger")
+  #   conn.exec("UPDATE emp SET sal = sal  # 1.1") # yahoo
+  #   conn.commit
+  #   conn.logoff
+  def commit
+  end
+
+  #--
+  # class: OCI8
+  # file:  ext/oci8/oci8.c
+  #++
+  # call-seq:
+  #   rollback
+  #
+  # トランザクションをロールバックします。
+  #
+  # 例:
+  #   conn = OCI8.new("scott", "tiger")
+  #   conn.exec("UPDATE emp SET sal = sal * 0.9") # boos
+  #   conn.rollback
+  #   conn.logoff
+  def rollback
+  end
+
+  #--
+  # class: OCI8
+  # file:  ext/oci8/oci8.c
+  #++
+  # call-seq:
+  #   non_blocking? -> true or false
+  #
+  # ブロッキング/非ブロッキングモードの状態を返します。
+  # non_blocking= も参照してください。
+  def non_blocking?
+  end
+
+  #--
+  # class: OCI8
+  # file:  ext/oci8/oci8.c
+  #++
+  # call-seq:
+  #   non_blocking = true or false
+  #
+  # ブロッキング/非ブロッキングモードの状態を変更します。true のとき非ブロッキ
+  # ングモードで false のときブロッキングモードです。デフォルトはブロッキン
+  # グモードです。
+  #
+  # ブロッキングモードの場合、実行に時間のかかるSQLを実行すると、スレッドを
+  # 使用していても ruby 全体がブロックされます。これは、ruby のスレッドは
+  # ネイティブスレッドではないためです。
+  # していない
+  #
+  # 非ブロッキングモードの場合、実行に時間のかかるSQLを実行しても ruby 全体
+  # はブロックされません。SQL を実行しているスレッドのみがブロックします。
+  # そのかわり、SQL が終了しているかどうかポーリングによってチェックしてい
+  # るため、個々の SQL の実行が少し遅くなります。
+  #
+  # OCI8#break により、別のスレッドから実行中の SQL をキャンセルできます。
+  # キャンセルされたスレッドでは例外 OCIBreak を上げます。
+  #
+  def non_blocking=(true_or_false)
+  end
+
+  #--
+  # class: OCI8
+  # file:  ext/oci8/oci8.c
+  #++
+  #--
+  # class: OCI8
+  # file:  ext/oci8/oci8.c
+  #++
+  # call-seq:
+  #   autocommit? -> true or false
+  #
+  # 自動コミットのモードを戻します。デフォルト値は false です。
+  # true のとき、SQL 文の実行の度にトランザクションがコミットされます。
+  def autocommit?
+  end
+
+  #--
+  # class: OCI8
+  # file:  ext/oci8/oci8.c
+  #++
+  # call-seq:
+  #   autocommit = true or false
+  #
+  # 自動コミットのモードを変更します。
+  #
+  # 例:
+  #   conn = OCI8.new("scott", "tiger")
+  #   conn.autocommit = true
+  #   ... do something ...
+  #   conn.logoff
+  def autocommit=(true_or_false)
+  end
+
+  #--
+  # class: OCI8
+  # file:  ext/oci8/oci8.c
+  #++
+  # call-seq:
+  #   long_read_len -> aFixnum   (new in 0.1.16)
+  #
+  # LONG 型、LONG RAW 型のカラムのフェッチサイズの最大値を取得します。
+  def long_read_len
+  end
+
+  #--
+  # class: OCI8
+  # file:  ext/oci8/oci8.c
+  #++
+  # call-seq:
+  #   long_read_len = aFixnum   (new in 0.1.16)
+  #
+  # LONG 型、LONG RAW 型のカラムのフェッチサイズの最大値を変更します。
+  # デフォルト値は 65535 です。
+  #
+  # 例:
+  #   conn = OCI8.new('scott', 'tiger'
+  #   conn.long_read_len = 1000000
+  #   cursor = con.exec('select content from articles where id = :1', 23478)
+  #   row = cursor.fetch
+  def long_read_len=(len)
+  end
+
+  #--
+  # class: OCI8
+  # file:  ext/oci8/oci8.c
+  #++
+  # call-seq:
+  #   break
+  #
+  # 他のスレッドで実行中の SQL をキャンセルします。
+  # non_blocking= も参照してください。
+  def break
+  end
+
+  #--
+  # class: OCI8
+  # file:  ext/oci8/oci8.c
+  #++
+  # call-seq:
+  #   prefetch_rows = aFixnum   (new in 0.1.14)
+  #
+  # プリフェッチ行のサイズを変更します。複数行をフェッチする時の
+  # ネットワークのやりとりを少なくすることができます。
+  def prefetch_rows=
+  end
+
   module BindType
     class Base
     end

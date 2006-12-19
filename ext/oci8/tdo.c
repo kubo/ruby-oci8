@@ -27,6 +27,12 @@ typedef struct {
     OCIDescribe *deschp;
 } oci8_tdo_t;
 
+static void oci8_tdo_mark(oci8_base_t *base)
+{
+    oci8_tdo_t *tdo = (oci8_tdo_t*)base;
+    rb_gc_mark(tdo->svcctx->base.self);
+}
+
 static void oci8_tdo_free(oci8_base_t *base)
 {
     oci8_tdo_t *tdo = (oci8_tdo_t*)base;
@@ -41,7 +47,7 @@ static void oci8_tdo_free(oci8_base_t *base)
 }
 
 static oci8_base_class_t oci8_tdo_class = {
-    NULL,
+    oci8_tdo_mark,
     oci8_tdo_free,
     sizeof(oci8_tdo_t),
 };

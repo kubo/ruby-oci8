@@ -1,17 +1,38 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
-  svcctx.c - part of ruby-oci8
-
-  Copyright (C) 2002-2006 KUBO Takehiro <kubo@jiubao.org>
-
-*/
+ * oci8.c - part of ruby-oci8
+ *
+ * Copyright (C) 2002-2006 KUBO Takehiro <kubo@jiubao.org>
+ *
+ */
 #include "oci8.h"
 
+/*
+ * Document-class: OCI8
+ *
+ * The class to access Oracle database server.
+ *
+ * example:
+ *   # output the emp table's content as CSV format.
+ *   conn = OCI8.new(username, password)
+ *   conn.exec('select * from emp') do |row|
+ *     puts row.join(',')
+ *   end
+ *
+ *   # execute PL/SQL block with bind variables.
+ *   conn = OCI8.new(username, password)
+ *   conn.exec('BEGIN procedure_name(:1, :2); END;',
+ *              value_for_the_first_parameter,
+ *              value_for_the_second_parameter)
+ */
 static VALUE cOCI8;
 
 static void oci8_svcctx_free(oci8_base_t *base)
 {
     oci8_svcctx_t *svcctx = (oci8_svcctx_t *)base;
+    /*
+      free cursors
+     */
     if (svcctx->authhp) {
         OCIHandleFree(svcctx->authhp, OCI_HTYPE_SESSION);
         svcctx->authhp = NULL;
@@ -30,19 +51,38 @@ static oci8_base_class_t oci8_svcctx_class = {
 
 static VALUE sym_SYSDBA;
 static VALUE sym_SYSOPER;
+static ID id_at_prefetch_rows;
+static ID id_set_prefetch_rows;
 
 /*
- * Connects to Oracle by +userid+ and +password+. +dbname+ is the connect
- * string of Net8. If you need DBA privilege, please set privilege
- * as :SYSDBA or :SYSOPER.
+ * call-seq:
+ *   new(username, password, dbname = nil, privilege = nil)
  *
- * example:
+ * connect to Oracle by _username_ and _password_.
+ * set _dbname_ nil to connect the local database or TNS name to connect
+ * via network. You can use the following syntax for _dbname_ if the client
+ * library is Oracle 10g or upper.
+ *
+ *   //HOST_NAME_OR_IP:TNS_LISTENER_PORT/ORACLE_SID
+ *
+ * If you need DBA privilege, use :SYSDBA or :SYSOPER to _privilege_.
+ *
+ *   # connect to the local database.
+ *   #   sqlplus scott/tiger
+ *   conn = OCI8.new("scott", "tiger")
+ *
+ *   # connect via network with TNS name.
  *   # sqlplus scott/tiger@orcl.world
  *   conn = OCI8.new("scott", "tiger", "orcl.world")
  *
- * example:
- *   # sqlplus 'sys/change_on_install as sysdba'
+ *   # connect via network with database's host, port and SID.
+ *   #   sqlplus scott/tiger@//localhost:1521/XE
+ *   conn = OCI8.new("scott", "tiger", "//localhost:1521/XE")
+ *
+ *   # connect as SYSDBA
+ *   #   sqlplus 'sys/change_on_install as sysdba'
  *   conn = OCI8.new("sys", "change_on_install", nil, :SYSDBA)
+ *
  */
 static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
 {
@@ -122,7 +162,7 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
         if (rv != OCI_SUCCESS)
             oci8_raise(oci8_errhp, rv, NULL);
 
-        /* attach to server and set to OCISvcCtx. */
+        /* begin session. */
         rv = OCISessionBegin(svcctx->base.hp, oci8_errhp, svcctx->authhp, OCI_CRED_RDBMS, mode);
         if (rv != OCI_SUCCESS)
             oci8_raise(oci8_errhp, rv, NULL);
@@ -139,7 +179,10 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
 
 
 /*
- * Disconnects from Oracle. Uncommitted transaction will be
+ * call-seq:
+ *   logoff
+ *
+ * disconnect from Oracle. Uncommitted transaction will be
  * rollbacked.
  *
  * example:
@@ -174,55 +217,26 @@ static VALUE oci8_svcctx_logoff(VALUE self)
 }
 
 /*
- * Creates cursor, prepare to execute SQL statement and return the
- * instance of OCI8::Cursor.
+ * call-seq:
+ *   parse(sql_text) -> an instance of OCI8::Cursor
+ *
+ * prepare the SQL statement and return an instance of OCI8::Cursor.
  */
 static VALUE oci8_svcctx_parse(VALUE self, VALUE sql)
 {
-    return rb_funcall(cOCIStmt, oci8_id_new, 2, self, sql);
-}
-
-/*
-=begin
---- OCISvcCtx#passwordChange(username, old_password, new_password [, mode])
-     :username
-        the username.
-     :old_password
-        old password of the user.
-     :new_password
-        new password of the user.
-     :mode
-        ((|OCI_DEFAULT|)) or ((|OCI_AUTH|)). Default value is ((|OCI_DEFAULT|)).
-
-        For most cases, use default value. If you want to know detail,
-        see "Oracle Call Interface Programmer's Guide".
-
-     correspond native OCI function: ((|OCIPasswordChange|))
-=end
-*/
-static VALUE oci8_password_change(VALUE self, VALUE username, VALUE opasswd, VALUE npasswd, VALUE mode)
-{
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
-    sword rv;
-
-    StringValue(username); /* 1 */
-    StringValue(opasswd); /* 2 */
-    StringValue(npasswd); /* 3 */
-    Check_Type(mode, T_FIXNUM); /* 4 */
-
-    rv = OCIPasswordChange(svcctx->base.hp, oci8_errhp,
-                           RSTRING(username)->ptr, RSTRING(username)->len,
-                           RSTRING(opasswd)->ptr, RSTRING(opasswd)->len,
-                           RSTRING(npasswd)->ptr, RSTRING(npasswd)->len,
-                           FIX2INT(mode));
-    if (rv != OCI_SUCCESS) {
-        oci8_raise(oci8_errhp, rv, NULL);
+    VALUE obj = rb_funcall(cOCIStmt, oci8_id_new, 2, self, sql);
+    VALUE prefetch_rows = rb_ivar_get(self, id_at_prefetch_rows);
+    if (!NIL_P(prefetch_rows)) {
+        rb_funcall(obj, id_set_prefetch_rows, 1, prefetch_rows);
     }
-    return self;
+    return obj;
 }
 
 /*
- * Commits the transaction.
+ * call-seq:
+ *   commit
+ *
+ * commit the transaction.
  *
  * example:
  *   conn = OCI8.new("scott", "tiger")
@@ -238,8 +252,11 @@ static VALUE oci8_commit(VALUE self)
 }
 
 /*
- * Rollbacks the transaction.
- * 
+ * call-seq:
+ *   rollback
+ *
+ * rollback the transaction.
+ *
  * example:
  *   conn = OCI8.new("scott", "tiger")
  *   conn.exec("UPDATE emp SET sal = sal * 0.9") # boos
@@ -254,8 +271,11 @@ static VALUE oci8_rollback(VALUE self)
 }
 
 /*
- * Returns the status of blocking/non-blocking mode. The default
- * value is false 
+ * call-seq:
+ *   non_blocking? -> true or false
+ *
+ * return the status of blocking/non-blocking mode.
+ * See non_blocking= also.
  */
 static VALUE oci8_non_blocking_p(VALUE self)
 {
@@ -270,8 +290,23 @@ static VALUE oci8_non_blocking_p(VALUE self)
 }
 
 /*
- * Changes the status of blocking/non-blocking mode. Acceptable
- * values are true and false.
+ * call-seq:
+ *   non_blocking = true or false
+ *
+ * change the status of blocking/non-blocking mode. true for non-blocking
+ * mode. false for blocking mode. The default is blocking.
+ *
+ * When blocking mode, long-time SQL execution blocks the ruby process
+ * itself even though multithread application because ruby's thread is
+ * not native one.
+ *
+ * when non-blocking mode, long-time SQL execution doesn't block the ruby
+ * process. It only blocks the thread which executing the SQL statement.
+ * But each SQL will need a bit more time because it checks the status by
+ * polling.
+ *
+ * You can cancel an executing SQL by using OCI8#break from another thread.
+ * The canceled thread raises OCIBreak exception.
  */
 static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
 {
@@ -290,9 +325,11 @@ static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
 }
 
 /*
- * Returns the state of the autocommit mode. The default value is
- * false. If true, the transaction is committed automatically
- * whenever executing insert/update/delete statements.
+ * call-seq:
+ *   autocommit? -> true or false
+ *
+ * return the state of the autocommit mode. The default value is
+ * false. If true, the transaction is committed on every SQL executions.
  */
 static VALUE oci8_autocommit_p(VALUE self)
 {
@@ -301,8 +338,10 @@ static VALUE oci8_autocommit_p(VALUE self)
 }
 
 /*
- * Changes the status of the autocommit mode. Acceptable values are
- * true and false.
+ * call-seq:
+ *   autocommit = true or false
+ *
+ * change the status of the autocommit mode.
  *
  * example:
  *   conn = OCI8.new("scott", "tiger")
@@ -317,12 +356,31 @@ static VALUE oci8_set_autocommit(VALUE self, VALUE val)
     return val;
 }
 
+/*
+ * call-seq:
+ *   long_read_len -> aFixnum   (new in 0.1.16)
+ *
+ * get the maximum fetch size for a LONG and LONG RAW column.
+ */
 static VALUE oci8_long_read_len(VALUE self)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
     return svcctx->long_read_len;
 }
 
+/*
+ * call-seq:
+ *   long_read_len = aFixnum   (new in 0.1.16)
+ *
+ * change the maximum fetch size for a LONG and LONG RAW column.
+ * The default value is 65535.
+ *
+ * example:
+ *   conn = OCI8.new('scott', 'tiger'
+ *   conn.long_read_len = 1000000
+ *   cursor = con.exec('select content from articles where id = :1', 23478)
+ *   row = cursor.fetch
+ */
 static VALUE oci8_set_long_read_len(VALUE self, VALUE val)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
@@ -331,36 +389,12 @@ static VALUE oci8_set_long_read_len(VALUE self, VALUE val)
     return val;
 }
 
-static VALUE oci8_server_version(VALUE self)
-{
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
-    OraText buf[1024];
-    sword rv;
-
-    rv = OCIServerVersion(svcctx->base.hp, oci8_errhp, buf, sizeof(buf), OCI_HTYPE_SVCCTX);
-    if (rv != OCI_SUCCESS)
-        oci8_raise(oci8_errhp, rv, NULL);
-    return rb_str_new2(buf);
-}
-
-#ifdef HAVE_OCISERVERRELEASE
-static VALUE oci8_server_release(VALUE self)
-{
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
-    OraText buf[1024];
-    ub4 version = 0;
-    sword rv;
-
-    rv = OCIServerRelease(svcctx->base.hp, oci8_errhp, buf, sizeof(buf), OCI_HTYPE_SVCCTX, &version);
-    if (rv != OCI_SUCCESS)
-        oci8_raise(oci8_errhp, rv, NULL);
-    return rb_ary_new3(2, INT2FIX(version), rb_str_new2(buf));
-}
-#endif
-
 /*
- * Cancels the OCI call performing in other thread. To use this, the
- * connection status must be non-blocking mode.
+ * call-seq:
+ *   break
+ *
+ * cancel an executing SQL in an other thread.
+ * See non_blocking= also.
  */
 static VALUE oci8_break(VALUE self)
 {
@@ -380,17 +414,35 @@ static VALUE oci8_break(VALUE self)
     return Qtrue;
 }
 
+/*
+ * call-seq:
+ *   prefetch_rows = aFixnum   (new in 0.1.14)
+ *
+ * change the prefetch rows size. This reduces network round trips
+ * when fetching multiple rows.
+ */
+static VALUE oci8_set_prefetch_rows(VALUE self, VALUE val)
+{
+    rb_ivar_set(self, id_at_prefetch_rows, val);
+    return val;
+}
+
 VALUE Init_oci8(void)
 {
+#if 0 /* for rdoc */
+    cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
+    cOCI8 = rb_define_class("OCI8", cOCIHandle);
+#endif
     cOCI8 = oci8_define_class("OCI8", &oci8_svcctx_class);
 
     sym_SYSDBA = ID2SYM(rb_intern("SYSDBA"));
     sym_SYSOPER = ID2SYM(rb_intern("SYSOPER"));
+    id_at_prefetch_rows = rb_intern("@prefetch_rows");
+    id_set_prefetch_rows = rb_intern("prefetch_rows=");
 
     rb_define_method(cOCI8, "initialize", oci8_svcctx_initialize, -1);
     rb_define_method(cOCI8, "logoff", oci8_svcctx_logoff, 0);
     rb_define_method(cOCI8, "parse", oci8_svcctx_parse, 1);
-    rb_define_private_method(cOCI8, "__passwordChange", oci8_password_change, 4);
     rb_define_method(cOCI8, "commit", oci8_commit, 0);
     rb_define_method(cOCI8, "rollback", oci8_rollback, 0);
     rb_define_method(cOCI8, "non_blocking?", oci8_non_blocking_p, 0);
@@ -399,11 +451,8 @@ VALUE Init_oci8(void)
     rb_define_method(cOCI8, "autocommit=", oci8_set_autocommit, 1);
     rb_define_method(cOCI8, "long_read_len", oci8_long_read_len, 0);
     rb_define_method(cOCI8, "long_read_len=", oci8_set_long_read_len, 1);
-    rb_define_method(cOCI8, "version", oci8_server_version, 0);
-#ifdef HAVE_OCISERVERRELEASE
-    rb_define_method(cOCI8, "release", oci8_server_release, 0);
-#endif
     rb_define_method(cOCI8, "break", oci8_break, 0);
+    rb_define_method(cOCI8, "prefetch_rows=", oci8_set_prefetch_rows, 1);
     return cOCI8;
 }
 

@@ -632,6 +632,15 @@ static VALUE oci8_stmt_defined_p(VALUE self, VALUE pos)
     return Qfalse;
 }
 
+static VALUE oci8_stmt_set_prefetch_rows(VALUE self, VALUE rows)
+{
+    oci8_stmt_t *stmt = DATA_PTR(self);
+    ub4 num = NUM2UINT(rows);
+
+    oci_lc(OCIAttrSet(stmt->base.hp, OCI_HTYPE_STMT, &num, 0, OCI_ATTR_PREFETCH_ROWS, oci8_errhp));
+    return Qfalse;
+}
+
 /*
  * bind_stmt
  */
@@ -720,6 +729,7 @@ void Init_oci8_stmt(VALUE cOCI8)
     rb_define_method(cOCIStmt, "[]=", oci8_stmt_aset, 2);
     rb_define_method(cOCIStmt, "keys", oci8_stmt_keys, 0);
     rb_define_private_method(cOCIStmt, "__defiend?", oci8_stmt_defined_p, 1);
+    rb_define_method(cOCIStmt, "prefetch_rows=", oci8_stmt_set_prefetch_rows, 1);
 
     oci8_define_bind_class("Cursor", &bind_stmt_class);
 }
