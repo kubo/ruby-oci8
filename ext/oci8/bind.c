@@ -375,8 +375,6 @@ static VALUE oci8_bind_initialize(VALUE self, VALUE svc, VALUE val, VALUE length
     oci8_bind_class_t *bind_class = (oci8_bind_class_t *)obind->base.klass;
     ub4 cnt = 1;
 
-    obind->next = obind;
-    obind->prev = obind;
     obind->tdo = Qnil;
     obind->maxar_sz = NIL_P(max_array_size) ? 0 : NUM2UINT(max_array_size);
     obind->curar_sz = 0;
@@ -408,9 +406,6 @@ static VALUE oci8_bind_initialize(VALUE self, VALUE svc, VALUE val, VALUE length
 void oci8_bind_free(oci8_base_t *base)
 {
     oci8_bind_t *obind = (oci8_bind_t *)base;
-    obind->next->prev = obind->prev;
-    obind->prev->next = obind->next;
-    obind->next = obind->prev = obind;
     if (obind->valuep != NULL) {
         xfree(obind->valuep);
         obind->valuep = NULL;

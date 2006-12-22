@@ -30,9 +30,29 @@ static VALUE cOCI8;
 static void oci8_svcctx_free(oci8_base_t *base)
 {
     oci8_svcctx_t *svcctx = (oci8_svcctx_t *)base;
-    /*
-      free cursors
-     */
+    sword rv;
+
+    oci_rc(svcctx, OCITransRollback(svcctx->base.hp, oci8_errhp, OCI_DEFAULT));
+    switch (svcctx->logon_type) {
+    case T_IMPLICIT:
+        rv = OCILogoff(svcctx->base.hp, oci8_errhp);
+        if (rv != OCI_SUCCESS)
+            oci8_raise(oci8_errhp, rv, NULL);
+        svcctx->base.type = 0;
+        svcctx->logon_type = T_NOT_LOGIN;
+        break;
+    case T_EXPLICIT:
+        rv = OCISessionEnd(svcctx->base.hp, oci8_errhp, svcctx->authhp, OCI_DEFAULT);
+        if (rv != OCI_SUCCESS)
+            oci8_raise(oci8_errhp, rv, NULL);
+        rv = OCIServerDetach(svcctx->srvhp, oci8_errhp, OCI_DEFAULT);
+        if (rv != OCI_SUCCESS)
+            oci8_raise(oci8_errhp, rv, NULL);
+        svcctx->logon_type = T_NOT_LOGIN;
+        break;
+    case T_NOT_LOGIN:
+        break;
+    }
     if (svcctx->authhp) {
         OCIHandleFree(svcctx->authhp, OCI_HTYPE_SESSION);
         svcctx->authhp = NULL;
@@ -192,27 +212,7 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
  */
 static VALUE oci8_svcctx_logoff(VALUE self)
 {
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
-    sword rv;
-
-    oci_rc(svcctx, OCITransRollback(svcctx->base.hp, oci8_errhp, OCI_DEFAULT));
-    switch (svcctx->logon_type) {
-    case T_IMPLICIT:
-        rv = OCILogoff(svcctx->base.hp, oci8_errhp);
-        if (rv != OCI_SUCCESS)
-            oci8_raise(oci8_errhp, rv, NULL);
-        svcctx->base.type = 0;
-        break;
-    case T_EXPLICIT:
-        rv = OCISessionEnd(svcctx->base.hp, oci8_errhp, svcctx->authhp, OCI_DEFAULT);
-        if (rv != OCI_SUCCESS)
-            oci8_raise(oci8_errhp, rv, NULL);
-        rv = OCIServerDetach(svcctx->srvhp, oci8_errhp, OCI_DEFAULT);
-        if (rv != OCI_SUCCESS)
-            oci8_raise(oci8_errhp, rv, NULL);
-        break;
-    }
-    oci8_base_free(&svcctx->base);
+    oci8_base_free((oci8_base_t*)DATA_PTR(self));
     return Qtrue;
 }
 

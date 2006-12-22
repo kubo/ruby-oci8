@@ -88,12 +88,14 @@ struct oci8_base {
     dvoid *hp;
     VALUE self;
     oci8_base_class_t *klass;
+    oci8_base_t *parent;
+    oci8_base_t *next;
+    oci8_base_t *prev;
+    oci8_base_t *children;
 };
 
 struct oci8_bind {
     oci8_base_t base;
-    oci8_bind_t *next;
-    oci8_bind_t *prev;
     void *valuep;
     sb4 value_sz; /* size to define or bind. */
     sb4 alloc_sz; /* size of a element. */
@@ -106,7 +108,7 @@ struct oci8_bind {
     } u;
 };
 
-enum logon_type_t {T_IMPLICIT, T_EXPLICIT};
+enum logon_type_t {T_NOT_LOGIN = 0, T_IMPLICIT, T_EXPLICIT};
 
 typedef struct  {
     oci8_base_t base;
@@ -224,6 +226,8 @@ void oci8_base_free(oci8_base_t *base);
 VALUE oci8_define_class(const char *name, oci8_base_class_t *klass);
 VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_class_t *klass);
 VALUE oci8_define_bind_class(const char *name, oci8_bind_class_t *oci8_bind_class);
+void oci8_link_to_parent(oci8_base_t *base, oci8_base_t *parent);
+void oci8_unlink_from_parent(oci8_base_t *base);
 extern oci8_base_class_t oci8_base_class;
 #ifdef RUNTIME_API_CHECK
 typedef sword (*rboci8_OCIRowidToChar_t)(OCIRowid *, OraText *, ub2 *, OCIError *);

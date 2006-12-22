@@ -37,6 +37,10 @@ static VALUE oci8_handle_initialize(VALUE self)
 
 void oci8_base_free(oci8_base_t *base)
 {
+    while (base->children != NULL) {
+        oci8_base_free(base->children);
+    }
+    oci8_unlink_from_parent(base);
     if (base->klass->free != NULL)
         base->klass->free(base);
     if (base->type >= OCI_DTYPE_FIRST)
@@ -89,6 +93,10 @@ static VALUE oci8_s_allocate(VALUE klass)
     obj = Data_Wrap_Struct(klass, oci8_handle_mark, oci8_handle_cleanup, base);
     base->self = obj;
     base->klass = base_class;
+    base->parent = NULL;
+    base->next = base;
+    base->prev = base;
+    base->children = NULL;
     return obj;
 }
 
@@ -178,4 +186,39 @@ VALUE oci8_define_bind_class(const char *name, oci8_bind_class_t *bind_class)
     VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, bind_class);
     rb_ivar_set(klass, id_oci8_class, obj);
     return klass;
+}
+
+void oci8_link_to_parent(oci8_base_t *base, oci8_base_t *parent)
+{
+    if (base->parent != NULL) {
+        oci8_unlink_from_parent(base);
+    }
+    if (parent->children == NULL) {
+        parent->children = base;
+    } else {
+        base->next = parent->children;
+        base->prev = parent->children->prev;
+        parent->children->prev->next = base;
+        parent->children->prev = base;
+    }
+    base->parent = parent;
+}
+
+void oci8_unlink_from_parent(oci8_base_t *base)
+{
+    if (base->parent == NULL) {
+        return;
+    }
+    if (base->next == base) {
+        base->parent->children = NULL;
+    } else {
+        if (base->parent->children == base) {
+            base->parent->children = base->next;
+        }
+        base->next->prev = base->prev;
+        base->prev->next = base->next;
+        base->next = base;
+        base->prev = base;
+    }
+    base->parent = NULL;
 }

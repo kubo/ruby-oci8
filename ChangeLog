@@ -1,3 +1,18 @@
+2006-12-22  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.h, ext/oci8/oci8lib.c: add new structure
+	    members to oci8_base_t to handle parent-children tree.
+	    add new functions oci8_link_to_parent() and
+	    oci8_unlink_from_parent().
+	    In prior to free the object's content. free all its children.
+	* ext/oci8/bind.c, ext/oci8/stmt.c:
+	    use oci8_base_t's structure members instead of oci8_bind_t 
+	    and oci8_stmt_t's members.
+	* ext/oci8/lob.c, ext/oci8/metadata.c, ext/oci8/tdo.c:
+	    link to the connection which creates the LOB, Metadata, TDO objects.
+	    These objects are freed when the connection is disconnected.
+	* ext/oci8/oci8.c: call logoff explicitly when the connection object
+	    is freed.
+
 2006-12-19  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/tdo.c: fix a GC problem.
 	* ext/oci8/stmt.c: add OCI8::Cursor#prefetch_rows=

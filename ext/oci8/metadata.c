@@ -40,6 +40,7 @@ VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE desc)
     rb_ivar_set(obj, id_at_is_implicit, RTEST(desc) ? Qfalse : Qtrue);
     rb_ivar_set(obj, id_at_con, svc);
     rb_ivar_set(obj, id___desc__, desc);
+    oci8_link_to_parent(base, (oci8_base_t*)DATA_PTR(svc));
     return obj;
 }
 

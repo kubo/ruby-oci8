@@ -125,6 +125,7 @@ static VALUE oci8_lob_initialize(VALUE self, VALUE svc)
     lob->pos = 0;
     lob->char_width = 1;
     lob->state = S_NO_OPEN_CLOSE;
+    oci8_link_to_parent((oci8_base_t*)lob, (oci8_base_t*)DATA_PTR(svc));
     return Qnil;
 }
 

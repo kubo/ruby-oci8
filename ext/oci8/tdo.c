@@ -160,8 +160,8 @@ static VALUE oci8_tdo_initialize(VALUE self, VALUE metadata)
     oci8_svcctx_t *svcctx;
 
     Check_Handle(metadata, cOCI8MetadataBase, md);
-    /* TODO link to svcctx to free on closing the connection. */
     svcctx = oci8_get_svcctx(rb_ivar_get(metadata, id_at_con));
+    oci8_link_to_parent((oci8_base_t*)DATA_PTR(self), (oci8_base_t*)svcctx);
     return oci8_tdo_init(self, svcctx, md->hp);
 }
 
