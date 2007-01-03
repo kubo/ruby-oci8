@@ -1,3 +1,10 @@
+2007-01-03  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/env.c: raise "OCI Library Initialization Error" message
+	    if no message can not be retrieved while OCIEnv.create.
+	* ext/oci8/oraconf.rb, ext/oci8/extconf.rb: refactor oraconf.rb.
+	* lib/oci8.rb.in: don't raise OCIError on requireing oci8. raise
+	    the error when connecting to the Oracle. (for active record)
+
 2006-12-09  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/env.c, ext/oci8/handle.c, ext/oci8/oci8.c, ext/oci8/oci8.h,
 	  ext/oci8/stmt.c: add OCIFileLocator.

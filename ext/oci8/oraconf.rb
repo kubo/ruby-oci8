@@ -101,85 +101,22 @@ class OraConf
   attr_reader :cflags
   attr_reader :libs
 
-  def initialize(oracle_home = nil)
+  def initialize
+    raise 'use OraConf.get instead'
+  end
+
+  def self.get
     original_CFLAGS = $CFLAGS
     original_defs = $defs
     ic_dir = nil
     begin
-      @cc_is_gcc = get_cc_is_gcc_or_not()
-      @lp64 = check_lp64()
-      check_ruby_header()
-
       # check Oracle instant client
       ic_dir = with_config('instant-client')
       if ic_dir
-        check_instant_client(ic_dir)
-        return
-      end
-
-      @oracle_home = get_home(oracle_home)
-      @version = get_version()
-      @cflags = get_cflags()
-      $CFLAGS += @cflags
-
-      if !@lp64 && File.exist?("#{@oracle_home}/lib32")
-        # ruby - 32bit
-        # oracle - 64bit
-        use_lib32 = true
+        OraConfIC.new(ic_dir)
       else
-        use_lib32 = false
+        OraConfFC.new()
       end
-
-      # default
-      if @version.to_i >= 900
-        if use_lib32
-          lib_dir = "#{@oracle_home}/lib32"
-        else
-          lib_dir = "#{@oracle_home}/lib"
-        end
-        case RUBY_PLATFORM
-        when /solaris/
-          @libs = " -L#{lib_dir} -R#{lib_dir} -lclntsh"
-        when /linux/
-          @libs = " -L#{lib_dir} -Wl,-rpath,#{lib_dir} -lclntsh"
-        else
-          @libs = " -L#{lib_dir} -lclntsh"
-        end
-        return if try_link_oci()
-      end
-
-      # get from demo_rdbms.mk
-      if use_lib32
-        if File.exist?("#{@oracle_home}/rdbms/demo/demo_rdbms32.mk")
-          @libs = get_libs('32', '')
-        else
-          @libs = get_libs('', '32')
-        end
-      else
-        @libs = get_libs()
-      end
-      return if try_link_oci()
-
-      if RUBY_PLATFORM =~ /darwin/
-        open('mkmf.log', 'r') do |f|
-          while line = f.gets
-            if line.include? 'cputype (18, architecture ppc) does not match cputype (7)'
-              raise <<EOS
-Oracle doesn't support intel mac.
-  http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-talk/223854
-
-There are three solutions:
-1. Compile ruby as ppc binary.
-2. Wait until Oracle releases mac intel binary.
-3. Use a third-party ODBC driver and ruby-odbc instead.
-     http://www.actualtechnologies.com/
-EOS
-            end
-          end
-        end
-      end
-
-      raise 'cannot compile OCI'
     rescue
       print <<EOS
 ---------------------------------------------------
@@ -234,17 +171,25 @@ EOS
 
   private
 
-  def try_link_oci
-    original_libs = $libs
-    begin
-      $libs += " -L#{CONFIG['libdir']} " + @libs
-      have_func("OCIInitialize", "oci.h")
-    ensure
-      $libs = original_libs
-    end
+  def init
+    check_cc()
+    @cc_is_gcc = check_cc_is_gcc()
+    @lp64 = check_lp64()
+    check_ruby_header()
   end
 
-  def get_cc_is_gcc_or_not
+  def check_cc
+    print "checking for cc... "
+    STDOUT.flush
+    if try_run("int main() { return 0; }")
+      puts "OK"
+    else
+      puts "NG"
+      raise "C compiler doesn't work correctly."
+    end
+  end # check_cc
+
+  def check_cc_is_gcc
     # bcc defines __GNUC__. why??
     return false if RUBY_PLATFORM =~ /bccwin32/
 
@@ -257,7 +202,7 @@ EOS
       print "no\n"
       return false
     end
-  end # cc_is_gcc
+  end # check_cc_is_gcc
 
   def check_lp64
     print "checking for LP64... "
@@ -298,7 +243,71 @@ You need /usr/include/sys/types.h to compile ruby-oci8.
 EOS
     end
     puts "ok"
+  end # check_ruby_header
+
+  def try_link_oci
+    original_libs = $libs
+    begin
+      $libs += " -L#{CONFIG['libdir']} " + @libs
+      have_func("OCIInitialize", "oci.h")
+    ensure
+      $libs = original_libs
+    end
   end
+end
+
+# OraConf for Full Client
+class OraConfFC < OraConf
+  def initialize
+    init
+
+    @oracle_home = get_home()
+    @version = get_version()
+    @cflags = get_cflags()
+    $CFLAGS += @cflags
+
+    if !@lp64 && File.exist?("#{@oracle_home}/lib32")
+      # ruby - 32bit
+      # oracle - 64bit
+      use_lib32 = true
+    else
+      use_lib32 = false
+    end
+
+    # default
+    if @version.to_i >= 900
+      if use_lib32
+        lib_dir = "#{@oracle_home}/lib32"
+      else
+        lib_dir = "#{@oracle_home}/lib"
+      end
+      case RUBY_PLATFORM
+      when /solaris/
+        @libs = " -L#{lib_dir} -R#{lib_dir} -lclntsh"
+      when /linux/
+        @libs = " -L#{lib_dir} -Wl,-rpath,#{lib_dir} -lclntsh"
+      else
+        @libs = " -L#{lib_dir} -lclntsh"
+      end
+      return if try_link_oci()
+    end
+
+    # get from demo_rdbms.mk
+    if use_lib32
+      if File.exist?("#{@oracle_home}/rdbms/demo/demo_rdbms32.mk")
+        @libs = get_libs('32', '')
+      else
+        @libs = get_libs('', '32')
+      end
+    else
+      @libs = get_libs()
+    end
+    return if try_link_oci()
+
+    raise 'cannot compile OCI'
+  end
+
+  private
 
   def get_version
     print("Get the version of Oracle from SQL*Plus... ")
@@ -343,10 +352,8 @@ EOS
       end
     end
 
-    def get_home(oracle_home)
-      if oracle_home.nil?
-        oracle_home = ENV['ORACLE_HOME']
-      end
+    def get_home()
+      oracle_home = ENV['ORACLE_HOME']
       if oracle_home.nil?
         struct = Struct.new("OracleHome", :name, :path)
         oracle_homes = []
@@ -383,7 +390,7 @@ EOS
              dir_sep = '\\'
           end
           ENV['PATH'].split(path_sep).each do |path|
-	    path.chomp!(dir_sep)
+            path.chomp!(dir_sep)
             if File.exists?("#{path}/OCI.DLL")
               default_path = path
               break
@@ -409,7 +416,7 @@ EOS
             raise 'Cannot get ORACLE_HOME. Please set the environment valiable ORACLE_HOME.'
           else
             printf "use %s\n", oracle_home.name
-	    puts "run ohsel.exe to use another oracle home."
+            puts "run ohsel.exe to use another oracle home."
             puts "---------------------------------------------------"
             oracle_home = oracle_home.path
           end
@@ -481,8 +488,8 @@ EOS
 
   else # when UNIX
 
-    def get_home(oracle_home)
-      oracle_home ||= ENV['ORACLE_HOME']
+    def get_home
+      oracle_home = ENV['ORACLE_HOME']
       raise 'Cannot get ORACLE_HOME. Please set the environment valiable ORACLE_HOME.' if oracle_home.nil?
       oracle_home
     end
@@ -581,8 +588,13 @@ EOS
       libs
     end # get_libs
   end
+end
 
-  def check_instant_client(ic_dir)
+# OraConf for Instant Client
+class OraConfIC < OraConf
+  def initialize(ic_dir)
+    init
+
     if ic_dir.is_a? String
       # zip package
       lib_dir = ic_dir
@@ -655,21 +667,40 @@ EOS
     end
     unless File.exists?("#{inc_dir}/oci.h")
           raise <<EOS
-'#{inc_dir}/oci.h' doesn't exist.
+'#{inc_dir}/oci.h' does not exist.
 Install 'Instant Client SDK'.
 EOS
     end
     $CFLAGS += @cflags
-    unless try_link_oci()
-      unless ld_path.nil?
-        raise <<EOS
+    return if try_link_oci()
+
+    if RUBY_PLATFORM =~ /darwin/
+      open('mkmf.log', 'r') do |f|
+        while line = f.gets
+          if line.include? 'cputype (18, architecture ppc) does not match cputype (7)'
+            raise <<EOS
+Oracle doesn't support intel mac.
+  http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-talk/223854
+
+There are three solutions:
+1. Compile ruby as ppc binary.
+2. Wait until Oracle releases mac intel binary.
+3. Use a third-party ODBC driver and ruby-odbc instead.
+     http://www.actualtechnologies.com/
+EOS
+          end
+        end
+      end
+    end
+
+    unless ld_path.nil?
+      raise <<EOS
 Could not compile with Oracle instant client.
 You may need to set a environment variable:
     #{ld_path}=#{lib_dir}
     export #{ld_path}
 EOS
-      end
-      raise 'failed'
     end
+    raise 'failed'
   end
 end

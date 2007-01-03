@@ -45,11 +45,17 @@ class OCIBind # :nodoc:
 end
 
 class OCI8
-  if OCIEnv.respond_to?("create")
-    @@env = OCIEnv.create(OCI_OBJECT)
-  else
-    OCIEnv.initialise(OCI_OBJECT)
-    @@env = OCIEnv.init()
+  begin
+    if OCIEnv.respond_to?("create")
+      @@env = OCIEnv.create(OCI_OBJECT)
+    else
+      OCIEnv.initialise(OCI_OBJECT)
+      @@env = OCIEnv.init()
+    end
+    @@error_in_initialization = nil
+  rescue OCIError
+    # don't raise this error at this time.
+    @@error_in_initialization = $!
   end
 
   VERSION = '@@OCI8_MODULE_VERSION@@'
@@ -148,6 +154,7 @@ class OCI8
   include Util
 
   def initialize(uid, pswd, conn = nil, privilege = nil)
+    @@error_in_initialization && raise @@error_in_initialization
     case privilege
     when nil
       @privilege = nil

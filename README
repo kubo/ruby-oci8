@@ -73,11 +73,14 @@
    AIX:
      add /opt/oracle/instantclient10_1 to LIBPATH.
 
-   HP-UX PA-RISC32: (for 32-bit ruby)
+   HP-UX PA-RISC 32-bit ruby:
      add /opt/oracle/instantclient10_1 to SHLIB_PATH.
 
-   Solaris SPARC 32: (for 32-bit ruby)
+   SPARC/Solaris 32-bit ruby:
      add /opt/oracle/instantclient10_1 to LD_LIBRARY_PATH_32.
+
+   SPARC/Solaris 64-bit ruby:
+     add /opt/oracle/instantclient10_1 to LD_LIBRARY_PATH_64.
 
    Mac OS X:
      add /opt/oracle/instantclient10_1 to DYLD_LIBRARY_PATH.
@@ -135,12 +138,45 @@
 1. set environmet variables.
 
    The follwing environmet variables are required:
-     ORACLE_HOME
-     NLS_LANG
-     LD_LIBRARY_PATH (or LIBPATH, SHLIB_PATH, DYLD_LIBRARY_PATH, LD_LIBRARY_PATH_32)
+
+     * ORACLE_HOME
+       UNIX only. This variable is set on registry on Windows.
+
+     * NLS_LANG
+       UNIX only. This variable is set on registry on Windows.
+
+     * library serach path
+
+       Windows:
+         add %ORACLE_HOME%\bin to PATH.
+
+       AIX:
+         add $ORACLE_HOME/lib to LIBPATH.
+
+       HP-UX PA-RISC 32-bit ruby:
+         add $ORACLE_HOME/lib32 to SHLIB_PATH.
+         If $ORACLE_HOME/lib32 doesn't exist, add $ORACLE_HOME/lib instead.
+
+       SPARC/Solaris 32-bit ruby:
+         add $ORACLE_HOME/lib32 to LD_LIBRARY_PATH_32.
+         If $ORACLE_HOME/lib32 doesn't exist, add $ORACLE_HOME/lib instead.
+
+       SPARC/Solaris 64-bit ruby:
+         add $ORACLE_HOME/lib to LD_LIBRARY_PATH_64.
+
+       Mac OS X:
+         add $ORACLE_HOME/lib to DYLD_LIBRARY_PATH.
+
+       Other 32-bit ruby:
+         add $ORACLE_HOME/lib32 to LD_LIBRARY_PATH.
+         If $ORACLE_HOME/lib32 doesn't exist, add $ORACLE_HOME/lib instead.
+
+       Other 64-bit ruby:
+         add $ORACLE_HOME/lib to LD_LIBRARY_PATH.
 
    To connect the local database:
-     ORACLE_SID
+
+     * ORACLE_SID
 
 2. enjoy.
 
@@ -152,8 +188,37 @@
 1. set environmet variables.
 
    The follwing environmet variables are required:
-     NLS_LANG
-     LD_LIBRARY_PATH (or LIBPATH, SHLIB_PATH, DYLD_LIBRARY_PATH, LD_LIBRARY_PATH_32)
+
+     * NLS_LANG
+
+     * library serach path
+
+       Windows:
+         add %ORACLE_HOME%\bin to PATH.
+
+       AIX:
+         add $ORACLE_HOME/lib to LIBPATH.
+
+       HP-UX PA-RISC 32-bit ruby:
+         add $ORACLE_HOME/lib32 to SHLIB_PATH.
+         If $ORACLE_HOME/lib32 doesn't exist, add $ORACLE_HOME/lib instead.
+
+       SPARC/Solaris 32-bit ruby:
+         add $ORACLE_HOME/lib32 to LD_LIBRARY_PATH_32.
+         If $ORACLE_HOME/lib32 doesn't exist, add $ORACLE_HOME/lib instead.
+
+       SPARC/Solaris 64-bit ruby:
+         add $ORACLE_HOME/lib to LD_LIBRARY_PATH_64.
+
+       Mac OS X:
+         add $ORACLE_HOME/lib to DYLD_LIBRARY_PATH.
+
+       Other 32-bit ruby:
+         add $ORACLE_HOME/lib32 to LD_LIBRARY_PATH.
+         If $ORACLE_HOME/lib32 doesn't exist, add $ORACLE_HOME/lib instead.
+
+       Other 64-bit ruby:
+         add $ORACLE_HOME/lib to LD_LIBRARY_PATH.
 
    ORACLE_HOME and TNS_ADMIN are optional:
      see: http://www.oracle.com/technology/tech/oci/instantclient/ic-faq.html#A4428

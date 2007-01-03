@@ -16,6 +16,17 @@ correspond native OCI datatype: ((|OCIEnv|))
 #include "oci8.h"
 #include <util.h> /* ruby_setenv */
 
+RBOCI_NORETURN(static void oci8_raise_init_error(void));
+
+static void oci8_raise_init_error(void)
+{
+  VALUE msg = rb_str_new2("OCI Library Initialization Error");
+  VALUE exc = rb_funcall(eOCIError, oci8_id_new, 1, msg);
+  rb_ivar_set(exc, oci8_id_code, rb_ary_new3(1, INT2FIX(-1)));
+  rb_ivar_set(exc, oci8_id_message, rb_ary_new3(1, msg));
+  rb_exc_raise(exc);
+}
+
 static VALUE oci8_env_s_initialize(int argc, VALUE *argv, VALUE klass)
 {
   VALUE vmode;
@@ -53,7 +64,7 @@ static VALUE oci8_env_s_init(int argc, VALUE *argv, VALUE klass)
 {
   VALUE vmode;
   ub4 mode;
-  OCIEnv *envhp;
+  OCIEnv *envhp = NULL;
   OCIError *errhp;
   oci8_handle_t *h;
   sword rv;
@@ -62,6 +73,9 @@ static VALUE oci8_env_s_init(int argc, VALUE *argv, VALUE klass)
   Get_Int_With_Default(argc, 1, vmode, mode, OCI_DEFAULT); /* 1 */
   
   rv = OCIEnvInit(&envhp, OCI_DEFAULT, 0, NULL);
+  if (envhp == NULL) {
+    oci8_raise_init_error();
+  }
   if (rv != OCI_SUCCESS)
     oci8_env_raise(envhp, rv);
   rv = OCIHandleAlloc(envhp, (dvoid *)&errhp, OCI_HTYPE_ERROR, 0, NULL);
@@ -99,15 +113,18 @@ static VALUE oci8_env_s_create(int argc, VALUE *argv, VALUE klass)
 {
   VALUE vmode;
   ub4 mode;
-  OCIEnv *envhp;
+  OCIEnv *envhp = NULL;
   OCIError *errhp;
   oci8_handle_t *h;
   sword rv;
 
   rb_scan_args(argc, argv, "01", &vmode);
   Get_Int_With_Default(argc, 1, vmode, mode, OCI_DEFAULT); /* 1 */
-  
+
   rv = OCIEnvCreate(&envhp, mode, NULL, NULL, NULL, NULL, 0, NULL);
+  if (envhp == NULL) {
+    oci8_raise_init_error();
+  }
   if (rv != OCI_SUCCESS)
     oci8_env_raise(envhp, rv);
   rv = OCIHandleAlloc(envhp, (dvoid *)&errhp, OCI_HTYPE_ERROR, 0, NULL);
