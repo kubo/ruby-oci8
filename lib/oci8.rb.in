@@ -154,7 +154,7 @@ class OCI8
   include Util
 
   def initialize(uid, pswd, conn = nil, privilege = nil)
-    @@error_in_initialization && raise @@error_in_initialization
+    raise @@error_in_initialization if @@error_in_initialization
     case privilege
     when nil
       @privilege = nil
