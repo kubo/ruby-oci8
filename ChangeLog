@@ -1,3 +1,8 @@
+2007-01-08  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb, ext/oci8/extconf.rb: refactor oraconf.rb.
+	    check whether Full Client or Instant Client by checking load
+	    library path.
+
 2006-12-27  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c: ignore an exception during GC.
 

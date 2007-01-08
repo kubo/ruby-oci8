@@ -3,7 +3,7 @@ require File.dirname(__FILE__) + '/oraconf'
 
 RUBY_OCI8_VERSION = File.read("#{File.dirname(__FILE__)}/../../VERSION").chomp
 
-oraconf = OraConf.new()
+oraconf = OraConf.get()
 
 def replace_keyword(source, target, replace)
   puts "creating #{target} from #{source}"
