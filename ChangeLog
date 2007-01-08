@@ -1,3 +1,7 @@
+2007-01-08  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: check whether Full Client or Instant Client by checking
+	  load library path.
+
 2007-01-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/env.c: raise "OCI Library Initialization Error" message
 	    if no message can not be retrieved while OCIEnv.create.

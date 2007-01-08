@@ -111,54 +111,28 @@ class OraConf
     ic_dir = nil
     begin
       # check Oracle instant client
-      ic_dir = with_config('instant-client')
+      ic_dir = with_config('instant-client') || check_ic_dir
       if ic_dir
         OraConfIC.new(ic_dir)
       else
         OraConfFC.new()
       end
     rescue
+      case ENV['LANG']
+      when /^ja/
+        lang = 'ja'
+      else
+        lang = 'en'
+      end
       print <<EOS
 ---------------------------------------------------
 error messages:
 #{$!.to_str}
 ---------------------------------------------------
-If you use Oracle instant client, try with --with-instant-client.
+See:
+ * http://ruby-oci8.rubyforge.org/#{lang}/HowToInstall.html
+ * http://ruby-oci8.rubyforge.org/#{lang}/ReportInstallProblem.html
 
-zip package:
-  ruby setup.rb config -- --with-instant-client=/path/to/instantclient10_1
-
-rpm package:
-  ruby setup.rb config -- --with-instant-client
-
-The latest version of oraconf.rb may solve the problem.
-   http://rubyforge.org/viewvc/trunk/ruby-oci8/ext/oci8/oraconf.rb?root=ruby-oci8&view=log
-
-If it could not be solved, send the following information to kubo@jiubao.org.
-
-* following error messages:
-#{$!.to_str.gsub(/^/, '  | ')}
-* last 100 lines of 'ext/oci8/mkmf.log'.
-* results of the following commands:
-    ruby --version
-    ruby -r rbconfig -e "p Config::CONFIG['host']"
-    ruby -r rbconfig -e "p Config::CONFIG['CC']"
-    ruby -r rbconfig -e "p Config::CONFIG['CFLAGS']"
-    ruby -r rbconfig -e "p Config::CONFIG['LDSHARED']"
-    ruby -r rbconfig -e "p Config::CONFIG['LDFLAGS']"
-    ruby -r rbconfig -e "p Config::CONFIG['DLDFLAGS']"
-    ruby -r rbconfig -e "p Config::CONFIG['LIBS']"
-    ruby -r rbconfig -e "p Config::CONFIG['GNU_LD']"
-* if you use gcc:
-    gcc --print-prog-name=ld
-    gcc --print-prog-name=as
-* on platforms which can use both 32bit/64bit binaries:
-    file $ORACLE_HOME/bin/oracle
-    file `which ruby`
-    echo $LD_LIBRARY_PATH
-    echo $LIBPATH      # AIX
-    echo $SHLIB_PATH   # HP-UX
----------------------------------------------------
 EOS
       exc = RuntimeError.new
       exc.set_backtrace($!.backtrace)
@@ -169,7 +143,109 @@ EOS
     end
   end
 
+  def self.ld_envs
+    @@ld_envs
+  end
+
   private
+
+  def self.check_ic_dir
+    print "checking for load library path... "
+    STDOUT.flush
+
+    # get library load path names
+    oci_basename = 'libclntsh'
+    oci_glob_postfix = '.[0-9]*'
+    ocidata_basename = ['libociei', 'libociicus']
+    @@ld_envs = %w[LD_LIBRARY_PATH]
+    so_ext = 'so'
+    check_proc = nil
+    case RUBY_PLATFORM
+    when /mswin32|cygwin|mingw32|bccwin32/
+      oci_basename = 'oci'
+      oci_glob_postfix = ''
+      ocidata_basename = ['oraociei10', 'oraociicus10']
+      @@ld_envs = %w[PATH]
+      so_ext = 'dll'
+    when /i.86-linux/
+      check_proc = Proc.new do |file|
+        File.read("|file #{file}").include? "80386"
+      end
+    when /ia64-linux/
+      check_proc = Proc.new do |file|
+        File.read("|file #{file}").include? "IA-64"
+      end
+    when /x86_64-linux/
+      check_proc = Proc.new do |file|
+        File.read("|file #{file}").include? "x86-64"
+      end
+    when /solaris/
+      if [0].pack('l!').length == 8
+        @@ld_envs = %w[LD_LIBRARY_PATH_64 LD_LIBRARY_PATH]
+      else
+        @@ld_envs = %w[LD_LIBRARY_PATH_32 LD_LIBRARY_PATH]
+      end
+    when /aix/
+      oci_glob_postfix = ''
+      @@ld_envs = %w[LIBPATH]
+      so_ext = 'a'
+    when /hppa.*-hpux/
+      if [0].pack('l!').length == 4
+        @@ld_envs = %w[SHLIB_PATH]
+      end
+      so_ext = 'sl'
+    when /darwin/
+      @@ld_envs = %w[DYLD_LIBRARY_PATH]
+      so_ext = 'dylib'
+    end
+
+    glob_name = "#{oci_basename}.#{so_ext}#{oci_glob_postfix}"
+    ld_path = nil
+    file = nil
+    @@ld_envs.collect do |env|
+      print "(#{env})... "
+      STDOUT.flush
+      ENV[env] && ENV[env].split(File::PATH_SEPARATOR)
+    end.flatten.each do |path|
+      next if path.nil? or path == ''
+      files = Dir.glob(File.join(path, glob_name))
+      next if files.empty?
+      STDOUT.flush
+      next if (check_proc && !check_proc.call(files[0]))
+      file = files[0]
+      ld_path = path
+      break
+    end
+
+    if ld_path.nil? and RUBY_PLATFORM =~ /linux/
+      open("|/sbin/ldconfig -p") do |f|
+        print "(ld.so.conf)... "
+        STDOUT.flush
+        while line = f.gets
+          if line =~ /libclntsh\.so\..* => (\/.*)\/libclntsh\.so\.(.*)/
+            file = "#$1/libclntsh.so.#$2"
+            path = $1
+            next if (check_proc && !check_proc.call(file))
+            ld_path = path
+            break
+          end
+        end
+      end
+    end
+
+    if ld_path
+      ocidata_basename.each do |basename|
+        if File.exists?(File.join(ld_path, "#{basename}.#{so_ext}"))
+          puts "#{file} looks like an instant client."
+          return ld_path
+        end
+      end
+      puts "#{file} looks like a full client."
+    else
+      puts "not found"
+    end
+    nil
+  end
 
   def init
     check_cc()
@@ -182,9 +258,9 @@ EOS
     print "checking for cc... "
     STDOUT.flush
     if try_run("int main() { return 0; }")
-      puts "OK"
+      puts "ok"
     else
-      puts "NG"
+      puts "ng"
       raise "C compiler doesn't work correctly."
     end
   end # check_cc
@@ -377,7 +453,12 @@ class OraConfFC < OraConf
           end
         end
         oracle_homes.compact!
-        raise 'Cannot get ORACLE_HOME. Please set the environment valiable ORACLE_HOME.' if oracle_homes.empty?
+        if oracle_homes.empty?
+          raise <<EOS
+Set the environment variable ORACLE_HOME if Oracle Full Client.
+Append the path of Oracle client libraries to #{OraConf.ld_envs[0]} if Oracle Instant Client.
+EOS
+        end
         if oracle_homes.length == 1
           oracle_home = oracle_homes[0].path
         else
@@ -490,7 +571,12 @@ EOS
 
     def get_home
       oracle_home = ENV['ORACLE_HOME']
-      raise 'Cannot get ORACLE_HOME. Please set the environment valiable ORACLE_HOME.' if oracle_home.nil?
+      if oracle_home.nil?
+        raise <<EOS
+Set the environment variable ORACLE_HOME if Oracle Full Client.
+Append the path of Oracle client libraries to #{OraConf.ld_envs[0]} if Oracle Instant Client.
+EOS
+      end
       oracle_home
     end
 
@@ -596,9 +682,15 @@ class OraConfIC < OraConf
     init
 
     if ic_dir.is_a? String
-      # zip package
-      lib_dir = ic_dir
-      inc_dir = "#{ic_dir}/sdk/include"
+      if ic_dir =~ /^\/usr\/lib\/oracle\/(\d+\.\d+\.\d+\.\d+)\/client\/lib/
+        # rpm package
+        lib_dir = ic_dir
+        inc_dir = "/usr/include/oracle/#{$1}/client"
+      else
+        # zip package
+        lib_dir = ic_dir
+        inc_dir = "#{ic_dir}/sdk/include"
+      end
     else
       # rpm package
       lib_dirs = Dir.glob("/usr/lib/oracle/*/client/lib")
@@ -674,7 +766,7 @@ EOS
     $CFLAGS += @cflags
     return if try_link_oci()
 
-    if RUBY_PLATFORM =~ /darwin/
+    if RUBY_PLATFORM =~ /i.*-darwin/
       open('mkmf.log', 'r') do |f|
         while line = f.gets
           if line.include? 'cputype (18, architecture ppc) does not match cputype (7)'
