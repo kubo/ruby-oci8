@@ -1,3 +1,6 @@
+2007-01-19  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: fix bugs on windows created by the previous commit.
+
 2007-01-08  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: check whether Full Client or Instant Client by checking
 	  load library path.
