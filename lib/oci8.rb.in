@@ -45,14 +45,10 @@ class OCIBind # :nodoc:
 end
 
 class OCI8
+  @@error_in_initialization = nil
   begin
-    if OCIEnv.respond_to?("create")
-      @@env = OCIEnv.create(OCI_OBJECT)
-    else
-      OCIEnv.initialise(OCI_OBJECT)
-      @@env = OCIEnv.init()
-    end
-    @@error_in_initialization = nil
+    OCIEnv.initialise(OCI_OBJECT)
+    @@env = OCIEnv.init()
   rescue OCIError
     # don't raise this error at this time.
     @@error_in_initialization = $!
@@ -134,20 +130,20 @@ class OCI8
       ctx[CTX_MUTEX].lock
       ctx[CTX_THREAD] = Thread.current
       begin
-	yield
+        yield
       rescue OCIStillExecuting # non-blocking mode
-	ctx[CTX_MUTEX].unlock
-	sleep(sleep_time)
-	ctx[CTX_MUTEX].lock
-	if ctx[CTX_THREAD].nil?
-	  raise OCIBreak
-	end
-	# expand sleep time to prevent busy loop.
-	sleep_time *= 2 if sleep_time < 0.5
-	retry
+        ctx[CTX_MUTEX].unlock
+        sleep(sleep_time)
+        ctx[CTX_MUTEX].lock
+        if ctx[CTX_THREAD].nil?
+          raise OCIBreak
+        end
+        # expand sleep time to prevent busy loop.
+        sleep_time *= 2 if sleep_time < 0.5
+        retry
       ensure
-	ctx[CTX_THREAD] = nil
-	ctx[CTX_MUTEX].unlock
+        ctx[CTX_THREAD] = nil
+        ctx[CTX_MUTEX].unlock
       end
     end # do_ocicall
   end
@@ -210,22 +206,22 @@ class OCI8
       cursor
     else
       begin
-	ret = cursor.exec(*bindvars)
-	case cursor.type
-	when OCI_STMT_SELECT
-	  cursor.fetch { |row| yield(row) }   # for each row
-	  cursor.row_count()
-	when OCI_STMT_BEGIN, OCI_STMT_DECLARE # PL/SQL block
-	  ary = []
-	  cursor.keys.sort.each do |key|
-	    ary << cursor[key]
-	  end
-	  ary
-	else
-	  ret
-	end
+        ret = cursor.exec(*bindvars)
+        case cursor.type
+        when OCI_STMT_SELECT
+          cursor.fetch { |row| yield(row) }   # for each row
+          cursor.row_count()
+        when OCI_STMT_BEGIN, OCI_STMT_DECLARE # PL/SQL block
+          ary = []
+          cursor.keys.sort.each do |key|
+            ary << cursor[key]
+          end
+          ary
+        else
+          ret
+        end
       ensure
-	cursor.close
+        cursor.close
       end
     end
   end # exec
@@ -283,15 +279,15 @@ class OCI8
     @ctx[CTX_MUTEX].synchronize do
       @svc.break()
       unless @ctx[CTX_THREAD].nil?
-	@ctx[CTX_THREAD].wakeup()
-	@ctx[CTX_THREAD] = nil
-	if @svc.respond_to?("reset")
-	  begin
-	    @svc.reset()
-	  rescue OCIError
-	    raise if $!.code != 1013 # ORA-01013
-	  end
-	end
+        @ctx[CTX_THREAD].wakeup()
+        @ctx[CTX_THREAD] = nil
+        if @svc.respond_to?("reset")
+          begin
+            @svc.reset()
+          rescue OCIError
+            raise if $!.code != 1013 # ORA-01013
+          end
+        end
       end
     end
   end # break
@@ -565,7 +561,7 @@ class OCI8
     def define(pos, type, length = nil)
       @defns = [] if @defns.nil?
       if type == String and length.nil?
-	length = 4000
+        length = 4000
       end
       b = bind_or_define(:define, pos, nil, type, length, nil, nil, false)
       @defns[pos].free() unless @defns[pos].nil?
@@ -584,7 +580,7 @@ class OCI8
     # get bind value
     def [](key)
       if @binds.nil? or @binds[key].nil?
-	return nil 
+        return nil 
       end
       @binds[key].get()
     end
@@ -592,7 +588,7 @@ class OCI8
     # set bind value
     def []=(key, val)
       if @binds.nil? or @binds[key].nil?
-	return nil 
+        return nil 
       end
       @binds[key].set(val)
     end
@@ -600,9 +596,9 @@ class OCI8
     # get bind keys
     def keys
       if @binds.nil?
-	[]
+        []
       else
-	@binds.keys
+        @binds.keys
       end
     end
 
@@ -610,14 +606,14 @@ class OCI8
       bind_params(*bindvars)
       case @stmttype
       when OCI_STMT_SELECT
-	do_ocicall(@ctx) { @stmt.execute(@svc, 0, OCI_DEFAULT) }
+        do_ocicall(@ctx) { @stmt.execute(@svc, 0, OCI_DEFAULT) }
         define_columns()
       when OCI_STMT_UPDATE, OCI_STMT_DELETE, OCI_STMT_INSERT
-	do_ocicall(@ctx) { @stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG]) }
-	@stmt.attrGet(OCI_ATTR_ROW_COUNT)
+        do_ocicall(@ctx) { @stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG]) }
+        @stmt.attrGet(OCI_ATTR_ROW_COUNT)
       else
-	do_ocicall(@ctx) { @stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG]) }
-	true
+        do_ocicall(@ctx) { @stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG]) }
+        true
       end
     end # exec
 
@@ -632,7 +628,7 @@ class OCI8
     def get_col_names
       return [] if @parms.nil?
       @parms.collect do |p|
-	do_ocicall(@ctx) { p.attrGet(OCI_ATTR_NAME) }
+        do_ocicall(@ctx) { p.attrGet(OCI_ATTR_NAME) }
       end
     end # get_col_names
 
@@ -641,11 +637,11 @@ class OCI8
 
     def fetch
       if iterator?
-	while ret = fetch_a_row()
-	  yield(ret)
-	end
+        while ret = fetch_a_row()
+          yield(ret)
+        end
       else
-	fetch_a_row()
+        fetch_a_row()
       end
     end # fetch
 
@@ -683,16 +679,16 @@ class OCI8
 
     def bind_or_define(bind_type, key, val, type, length, precision, scale, strict_check)
       if type.nil?
-	if val.nil?
-	  raise "bind type is not given." if type.nil?
-	else
+        if val.nil?
+          raise "bind type is not given." if type.nil?
+        else
           if val.class == Class
             type = val
             val = nil
           else
             type = val.class
           end
-	end
+        end
       end
 
       binder = OCI8::BindType::Mapping[type]
@@ -708,14 +704,14 @@ class OCI8
 
       case bind_type
       when :bind
-	if key.is_a? Fixnum
-	  b = @stmt.bindByPos(key, type, option)
-	else
-	  b = @stmt.bindByName(key, type, option)
-	end
+        if key.is_a? Fixnum
+          b = @stmt.bindByPos(key, type, option)
+        else
+          b = @stmt.bindByName(key, type, option)
+        end
         b.set_handle(@env, @svc, @ctx)
       when :define
-	b = @stmt.defineByPos(key, type, option)
+        b = @stmt.defineByPos(key, type, option)
         b.set_handle(@env, @svc)
       end
 
@@ -736,7 +732,7 @@ class OCI8
       end
       @defns = Array.new(@parms.size) if @defns.nil?
       1.upto(num_cols) do |i|
-	@defns[i] = define_a_column(i) if @defns[i].nil?
+        @defns[i] = define_a_column(i) if @defns[i].nil?
       end
       num_cols
     end # define_columns
@@ -763,11 +759,11 @@ class OCI8
 
     def bind_params(*bindvars)
       bindvars.each_with_index do |val, i|
-	if val.is_a? Array
-	  bind_param(i + 1, val[0], val[1], val[2])
-	else
-	  bind_param(i + 1, val)
-	end
+        if val.is_a? Array
+          bind_param(i + 1, val[0], val[1], val[2])
+        else
+          bind_param(i + 1, val)
+        end
       end
     end # bind_params
 
@@ -779,18 +775,18 @@ class OCI8
 
     def free_defns
       unless @defns.nil?
-	@defns.each do |b|
-	  b.free() unless b.nil?
-	end
+        @defns.each do |b|
+          b.free() unless b.nil?
+        end
       end
       @defns = nil
     end # free_defns
 
     def free_binds
       unless @binds.nil?
-	@binds.each_value do |b|
-	  b.free()
-	end
+        @binds.each_value do |b|
+          b.free()
+        end
       end
       @binds = nil
     end # free_binds
