@@ -66,5 +66,5 @@ VALUE oci8_get_string_attr(oci8_base_t *base, ub4 attrtype)
     rv = OCIAttrGet(base->hp, base->type, &val, &size, attrtype, oci8_errhp);
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);
-    return rb_str_new(val, size);
+    return rb_str_new(TO_CHARPTR(val), size);
 }

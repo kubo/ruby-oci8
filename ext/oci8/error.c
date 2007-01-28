@@ -47,8 +47,8 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, c
     VALUE vcodes = Qnil;
     VALUE vmessages = Qnil;
     VALUE exc;
-    OraText errmsg[1024];
-    ub4 errcode;
+    char errmsg[1024];
+    sb4 errcode;
     ub4 recodeno;
     VALUE msg;
     VALUE vparse_error_offset = Qnil;
@@ -69,7 +69,7 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, c
         vmessages = rb_ary_new();
         for (recodeno = 1;;recodeno++) {
             /* get error string */
-            rv = OCIErrorGet(errhp, recodeno, NULL, &errcode, errmsg, sizeof(errmsg), type);
+            rv = OCIErrorGet(errhp, recodeno, NULL, &errcode, TO_ORATEXT(errmsg), sizeof(errmsg), type);
             if (rv != OCI_SUCCESS) {
                 break;
             }
@@ -109,7 +109,7 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, c
             ub4 size;
             rv = OCIAttrGet(stmthp, OCI_HTYPE_STMT, &sql, &size, OCI_ATTR_STATEMENT, errhp);
             if (rv == OCI_SUCCESS) {
-                vsql = rb_str_new(sql, size);
+                vsql = rb_str_new(TO_CHARPTR(sql), size);
             }
         }
 #endif
@@ -232,9 +232,9 @@ static VALUE oci8_error_sql(VALUE self)
 }
 #endif
 
-ub4 oci8_get_error_code(OCIError *errhp)
+sb4 oci8_get_error_code(OCIError *errhp)
 {
-    ub4 errcode;
+    sb4 errcode;
     OCIErrorGet(oci8_errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
     return errcode;
 }

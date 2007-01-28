@@ -154,7 +154,7 @@ static VALUE metadata_get_text(VALUE self, VALUE idx)
     ub4 size;
 
     oci_lc(OCIAttrGet(base->hp, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
-    return rb_str_new(value, size);
+    return rb_str_new(TO_CHARPTR(value), size);
 }
 
 static VALUE metadata_get_oradate(VALUE self, VALUE idx)
@@ -221,7 +221,7 @@ static VALUE metadata_get_charset_name(VALUE self, VALUE charset_id)
     sword rv;
 
     Check_Type(charset_id, T_FIXNUM);
-    rv = OCINlsCharSetIdToName(oci8_envhp, buf, sizeof(buf), FIX2INT(charset_id));
+    rv = OCINlsCharSetIdToName(oci8_envhp, TO_ORATEXT(buf), sizeof(buf), FIX2INT(charset_id));
     if (rv != OCI_SUCCESS) {
         return Qnil;
     }

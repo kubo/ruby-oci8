@@ -67,7 +67,7 @@ static VALUE oci8_tdo_init(VALUE self, oci8_svcctx_t *svcctx, OCIParam *param)
     ub2 idx;
     ub4 name_max = 0;
     char *name;
-    OraText *str;
+    char *str;
     ub4 strlen;
 
     tdo->svcctx = svcctx;
@@ -107,7 +107,7 @@ static VALUE oci8_tdo_init(VALUE self, oci8_svcctx_t *svcctx, OCIParam *param)
 
         /* attribute name */
         oci_lc(OCIAttrGet(param, OCI_DTYPE_PARAM, &text, &size, OCI_ATTR_NAME, oci8_errhp));
-        name_obj = rb_str_new(text, size);
+        name_obj = rb_str_new(TO_CHARPTR(text), size);
         if (name_max < size)
             name_max = size;
 
@@ -141,7 +141,7 @@ static VALUE oci8_tdo_init(VALUE self, oci8_svcctx_t *svcctx, OCIParam *param)
     name[0] = '@';
     for (idx = 0; idx < num_type_attrs; idx++) {
         VALUE name_obj = RARRAY_PTR(attrs)[idx];
-        OCIMultiByteStrCaseConversion(oci8_envhp, name + 1, RSTRING_PTR(name_obj), OCI_NLS_LOWERCASE);
+        OCIMultiByteStrCaseConversion(oci8_envhp, TO_ORATEXT(name + 1), RSTRING_ORATEXT(name_obj), OCI_NLS_LOWERCASE);
         rb_ary_store(attr_syms, idx, ID2SYM(rb_intern(name)));
     }
     rb_ivar_set(self, id_at_schema_name, schema_name);
@@ -287,7 +287,7 @@ static VALUE orascalar_to_rubyobj(oci8_svcctx_t *svcctx, OCITypeCode typecode, d
     case OCI_TYPECODE_VARCHAR2:
     case OCI_TYPECODE_RAW:
         vs = *(OCIString **)instance;
-        return rb_str_new(OCIStringPtr(oci8_envhp, vs), OCIStringSize(oci8_envhp, vs));
+        return rb_str_new(TO_CHARPTR(OCIStringPtr(oci8_envhp, vs)), OCIStringSize(oci8_envhp, vs));
     case OCI_TYPECODE_NUMBER:
     case OCI_TYPECODE_DECIMAL:
         return oci8_make_ocinumber((OCINumber *)instance);

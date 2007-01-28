@@ -52,6 +52,37 @@ extern "C" {
 
 #define IS_OCI_ERROR(v) (((v) != OCI_SUCCESS) && ((v) != OCI_SUCCESS_WITH_INFO))
 
+#if defined(__GNUC__) && ((__GNUC__ > 3) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+/* gcc version >= 3.1 */
+#define ALWAYS_INLINE inline __attribute__((always_inline))
+#endif
+#ifdef _MSC_VER
+/* microsoft c */
+#define ALWAYS_INLINE __forceinline
+#endif
+
+#ifdef ALWAYS_INLINE
+/*
+ * I don't like cast because it can suppress warnings but may hide bugs.
+ * These macros make warnings when the source type is invalid.
+ */
+#define TO_ORATEXT to_oratext
+#define TO_CHARPTR to_charptr
+static ALWAYS_INLINE OraText *to_oratext(char *c)
+{
+  return (OraText*)c;
+}
+static ALWAYS_INLINE char *to_charptr(OraText *c)
+{
+  return (char*)c;
+}
+#else
+/* if not gcc, use normal cast. */
+#define TO_ORATEXT(c) ((OraText*)(c))
+#define TO_CHARPTR(c) ((char*)(c))
+#endif
+#define RSTRING_ORATEXT(obj) TO_ORATEXT(RSTRING_PTR(obj))
+
 #define rb_define_method_nodoc rb_define_method
 
 /* data structure for SQLT_LVC and SQLT_LVB. */
@@ -241,7 +272,7 @@ extern VALUE eOCIBreak;
 void Init_oci8_error(void);
 NORETURN(void oci8_do_raise(OCIError *, sword status, OCIStmt *, const char *file, int line));
 NORETURN(void oci8_do_env_raise(OCIEnv *, sword status, const char *file, int line));
-ub4 oci8_get_error_code(OCIError *errhp);
+sb4 oci8_get_error_code(OCIError *errhp);
 
 /* oci8.c */
 VALUE Init_oci8(void);

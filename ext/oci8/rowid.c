@@ -142,7 +142,7 @@ VALUE oci8_get_rowid1_attr(oci8_base_t *base, ub4 attrtype)
     OCIDescriptorFree(riddp, OCI_DTYPE_ROWID);
 
     rowid = rb_funcall(cOCIRowid, oci8_id_new, 1, Qnil);
-    oci8_rowid1_set(rowid, buf, buflen);
+    oci8_rowid1_set(rowid, TO_CHARPTR(buf), buflen);
     return rowid;
 }
 

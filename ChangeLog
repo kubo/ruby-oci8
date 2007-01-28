@@ -1,3 +1,12 @@
+2007-01-28  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.h: add TO_ORATEXT, TO_CHARPTR and RSTRING_ORATEXT
+	    macros to suppress 'differ in signedness' warinings.
+	* ext/oci8/attr.c, ext/oci8/error.c, ext/oci8/metadata.c,
+	  ext/oci8/oci8.c, ext/oci8/ocinumber.c, ext/oci8/rowid.c,
+	  ext/oci8/stmt.c, ext/oci8/tdo.c: use TO_ORATEXT, TO_CHARPTR and
+	    RSTRING_ORATEXT macros to suppress 'differ in signedness'
+	    warinings.
+
 2007-01-08  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb, ext/oci8/extconf.rb: refactor oraconf.rb.
 	    check whether Full Client or Instant Client by checking load

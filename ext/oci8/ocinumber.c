@@ -18,19 +18,19 @@ static OCINumber const_m1;   /*  -1 */
 static OCINumber const_PI2;  /* +PI/2 */
 static OCINumber const_mPI2; /* -PI/2 */
 
-#define SHRESHOLD_FMT "00000000000000000000000000"
+#define SHRESHOLD_FMT (OraText*)"00000000000000000000000000"
 #define SHRESHOLD_FMT_LEN (sizeof(SHRESHOLD_FMT) - 1)
-#define SHRESHOLD_VAL "10000000000000000000000000"
+#define SHRESHOLD_VAL (OraText*)"10000000000000000000000000"
 #define SHRESHOLD_VAL_LEN (sizeof(SHRESHOLD_VAL) - 1)
 static OCINumber const_shreshold;
 
 /* TODO: scale: -84 - 127 */
-#define NUMBER_FORMAT1 "FM9999999999999999999999990.9999999999999999999999999999999999999"
+#define NUMBER_FORMAT1 (OraText*)"FM9999999999999999999999990.9999999999999999999999999999999999999"
 #define NUMBER_FORMAT1_LEN (sizeof(NUMBER_FORMAT1) - 1)
-#define NUMBER_FORMAT2 "FM99999999999999999999999999999999999990.999999999999999999999999"
+#define NUMBER_FORMAT2 (OraText*)"FM99999999999999999999999999999999999990.999999999999999999999999"
 #define NUMBER_FORMAT2_LEN (sizeof(NUMBER_FORMAT2) - 1)
 #define NUMBER_FORMAT2_DECIMAL                          (sizeof("999999999999999999999999") - 1)
-#define NUMBER_FORMAT_INT "FM99999999999999999999999999999999999990"
+#define NUMBER_FORMAT_INT (OraText*)"FM99999999999999999999999999999999999990"
 #define NUMBER_FORMAT_INT_LEN (sizeof(NUMBER_FORMAT_INT) - 1)
 
 #define _NUMBER(val) ((OCINumber *)DATA_PTR(val)) /* dangerous macro */
@@ -59,14 +59,14 @@ VALUE oci8_make_ocinumber(OCINumber *s)
 VALUE oci8_make_integer(OCINumber *s)
 {
     signed long sl;
-    text buf[512];
+    char buf[512];
     ub4 buf_size = sizeof(buf);
 
     if (OCINumberToInt(oci8_errhp, s, sizeof(sl), OCI_NUMBER_SIGNED, &sl) == OCI_SUCCESS) {
         return LONG2NUM(sl);
     }
     oci_lc(OCINumberToText(oci8_errhp, s, NUMBER_FORMAT2, NUMBER_FORMAT2_LEN,
-                           NULL, 0, &buf_size, buf));
+                           NULL, 0, &buf_size, TO_ORATEXT(buf)));
     return rb_cstr2inum(buf, 10);
 }
 
@@ -109,7 +109,7 @@ static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VAL
         }
     } else {
         StringValue(fmt);
-        fmt_ptr = RSTRING_PTR(fmt);
+        fmt_ptr = RSTRING_ORATEXT(fmt);
         fmt_len = RSTRING_LEN(fmt);
     }
     if (NIL_P(nls_params)) {
@@ -117,11 +117,11 @@ static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VAL
         nls_params_len = 0;
     } else {
         StringValue(nls_params);
-        nls_params_ptr = RSTRING_PTR(nls_params);
+        nls_params_ptr = RSTRING_ORATEXT(nls_params);
         nls_params_len = RSTRING_LEN(nls_params);
     }
     oci_lc(OCINumberFromText(oci8_errhp,
-                             RSTRING_PTR(str), RSTRING_LEN(str),
+                             RSTRING_ORATEXT(str), RSTRING_LEN(str),
                              fmt_ptr, fmt_len, nls_params_ptr, nls_params_len,
                              result));
 }
@@ -773,7 +773,7 @@ static VALUE onum_to_char(int argc, VALUE *argv, VALUE self)
 {
     VALUE fmt;
     VALUE nls_params;
-    text buf[512];
+    char buf[512];
     ub4 buf_size = sizeof(buf);
     oratext *fmt_ptr;
     oratext *nls_params_ptr;
@@ -804,7 +804,7 @@ static VALUE onum_to_char(int argc, VALUE *argv, VALUE self)
         }
     } else {
         StringValue(fmt);
-        fmt_ptr = RSTRING_PTR(fmt);
+        fmt_ptr = RSTRING_ORATEXT(fmt);
         fmt_len = RSTRING_LEN(fmt);
     }
     if (NIL_P(nls_params)) {
@@ -812,14 +812,14 @@ static VALUE onum_to_char(int argc, VALUE *argv, VALUE self)
         nls_params_len = 0;
     } else {
         StringValue(nls_params);
-        nls_params_ptr = RSTRING_PTR(nls_params);
+        nls_params_ptr = RSTRING_ORATEXT(nls_params);
         nls_params_len = RSTRING_LEN(nls_params);
     }
     rv = OCINumberToText(oci8_errhp, _NUMBER(self),
                          fmt_ptr, fmt_len, nls_params_ptr, nls_params_len,
-                         &buf_size, buf);
+                         &buf_size, TO_ORATEXT(buf));
     if (rv == OCI_ERROR) {
-        ub4 errcode;
+        sb4 errcode;
         OCIErrorGet(oci8_errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
         if (errcode == 22065) {
             /* OCI-22065: number to text translation for the given format causes overflow */
@@ -984,7 +984,7 @@ onum_s_load(VALUE klass, VALUE str)
     OCINumber num;
 
     Check_Type(str, T_STRING);
-    c = RSTRING_PTR(str);
+    c = RSTRING_ORATEXT(str);
     size = RSTRING_LEN(str);
     if (size == 0 || size != c[0] + 1 || size > sizeof(num)) {
         rb_raise(rb_eTypeError, "marshaled OCI::Number format differ");

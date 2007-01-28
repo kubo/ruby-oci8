@@ -73,7 +73,7 @@ static VALUE oci8_stmt_initialize(int argc, VALUE *argv, VALUE self)
     rb_iv_set(stmt->base.self, "@con", svc);
 
     if (argc > 1) {
-        rv = OCIStmtPrepare(stmt->base.hp, oci8_errhp, RSTRING_PTR(sql), RSTRING_LEN(sql), OCI_NTV_SYNTAX, OCI_DEFAULT);
+        rv = OCIStmtPrepare(stmt->base.hp, oci8_errhp, RSTRING_ORATEXT(sql), RSTRING_LEN(sql), OCI_NTV_SYNTAX, OCI_DEFAULT);
         if (IS_OCI_ERROR(rv)) {
             oci8_raise(oci8_errhp, rv, stmt->base.hp);
         }
@@ -205,7 +205,7 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     if (placeholder_ptr == (char*)-1) {
         status = OCIBindByPos(stmt->base.hp, (OCIBind**)&obind->base.hp, oci8_errhp, position, obind->valuep, obind->value_sz, bind_class->dty, indp, NULL, 0, obind->maxar_sz, curelep, mode);
     } else {
-        status = OCIBindByName(stmt->base.hp, (OCIBind**)&obind->base.hp, oci8_errhp, placeholder_ptr, placeholder_len, obind->valuep, obind->value_sz, bind_class->dty, indp, NULL, 0, obind->maxar_sz, curelep, mode);
+        status = OCIBindByName(stmt->base.hp, (OCIBind**)&obind->base.hp, oci8_errhp, TO_ORATEXT(placeholder_ptr), placeholder_len, obind->valuep, obind->value_sz, bind_class->dty, indp, NULL, 0, obind->maxar_sz, curelep, mode);
     }
     if (status != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, status, stmt->base.hp);
@@ -231,7 +231,7 @@ static sword oci8_call_stmt_execute(oci8_svcctx_t *svcctx, oci8_stmt_t *stmt, ub
 
     oci_rc2(rv, svcctx, OCIStmtExecute(svcctx->base.hp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode));
     if (rv == OCI_ERROR) {
-        ub4 errcode;
+        sb4 errcode;
         OCIErrorGet(oci8_errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
         if (errcode == 1000) {
             /* run GC to close unreferred cursors

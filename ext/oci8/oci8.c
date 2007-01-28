@@ -113,9 +113,9 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
 #error TODO
 #else
         rv = OCILogon(oci8_envhp, oci8_errhp, (OCISvcCtx **)&svcctx->base.hp,
-                      RSTRING_PTR(vusername), RSTRING_LEN(vusername),
-                      RSTRING_PTR(vpassword), RSTRING_LEN(vpassword),
-                      NIL_P(vdbname) ? NULL : RSTRING_PTR(vdbname),
+                      RSTRING_ORATEXT(vusername), RSTRING_LEN(vusername),
+                      RSTRING_ORATEXT(vpassword), RSTRING_LEN(vpassword),
+                      NIL_P(vdbname) ? NULL : RSTRING_ORATEXT(vdbname),
                       NIL_P(vdbname) ? 0 : RSTRING_LEN(vdbname));
         if (rv != OCI_SUCCESS) {
             oci8_raise(oci8_errhp, rv, NULL);
@@ -160,7 +160,7 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
 
         /* attach to server and set to OCISvcCtx. */
         rv = OCIServerAttach(svcctx->srvhp, oci8_errhp,
-                             NIL_P(vdbname) ? NULL : RSTRING_PTR(vdbname),
+                             NIL_P(vdbname) ? NULL : RSTRING_ORATEXT(vdbname),
                              NIL_P(vdbname) ? 0 : RSTRING_LEN(vdbname), OCI_DEFAULT);
         if (rv != OCI_SUCCESS)
             oci8_raise(oci8_errhp, rv, NULL);
