@@ -64,7 +64,7 @@ static VALUE ora_number_initialize(int argc, VALUE *argv, VALUE self)
     if (TYPE(arg) != T_STRING) {
       arg = rb_obj_as_string(arg);
     }
-    if (ora_number_from_str(ovn, RSTRING_PTR(arg), RSTRING_LEN(arg)) != 0) {
+    if (ora_number_from_str(ovn, RSTRING_ORATEXT(arg), RSTRING_LEN(arg)) != 0) {
       rb_raise(rb_eArgError, "could not convert '%s' to OraNumber", RSTRING_PTR(arg));
     }
   }
@@ -102,7 +102,7 @@ static VALUE ora_number_to_i(VALUE self)
   unsigned char buf[ORA_NUMBER_BUF_SIZE];
 
   ora_number_to_str(buf, NULL, &(ovn->num), ovn->size);
-  return rb_cstr2inum(buf, 10);
+  return rb_cstr2inum(TO_CHARPTR(buf), 10);
 }
 
 /*
@@ -116,7 +116,7 @@ static VALUE ora_number_to_f(VALUE self)
   unsigned char buf[ORA_NUMBER_BUF_SIZE];
 
   ora_number_to_str(buf, NULL, &(ovn->num), ovn->size);
-  return rb_float_new(rb_cstr_to_dbl(buf, Qfalse));
+  return rb_float_new(rb_cstr_to_dbl(TO_CHARPTR(buf), Qfalse));
 }
 
 /*
@@ -131,7 +131,7 @@ static VALUE ora_number_to_s(VALUE self)
   size_t len;
 
   ora_number_to_str(buf, &len, &(ovn->num), ovn->size);
-  return rb_str_new(buf, len);
+  return rb_str_new(TO_CHARPTR(buf), len);
 }
 
 static VALUE ora_number_uminus(VALUE self)

@@ -306,8 +306,8 @@ static VALUE oci8_lobfile_set_name(VALUE self, VALUE venv, VALUE vdir, VALUE vfi
   StringValue(vfile); /* 3 */
 
   rv = OCILobFileSetName(envh->hp, h->errhp, (OCILobLocator **)&h->hp,
-			 RSTRING_PTR(vdir), RSTRING_LEN(vdir),
-			 RSTRING_PTR(vfile), RSTRING_LEN(vfile));
+			 RSTRING_ORATEXT(vdir), RSTRING_LEN(vdir),
+			 RSTRING_ORATEXT(vfile), RSTRING_LEN(vfile));
   if (rv != OCI_SUCCESS)
     oci8_raise(h->errhp, rv, NULL);
   return self;

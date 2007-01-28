@@ -14,12 +14,12 @@
     } \
 } while(0)
 
-#define NUMBER_FORMAT1 "FM9999999999999999999999990.9999999999999999999999999999999999999"
+#define NUMBER_FORMAT1 (OraText*)"FM9999999999999999999999990.9999999999999999999999999999999999999"
 #define NUMBER_FORMAT1_LEN (sizeof(NUMBER_FORMAT1) - 1)
-#define NUMBER_FORMAT2 "FM99999999999999999999999999999999999990.999999999999999999999999"
+#define NUMBER_FORMAT2 (OraText*)"FM99999999999999999999999999999999999990.999999999999999999999999"
 #define NUMBER_FORMAT2_LEN (sizeof(NUMBER_FORMAT2) - 1)
 #define NUMBER_FORMAT2_DECIMAL                          (sizeof("999999999999999999999999") - 1)
-#define NUMBER_FORMAT_INT "FM99999999999999999999999999999999999990"
+#define NUMBER_FORMAT_INT (OraText*)"FM99999999999999999999999999999999999990"
 #define NUMBER_FORMAT_INT_LEN (sizeof(NUMBER_FORMAT_INT) - 1)
 
 #ifndef StringValue
@@ -57,7 +57,7 @@ static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VAL
         }
     } else {
         StringValue(fmt);
-        fmt_ptr = RSTRING_PTR(fmt);
+        fmt_ptr = RSTRING_ORATEXT(fmt);
         fmt_len = RSTRING_LEN(fmt);
     }
     if (NIL_P(nls_params)) {
@@ -65,11 +65,11 @@ static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VAL
         nls_params_len = 0;
     } else {
         StringValue(nls_params);
-        nls_params_ptr = RSTRING_PTR(nls_params);
+        nls_params_ptr = RSTRING_ORATEXT(nls_params);
         nls_params_len = RSTRING_LEN(nls_params);
     }
     oci_lc(OCINumberFromText(errhp,
-                             RSTRING_PTR(str), RSTRING_LEN(str),
+                             RSTRING_ORATEXT(str), RSTRING_LEN(str),
                              fmt_ptr, fmt_len, nls_params_ptr, nls_params_len,
                              result));
 }

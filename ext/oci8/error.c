@@ -16,8 +16,8 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp)
   VALUE vcodes;
   VALUE vmessages;
   VALUE exc;
-  OraText errmsg[1024];
-  ub4 errcode;
+  char errmsg[1024];
+  sb4 errcode;
   ub4 recodeno;
   VALUE msg;
   int i;
@@ -30,9 +30,9 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp)
     vmessages = rb_ary_new();
     for (recodeno = 1;;recodeno++) {
       /* get error string */
-      rv = OCIErrorGet(errhp, recodeno, NULL, &errcode, errmsg, sizeof(errmsg), type);
+      rv = OCIErrorGet(errhp, recodeno, NULL, &errcode, TO_ORATEXT(errmsg), sizeof(errmsg), type);
       if (rv != OCI_SUCCESS) {
-	break;
+        break;
       }
       /* chop error string */
       for (i = strlen(errmsg) - 1;i >= 0;i--) {
@@ -72,7 +72,7 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp)
       ub4 size;
       rv = OCIAttrGet(stmthp, OCI_HTYPE_STMT, &sql, &size, OCI_ATTR_STATEMENT, errhp);
       if (rv == OCI_SUCCESS) {
-	rb_ivar_set(exc, oci8_id_sql, rb_str_new(sql, size));
+        rb_ivar_set(exc, oci8_id_sql, rb_str_new(TO_CHARPTR(sql), size));
       }
     }
 #endif

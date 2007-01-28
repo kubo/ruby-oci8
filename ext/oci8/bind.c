@@ -79,7 +79,7 @@ VALUE oci8_get_value(oci8_bind_handle_t *hp)
     return LONG2NUM(hp->value.lng);
   case BIND_INTEGER_VIA_ORA_NUMBER:
     ora_number_to_str(buf, NULL, &(hp->value.on), hp->rlen);
-    return rb_cstr2inum(buf, 10);
+    return rb_cstr2inum(TO_CHARPTR(buf), 10);
   case BIND_TIME_VIA_ORA_DATE:
     oci8_get_ora_date(&(hp->value.od), &year, &month, &day, &hour, &minute, &second);
     if (id_local == (ID)-1)

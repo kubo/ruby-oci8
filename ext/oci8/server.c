@@ -117,7 +117,7 @@ VALUE oci8_server_version(VALUE self)
   rv = OCIServerVersion(h->hp, h->errhp, buf, sizeof(buf), h->type);
   if (rv != OCI_SUCCESS)
     oci8_raise(h->errhp, rv, NULL);
-  return rb_str_new2(buf);
+  return rb_str_new2(TO_CHARPTR(buf));
 }
 
 /*

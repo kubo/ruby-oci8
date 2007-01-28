@@ -239,7 +239,7 @@ static VALUE get_string(oci8_handle_t *h, ub4 attr)
   rv = OCIAttrGet(h->hp, h->type, &txt, &size, attr, h->errhp);
   if (rv != OCI_SUCCESS)
     oci8_raise(h->errhp, rv, NULL);
-  return rb_str_new(txt, size);
+  return rb_str_new(TO_CHARPTR(txt), size);
 }
 
 static VALUE get_rowid(oci8_handle_t *h, ub4 attr)
@@ -268,13 +268,13 @@ static VALUE get_oranum_as_int(oci8_handle_t *h, ub4 attr) {
   ora_number_t *av;
   ub4 as = 0;
   sword rv;
-  unsigned char buf[ORA_NUMBER_BUF_SIZE];
+  char buf[ORA_NUMBER_BUF_SIZE];
   size_t len;
 
   rv = OCIAttrGet(h->hp, h->type, &av, &as, attr, h->errhp);
   if (rv != OCI_SUCCESS)
     oci8_raise(h->errhp, rv, NULL);
-  ora_number_to_str(buf, &len, av, as);
+  ora_number_to_str(TO_ORATEXT(buf), &len, av, as);
   return rb_cstr2inum(buf, 10);
 }
 

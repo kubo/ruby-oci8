@@ -525,7 +525,7 @@ static VALUE oci8_stmt_execute(int argc, VALUE *argv, VALUE self)
 
   rv = OCIStmtExecute(svch->hp, h->hp, h->errhp, iters, 0, NULL, NULL, mode);
   if (rv == OCI_ERROR) {
-    ub4 errcode;
+    sb4 errcode;
     OCIErrorGet(h->errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
     if (errcode == 1000) {
       /* run GC to close unreferred cursors when ORA-01000 (maximum open cursors exceeded). */
