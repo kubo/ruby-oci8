@@ -149,8 +149,26 @@ class OCI8
   end
   include Util
 
-  def initialize(uid, pswd, conn = nil, privilege = nil)
+  def parse_connect_string(connstr)
+    if connstr !~ /^([^(\s|\@)]+)\/([^(\s|\@)]*)(?:\@(\S+))?(?:\s+as\s+(\S*)\s*)?$/i
+      raise ArgumentError, %Q{invalid connect string "#{connstr}" (expect "username/password[@(tns_name|//host[:port]/service_name)][ as (sysdba|sysoper)]")}
+    end
+    uid, pswd, conn, privilege = $1, $2, $3, $4
+    case privilege.upcase
+    when 'SYSDBA'
+      privilege = :SYSDBA
+    when 'SYSOPER'
+      privilege = :SYSOPER
+    end if privilege
+    return uid, pswd, conn, privilege
+  end
+  private :parse_connect_string
+
+  def initialize(uid, pswd = nil, conn = nil, privilege = nil)
     raise @@error_in_initialization if @@error_in_initialization
+    if pswd.nil? && conn.nil? && privilege.nil?
+      uid, pswd, conn, privilege = parse_connect_string(uid)
+    end
     case privilege
     when nil
       @privilege = nil
