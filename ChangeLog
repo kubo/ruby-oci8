@@ -1,3 +1,11 @@
+2007-02-14  Oracle Corporation (modified for 2.0 by KUBO Takehiro <kubo@jiubao.org>)
+	* ext/oci8/oci8.c: add a private method parse_connect_string to support
+	    "username/password[@(tns_name|//host[:port]/service_name)][ as (sysdba|sysoper)]".
+	    (The original code, contributed by Oracle, is written
+	     for ruby-oci8 1.0. Kubo rewrite it for 2.0.)
+	* test/test_connstr.rb: add test cases for parse_connect_string.
+	* test/test_all.rb: call test cases for parse_connect_string.
+
 2007-02-14  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocinumber.c: fix a bug created by the previous commit.
 

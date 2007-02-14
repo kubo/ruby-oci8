@@ -60,6 +60,49 @@ static VALUE sym_SYSOPER;
 static ID id_at_prefetch_rows;
 static ID id_set_prefetch_rows;
 
+#define CONN_STR_REGEX "^([^(\\s|\\@)]+)\\/([^(\\s|\\@)]*)(?:\\@(\\S+))?(?:\\s+as\\s+(\\S*)\\s*)?$"
+static void oci8_do_parse_connect_string(VALUE conn_str, VALUE *user, VALUE *pass, VALUE *dbname, VALUE *mode)
+{
+    static VALUE re = Qnil;
+    if (NIL_P(re)) {
+        re = rb_reg_new(CONN_STR_REGEX, strlen(CONN_STR_REGEX), FIX2INT(rb_eval_string("Regexp::IGNORECASE")));
+        rb_global_variable(&re);
+    }
+    StringValue(conn_str);
+    if (RTEST(rb_reg_match(re, conn_str))) {
+        *user = rb_reg_nth_match(1, rb_backref_get());
+        *pass = rb_reg_nth_match(2, rb_backref_get());
+        *dbname = rb_reg_nth_match(3, rb_backref_get());
+        *mode = rb_reg_nth_match(4, rb_backref_get());
+        if (!NIL_P(*mode)) {
+            char *ptr;
+            StringValue(*mode);
+            ptr = RSTRING_PTR(*mode);
+            if (strcasecmp(ptr, "SYSDBA") == 0) {
+                *mode = sym_SYSDBA;
+            } else if (strcasecmp(ptr, "SYSOPER") == 0) {
+                *mode = sym_SYSOPER;
+            }
+        }
+    } else {
+        rb_raise(rb_eArgError, "invalid connect string \"%s\" (expect \"username/password[@(tns_name|//host[:port]/service_name)][ as (sysdba|sysoper)]\"", RSTRING_PTR(conn_str));
+    }
+}
+
+/*
+ * Add a private method to test oci8_do_parse_connect_string().
+ */
+static VALUE oci8_parse_connect_string(VALUE self, VALUE conn_str)
+{
+    VALUE user;
+    VALUE pass;
+    VALUE dbname;
+    VALUE mode;
+
+    oci8_do_parse_connect_string(conn_str, &user, &pass, &dbname, &mode);
+    return rb_ary_new3(4, user, pass, dbname, mode);
+}
+
 /*
  * call-seq:
  *   new(username, password, dbname = nil, privilege = nil)
@@ -99,7 +142,11 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
     oci8_svcctx_t *svcctx = DATA_PTR(self);
     sword rv;
 
-    rb_scan_args(argc, argv, "22", &vusername, &vpassword, &vdbname, &vmode);
+    if (argc == 1) {
+        oci8_do_parse_connect_string(argv[0], &vusername, &vpassword, &vdbname, &vmode);
+    } else {
+        rb_scan_args(argc, argv, "22", &vusername, &vpassword, &vdbname, &vmode);
+    }
 
     StringValue(vusername); /* 1 */
     StringValue(vpassword); /* 2 */
@@ -452,6 +499,7 @@ VALUE Init_oci8(void)
     id_at_prefetch_rows = rb_intern("@prefetch_rows");
     id_set_prefetch_rows = rb_intern("prefetch_rows=");
 
+    rb_define_private_method(cOCI8, "parse_connect_string", oci8_parse_connect_string, 1);
     rb_define_method(cOCI8, "initialize", oci8_svcctx_initialize, -1);
     rb_define_method(cOCI8, "logoff", oci8_svcctx_logoff, 0);
     rb_define_method(cOCI8, "parse", oci8_svcctx_parse, 1);

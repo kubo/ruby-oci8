@@ -15,6 +15,7 @@ end
 require "#{srcdir}/test_break"
 require "#{srcdir}/test_oci8"
 require "#{srcdir}/test_datetime"
+require "#{srcdir}/test_connstr"
 
 # Ruby/DBI
 begin
