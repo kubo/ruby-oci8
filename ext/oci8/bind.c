@@ -5,7 +5,7 @@
  * $Author$
  * $Date$
  *
- * Copyright (C) 2002-2005 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2007 KUBO Takehiro <kubo@jiubao.org>
  */
 #include "oci8.h"
 
@@ -29,7 +29,7 @@ static void bind_string_set(oci8_bind_t *obind, void *data, void *null_struct, V
 
     StringValue(val);
     if (RSTRING_LEN(val) > obind->value_sz - sizeof(vstr->size)) {
-        rb_raise(rb_eArgError, "too long String to set. (%d for %d)", RSTRING_LEN(val), obind->value_sz - sizeof(vstr->size));
+        rb_raise(rb_eArgError, "too long String to set. (%ld for %d)", RSTRING_LEN(val), obind->value_sz - sizeof(vstr->size));
     }
     memcpy(vstr->buf, RSTRING_PTR(val), RSTRING_LEN(val));
     vstr->size = RSTRING_LEN(val);

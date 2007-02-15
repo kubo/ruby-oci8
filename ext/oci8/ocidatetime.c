@@ -5,7 +5,7 @@
  * $Author$
  * $Date$
  *
- * Copyright (C) 2005-2006 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2005-2007 KUBO Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
@@ -274,7 +274,7 @@ static void bind_datetime_set(oci8_bind_t *obind, void *data, void *null_struct,
         ival = NUM2INT(rb_funcall(val, id_month, 0));
     } else {
         rb_raise(rb_eRuntimeError, "expect Time, Date or DateTime but %s",
-                 rb_class_name(CLASS_OF(val)));
+                 rb_class2name(CLASS_OF(val)));
     }
     if (ival < 0 || 12 < ival) {
         rb_raise(rb_eRuntimeError, "out of month range: %d", ival);
@@ -287,7 +287,7 @@ static void bind_datetime_set(oci8_bind_t *obind, void *data, void *null_struct,
         ival = NUM2INT(rb_funcall(val, id_day, 0));
     } else {
         rb_raise(rb_eRuntimeError, "expect Time, Date or DateTime but %s",
-                 rb_class_name(CLASS_OF(val)));
+                 rb_class2name(CLASS_OF(val)));
     }
     if (ival < 0 || 31 < ival) {
         rb_raise(rb_eRuntimeError, "out of day range: %d", ival);
@@ -555,7 +555,7 @@ static void bind_interval_ds_set(oci8_bind_t *obind, void *data, void *null_stru
     int is_negative = 0;
 
     if (!rb_obj_is_kind_of(val, rb_cNumeric)) {
-        rb_raise(rb_eTypeError, "expected numeric but %s", rb_class_name(CLASS_OF(val)));
+        rb_raise(rb_eTypeError, "expected numeric but %s", rb_class2name(CLASS_OF(val)));
     }
     /* sign */
     if (RTEST(rb_funcall(val, id_less, 1, INT2FIX(0)))) {

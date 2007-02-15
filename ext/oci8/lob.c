@@ -28,10 +28,10 @@ static VALUE oci8_make_lob(VALUE klass, oci8_svcctx_t *svcctx, OCILobLocator *s)
     lob = DATA_PTR(lob_obj);
 #ifdef HAVE_OCILOBLOCATORASSIGN
     /* Oracle 8.1 or upper */
-    rv = OCILobLocatorAssign(svcctx->base.hp, oci8_errhp, s, (OCILobLocator**)&lob->base.hp);
+    rv = OCILobLocatorAssign(svcctx->base.hp.svc, oci8_errhp, s, &lob->base.hp.lob);
 #else
     /* Oracle 8.0 */
-    rv = OCILobAssign(oci8_envhp, oci8_errhp, s, (OCILobLocator**)&lob->base.hp);
+    rv = OCILobAssign(oci8_envhp.svc, oci8_errhp, s, &lob->base.hp.lob);
 #endif
     if (rv != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, rv, NULL);
@@ -71,7 +71,7 @@ static ub4 oci8_lob_get_length(oci8_lob_t *lob)
 {
     ub4 len;
 
-    oci_lc(OCILobGetLength(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp, &len));
+    oci_lc(OCILobGetLength(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp.lob, &len));
     return len;
 }
 
@@ -81,7 +81,7 @@ static void lob_open(oci8_lob_t *lob)
     if (lob->state == S_CLOSE) {
         sword rv;
 
-        rv = OCILobOpen(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp, OCI_DEFAULT);
+        rv = OCILobOpen(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp.lob, OCI_DEFAULT);
         if (rv != OCI_SUCCESS)
             oci8_raise(oci8_errhp, rv, NULL);
         lob->state = S_OPEN;
@@ -95,7 +95,7 @@ static void lob_close(oci8_lob_t *lob)
     if (lob->state == S_OPEN) {
         sword rv;
 
-        rv = OCILobClose(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp);
+        rv = OCILobClose(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp.lob);
         if (rv != OCI_SUCCESS)
             oci8_raise(oci8_errhp, rv, NULL);
         lob->state = S_CLOSE;
@@ -117,7 +117,7 @@ static VALUE oci8_lob_initialize(VALUE self, VALUE svc)
     sword rv;
 
     TO_SVCCTX(svc); /* check argument type */
-    rv = OCIDescriptorAlloc(oci8_envhp, &lob->base.hp, OCI_DTYPE_LOB, 0, NULL);
+    rv = OCIDescriptorAlloc(oci8_envhp, &lob->base.hp.ptr, OCI_DTYPE_LOB, 0, NULL);
     if (rv != OCI_SUCCESS)
         oci8_env_raise(oci8_envhp, rv);
     lob->base.type = OCI_DTYPE_LOB;
@@ -148,7 +148,7 @@ static VALUE oci8_lob_available_p(VALUE self)
     boolean is_initialized;
     sword rv;
 
-    rv = OCILobLocatorIsInit(oci8_envhp, oci8_errhp, lob->base.hp, &is_initialized);
+    rv = OCILobLocatorIsInit(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_initialized);
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);
     return is_initialized ? Qtrue : Qfalse;
@@ -183,7 +183,7 @@ static VALUE oci8_lob_seek(int argc, VALUE *argv, VALUE self)
     if (argc == 2 && (whence != seek_set && whence != seek_cur && whence != seek_end)) {
         if (FIXNUM_P(whence)) {
             rb_raise(rb_eArgError, "expect IO::SEEK_SET, IO::SEEK_CUR or IO::SEEK_END but %d",
-                     INT2FIX(whence));
+                     FIX2INT(whence));
         } else {
             rb_raise(rb_eArgError, "expect IO::SEEK_SET, IO::SEEK_CUR or IO::SEEK_END but %s",
                      rb_class2name(CLASS_OF(whence)));
@@ -211,7 +211,7 @@ static VALUE oci8_lob_truncate(VALUE self, VALUE len)
     sword rv;
 
     lob_open(lob);
-    rv = OCILobTrim(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp, NUM2INT(len));
+    rv = OCILobTrim(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp.lob, NUM2INT(len));
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);
     return self;
@@ -248,7 +248,7 @@ static VALUE oci8_lob_read(VALUE self, VALUE size)
     amt = nchar;
     buf_size_in_char = sizeof(buf) / lob->char_width;
     do {
-        rv = OCILobRead(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp, &amt, lob->pos + 1, buf, sizeof(buf), NULL, NULL, 0, SQLCS_IMPLICIT);
+        rv = OCILobRead(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, buf, sizeof(buf), NULL, NULL, 0, SQLCS_IMPLICIT);
         if (rv != OCI_SUCCESS && rv != OCI_NEED_DATA)
             oci8_raise(oci8_errhp, rv, NULL);
         if (amt == 0)
@@ -275,7 +275,7 @@ static VALUE oci8_lob_write(VALUE self, VALUE data)
     lob_open(lob);
     StringValue(data);
     amt = RSTRING_LEN(data);
-    rv = OCILobWrite(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp, &amt, lob->pos + 1, RSTRING_PTR(data), amt, OCI_ONE_PIECE, NULL, NULL, 0, SQLCS_IMPLICIT);
+    rv = OCILobWrite(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, RSTRING_PTR(data), amt, OCI_ONE_PIECE, NULL, NULL, 0, SQLCS_IMPLICIT);
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);
     lob->pos += amt;
@@ -319,7 +319,7 @@ static VALUE oci8_lob_get_chunk_size(VALUE self)
     ub4 len;
     sword rv;
 
-    rv = OCILobGetChunkSize(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp, &len);
+    rv = OCILobGetChunkSize(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp.lob, &len);
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);
     return INT2FIX(len);
@@ -339,10 +339,10 @@ static VALUE oci8_lob_clone(VALUE self)
     newlob = DATA_PTR(newobj);
 #ifdef HAVE_OCILOBLOCATORASSIGN
     /* Oracle 8.1 or upper */
-    rv = OCILobLocatorAssign(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp, (OCILobLocator**)&newlob->base.hp);
+    rv = OCILobLocatorAssign(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp.lob, &newlob->base.hp.lob);
 #else
     /* Oracle 8.0 */
-    rv = OCILobAssign(oci8_envhp, oci8_errhp, lob->base.hp, (OCILobLocator**)&newlob->base.hp);
+    rv = OCILobAssign(oci8_envhp, oci8_errhp, lob->base.hp.lob, &newlob->base.hp.lob);
 #endif
     if (rv != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, rv, NULL);
@@ -373,7 +373,7 @@ static void bind_lob_set(oci8_bind_t *obind, void *data, void *null_struct, VALU
     if (!rb_obj_is_kind_of(val, *klass->klass))
         rb_raise(rb_eArgError, "Invalid argument: %s (expect %s)", rb_class2name(CLASS_OF(val)), rb_class2name(*klass->klass));
     h = DATA_PTR(val);
-    oho->hp = h->hp;
+    oho->hp = h->hp.ptr;
     oho->obj = val;
 }
 
@@ -393,7 +393,7 @@ static void bind_lob_init_elem(oci8_bind_t *obind, VALUE svc)
     do {
         oho[idx].obj = rb_funcall(*klass->klass, oci8_id_new, 1, svc);
         h = DATA_PTR(oho[idx].obj);
-        oho[idx].hp = h->hp;
+        oho[idx].hp = h->hp.ptr;
     } while (++idx < obind->maxar_sz);
 }
 

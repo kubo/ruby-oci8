@@ -2,7 +2,7 @@
 /*
   error.c - part of ruby-oci8
 
-  Copyright (C) 2002 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002-2007 KUBO Takehiro <kubo@jiubao.org>
 
 =begin
 == OCIError
@@ -36,10 +36,10 @@ static VALUE raise(VALUE exc)
 
 static VALUE set_backtrace(VALUE arg)
 {
-    VALUE bt = rb_funcall(ruby_errinfo, oci8_id_backtrace, 0);
+    VALUE bt = rb_funcall(rb_errinfo(), oci8_id_backtrace, 0);
     if (!NIL_P(bt))
         rb_ary_unshift(bt, arg);
-    return ruby_errinfo;
+    return rb_errinfo();
 }
 
 static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line)

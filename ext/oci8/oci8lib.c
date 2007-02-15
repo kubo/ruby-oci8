@@ -1,6 +1,6 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
- * Copyright (C) 2002-2006 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2007 KUBO Takehiro <kubo@jiubao.org>
  */
 #include "oci8.h"
 
@@ -44,11 +44,11 @@ void oci8_base_free(oci8_base_t *base)
     if (base->klass->free != NULL)
         base->klass->free(base);
     if (base->type >= OCI_DTYPE_FIRST)
-        OCIDescriptorFree(base->hp, base->type);
+        OCIDescriptorFree(base->hp.ptr, base->type);
     else if (base->type >= OCI_HTYPE_FIRST)
-        OCIHandleFree(base->hp, base->type);
+        OCIHandleFree(base->hp.ptr, base->type);
     base->type = 0;
-    base->hp = NULL;
+    base->hp.ptr = NULL;
 }
 
 static VALUE oci8_handle_free(VALUE self)
@@ -124,10 +124,6 @@ Init_oci8lib()
     oci8_id_set = rb_intern("set");
     oci8_id_keys = rb_intern("keys");
     rb_set_end_proc(at_exit_func, Qnil);
-
-    /* following two constants will be deleted before release. */
-    rb_define_global_const("OCI_DEFAULT", INT2FIX(OCI_DEFAULT));
-    rb_define_global_const("OCI_COMMIT_ON_SUCCESS", INT2FIX(OCI_COMMIT_ON_SUCCESS));
 
     Init_oci8_error();
     Init_oci8_env();

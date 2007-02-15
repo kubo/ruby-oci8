@@ -62,7 +62,7 @@ class OCI8
   # mapping of sql type number to sql type name.
   SQLT_NAMES = {}
   constants.each do |name|
-    next if name.index("SQLT_") != 0
+    next if name.to_s.index("SQLT_") != 0
     val = const_get name.intern
     if val.is_a? Fixnum
       SQLT_NAMES[val] = name

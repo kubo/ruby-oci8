@@ -1,3 +1,17 @@
+2007-02-15  KUBO Takehiro  <kubo@jiubao.org>
+	no new features. fix to suppress warnings and to compile with ruby 1.9.
+	* ext/oci8/attr.c, ext/oci8/lob.c, ext/oci8/metadata.c, ext/oci8/oci8.c,
+	  ext/oci8/oci8.h, ext/oci8/oci8lib.c, ext/oci8/rowid.c, ext/oci8/stmt.c,
+	  ext/oci8/tdo.c: use union to suppress warnings: dereferencing type-punned
+	    pointer will break strict-aliasing rules.
+	* ext/oci8/bind.c: change a format string tu suppress a warning.
+	* ext/oci8/error.c: use rb_errinfo() instead of ruby_errinfo to compile with ruby 1.9.
+	* ext/oci8/oci8.h: define rb_errinfo() as ruby_errinfo when compling with ruby 1.8.
+	* ext/oci8/oci8lib.c: delete unused macros OCI_DEFAULT and OCI_COMMIT_ON_SUCCESS.
+	* ext/oci8/ocidatetime.c, ext/oci8/ocinumber.c: fix bugs.
+	* ext/oci8/oraconf.rb: use File.exist? instead of File.exists?. The latter become obsolete on ruby 1.9.
+	* lib/oci8/compat.rb: fix for ruby 1.9. Class.constants returns an array of Symbols in 1.9.
+
 2007-02-14  Oracle Corporation (modified for 2.0 by KUBO Takehiro <kubo@jiubao.org>)
 	* ext/oci8/oci8.c: add a private method parse_connect_string to support
 	    "username/password[@(tns_name|//host[:port]/service_name)][ as (sysdba|sysoper)]".

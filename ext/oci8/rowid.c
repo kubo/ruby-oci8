@@ -2,7 +2,7 @@
 /*
   descriptor.c - part of ruby-oci8
 
-  Copyright (C) 2002 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002-2007 KUBO Takehiro <kubo@jiubao.org>
 */
 #include "oci8.h"
 
@@ -52,7 +52,7 @@ static VALUE oci8_rowid1_initialize(VALUE self, VALUE val)
 {
     oci8_rowid1_t *rowid = DATA_PTR(self);
 
-    rowid->base.hp = NULL;
+    rowid->base.hp.ptr = NULL;
     rowid->base.type = 0;
     if (!NIL_P(val)) {
         StringValue(val);
@@ -129,7 +129,7 @@ VALUE oci8_get_rowid1_attr(oci8_base_t *base, ub4 attrtype)
     rv = OCIDescriptorAlloc(oci8_envhp, (dvoid*)&riddp, OCI_DTYPE_ROWID, 0, NULL);
     if (rv != OCI_SUCCESS)
         oci8_env_raise(oci8_envhp, rv);
-    rv = OCIAttrGet(base->hp, base->type, riddp, 0, attrtype, oci8_errhp);
+    rv = OCIAttrGet(base->hp.ptr, base->type, riddp, 0, attrtype, oci8_errhp);
     if (rv != OCI_SUCCESS) {
         OCIDescriptorFree(riddp, OCI_DTYPE_ROWID);
         oci8_raise(oci8_errhp, rv, NULL);
@@ -227,7 +227,7 @@ static VALUE oci8_rowid2_initialize(VALUE self)
     oci8_rowid2_t *rowid = DATA_PTR(self);
     sword rv;
 
-    rv = OCIDescriptorAlloc(oci8_envhp, &rowid->base.hp, OCI_DTYPE_ROWID, 0, NULL);
+    rv = OCIDescriptorAlloc(oci8_envhp, &rowid->base.hp.ptr, OCI_DTYPE_ROWID, 0, NULL);
     if (rv != OCI_SUCCESS)
         oci8_env_raise(oci8_envhp, rv);
     rowid->base.type = OCI_DTYPE_ROWID;
@@ -256,7 +256,7 @@ static void bind_rowid2_set(oci8_bind_t *obind, void *data, void *null_struct, V
     if (!rb_obj_is_instance_of(val, cOCIRowid))
         rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIRowid)", rb_class2name(CLASS_OF(val)));
     h = DATA_PTR(val);
-    oho->hp = h->hp;
+    oho->hp = h->hp.ptr;
     oho->obj = val;
 }
 
@@ -275,7 +275,7 @@ static void bind_rowid2_init_elem(oci8_bind_t *obind, VALUE svc)
     do {
         oho[idx].obj = rb_funcall(cOCIRowid, oci8_id_new, 0);
         h = DATA_PTR(oho[idx].obj);
-        oho[idx].hp = h->hp;
+        oho[idx].hp = h->hp.ptr;
     } while (++idx < ob->maxar_sz);
 }
 
@@ -302,7 +302,7 @@ VALUE oci8_get_rowid2_attr(oci8_base_t *base, ub4 attrtype)
 
     obj = rb_funcall(cOCIRowid, oci8_id_new, 0);
     rowid = DATA_PTR(obj);
-    rv = OCIAttrGet(base->hp, base->type, rowid->hp, 0, attrtype, oci8_errhp);
+    rv = OCIAttrGet(base->hp.ptr, base->type, rowid->hp.ptr, 0, attrtype, oci8_errhp);
     if (rv != OCI_SUCCESS) {
         oci8_base_free(rowid);
         oci8_raise(oci8_errhp, rv, NULL);

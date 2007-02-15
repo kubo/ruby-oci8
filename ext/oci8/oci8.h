@@ -2,7 +2,7 @@
 /*
   oci8.h - part of ruby-oci8
 
-  Copyright (C) 2002-2006 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002-2007 KUBO Takehiro <kubo@jiubao.org>
 */
 #ifndef _RUBY_OCI_H_
 #define _RUBY_OCI_H_ 1
@@ -10,6 +10,7 @@
 #include "ruby.h"
 #include "rubyio.h"
 #include "intern.h"
+#include "version.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -35,6 +36,10 @@ extern "C" {
 #endif
 #ifndef RARRAY_LEN
 #define RARRAY_LEN(obj) RARRAY(obj)->len
+#endif
+
+#if RUBY_VERSION_CODE < 190
+#define rb_errinfo() ruby_errinfo
 #endif
 
 #define DEBUG_CORE_FILE 1
@@ -116,7 +121,16 @@ struct oci8_bind_class {
 
 struct oci8_base {
     ub4 type;
-    dvoid *hp;
+    union {
+        dvoid *ptr;
+        OCISvcCtx *svc;
+        OCIStmt *stmt;
+        OCIDefine *dfn;
+        OCIBind *bnd;
+        OCIParam *prm;
+        OCILobLocator *lob;
+        OCIType *tdo;
+    } hp;
     VALUE self;
     oci8_base_class_t *klass;
     oci8_base_t *parent;
@@ -204,7 +218,7 @@ typedef struct  {
         rb_thread_wait_for(__time); \
         if (svcctx->executing_thread == NB_STATE_CANCELING) { \
             svcctx->executing_thread = NB_STATE_NOT_EXECUTING; \
-            OCIReset(svcctx->base.hp, oci8_errhp); \
+            OCIReset(svcctx->base.hp.ptr, oci8_errhp); \
             rb_raise(eOCIBreak, "Canceled by user request."); \
         } \
         if (__time.tv_usec < 500000) \
@@ -213,7 +227,7 @@ typedef struct  {
     if (__r == OCI_ERROR) { \
        if (oci8_get_error_code(oci8_errhp) == 1013) { \
             svcctx->executing_thread = NB_STATE_NOT_EXECUTING; \
-            OCIReset(svcctx->base.hp, oci8_errhp); \
+            OCIReset(svcctx->base.hp.ptr, oci8_errhp); \
             rb_raise(eOCIBreak, "Canceled by user request."); \
        } \
     } \

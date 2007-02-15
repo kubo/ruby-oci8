@@ -36,9 +36,9 @@ static void oci8_tdo_mark(oci8_base_t *base)
 static void oci8_tdo_free(oci8_base_t *base)
 {
     oci8_tdo_t *tdo = (oci8_tdo_t*)base;
-    if (base->hp != NULL) {
-        OCIObjectUnpin(oci8_envhp, oci8_errhp, base->hp);
-        base->hp = NULL;
+    if (base->hp.ptr != NULL) {
+        OCIObjectUnpin(oci8_envhp, oci8_errhp, base->hp.ptr);
+        base->hp.ptr = NULL;
     }
     if (tdo->deschp != NULL) {
         OCIHandleFree(tdo->deschp, OCI_HTYPE_DESCRIBE);
@@ -73,7 +73,7 @@ static VALUE oci8_tdo_init(VALUE self, oci8_svcctx_t *svcctx, OCIParam *param)
     tdo->svcctx = svcctx;
     /* get tdo */
     oci_lc(OCIAttrGet(param, OCI_DTYPE_PARAM, (dvoid *)&tdo_ref, 0, OCI_ATTR_REF_TDO, oci8_errhp));
-    oci_lc(OCIObjectPin(oci8_envhp, oci8_errhp, tdo_ref, 0, OCI_PIN_ANY, OCI_DURATION_SESSION, OCI_LOCK_NONE, (dvoid**)&tdo->base.hp));
+    oci_lc(OCIObjectPin(oci8_envhp, oci8_errhp, tdo_ref, 0, OCI_PIN_ANY, OCI_DURATION_SESSION, OCI_LOCK_NONE, &tdo->base.hp.ptr));
     /* get schema name */
     oci_lc(OCIAttrGet(param, OCI_DTYPE_PARAM, &str, &strlen, OCI_ATTR_SCHEMA_NAME, oci8_errhp));
     schema_name = rb_str_new(str, strlen);
@@ -126,7 +126,7 @@ static VALUE oci8_tdo_init(VALUE self, oci8_svcctx_t *svcctx, OCIParam *param)
                 oci8_env_raise(oci8_envhp, rv);
             ref = NULL;
             oci_lc(OCIAttrGet(param, OCI_DTYPE_PARAM, &ref, NULL, OCI_ATTR_REF_TDO, oci8_errhp));
-            oci_rc(svcctx, OCIDescribeAny(svcctx->base.hp, oci8_errhp, ref, 0,
+            oci_rc(svcctx, OCIDescribeAny(svcctx->base.hp.svc, oci8_errhp, ref, 0,
                                           OCI_OTYPE_REF, OCI_DEFAULT, OCI_PTYPE_TYPE, tdo->deschp));
             oci_lc(OCIAttrGet(tdo->deschp, OCI_HTYPE_DESCRIBE, &param, 0, OCI_ATTR_PARAM, oci8_errhp));
             oci8_tdo_init(type_obj, svcctx, param);
@@ -162,13 +162,13 @@ static VALUE oci8_tdo_initialize(VALUE self, VALUE metadata)
     Check_Handle(metadata, cOCI8MetadataBase, md);
     svcctx = oci8_get_svcctx(rb_ivar_get(metadata, id_at_con));
     oci8_link_to_parent((oci8_base_t*)DATA_PTR(self), (oci8_base_t*)svcctx);
-    return oci8_tdo_init(self, svcctx, md->hp);
+    return oci8_tdo_init(self, svcctx, md->hp.prm);
 }
 
 static VALUE oci8_tdo_hash(VALUE self)
 {
     oci8_base_t *tdo = DATA_PTR(self);
-    return LONG2FIX(tdo->hp);
+    return LONG2FIX((long)tdo->hp.ptr);
 }
 
 static VALUE oci8_tdo_eq(VALUE lhs, VALUE rhs)
@@ -179,7 +179,7 @@ static VALUE oci8_tdo_eq(VALUE lhs, VALUE rhs)
     if (!rb_obj_is_kind_of(rhs, cOCITDO))
         return Qfalse;
     r = DATA_PTR(rhs);
-    return l->hp == r->hp ? Qtrue : Qfalse;
+    return l->hp.ptr == r->hp.ptr ? Qtrue : Qfalse;
 }
 
 static void bind_tdo_free(oci8_base_t *base)
@@ -244,7 +244,7 @@ static VALUE oraobject_to_rubyobj(VALUE tdo_obj, dvoid *instance, dvoid *null_st
         VALUE attr_obj;
 
         oci_lc(OCIObjectGetAttr(oci8_envhp, oci8_errhp, instance,
-                                null_struct, tdo->base.hp,
+                                null_struct, tdo->base.hp.ptr,
                                 &name, &namelen, 1, NULL, 0,
                                 &attr_null_status, &attr_null_struct,
                                 &attr_value, &attr_tdo));
@@ -345,7 +345,7 @@ static void bind_tdo_init_elem(oci8_bind_t *obind, VALUE svc)
     svcctx = oci8_get_svcctx(svc);
     Data_Get_Struct(obind->tdo, oci8_tdo_t, tdo);
     do {
-        oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->base.hp, OCI_TYPECODE_OBJECT, tdo->base.hp, NULL, OCI_DURATION_SESSION, 0, &instancepp[idx]));
+        oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->base.hp.svc, OCI_TYPECODE_OBJECT, tdo->base.hp.tdo, NULL, OCI_DURATION_SESSION, 0, &instancepp[idx]));
         oci_lc(OCIObjectGetInd(oci8_envhp, oci8_errhp, instancepp[idx], &obind->u.null_structs[idx]));
     } while (++idx < obind->maxar_sz);
 }

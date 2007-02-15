@@ -3,7 +3,7 @@
  * stmt.c - part of ruby-oci8
  *         implement the methods of OCIStmt.
  *
- * Copyright (C) 2002-2006 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2007 KUBO Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
@@ -62,7 +62,7 @@ static VALUE oci8_stmt_initialize(int argc, VALUE *argv, VALUE self)
     if (argc > 1)
         StringValue(sql);
 
-    rv = OCIHandleAlloc(oci8_envhp, &stmt->base.hp, OCI_HTYPE_STMT, 0, NULL);
+    rv = OCIHandleAlloc(oci8_envhp, &stmt->base.hp.ptr, OCI_HTYPE_STMT, 0, NULL);
     if (rv != OCI_SUCCESS)
         oci8_env_raise(oci8_envhp, rv);
     stmt->base.type = OCI_HTYPE_STMT;
@@ -73,9 +73,9 @@ static VALUE oci8_stmt_initialize(int argc, VALUE *argv, VALUE self)
     rb_iv_set(stmt->base.self, "@con", svc);
 
     if (argc > 1) {
-        rv = OCIStmtPrepare(stmt->base.hp, oci8_errhp, RSTRING_ORATEXT(sql), RSTRING_LEN(sql), OCI_NTV_SYNTAX, OCI_DEFAULT);
+        rv = OCIStmtPrepare(stmt->base.hp.stmt, oci8_errhp, RSTRING_ORATEXT(sql), RSTRING_LEN(sql), OCI_NTV_SYNTAX, OCI_DEFAULT);
         if (IS_OCI_ERROR(rv)) {
-            oci8_raise(oci8_errhp, rv, stmt->base.hp);
+            oci8_raise(oci8_errhp, rv, stmt->base.hp.stmt);
         }
     }
     oci8_link_to_parent((oci8_base_t*)stmt, (oci8_base_t*)DATA_PTR(svc));
@@ -120,7 +120,7 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
 
     position = NUM2INT(vposition); /* 1 */
     obind = oci8_get_bind(vbindobj); /* 2 */
-    if (obind->base.hp != NULL) {
+    if (obind->base.hp.dfn != NULL) {
         oci8_base_free(&obind->base); /* TODO: OK? */
     }
     bind_class = (oci8_bind_class_t *)obind->base.klass;
@@ -129,17 +129,17 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
     } else {
         mode = OCI_DYNAMIC_FETCH;
     }
-    status = OCIDefineByPos(stmt->base.hp, (OCIDefine**)&obind->base.hp, oci8_errhp, position, obind->valuep, obind->value_sz, bind_class->dty, NIL_P(obind->tdo) ? obind->u.inds : NULL, NULL, 0, mode);
+    status = OCIDefineByPos(stmt->base.hp.stmt, &obind->base.hp.dfn, oci8_errhp, position, obind->valuep, obind->value_sz, bind_class->dty, NIL_P(obind->tdo) ? obind->u.inds : NULL, NULL, 0, mode);
     if (status != OCI_SUCCESS) {
-        oci8_raise(oci8_errhp, status, stmt->base.hp);
+        oci8_raise(oci8_errhp, status, stmt->base.hp.ptr);
     }
     obind->base.type = OCI_HTYPE_DEFINE;
     if (obind->maxar_sz > 0) {
-        oci_lc(OCIDefineArrayOfStruct(obind->base.hp, oci8_errhp, obind->alloc_sz, sizeof(sb2), 0, 0));
+        oci_lc(OCIDefineArrayOfStruct(obind->base.hp.dfn, oci8_errhp, obind->alloc_sz, sizeof(sb2), 0, 0));
     }
     if (RTEST(obind->tdo)) {
         oci8_base_t *tdo = DATA_PTR(obind->tdo);
-        oci_lc(OCIDefineObject(obind->base.hp, oci8_errhp, tdo->hp,
+        oci_lc(OCIDefineObject(obind->base.hp.dfn, oci8_errhp, tdo->hp.tdo,
                                obind->valuep, 0, obind->u.null_structs, 0));
     }
     if (position - 1 < RARRAY_LEN(stmt->defns)) {
@@ -172,7 +172,7 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
         placeholder_ptr = NULL;
         placeholder_len = 0;
     } else if (SYMBOL_P(vplaceholder)) {
-        char *symname = rb_id2name(SYM2ID(vplaceholder));
+        const char *symname = rb_id2name(SYM2ID(vplaceholder));
         size_t len = strlen(symname);
         placeholder_ptr = ALLOCA_N(char, len + 1);
         placeholder_len = len + 1;
@@ -186,7 +186,7 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
         placeholder_len = RSTRING_LEN(vplaceholder);
     }
     obind = oci8_get_bind(vbindobj); /* 2 */
-    if (obind->base.hp != NULL) {
+    if (obind->base.hp.bnd != NULL) {
         oci8_base_free(&obind->base); /* TODO: OK? */
     }
     bind_class = (oci8_bind_class_t *)obind->base.klass;
@@ -203,16 +203,16 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
         curelep = &obind->curar_sz;
     }
     if (placeholder_ptr == (char*)-1) {
-        status = OCIBindByPos(stmt->base.hp, (OCIBind**)&obind->base.hp, oci8_errhp, position, obind->valuep, obind->value_sz, bind_class->dty, indp, NULL, 0, obind->maxar_sz, curelep, mode);
+        status = OCIBindByPos(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, position, obind->valuep, obind->value_sz, bind_class->dty, indp, NULL, 0, obind->maxar_sz, curelep, mode);
     } else {
-        status = OCIBindByName(stmt->base.hp, (OCIBind**)&obind->base.hp, oci8_errhp, TO_ORATEXT(placeholder_ptr), placeholder_len, obind->valuep, obind->value_sz, bind_class->dty, indp, NULL, 0, obind->maxar_sz, curelep, mode);
+        status = OCIBindByName(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, TO_ORATEXT(placeholder_ptr), placeholder_len, obind->valuep, obind->value_sz, bind_class->dty, indp, NULL, 0, obind->maxar_sz, curelep, mode);
     }
     if (status != OCI_SUCCESS) {
-        oci8_raise(oci8_errhp, status, stmt->base.hp);
+        oci8_raise(oci8_errhp, status, stmt->base.hp.stmt);
     }
     obind->base.type = OCI_HTYPE_BIND;
     if (obind->maxar_sz > 0) {
-        oci_lc(OCIBindArrayOfStruct(obind->base.hp, oci8_errhp, obind->alloc_sz, sizeof(sb2), 0, 0));
+        oci_lc(OCIBindArrayOfStruct(obind->base.hp.bnd, oci8_errhp, obind->alloc_sz, sizeof(sb2), 0, 0));
     }
 
     old_value = rb_hash_aref(stmt->binds, vplaceholder);
@@ -229,7 +229,7 @@ static sword oci8_call_stmt_execute(oci8_svcctx_t *svcctx, oci8_stmt_t *stmt, ub
 {
     sword rv;
 
-    oci_rc2(rv, svcctx, OCIStmtExecute(svcctx->base.hp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode));
+    oci_rc2(rv, svcctx, OCIStmtExecute(svcctx->base.hp.svc, stmt->base.hp.stmt, oci8_errhp, iters, 0, NULL, NULL, mode));
     if (rv == OCI_ERROR) {
         sb4 errcode;
         OCIErrorGet(oci8_errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
@@ -238,7 +238,7 @@ static sword oci8_call_stmt_execute(oci8_svcctx_t *svcctx, oci8_stmt_t *stmt, ub
              * when ORA-01000 (maximum open cursors exceeded).
              */
             rb_gc();
-            oci_rc2(rv, svcctx, OCIStmtExecute(svcctx->base.hp, stmt->base.hp, oci8_errhp, iters, 0, NULL, NULL, mode));
+            oci_rc2(rv, svcctx, OCIStmtExecute(svcctx->base.hp.svc, stmt->base.hp.stmt, oci8_errhp, iters, 0, NULL, NULL, mode));
         }
     }
     return rv;
@@ -275,10 +275,10 @@ static VALUE oci8_stmt_execute(VALUE self)
         ub4 *alenp;
         void *indp;
 
-        oci_lc(OCIStmtGetPieceInfo(stmt->base.hp, oci8_errhp, &hp, &type, &in_out, &iter, &idx, &piece));
+        oci_lc(OCIStmtGetPieceInfo(stmt->base.hp.ptr, oci8_errhp, &hp, &type, &in_out, &iter, &idx, &piece));
         obind = (oci8_bind_t*)stmt->base.children;
         do {
-            if (obind->base.hp == hp) {
+            if (obind->base.hp.ptr == hp) {
                 if (type != OCI_HTYPE_BIND)
                     rb_bug("ruby-oci8: expect OCI_HTYPE_BIND but %d", type);
                 bind_class = (oci8_bind_class_t *)obind->base.klass;
@@ -296,7 +296,7 @@ static VALUE oci8_stmt_execute(VALUE self)
                 default:
                     rb_bug("ruby-oci8: expect OCI_PARAM_IN or OCI_PARAM_OUT but %d", in_out);
                 }
-                oci_lc(OCIStmtSetPieceInfo(obind->base.hp, OCI_HTYPE_BIND, oci8_errhp, valuep, alenp, 0, indp, NULL));
+                oci_lc(OCIStmtSetPieceInfo(obind->base.hp.ptr, OCI_HTYPE_BIND, oci8_errhp, valuep, alenp, 0, indp, NULL));
                 break;
             }
             obind = (oci8_bind_t*)obind->base.next;
@@ -307,7 +307,7 @@ static VALUE oci8_stmt_execute(VALUE self)
         rv = oci8_call_stmt_execute(svcctx, stmt, iters, mode);
     }
     if (IS_OCI_ERROR(rv)) {
-        oci8_raise(oci8_errhp, rv, stmt->base.hp);
+        oci8_raise(oci8_errhp, rv, stmt->base.hp.stmt);
     }
     return self;
 }
@@ -320,7 +320,7 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
     oci8_bind_t *obind;
     oci8_bind_class_t *bind_class;
 
-    oci_rc2(rv, svcctx, OCIStmtFetch(stmt->base.hp, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT));
+    oci_rc2(rv, svcctx, OCIStmtFetch(stmt->base.hp.stmt, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT));
     while (rv == OCI_NEED_DATA) {
         /* get piece info. */
         dvoid *hp;
@@ -334,10 +334,10 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
         ub4 *alenp;
         void *indp;
 
-        oci_lc(OCIStmtGetPieceInfo(stmt->base.hp, oci8_errhp, &hp, &type, &in_out, &iter, &idx, &piece));
+        oci_lc(OCIStmtGetPieceInfo(stmt->base.hp.ptr, oci8_errhp, &hp, &type, &in_out, &iter, &idx, &piece));
         obind = (oci8_bind_t *)stmt->base.children;
         do {
-            if (obind->base.hp == hp) {
+            if (obind->base.hp.ptr == hp) {
                 if (type != OCI_HTYPE_DEFINE)
                     rb_bug("ruby-oci8: expect OCI_HTYPE_DEFINE but %d", type);
                 bind_class = (oci8_bind_class_t *)obind->base.klass;
@@ -350,7 +350,7 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
                 default:
                     rb_bug("ruby-oci8: expect OCI_PARAM_OUT but %d", in_out);
                 }
-                oci_lc(OCIStmtSetPieceInfo(obind->base.hp, OCI_HTYPE_DEFINE, oci8_errhp, valuep, alenp, 0, indp, NULL));
+                oci_lc(OCIStmtSetPieceInfo(obind->base.hp.ptr, OCI_HTYPE_DEFINE, oci8_errhp, valuep, alenp, 0, indp, NULL));
                 break;
             }
             obind = (oci8_bind_t *)obind->base.next;
@@ -358,13 +358,13 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
         if (obind == (oci8_bind_t*)stmt) {
             rb_bug("ruby-oci8: No define handle is found.");
         }
-        oci_rc2(rv, svcctx, OCIStmtFetch(stmt->base.hp, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT));
+        oci_rc2(rv, svcctx, OCIStmtFetch(stmt->base.hp.stmt, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT));
     }
     if (rv == OCI_NO_DATA) {
         return Qnil;
     }
     if (IS_OCI_ERROR(rv)) {
-        oci8_raise(oci8_errhp, rv, stmt->base.hp);
+        oci8_raise(oci8_errhp, rv, stmt->base.hp.stmt);
     }
     obind = (oci8_bind_t *)stmt->base.children;
     do {
@@ -432,7 +432,7 @@ static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
     sword rv;
 
     Check_Type(pos, T_FIXNUM); /* 1 */
-    rv = OCIParamGet(stmt->base.hp, OCI_HTYPE_STMT, oci8_errhp, (dvoid *)&parmhp, FIX2INT(pos));
+    rv = OCIParamGet(stmt->base.hp.stmt, OCI_HTYPE_STMT, oci8_errhp, (dvoid *)&parmhp, FIX2INT(pos));
     if (rv != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, rv, NULL);
     }
@@ -615,7 +615,7 @@ static VALUE oci8_stmt_set_prefetch_rows(VALUE self, VALUE rows)
     oci8_stmt_t *stmt = DATA_PTR(self);
     ub4 num = NUM2UINT(rows);
 
-    oci_lc(OCIAttrSet(stmt->base.hp, OCI_HTYPE_STMT, &num, 0, OCI_ATTR_PREFETCH_ROWS, oci8_errhp));
+    oci_lc(OCIAttrSet(stmt->base.hp.ptr, OCI_HTYPE_STMT, &num, 0, OCI_ATTR_PREFETCH_ROWS, oci8_errhp));
     return Qfalse;
 }
 
@@ -636,7 +636,7 @@ static void bind_stmt_set(oci8_bind_t *obind, void *data, void *null_structs, VA
     if (!rb_obj_is_instance_of(val, cOCIStmt))
         rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIStmt)", rb_class2name(CLASS_OF(val)));
     h = DATA_PTR(val);
-    oho->hp = h->hp;
+    oho->hp = h->hp.ptr;
     oho->obj = val;
 }
 
@@ -658,7 +658,7 @@ static void bind_stmt_init_elem(oci8_bind_t *obind, VALUE svc)
     do {
         oho[idx].obj = rb_funcall(cOCIStmt, oci8_id_new, 1, svc);
         h = DATA_PTR(oho[idx].obj);
-        oho[idx].hp = h->hp;
+        oho[idx].hp = h->hp.ptr;
     } while (++idx < obind->maxar_sz);
 }
 
