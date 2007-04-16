@@ -5,6 +5,7 @@ README
 VERSION
 metaconfig
 pre-distclean.rb
+ruby-oci8.spec
 setup.rb
 doc/api.en.html
 doc/api.en.rd

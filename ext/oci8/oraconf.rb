@@ -658,6 +658,11 @@ EOS
           libs.gsub!(/-Wl,\+[sn](\s)*/, "")
         end
         libs.gsub!(/ -Wl,/, " ")
+      when /aix/
+        if @cc_is_gcc
+          # strip -bI:/xxx
+          libs.gsub!(/(-bI:\S+)/, '')
+        end
       end
 
       # remove object files from libs.

@@ -1,3 +1,8 @@
+2007-04-16  KUBO Takehiro  <kubo@jiubao.org>
+	* ruby-oci8.spec: add a rpm spec file. (contributed by Brian Candler)
+	* dist-files: add ruby-oci8.spec.
+	* ext/oci8/oraconf.rb: fix for oracle 8.x and gcc on AIX.
+
 2007-02-14  Oracle Corporation (commited by KUBO Takehiro <kubo@jiubao.org>)
 	* lib/oci8.rb.in: add a private method parse_connect_string to support
 	    "username/password[@(tns_name|//host[:port]/service_name)][ as (sysdba|sysoper)]".
