@@ -2,6 +2,8 @@
 	* ext/oci8/attr.c, ext/oci8/lob.c, lib/oci8.rb.in: fix a problem
 	    when reading NCLOB.
 	    (This problem is reported by Dmitry Zadvornykh.)
+	* lib/oci8.rb.in: fix a probmen when fetching BINARY_FLOAT.
+	    (This problem is reported by Duncan McCaffery.)
 
 2007-04-16  KUBO Takehiro  <kubo@jiubao.org>
 	* ruby-oci8.spec: add a rpm spec file. (contributed by Brian Candler)

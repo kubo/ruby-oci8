@@ -83,6 +83,10 @@ class OCI8
   SQLT_LBI = 24
   # sql type (char)
   SQLT_AFC = 96
+  # sql type (binary_float)
+  SQLT_IBFLOAT = 100
+  # sql type (binary_double)
+  SQLT_IBDOUBLE = 101
   # sql type (rowid)
   SQLT_RDD = 104
   # sql type (clob)
@@ -1084,6 +1088,16 @@ class OCI8
   # note: This is available only on Oracle 9.2.0.3 or above.
   # see:  Oracle 9.2.0.x Patch Set Notes.
   BindType::Mapping[:number_no_prec_setting] = BindType::Float
+
+  # datatype         type       size prec scale
+  # -------------------------------------------------
+  # BINARY FLOAT   SQLT_IBFLOAT  4    0    0
+  BindType::Mapping[OCI8::SQLT_IBFLOAT] = BindType::Float
+
+  # datatype         type        size prec scale
+  # -------------------------------------------------
+  # BINARY DOUBLE  SQLT_IBDOUBLE  8    0    0
+  BindType::Mapping[OCI8::SQLT_IBDOUBLE] = BindType::Float
 end # OCI8
 
 class OraDate
