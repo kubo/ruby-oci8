@@ -1,3 +1,8 @@
+2007-04-17  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/attr.c, ext/oci8/lob.c, lib/oci8.rb.in: fix a problem
+	    when reading NCLOB.
+	    (This problem is reported by Dmitry Zadvornykh.)
+
 2007-04-16  KUBO Takehiro  <kubo@jiubao.org>
 	* ruby-oci8.spec: add a rpm spec file. (contributed by Brian Candler)
 	* dist-files: add ruby-oci8.spec.

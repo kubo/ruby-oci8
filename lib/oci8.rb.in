@@ -491,7 +491,7 @@ class OCI8
       end
       def decorate(b)
         def b.get()
-          (val = super()) && OCI8::CLOB.new(@env, @svc, val.clone(@svc))
+          (val = super()) && OCI8::CLOB.new(@env, @svc, val.clone(@svc), 0, @csfrm)
         end
       end
     end
@@ -695,7 +695,7 @@ class OCI8
 
     private
 
-    def bind_or_define(bind_type, key, val, type, length, precision, scale, strict_check)
+    def bind_or_define(bind_type, key, val, type, length, precision, scale, strict_check, csfrm = nil)
       if type.nil?
         if val.nil?
           raise "bind type is not given." if type.nil?
@@ -738,6 +738,9 @@ class OCI8
         binder.decorate(b)
       end
 
+      unless csfrm.nil?
+        b.instance_variable_set(:@csfrm, csfrm)
+      end
       b.set(val) unless val.nil?
       b
     end # bind_or_define
@@ -761,6 +764,7 @@ class OCI8
       datasize = do_ocicall(@ctx) { p.attrGet(OCI_ATTR_DATA_SIZE) }
       precision = do_ocicall(@ctx) { p.attrGet(OCI_ATTR_PRECISION) }
       scale = do_ocicall(@ctx) { p.attrGet(OCI_ATTR_SCALE) }
+      csfrm = nil
 
       case datatype
       when SQLT_CHR, SQLT_AFC
@@ -770,9 +774,11 @@ class OCI8
         datasize *= 3
       when SQLT_LNG, SQLT_LBI
         datasize = @ctx[OCI8::Util::CTX_LONG_READ_LEN]
+      when SQLT_CLOB
+        csfrm = p.attrGet(OCI_ATTR_CHARSET_FORM)
       end
 
-      bind_or_define(:define, i, nil, datatype, datasize, precision, scale, true)
+      bind_or_define(:define, i, nil, datatype, datasize, precision, scale, true, csfrm)
     end # define_a_column
 
     def bind_params(*bindvars)
@@ -812,7 +818,7 @@ class OCI8
 
   class LOB
     attr :pos
-    def initialize(env, svc, locator)
+    def initialize(env, svc, locator, csid = nil, csfrm = nil)
       raise "invalid argument" unless env.is_a? OCIEnv
       raise "invalid argument" unless svc.is_a? OCISvcCtx
       raise "invalid argument" unless locator.is_a? OCILobLocator
@@ -820,6 +826,8 @@ class OCI8
       @svc = svc
       @locator = locator
       @pos = 0
+      @csid = csid
+      @csfrm = csfrm
     end
 
     def available?
@@ -839,7 +847,7 @@ class OCI8
         readlen = rest # read until EOF.
       end
       begin
-        rv = @locator.read(@svc, @pos + 1, readlen)
+        rv = @locator.read(@svc, @pos + 1, readlen, @csid, @csfrm)
       rescue OCIError
         raise if $!.code != 22289
         # ORA-22289: cannot perform FILEREAD operation on an unopened file or LOB.
@@ -852,7 +860,7 @@ class OCI8
 
     def write(data)
       raise "uninitialized LOB" unless available?
-      size = @locator.write(@svc, @pos + 1, data)
+      size = @locator.write(@svc, @pos + 1, data, @csid, @csfrm)
       @pos += size
       size
     end

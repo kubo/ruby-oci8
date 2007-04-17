@@ -112,8 +112,8 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
   Check_Handle(vsvc, OCISvcCtx, svch); /* 1 */
   offset = NUM2INT(voffset); /* 2 */
   amt = NUM2INT(vamt); /* 3 */
-  Get_Int_With_Default(argc, 4, vcsid, csid, 0); /* 4 */
-  Get_Int_With_Default(argc, 5, vcsfrm, csfrm, SQLCS_IMPLICIT); /* 5 */
+  csid = NIL_P(vcsid) ? 0 : NUM2INT(vcsid); /* 4 */
+  csfrm = NIL_P(vcsfrm) ? SQLCS_IMPLICIT : NUM2INT(vcsfrm); /* 5 */
 
 #ifdef OCI8_USE_CALLBACK_LOB_READ
   /* This raises ORA-24812, when the size of readed data is two or
@@ -137,7 +137,7 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
    */
   buf_size_in_char = sizeof(buf) / h->u.lob_locator.char_width;
   do {
-    rv = OCILobRead(svch->hp, h->errhp, h->hp, &amt, offset, buf, sizeof(buf), NULL, NULL, 0, SQLCS_IMPLICIT);
+    rv = OCILobRead(svch->hp, h->errhp, h->hp, &amt, offset, buf, sizeof(buf), NULL, NULL, csid, csfrm);
     if (rv != OCI_SUCCESS && rv != OCI_NEED_DATA)
       oci8_raise(h->errhp, rv, NULL);
     if (amt == 0)
@@ -167,13 +167,13 @@ static VALUE oci8_lob_write(int argc, VALUE *argv, VALUE self)
   ub4 amt;
   sword rv;
 
-  rb_scan_args(argc, argv, "30", &vsvc, &voffset, &vbuf, &vcsid, &vcsfrm);
+  rb_scan_args(argc, argv, "32", &vsvc, &voffset, &vbuf, &vcsid, &vcsfrm);
   Get_Handle(self, h); /* 0 */
   Check_Handle(vsvc, OCISvcCtx, svch); /* 1 */
   offset = NUM2INT(voffset); /* 2 */
   Get_String(vbuf, buf); /* 3 */
-  Get_Int_With_Default(argc, 4, vcsid, csid, 0); /* 4 */
-  Get_Int_With_Default(argc, 5, vcsfrm, csfrm, SQLCS_IMPLICIT); /* 5 */
+  csid = NIL_P(vcsid) ? 0 : NUM2INT(vcsid); /* 4 */
+  csfrm = NIL_P(vcsfrm) ? SQLCS_IMPLICIT : NUM2INT(vcsfrm); /* 5 */
 
   amt = buf.len;
   rv = OCILobWrite(svch->hp, h->errhp, h->hp, &amt, offset, buf.ptr, buf.len, OCI_ONE_PIECE, NULL, NULL, csid, csfrm);

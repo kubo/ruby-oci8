@@ -42,8 +42,8 @@ oci8_attr_t oci8_attr_list[] = {
   ENTRY(USERNAME,           ATTR_FOR_HNDL, NULL, set_string), /* 22 */
   ENTRY(PASSWORD,           ATTR_FOR_HNDL, NULL, set_string), /* 23 */
   ENTRY(STMT_TYPE,          ATTR_FOR_HNDL, get_ub2, NULL), /* 24 */
-  ENTRY(CHARSET_ID,         ATTR_FOR_HNDL, get_ub2, set_ub2), /* 31 */
-  ENTRY(CHARSET_FORM,       ATTR_FOR_HNDL, get_ub1, set_ub1), /* 32 */
+  ENTRY(CHARSET_ID,         ATTR_FOR_BOTH, get_ub2, set_ub2), /* 31 */
+  ENTRY(CHARSET_FORM,       ATTR_FOR_BOTH, get_ub1, set_ub1), /* 32 */
   ENTRY(MAXDATA_SIZE,       ATTR_FOR_HNDL, get_ub2, NULL), /* 33 */
   ENTRY(ROWS_RETURNED,      ATTR_FOR_HNDL, get_ub4, NULL), /* 42 */
   ENTRY(LOBEMPTY,           ATTR_FOR_DESC, NULL, set_ub4), /* 45 */
