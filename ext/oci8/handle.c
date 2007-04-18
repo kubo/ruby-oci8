@@ -26,10 +26,12 @@ static void oci8_handle_do_free(oci8_handle_t *h)
   /* unlink from parent */
   oci8_unlink(h);
   /* do free */
-  if (h->type >= OCI_DTYPE_FIRST)
-    OCIDescriptorFree(h->hp, h->type);
-  else
-    OCIHandleFree(h->hp, h->type);
+  if (h->hp != NULL) {
+    if (h->type >= OCI_DTYPE_FIRST)
+      OCIDescriptorFree(h->hp, h->type);
+    else
+      OCIHandleFree(h->hp, h->type);
+  }
   h->type = 0;
   return;
 }
@@ -127,7 +129,7 @@ static void oci8_handle_mark(oci8_handle_t *h)
   case OCI_HTYPE_BIND:
     bh = (oci8_bind_handle_t *)h;
     if (bh->bind_type == BIND_HANDLE)
-      rb_gc_mark(bh->value.v);
+      rb_gc_mark(bh->value.handle.v);
     break;
   }
   if (h->parent != NULL) {

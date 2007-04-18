@@ -97,7 +97,7 @@ VALUE oci8_get_value(oci8_bind_handle_t *hp)
     memcpy(&(ovn->num), &(hp->value.on), sizeof(ora_number_t));
     return obj;
   case BIND_HANDLE:
-    return hp->value.v;
+    return hp->value.handle.v;
   }
   rb_bug("unsupported data type: %d", hp->bind_type);
 }
@@ -176,7 +176,15 @@ void oci8_set_value(oci8_bind_handle_t *hp, VALUE val)
     }
     break;
   case BIND_HANDLE:
-    rb_raise(rb_eRuntimeError, "it is not permitted to set to this handle.");
+    if (rb_obj_is_kind_of(val, hp->value.handle.klass)) {
+      oci8_handle_t *h;
+      Get_Handle(val, h);
+      hp->value.handle.v = val;
+      hp->value.handle.hp = h->hp;
+    } else {
+      rb_raise(rb_eTypeError, "invalid argument: %s (expect %s)", rb_obj_classname(val), rb_class2name(hp->value.handle.klass));
+    }
+    break;
   default:
     rb_bug("unsupported data type: %d", hp->bind_type);
   }

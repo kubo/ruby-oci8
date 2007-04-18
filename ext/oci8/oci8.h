@@ -160,7 +160,11 @@ struct oci8_bind_handle {
     double dbl;
     ora_date_t od;
     ora_number_t on;
-    VALUE v;
+    struct {
+      void *hp;
+      VALUE v;
+      VALUE klass;
+    } handle;
   } value;
 };
 typedef struct oci8_bind_handle oci8_bind_handle_t;

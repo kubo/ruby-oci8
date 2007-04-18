@@ -1,3 +1,8 @@
+2007-04-18  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/bind.c, ext/oci8/handle.c, ext/oci8/oci8.h, ext/oci8/stmt.c
+	  lib/oci8.rb.in: change the internal structure to enable
+	    OCIBind#set(anOCIHandle).
+
 2007-04-17  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/attr.c, ext/oci8/lob.c, lib/oci8.rb.in: fix a problem
 	    when reading NCLOB.

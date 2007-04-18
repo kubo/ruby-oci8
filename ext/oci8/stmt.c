@@ -19,11 +19,14 @@ correspond native OCI datatype: ((|OCIStmt|))
 */
 #include "oci8.h"
 
+static ID id_alloc;
+
 static void check_bind_type(ub4 type, oci8_handle_t *stmth, VALUE vtype, VALUE vlength, oci8_bind_handle_t **bhp, ub2 *dty)
 {
   enum oci8_bind_type bind_type;
   oci8_bind_handle_t *bh;
   sb4 value_sz;
+  VALUE klass = Qnil;
 
   if (TYPE(vtype) == T_FIXNUM) {
     switch (FIX2INT(vtype)) {
@@ -51,31 +54,27 @@ static void check_bind_type(ub4 type, oci8_handle_t *stmth, VALUE vtype, VALUE v
     case SQLT_BLOB: /* OCI_TYPECODE_BLOB */
       bind_type = BIND_HANDLE;
       *dty = FIX2INT(vtype);
-      value_sz = sizeof(OCILobLocator *);
-      if (!rb_obj_is_instance_of(vlength, cOCILobLocator))
-	rb_raise(rb_eArgError, "Invalid argument: %s (expect OCILobLocator)", rb_class2name(CLASS_OF(vlength)));
+      value_sz = sizeof(bh->value.handle);
+      klass = cOCILobLocator;
       break;
     case SQLT_BFILE:
     case SQLT_CFILE:
       bind_type = BIND_HANDLE;
       *dty = FIX2INT(vtype);
-      value_sz = sizeof(OCILobLocator *);
-      if (!rb_obj_is_instance_of(vlength, cOCIFileLocator))
-	rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIFileLocator)", rb_class2name(CLASS_OF(vlength)));
+      value_sz = sizeof(bh->value.handle);
+      klass = cOCIFileLocator;
       break;
     case SQLT_RDD:
       bind_type = BIND_HANDLE;
       *dty = SQLT_RDD;
-      value_sz = sizeof(OCIRowid *);
-      if (!rb_obj_is_instance_of(vlength, cOCIRowid))
-	rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIRowid)", rb_class2name(CLASS_OF(vlength)));
+      value_sz = sizeof(bh->value.handle);
+      klass = cOCIRowid;
       break;
     case SQLT_RSET:
       bind_type = BIND_HANDLE;
       *dty = SQLT_RSET;
-      value_sz = sizeof(OCIStmt *);
-      if (!rb_obj_is_instance_of(vlength, cOCIStmt))
-	rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIStmt)", rb_class2name(CLASS_OF(vlength)));
+      value_sz = sizeof(bh->value.handle);
+      klass = cOCIStmt;
       break;
     default:
       rb_raise(rb_eArgError, "Not supported type (%d)", FIX2INT(vtype));
@@ -111,10 +110,23 @@ static void check_bind_type(ub4 type, oci8_handle_t *stmth, VALUE vtype, VALUE v
     *dty = SQLT_NUM;
     value_sz = sizeof(ora_number_t);
   } else {
-    rb_raise(rb_eArgError, "Not supported type (%s)", rb_class2name(vtype));
+    if (SYMBOL_P(vtype)) {
+      rb_raise(rb_eArgError, "Not supported type (:%s)", rb_id2name(SYM2ID(vtype)));
+    } else {
+      rb_raise(rb_eArgError, "Not supported type (%s)", rb_class2name(vtype));
+    }
   }
   bh = (oci8_bind_handle_t *)oci8_make_handle(type, NULL, NULL, stmth, value_sz);
   bh->bind_type = bind_type;
+  if (bind_type == BIND_HANDLE) {
+    if (NIL_P(vlength)) {
+      oci8_handle_t *envh;
+      for (envh = stmth; envh->type != OCI_HTYPE_ENV; envh = envh->parent);
+      vlength = rb_funcall(envh->self, id_alloc, 1, klass);
+    }
+    bh->value.handle.klass = klass;
+    oci8_set_value(bh, vlength);
+  }
   *bhp = bh;
 }
 
@@ -245,14 +257,7 @@ static VALUE oci8_define_by_pos(int argc, VALUE *argv, VALUE self)
     indp = &(bh->ind);
     rlenp = (bh->bind_type == BIND_STRING) ? NULL : &bh->rlen;
   }
-  if (bh->bind_type == BIND_HANDLE) {
-    oci8_handle_t *h;
-    Get_Handle(vlength, h); /* 3 */
-    bh->value.v = vlength;
-    valuep = &(h->hp);
-  } else {
-    valuep = &(bh->value);
-  }
+  valuep = &bh->value;
   status = OCIDefineByPos(h->hp, &dfnhp, h->errhp, position, valuep, bh->value_sz, dty, indp, rlenp, 0, mode);
   if (status != OCI_SUCCESS) {
     oci8_unlink((oci8_handle_t *)bh);
@@ -330,14 +335,7 @@ static VALUE oci8_bind_by_pos(int argc, VALUE *argv, VALUE self)
     indp = &(bh->ind);
     rlenp = (bh->bind_type == BIND_STRING) ? NULL : &bh->rlen;
   }
-  if (bh->bind_type == BIND_HANDLE) {
-    oci8_handle_t *h;
-    Get_Handle(vlength, h); /* 3 */
-    bh->value.v = vlength;
-    valuep = &(h->hp);
-  } else {
-    valuep = &(bh->value);
-  }
+  valuep = &bh->value;
   status = OCIBindByPos(h->hp, &bindhp, h->errhp, position, valuep, bh->value_sz, dty, indp, rlenp, 0, 0, 0, mode);
   if (status != OCI_SUCCESS) {
     oci8_unlink((oci8_handle_t *)bh);
@@ -425,14 +423,7 @@ static VALUE oci8_bind_by_name(int argc, VALUE *argv, VALUE self)
     indp = &(bh->ind);
     rlenp = (bh->bind_type == BIND_STRING) ? NULL : &bh->rlen;
   }
-  if (bh->bind_type == BIND_HANDLE) {
-    oci8_handle_t *h;
-    Get_Handle(vlength, h); /* 3 */
-    bh->value.v = vlength;
-    valuep = &(h->hp);
-  } else {
-    valuep = &(bh->value);
-  }
+  valuep = &bh->value;
   status = OCIBindByName(h->hp, &bindhp, h->errhp, placeholder.ptr, placeholder.len, valuep, bh->value_sz, dty, indp, rlenp, 0, 0, 0, mode);
   if (status != OCI_SUCCESS) {
     oci8_unlink((oci8_handle_t *)bh);
@@ -611,6 +602,7 @@ implemented in param.c
 
 void Init_oci8_stmt(void)
 {
+  id_alloc = rb_intern("alloc");
   rb_define_method(cOCIStmt, "prepare", oci8_stmt_prepare, -1);
   rb_define_method(cOCIStmt, "defineByPos", oci8_define_by_pos, -1);
   rb_define_method(cOCIStmt, "bindByPos", oci8_bind_by_pos, -1);

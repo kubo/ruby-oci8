@@ -478,7 +478,7 @@ class OCI8
     BLOB = Object.new
     class << BLOB
       def fix_type(env, val, length, precision, scale)
-        [OCI8::SQLT_BLOB, nil, val.nil? ? env.alloc(OCILobLocator) : val]
+        [OCI8::SQLT_BLOB, nil, val]
       end
       def decorate(b)
         def b.get()
@@ -491,7 +491,7 @@ class OCI8
     CLOB = Object.new
     class << CLOB
       def fix_type(env, val, length, precision, scale)
-        [OCI8::SQLT_CLOB, nil, val.nil? ? env.alloc(OCILobLocator) : val]
+        [OCI8::SQLT_CLOB, nil, val]
       end
       def decorate(b)
         def b.get()
@@ -504,7 +504,7 @@ class OCI8
     BFILE = Object.new
     class << BFILE
       def fix_type(env, val, length, precision, scale)
-        [OCI8::SQLT_BFILE, nil, val.nil? ? env.alloc(OCIFileLocator) : val]
+        [OCI8::SQLT_BFILE, nil, val]
       end
       def decorate(b)
         def b.get()
@@ -517,8 +517,7 @@ class OCI8
     Cursor = Object.new
     class << Cursor
       def fix_type(env, val, length, precision, scale)
-        raise NotImplementedError unless val.nil?
-        [OCI8::SQLT_RSET, nil, env.alloc(OCIStmt)]
+        [OCI8::SQLT_RSET, nil, val]
       end
       def decorate(b)
         def b.set(val)
