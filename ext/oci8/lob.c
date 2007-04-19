@@ -329,6 +329,31 @@ static VALUE oci8_lobfile_exist_p(VALUE self, VALUE vsvc)
   return flag ? Qtrue : Qfalse;
 }
 
+static VALUE oci8_lob_create_temporary(VALUE self, VALUE vsvc, VALUE vcsid, VALUE vcsfrm, VALUE vlobtype, VALUE vcache, VALUE vduration)
+{
+  oci8_handle_t *h;
+  oci8_handle_t *svch;
+  ub2 csid;
+  ub1 csfrm;
+  ub1 lobtype;
+  boolean cache;
+  OCIDuration duration;
+  sword rv;
+
+  Get_Handle(self, h); /* 0 */
+  Check_Handle(vsvc, OCISvcCtx, svch); /* 1 */
+  csid = NIL_P(vcsid) ? 0 : NUM2INT(vcsid); /* 2 */
+  csfrm = NIL_P(vcsfrm) ? SQLCS_IMPLICIT : NUM2INT(vcsfrm); /* 3 */
+  lobtype = NUM2INT(vlobtype); /* 4 */
+  cache = RTEST(vcache) ? TRUE : FALSE; /* 5 */
+  duration = NIL_P(vduration) ? OCI_DURATION_SESSION : NUM2INT(vduration); /* 6 */
+
+  rv = OCILobCreateTemporary(svch->hp, h->errhp, h->hp, csid, csfrm, lobtype, cache, duration);
+  if (rv != OCI_SUCCESS)
+    oci8_raise(h->errhp, rv, NULL);
+  return self;
+}
+
 void Init_oci8_lob(void)
 {
   sym_file_readonly = ID2SYM(rb_intern("file_readonly"));
@@ -353,4 +378,5 @@ void Init_oci8_lob(void)
   rb_define_method(cOCIFileLocator, "name", oci8_lobfile_name, 1);
   rb_define_method(cOCIFileLocator, "set_name", oci8_lobfile_set_name, 3);
   rb_define_method(cOCIFileLocator, "exists?", oci8_lobfile_exist_p, 1);
+  rb_define_method(cOCILobLocator, "create_temporary", oci8_lob_create_temporary, 6);
 }

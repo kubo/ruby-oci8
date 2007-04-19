@@ -1,3 +1,10 @@
+2007-04-19  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8.rb.in: add OCI8::NCLOB and add new method to bind
+	    CLOB/NCLOB/BLOB.
+	* ext/oci8/lob.c: add OCILobLocator#create_temporary.
+	* test/test_oci8.rb: add two testcases for BINARY_FLOAT and
+	    CLOB/NCLOB/BLOB.
+
 2007-04-18  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c, ext/oci8/handle.c, ext/oci8/oci8.h, ext/oci8/stmt.c
 	  lib/oci8.rb.in: change the internal structure to enable

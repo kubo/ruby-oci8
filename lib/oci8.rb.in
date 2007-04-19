@@ -113,6 +113,10 @@ class OCI8
   # sql type (timestamp with local time zone), not supported yet
   SQLT_TIMESTAMP_LTZ = 232
 
+  # charset form
+  SQLCS_IMPLICIT = 1
+  SQLCS_NCHAR = 2
+
   # mapping of sql type number to sql type name.
   SQLT_NAMES = {}
   constants.each do |name|
@@ -205,6 +209,7 @@ class OCI8
     else
       @svc = @@env.logon(uid, pswd, conn)
     end
+    @svc.instance_variable_set(:@env, @@env)
   end # initialize
 
   def logoff
@@ -477,12 +482,24 @@ class OCI8
     # get/set BLOB
     BLOB = Object.new
     class << BLOB
+      def check_type(val)
+        raise ArgumentError, "invalid argument: #{val.class} (expect OCI8::BLOB)" unless val.is_a? OCI8::BLOB
+      end
       def fix_type(env, val, length, precision, scale)
+        unless val.nil?
+          check_type(val)
+          val = val.instance_variable_get(:@locator)
+        end
         [OCI8::SQLT_BLOB, nil, val]
       end
       def decorate(b)
+        def b.set(val)
+          check_type(val)
+          val = val.instance_variable_get(:@locator)
+          super(val)
+        end
         def b.get()
-          (val = super()) && OCI8::BLOB.new(@env, @svc, val.clone(@svc))
+          (val = super()) && OCI8::BLOB.new(@svc, val.clone(@svc))
         end
       end
     end
@@ -490,12 +507,49 @@ class OCI8
     # get/set CLOB
     CLOB = Object.new
     class << CLOB
+      def check_type(val)
+        raise ArgumentError, "invalid argument: #{val.class} (expect OCI8::CLOB)" unless val.is_a? OCI8::CLOB
+      end
       def fix_type(env, val, length, precision, scale)
+        unless val.nil?
+          check_type(val)
+          val = val.instance_variable_get(:@locator)
+        end
         [OCI8::SQLT_CLOB, nil, val]
       end
       def decorate(b)
+        def b.set(val)
+          check_type(val)
+          val = val.instance_variable_get(:@locator)
+          super(val)
+        end
         def b.get()
-          (val = super()) && OCI8::CLOB.new(@env, @svc, val.clone(@svc), 0, @csfrm)
+          (val = super()) && OCI8::CLOB.new(@svc, val.clone(@svc))
+        end
+      end
+    end
+
+    # get/set NCLOB
+    NCLOB = Object.new
+    class << NCLOB
+      def check_type(val)
+        raise ArgumentError, "invalid argument: #{val.class} (expect OCI8::NCLOB)" unless val.is_a? OCI8::NCLOB
+      end
+      def fix_type(env, val, length, precision, scale)
+        unless val.nil?
+          check_type(val)
+          val = val.instance_variable_get(:@locator)
+        end
+        [OCI8::SQLT_CLOB, nil, val]
+      end
+      def decorate(b)
+        def b.set(val)
+          check_type(val)
+          val = val.instance_variable_get(:@locator)
+          super(val)
+        end
+        def b.get()
+          (val = super()) && OCI8::NCLOB.new(@svc, val.clone(@svc))
         end
       end
     end
@@ -503,12 +557,24 @@ class OCI8
     # get/set BFILE
     BFILE = Object.new
     class << BFILE
+      def check_type(val)
+        raise ArgumentError, "invalid argument: #{val.class} (expect OCI8::BFILE)" unless val.is_a? OCI8::BFILE
+      end
       def fix_type(env, val, length, precision, scale)
+        unless val.nil?
+          check_type(val)
+          val = val.instance_variable_get(:@locator)
+        end
         [OCI8::SQLT_BFILE, nil, val]
       end
       def decorate(b)
+        def b.set(val)
+          check_type(val)
+          val = val.instance_variable_get(:@locator)
+          super(val)
+        end
         def b.get()
-          (val = super()) && OCI8::BFILE.new(@env, @svc, val.clone(@svc))
+          (val = super()) && OCI8::BFILE.new(@svc, val.clone(@svc))
         end
       end
     end
@@ -698,7 +764,7 @@ class OCI8
 
     private
 
-    def bind_or_define(bind_type, key, val, type, length, precision, scale, strict_check, csfrm = nil)
+    def bind_or_define(bind_type, key, val, type, length, precision, scale, strict_check)
       if type.nil?
         if val.nil?
           raise "bind type is not given." if type.nil?
@@ -741,9 +807,6 @@ class OCI8
         binder.decorate(b)
       end
 
-      unless csfrm.nil?
-        b.instance_variable_set(:@csfrm, csfrm)
-      end
       b.set(val) unless val.nil?
       b
     end # bind_or_define
@@ -778,10 +841,10 @@ class OCI8
       when SQLT_LNG, SQLT_LBI
         datasize = @ctx[OCI8::Util::CTX_LONG_READ_LEN]
       when SQLT_CLOB
-        csfrm = p.attrGet(OCI_ATTR_CHARSET_FORM)
+        datatype = :nclob if p.attrGet(OCI_ATTR_CHARSET_FORM) == SQLCS_NCHAR
       end
 
-      bind_or_define(:define, i, nil, datatype, datasize, precision, scale, true, csfrm)
+      bind_or_define(:define, i, nil, datatype, datasize, precision, scale, true)
     end # define_a_column
 
     def bind_params(*bindvars)
@@ -821,16 +884,20 @@ class OCI8
 
   class LOB
     attr :pos
-    def initialize(env, svc, locator, csid = nil, csfrm = nil)
-      raise "invalid argument" unless env.is_a? OCIEnv
+    def initialize(svc, val)
+      svc = svc.instance_variable_get(:@svc) if svc.is_a? OCI8
       raise "invalid argument" unless svc.is_a? OCISvcCtx
-      raise "invalid argument" unless locator.is_a? OCILobLocator
-      @env = env
+      @env = svc.instance_variable_get(:@env)
       @svc = svc
-      @locator = locator
+      @csid = 0
       @pos = 0
-      @csid = csid
-      @csfrm = csfrm
+      if val.is_a? OCILobLocator
+        @locator = val
+      else
+        @locator = @env.alloc(OCILobLocator)
+        @locator.create_temporary(@svc, @csid, @csfrm, @lobtype, false, nil)
+        val.nil? || write(val.to_s)
+      end
     end
 
     def available?
@@ -927,19 +994,36 @@ class OCI8
   end
 
   class BLOB < LOB
+    def initialize(*arg)
+      @lobtype = 1
+      @csfrm = SQLCS_IMPLICIT
+      super(*arg)
+    end
   end
 
   class CLOB < LOB
+    def initialize(*arg)
+      @lobtype = 2
+      @csfrm = SQLCS_IMPLICIT
+      super(*arg)
+    end
+  end
+
+  class NCLOB < LOB
+    def initialize(*arg)
+      @lobtype = 2
+      @csfrm = SQLCS_NCHAR
+      super(*arg)
+    end
   end
 
   class BFILE < LOB
     attr_reader :dir_alias
     attr_reader :filename
-    def initialize(env, svc, locator)
-      raise "invalid argument" unless env.is_a? OCIEnv
+    def initialize(svc, locator)
       raise "invalid argument" unless svc.is_a? OCISvcCtx
       raise "invalid argument" unless locator.is_a? OCIFileLocator
-      @env = env
+      @env = svc.instance_variable_get(:@env)
       @svc = svc
       @locator = locator
       @pos = 0
@@ -992,6 +1076,7 @@ class OCI8
   BindType::Mapping[::OCIRowid]     = BindType::OCIRowid
   BindType::Mapping[::OCI8::BLOB]   = BindType::BLOB
   BindType::Mapping[::OCI8::CLOB]   = BindType::CLOB
+  BindType::Mapping[::OCI8::NCLOB]  = BindType::NCLOB
   BindType::Mapping[::OCI8::BFILE]  = BindType::BFILE
   BindType::Mapping[::OCI8::Cursor] = BindType::Cursor
 
@@ -1031,6 +1116,7 @@ class OCI8
   # -------------------------------------------------
   # CLOB          SQLT_CLOB  4000    0    0
   BindType::Mapping[OCI8::SQLT_CLOB] = BindType::CLOB
+  BindType::Mapping[:nclob] = BindType::NCLOB  # if OCI_ATTR_CHARSET_FORM is SQLCS_NCHAR.
 
   # datatype        type     size prec scale
   # -------------------------------------------------
