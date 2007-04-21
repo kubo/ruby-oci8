@@ -1,3 +1,7 @@
+2007-04-21  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/error.c: change a way to set the error line number to the
+	    OCIException's backtrace.
+
 2007-02-15  KUBO Takehiro  <kubo@jiubao.org>
 	no new features. fix to suppress warnings and to compile with ruby 1.9.
 	* ext/oci8/attr.c, ext/oci8/lob.c, ext/oci8/metadata.c, ext/oci8/oci8.c,

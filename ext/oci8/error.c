@@ -25,22 +25,10 @@ static ID oci8_id_code;
 static ID oci8_id_message;
 static ID oci8_id_parse_error_offset;
 static ID oci8_id_sql;
-static ID oci8_id_backtrace;
+static ID oci8_id_caller;
+static ID oci8_id_set_backtrace;
 
 NORETURN(static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line));
-
-static VALUE raise(VALUE exc)
-{
-    rb_exc_raise(exc);
-}
-
-static VALUE set_backtrace(VALUE arg)
-{
-    VALUE bt = rb_funcall(rb_errinfo(), oci8_id_backtrace, 0);
-    if (!NIL_P(bt))
-        rb_ary_unshift(bt, arg);
-    return rb_errinfo();
-}
 
 static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line)
 {
@@ -51,11 +39,15 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, c
     sb4 errcode;
     ub4 recodeno;
     VALUE msg;
+#ifdef OCI_ATTR_PARSE_ERROR_OFFSET
     VALUE vparse_error_offset = Qnil;
+#endif
+#ifdef OCI_ATTR_STATEMENT
     VALUE vsql = Qnil;
+#endif
     int i;
     int rv;
-    VALUE error_pos;
+    VALUE backtrace;
 #ifdef _WIN32
     char *p = strrchr(file, '\\');
     if (p != NULL)
@@ -146,24 +138,23 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, c
     if (!NIL_P(vmessages)) {
         rb_ivar_set(exc, oci8_id_message, vmessages);
     }
+#ifdef OCI_ATTR_PARSE_ERROR_OFFSET
     if (!NIL_P(vparse_error_offset)) {
         rb_ivar_set(exc, oci8_id_parse_error_offset, vparse_error_offset);
     }
+#endif
+#ifdef OCI_ATTR_STATEMENT
     if (!NIL_P(vsql)) {
         rb_ivar_set(exc, oci8_id_sql, vsql);
     }
+#endif
     /*
      * make error line in C code.
      */
+    backtrace = rb_funcall(rb_cObject, oci8_id_caller, 0);
     sprintf(errmsg, "%s:%d:in oci8lib.so", file, line);
-    error_pos = rb_str_new2(errmsg);
-    /*
-     * The stack trace is created when it is raised.
-     * To set my own backtrace line, make it raise in rb_rescue(),
-     * catch it by set_backtrace and prepend my own error position.
-     */
-    exc = rb_rescue(raise, exc, set_backtrace, error_pos);
-    /* raise */
+    rb_ary_unshift(backtrace, rb_str_new2(errmsg));
+    rb_funcall(exc, oci8_id_set_backtrace, 1, backtrace);
     rb_exc_raise(exc);
 }
 
@@ -245,7 +236,8 @@ void Init_oci8_error(void)
     oci8_id_message = rb_intern("message");
     oci8_id_parse_error_offset = rb_intern("parse_error_offset");
     oci8_id_sql = rb_intern("sql");
-    oci8_id_backtrace = rb_intern("backtrace");
+    oci8_id_caller = rb_intern("caller");
+    oci8_id_set_backtrace = rb_intern("set_backtrace");
 
     eOCIException = rb_define_class("OCIException", rb_eStandardError);
     eOCIBreak = rb_define_class("OCIBreak", eOCIException);
