@@ -9,19 +9,38 @@
 */
 #include "oci8.h"
 
-RBOCI_NORETURN(static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp));
+static ID oci8_id_code;
+static ID oci8_id_message;
+static ID oci8_id_parse_error_offset;
+static ID oci8_id_sql;
+static ID oci8_id_caller;
+static ID oci8_id_set_backtrace;
 
-static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp)
+RBOCI_NORETURN(static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line));
+
+static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line)
 {
-  VALUE vcodes;
-  VALUE vmessages;
+  VALUE vcodes = Qnil;
+  VALUE vmessages = Qnil;
   VALUE exc;
   char errmsg[1024];
   sb4 errcode;
   ub4 recodeno;
   VALUE msg;
+#ifdef OCI_ATTR_PARSE_ERROR_OFFSET
+  VALUE vparse_error_offset = Qnil;
+#endif
+#ifdef OCI_ATTR_STATEMENT
+  VALUE vsql = Qnil;
+#endif
   int i;
   int rv;
+  VALUE backtrace;
+#if defined(_WIN32) || defined(WIN32)
+  char *p = strrchr(file, '\\');
+  if (p != NULL)
+    file = p + 1;
+#endif
 
   switch (status) {
   case OCI_ERROR:
@@ -51,51 +70,61 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp)
       msg = rb_str_new2("ERROR");
     }
     if (status == OCI_ERROR) {
-      exc = rb_funcall(eOCIError, oci8_id_new, 1, msg);
+      exc = eOCIError;
     } else {
-      exc = rb_funcall(eOCISuccessWithInfo, oci8_id_new, 1, msg);
+      exc = eOCISuccessWithInfo;
     }
-    rb_ivar_set(exc, oci8_id_code, vcodes);
-    rb_ivar_set(exc, oci8_id_message, vmessages);
-#ifdef OCI_ATTR_PARSE_ERROR_OFFSET
-    if (stmthp != NULL) {
-      ub2 offset;
-      rv = OCIAttrGet(stmthp, OCI_HTYPE_STMT, &offset, 0, OCI_ATTR_PARSE_ERROR_OFFSET, errhp);
-      if (rv == OCI_SUCCESS) {
-	rb_ivar_set(exc, oci8_id_parse_error_offset, INT2FIX(offset));
-      }
-    }
-#endif
-#ifdef OCI_ATTR_STATEMENT
-    if (stmthp != NULL) {
-      text *sql;
-      ub4 size;
-      rv = OCIAttrGet(stmthp, OCI_HTYPE_STMT, &sql, &size, OCI_ATTR_STATEMENT, errhp);
-      if (rv == OCI_SUCCESS) {
-        rb_ivar_set(exc, oci8_id_sql, rb_str_new(TO_CHARPTR(sql), size));
-      }
-    }
-#endif
-    rb_exc_raise(exc);
     break;
   case OCI_NO_DATA:
-    rb_raise(eOCINoData, "No Data");
+    exc = eOCINoData;
+    msg = rb_str_new2("No Data");
     break;
   case OCI_INVALID_HANDLE:
-    rb_raise(eOCIInvalidHandle, "Invalid Handle");
+    exc = eOCIInvalidHandle;
+    msg = rb_str_new2("Invalid Handle");
     break;
   case OCI_NEED_DATA:
-    rb_raise(eOCINeedData, "Need Data");
+    exc = eOCINeedData;
+    msg = rb_str_new2("Need Data");
     break;
   case OCI_STILL_EXECUTING:
-    rb_raise(eOCIStillExecuting, "Still Executing");
+    exc = eOCIStillExecuting;
+    msg = rb_str_new2("Still Executing");
     break;
   case OCI_CONTINUE:
-    rb_raise(eOCIContinue, "Continue");
+    exc = eOCIContinue;
+    msg = rb_str_new2("Continue");
     break;
   default:
-    rb_raise(rb_eStandardError, "Unknown error (%d)", status);
+    sprintf(errmsg, "Unknown error (%d)", status);
+    exc = rb_eStandardError;
+    msg = rb_str_new2(errmsg);
   }
+  exc = rb_funcall(exc, oci8_id_new, 1, msg);
+  if (!NIL_P(vcodes)) {
+    rb_ivar_set(exc, oci8_id_code, vcodes);
+  }
+  if (!NIL_P(vmessages)) {
+    rb_ivar_set(exc, oci8_id_message, vmessages);
+  }
+#ifdef OCI_ATTR_PARSE_ERROR_OFFSET
+  if (!NIL_P(vparse_error_offset)) {
+    rb_ivar_set(exc, oci8_id_parse_error_offset, vparse_error_offset);
+  }
+#endif
+#ifdef OCI_ATTR_STATEMENT
+  if (!NIL_P(vsql)) {
+    rb_ivar_set(exc, oci8_id_sql, vsql);
+  }
+#endif
+  /*
+   * make error line in C code.
+   */
+  backtrace = rb_funcall(rb_cObject, rb_intern("caller"), 0);
+  sprintf(errmsg, "%s:%d:in oci8lib.so", file, line);
+  rb_ary_unshift(backtrace, rb_str_new2(errmsg));
+  rb_funcall(exc, rb_intern("set_backtrace"), 1, backtrace);
+  rb_exc_raise(exc);
 }
 
 /*
@@ -165,6 +194,13 @@ static VALUE oci8_error_sql(VALUE self)
 
 void Init_oci8_error(void)
 {
+  oci8_id_code = rb_intern("code");
+  oci8_id_message = rb_intern("message");
+  oci8_id_parse_error_offset = rb_intern("parse_error_offset");
+  oci8_id_sql = rb_intern("sql");
+  oci8_id_caller = rb_intern("caller");
+  oci8_id_set_backtrace = rb_intern("set_backtrace");
+
   rb_define_method(eOCIError, "code", oci8_error_code, 0);
   rb_define_method(eOCIError, "codes", oci8_error_code_array, 0);
   rb_define_method(eOCIError, "messages", oci8_error_message_array, 0);
@@ -176,12 +212,12 @@ void Init_oci8_error(void)
 #endif
 }
 
-void oci8_raise(OCIError *errhp, sword status, OCIStmt *stmthp)
+void oci8_do_raise(OCIError *errhp, sword status, OCIStmt *stmthp, const char *file, int line)
 {
-  oci8_raise2(errhp, status, OCI_HTYPE_ERROR, stmthp);
+  oci8_raise2(errhp, status, OCI_HTYPE_ERROR, stmthp, file, line);
 }
 
-void oci8_env_raise(OCIEnv *envhp, sword status)
+void oci8_do_env_raise(OCIEnv *envhp, sword status, const char *file, int line)
 {
-  oci8_raise2(envhp, status, OCI_HTYPE_ENV, NULL);
+  oci8_raise2(envhp, status, OCI_HTYPE_ENV, NULL, file, line);
 }

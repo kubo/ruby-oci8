@@ -276,8 +276,10 @@ void Init_oci8_env(void);
 
 /* error.c */
 void Init_oci8_error(void);
-RBOCI_NORETURN(void oci8_raise(OCIError *, sword status, OCIStmt *));
-RBOCI_NORETURN(void oci8_env_raise(OCIEnv *, sword status));
+#define oci8_raise(errhp, status, stmthp) oci8_do_raise((errhp), (status), (stmthp), __FILE__, __LINE__)
+#define oci8_env_raise(envhp, status) oci8_do_env_raise((envhp), (status), __FILE__, __LINE__)
+RBOCI_NORETURN(void oci8_do_raise(OCIError *, sword status, OCIStmt *, const char *file, int line));
+RBOCI_NORETURN(void oci8_do_env_raise(OCIEnv *, sword status, const char *file, int line));
 
 /* svcctx.c */
 void Init_oci8_svcctx(void);

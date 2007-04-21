@@ -1,3 +1,7 @@
+2007-04-21  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/error.c, ext/oci8/oci8.h: add the error line number
+	    in C code to OCIException's backtrace.
+
 2007-04-19  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8.rb.in: add OCI8::NCLOB and add new method to bind
 	    CLOB/NCLOB/BLOB.
