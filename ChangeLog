@@ -1,3 +1,11 @@
+2007-04-22  KUBO Takehiro  <kubo@jiubao.org>
+	* NEWS: add changes between 1.0.0-rc2 and 0.1.16
+	* ruby-oci8.spec: fix hardcoded sitearch dir.
+	* VERSION: change version to 1.0.0-rc2
+	* ext/oci8/extconf.rb, ext/oci8/lob.c: check whether
+	    OCILobCreateTemporary is available.
+	* dist-files: add test/test_connstr.rb.
+
 2007-04-21  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/error.c, ext/oci8/oci8.h: add the error line number
 	    in C code to OCIException's backtrace.

@@ -331,6 +331,7 @@ static VALUE oci8_lobfile_exist_p(VALUE self, VALUE vsvc)
 
 static VALUE oci8_lob_create_temporary(VALUE self, VALUE vsvc, VALUE vcsid, VALUE vcsfrm, VALUE vlobtype, VALUE vcache, VALUE vduration)
 {
+#ifdef HAVE_OCILOBCREATETEMPORARY
   oci8_handle_t *h;
   oci8_handle_t *svch;
   ub2 csid;
@@ -352,6 +353,9 @@ static VALUE oci8_lob_create_temporary(VALUE self, VALUE vsvc, VALUE vcsid, VALU
   if (rv != OCI_SUCCESS)
     oci8_raise(h->errhp, rv, NULL);
   return self;
+#else
+  rb_notimplement();
+#endif
 }
 
 void Init_oci8_lob(void)

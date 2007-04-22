@@ -58,6 +58,7 @@ test/test_bind_raw.rb
 test/test_bind_time.rb
 test/test_break.rb
 test/test_clob.rb
+test/test_connstr.rb
 test/test_dbi.rb
 test/test_dbi_clob.rb
 test/test_describe.rb

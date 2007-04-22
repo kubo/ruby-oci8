@@ -1,3 +1,61 @@
+1.0.0-rc2:
+
+1. support SQL*Plus-like connect strings.
+   (contributed by Oracle Corporation)
+
+     require 'oci8'
+     conn = OCI8.new('username/password@tns_name')
+     # instead of OCI8.new('username', 'password', 'tns_name')
+
+2. Add a rpm spec file.
+   (contributed by Brian Candler)
+
+     rpmbuild -tb ruby-oci8-x.y.z.tar.gz
+
+     /usr/src/redhat/RPMS/i386/ruby-oci8-x.y.z-1.i386.rpm
+
+3. support BINARY_FLOAT and BINADY_DOUBLE columns.
+   (This problem is reported by Duncan McCaffery.)
+
+4. support NCLOB columns.
+   (This problem is reported by Dmitry Zadvornykh.)
+
+     cursor = conn.exec('select nclob_column from nclob_table')
+     cursor.fetch # => [ instance of OCI8::NCLOB ]
+
+5. add new CLOB/NCLOB/BLOB insert method.
+   (This is available on Oracle 8.1.5 or later.)
+
+     cursor = conn.parse("INSERT INTO clob_table VALUES (:1)")
+     cursor.bind_param(1, OCI8::CLOB.new(@conn, lob_data))
+     cursor.exec
+
+     cursor = conn.parse("INSERT INTO nclob_table VALUES (:1)")
+     cursor.exec(OCI8::NCLOB.new(@conn, lob_data))
+
+     conn.exec("INSERT INTO blob_table VALUES (:1)",
+               OCI8::BLOB.new(@conn, lob_data))
+
+   This is added to insert CLOB as a SDO_GEOMETRY's parameter
+   to solve a problem reported by Pete Schwamb.
+
+6. add an error location in C code to OCIException's backtrace.
+   This is for debug information.
+
+1.0.0-rc1:
+
+1. support BFILE columns.
+
+2. check whether Full Client or Instant Client by checking load library
+   path on configuration to compile.
+
+3. raise an OCIError with "OCI Library Initialization Error" message if
+   no message can not be retrieved when requiring oci8lib.so.
+
+4. raise "OCI Library Initialization Error" when first connect instead
+   of requiring oci8lib.so. This is a workaround to prevent Rails from
+   being stopped on invalid Oracle environment.
+
 0.1.16:
 
 1. Add LONG and LONG RAW support longer than 65535 bytes.

@@ -1,9 +1,10 @@
 %define ruby_sitelib %(ruby -rrbconfig -e 'puts Config::CONFIG["sitelibdir"]')
+%define ruby_sitearch %(ruby -rrbconfig -e 'puts Config::CONFIG["sitearchdir"]')
 
 Summary: ruby interface for Oracle using OCI8 API
 Name: ruby-oci8
-Version: 1.0.0_rc1
-%define RealVersion 1.0.0-rc1
+Version: 1.0.0_rc2
+%define RealVersion 1.0.0-rc2
 Release: 1%{?dist}
 Group: Development/Libraries
 License: Ruby License
@@ -52,7 +53,7 @@ rm -rf $RPM_BUILD_ROOT
 
 %{ruby_sitelib}/oci8.rb
 %{ruby_sitelib}/DBD/OCI8/OCI8.rb
-%{ruby_sitelib}/i386-linux/oci8lib.so
+%{ruby_sitearch}/oci8lib.so
 
 %changelog
 * Fri Mar 23 2007 Brian Candler <brian.candler@inspiredbroadcast.net> - 1.0.0_rc1-1

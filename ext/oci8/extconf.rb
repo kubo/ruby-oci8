@@ -51,6 +51,11 @@ have_func("OCILobOpen")
 #   9.0.1  - OK
 have_func("OCILobClose")
 
+# OCILobCreateTemporary
+#   8.0.5  - NG
+#   8.1.5  - OK
+have_func("OCILobCreateTemporary")
+
 have_func("OCILobGetChunkSize")
 have_func("OCILobLocatorAssign")
 
