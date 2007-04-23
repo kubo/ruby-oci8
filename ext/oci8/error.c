@@ -9,10 +9,6 @@
 */
 #include "oci8.h"
 
-static ID oci8_id_code;
-static ID oci8_id_message;
-static ID oci8_id_parse_error_offset;
-static ID oci8_id_sql;
 static ID oci8_id_caller;
 static ID oci8_id_set_backtrace;
 
@@ -194,10 +190,6 @@ static VALUE oci8_error_sql(VALUE self)
 
 void Init_oci8_error(void)
 {
-  oci8_id_code = rb_intern("code");
-  oci8_id_message = rb_intern("message");
-  oci8_id_parse_error_offset = rb_intern("parse_error_offset");
-  oci8_id_sql = rb_intern("sql");
   oci8_id_caller = rb_intern("caller");
   oci8_id_set_backtrace = rb_intern("set_backtrace");
 

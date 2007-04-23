@@ -27,14 +27,14 @@
    (This is available on Oracle 8.1.5 or later.)
 
      cursor = conn.parse("INSERT INTO clob_table VALUES (:1)")
-     cursor.bind_param(1, OCI8::CLOB.new(@conn, lob_data))
+     cursor.bind_param(1, OCI8::CLOB.new(conn, lob_data))
      cursor.exec
 
      cursor = conn.parse("INSERT INTO nclob_table VALUES (:1)")
-     cursor.exec(OCI8::NCLOB.new(@conn, lob_data))
+     cursor.exec(OCI8::NCLOB.new(conn, lob_data))
 
      conn.exec("INSERT INTO blob_table VALUES (:1)",
-               OCI8::BLOB.new(@conn, lob_data))
+               OCI8::BLOB.new(conn, lob_data))
 
    This is added to insert CLOB as a SDO_GEOMETRY's parameter
    to solve a problem reported by Pete Schwamb.
