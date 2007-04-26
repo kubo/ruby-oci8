@@ -302,6 +302,8 @@ static VALUE orascalar_to_rubyobj(oci8_svcctx_t *svcctx, OCITypeCode typecode, d
         return oci8_make_clob(svcctx, *(OCILobLocator **)instance);
     case OCI_TYPECODE_BLOB:
         return oci8_make_blob(svcctx, *(OCILobLocator **)instance);
+    case OCI_TYPECODE_BFILE:
+        return oci8_make_bfile(svcctx, *(OCILobLocator **)instance);
     case OCI_TYPECODE_DATE:
         return oci8_make_datetime_from_ocidate((OCIDate*)instance);
     case OCI_TYPECODE_TIMESTAMP:

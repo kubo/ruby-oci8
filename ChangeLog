@@ -1,3 +1,10 @@
+2007-04-26  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb: fetch BFILE as OCI8::BFILE.
+	* ext/oci8/lob.c: add OCI8::BFILE.
+	* ext/oci8/oci8.h: add oci8_make_bfile().
+	* ext/oci8/tdo.c: use oci8_make_bfile().
+	* ext/oci8/stmt.c: use oci8_get_error_code().
+
 2007-04-21  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/error.c: change a way to set the error line number to the
 	    OCIException's backtrace.

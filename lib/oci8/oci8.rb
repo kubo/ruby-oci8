@@ -212,6 +212,11 @@ class OCI8
 
     # datatype        type     size prec scale
     # -------------------------------------------------
+    # BFILE         SQLT_BFILE 4000    0    0
+    Mapping[:bfile] = ::OCI8::BindType::BFILE
+
+    # datatype        type     size prec scale
+    # -------------------------------------------------
     # DATE          SQLT_DAT      7    0    0
     Mapping[:date] = ::OCI8::BindType::DateTime
 

@@ -323,6 +323,7 @@ VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE desc);
 void Init_oci8_lob(VALUE cOCI8);
 VALUE oci8_make_clob(oci8_svcctx_t *svcctx, OCILobLocator *s);
 VALUE oci8_make_blob(oci8_svcctx_t *svcctx, OCILobLocator *s);
+VALUE oci8_make_bfile(oci8_svcctx_t *svcctx, OCILobLocator *s);
 
 /* oradate.c */
 void Init_ora_date(void);

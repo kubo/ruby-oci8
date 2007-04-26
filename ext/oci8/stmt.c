@@ -231,9 +231,7 @@ static sword oci8_call_stmt_execute(oci8_svcctx_t *svcctx, oci8_stmt_t *stmt, ub
 
     oci_rc2(rv, svcctx, OCIStmtExecute(svcctx->base.hp.svc, stmt->base.hp.stmt, oci8_errhp, iters, 0, NULL, NULL, mode));
     if (rv == OCI_ERROR) {
-        sb4 errcode;
-        OCIErrorGet(oci8_errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
-        if (errcode == 1000) {
+        if (oci8_get_error_code(oci8_errhp) == 1000) {
             /* run GC to close unreferred cursors
              * when ORA-01000 (maximum open cursors exceeded).
              */

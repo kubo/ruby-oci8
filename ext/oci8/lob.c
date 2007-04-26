@@ -2,14 +2,23 @@
 #include "oci8.h"
 
 static ID id_plus;
+static ID id_dir_alias;
+static ID id_filename;
 static VALUE cOCI8LOB;
 static VALUE cOCI8BLOB;
 static VALUE cOCI8CLOB;
+static VALUE cOCI8BFILE;
 static VALUE seek_set;
 static VALUE seek_cur;
 static VALUE seek_end;
 
-enum state {S_NO_OPEN_CLOSE, S_OPEN, S_CLOSE};
+enum state {
+    S_NO_OPEN_CLOSE,
+    S_OPEN,
+    S_CLOSE,
+    S_BFILE_CLOSE,
+    S_BFILE_OPEN,
+};
 typedef struct {
     oci8_base_t base;
     VALUE svc;
@@ -22,20 +31,16 @@ static VALUE oci8_make_lob(VALUE klass, oci8_svcctx_t *svcctx, OCILobLocator *s)
 {
     oci8_lob_t *lob;
     VALUE lob_obj;
-    sword rv;
 
     lob_obj = rb_funcall(klass, oci8_id_new, 1, svcctx->base.self);
     lob = DATA_PTR(lob_obj);
 #ifdef HAVE_OCILOBLOCATORASSIGN
     /* Oracle 8.1 or upper */
-    rv = OCILobLocatorAssign(svcctx->base.hp.svc, oci8_errhp, s, &lob->base.hp.lob);
+    oci_lc(OCILobLocatorAssign(svcctx->base.hp.svc, oci8_errhp, s, &lob->base.hp.lob));
 #else
     /* Oracle 8.0 */
-    rv = OCILobAssign(oci8_envhp.svc, oci8_errhp, s, &lob->base.hp.lob);
+    oci_lc(OCILobAssign(oci8_envhp.svc, oci8_errhp, s, &lob->base.hp.lob));
 #endif
-    if (rv != OCI_SUCCESS) {
-        oci8_raise(oci8_errhp, rv, NULL);
-    }
     return lob_obj;
 }
 
@@ -47,6 +52,11 @@ VALUE oci8_make_clob(oci8_svcctx_t *svcctx, OCILobLocator *s)
 VALUE oci8_make_blob(oci8_svcctx_t *svcctx, OCILobLocator *s)
 {
     return oci8_make_lob(cOCI8BLOB, svcctx, s);
+}
+
+VALUE oci8_make_bfile(oci8_svcctx_t *svcctx, OCILobLocator *s)
+{
+    return oci8_make_lob(cOCI8BFILE, svcctx, s);
 }
 
 static void oci8_lob_mark(oci8_base_t *base)
@@ -69,9 +79,10 @@ static oci8_base_class_t oci8_lob_class = {
 
 static ub4 oci8_lob_get_length(oci8_lob_t *lob)
 {
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
     ub4 len;
 
-    oci_lc(OCILobGetLength(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp.lob, &len));
+    oci_rc(svcctx, OCILobGetLength(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &len));
     return len;
 }
 
@@ -79,11 +90,9 @@ static void lob_open(oci8_lob_t *lob)
 {
 #ifdef HAVE_OCILOBOPEN
     if (lob->state == S_CLOSE) {
-        sword rv;
+        oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
 
-        rv = OCILobOpen(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp.lob, OCI_DEFAULT);
-        if (rv != OCI_SUCCESS)
-            oci8_raise(oci8_errhp, rv, NULL);
+        oci_rc(svcctx, OCILobOpen(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, OCI_DEFAULT));
         lob->state = S_OPEN;
     }
 #endif
@@ -93,14 +102,22 @@ static void lob_close(oci8_lob_t *lob)
 {
 #ifdef HAVE_OCILOBCLOSE
     if (lob->state == S_OPEN) {
-        sword rv;
+        oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
 
-        rv = OCILobClose(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp.lob);
-        if (rv != OCI_SUCCESS)
-            oci8_raise(oci8_errhp, rv, NULL);
+        oci_rc(svcctx, OCILobClose(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob));
         lob->state = S_CLOSE;
     }
 #endif
+}
+
+static void bfile_close(oci8_lob_t *lob)
+{
+    if (lob->state == S_BFILE_OPEN) {
+        oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+
+        oci_rc(svcctx, OCILobFileClose(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob));
+        lob->state = S_BFILE_CLOSE;
+    }
 }
 
 static VALUE oci8_lob_close(VALUE self)
@@ -146,11 +163,8 @@ static VALUE oci8_lob_available_p(VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
     boolean is_initialized;
-    sword rv;
 
-    rv = OCILobLocatorIsInit(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_initialized);
-    if (rv != OCI_SUCCESS)
-        oci8_raise(oci8_errhp, rv, NULL);
+    oci_lc(OCILobLocatorIsInit(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_initialized));
     return is_initialized ? Qtrue : Qfalse;
 }
 
@@ -208,12 +222,10 @@ static VALUE oci8_lob_rewind(VALUE self)
 static VALUE oci8_lob_truncate(VALUE self, VALUE len)
 {
     oci8_lob_t *lob = DATA_PTR(self);
-    sword rv;
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
 
     lob_open(lob);
-    rv = OCILobTrim(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp.lob, NUM2INT(len));
-    if (rv != OCI_SUCCESS)
-        oci8_raise(oci8_errhp, rv, NULL);
+    oci_rc(svcctx, OCILobTrim(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, NUM2INT(len)));
     return self;
 }
 
@@ -223,17 +235,20 @@ static VALUE oci8_lob_set_size(VALUE self, VALUE len)
     return len;
 }
 
-static VALUE oci8_lob_read(VALUE self, VALUE size)
+static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
     ub4 length;
     ub4 nchar;
     ub4 amt;
     sword rv;
     char buf[4096];
     size_t buf_size_in_char;
+    VALUE size;
     VALUE v = Qnil;
 
+    rb_scan_args(argc, argv, "01", &size);
     length = oci8_lob_get_length(lob);
     if (length <= lob->pos) /* EOF */
         return Qnil;
@@ -248,7 +263,33 @@ static VALUE oci8_lob_read(VALUE self, VALUE size)
     amt = nchar;
     buf_size_in_char = sizeof(buf) / lob->char_width;
     do {
-        rv = OCILobRead(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, buf, sizeof(buf), NULL, NULL, 0, SQLCS_IMPLICIT);
+        if (lob->state == S_BFILE_CLOSE) {
+            oci_rc2(rv, svcctx, OCILobFileOpen(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, OCI_FILE_READONLY));
+            if (rv == OCI_ERROR && oci8_get_error_code(oci8_errhp) == 22290) {
+                /* ORA-22290: operation would exceed the maximum number of opened files or LOBs */
+                /* close all opened BFILE implicitly. */
+                oci8_base_t *base;
+                for (base = &lob->base; base != &lob->base; base = base->next) {
+                    if (base->type == OCI_DTYPE_LOB) {
+                        oci8_lob_t *tmp = (oci8_lob_t *)base;
+                        if (tmp->state == S_BFILE_OPEN) {
+                            tmp->state = S_BFILE_CLOSE;
+                        }
+                    }
+                }
+                oci_rc(svcctx, OCILobFileCloseAll(svcctx->base.hp.svc, oci8_errhp));
+                continue;
+            }
+            if (rv != OCI_SUCCESS)
+                oci8_raise(oci8_errhp, rv, NULL);
+            lob->state = S_BFILE_OPEN;
+        }
+        oci_rc2(rv, svcctx, OCILobRead(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, buf, sizeof(buf), NULL, NULL, 0, SQLCS_IMPLICIT));
+        if (rv == OCI_ERROR && oci8_get_error_code(oci8_errhp) == 22289) {
+            /* ORA-22289: cannot perform FILEREAD operation on an unopened file or LOB */
+            if (lob->state == S_BFILE_CLOSE)
+                continue;
+        }
         if (rv != OCI_SUCCESS && rv != OCI_NEED_DATA)
             oci8_raise(oci8_errhp, rv, NULL);
         if (amt == 0)
@@ -263,21 +304,23 @@ static VALUE oci8_lob_read(VALUE self, VALUE size)
             v = rb_str_cat(v, buf, amt);
     } while (rv == OCI_NEED_DATA);
     lob->pos += nchar;
+    if (nchar == length) {
+        lob_close(lob);
+        bfile_close(lob);
+    }
     return v;
 }
 
 static VALUE oci8_lob_write(VALUE self, VALUE data)
 {
     oci8_lob_t *lob = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
     ub4 amt;
-    sword rv;
 
     lob_open(lob);
     StringValue(data);
     amt = RSTRING_LEN(data);
-    rv = OCILobWrite(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, RSTRING_PTR(data), amt, OCI_ONE_PIECE, NULL, NULL, 0, SQLCS_IMPLICIT);
-    if (rv != OCI_SUCCESS)
-        oci8_raise(oci8_errhp, rv, NULL);
+    oci_rc(svcctx, OCILobWrite(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, RSTRING_PTR(data), amt, OCI_ONE_PIECE, NULL, NULL, 0, SQLCS_IMPLICIT));
     lob->pos += amt;
     return INT2FIX(amt);
 }
@@ -316,12 +359,10 @@ static VALUE oci8_lob_get_chunk_size(VALUE self)
 {
 #ifdef HAVE_OCILOBGETCHUNKSIZE
     oci8_lob_t *lob = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
     ub4 len;
-    sword rv;
 
-    rv = OCILobGetChunkSize(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp.lob, &len);
-    if (rv != OCI_SUCCESS)
-        oci8_raise(oci8_errhp, rv, NULL);
+    oci_rc(svcctx, OCILobGetChunkSize(svcctx->hp.svc, oci8_errhp, lob->base.hp.lob, &len);
     return INT2FIX(len);
 #else
     rb_notimplement();
@@ -350,8 +391,133 @@ static VALUE oci8_lob_clone(VALUE self)
     return newobj;
 }
 
+static void oci8_bfile_get_name(VALUE self, VALUE *dir_alias_p, VALUE *filename_p)
+{
+    int need_get = 0;
+    if (dir_alias_p != NULL) {
+        *dir_alias_p = rb_ivar_get(self, id_dir_alias);
+        if (NIL_P(*dir_alias_p))
+            need_get = 1;
+    }
+    if (filename_p != NULL) {
+        *filename_p = rb_ivar_get(self, id_filename);
+        if (NIL_P(*filename_p))
+            need_get = 1;
+    }
+    if (need_get) {
+        oci8_lob_t *lob = DATA_PTR(self);
+        oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+        char d_buf[31];
+        ub2 d_length = sizeof(d_buf);
+        char f_buf[256];
+        ub2 f_length = sizeof(f_buf);
+        VALUE dir_alias;
+        VALUE filename;
+
+        oci_rc(svcctx, OCILobFileGetName(oci8_envhp, oci8_errhp, lob->base.hp.lob, TO_ORATEXT(d_buf), &d_length, TO_ORATEXT(f_buf), &f_length));
+        dir_alias = rb_str_new(d_buf, d_length);
+        filename = rb_str_new(f_buf, f_length);
+        rb_ivar_set(self, id_dir_alias, dir_alias);
+        rb_ivar_set(self, id_filename, filename);
+        if (dir_alias_p != NULL) {
+            *dir_alias_p = dir_alias;
+        }
+        if (filename_p != NULL) {
+            *filename_p = filename;
+        }
+    }
+}
+
+static void oci8_bfile_set_name(VALUE self, VALUE dir_alias, VALUE filename)
+{
+    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+
+    bfile_close(lob);
+    oci_rc(svcctx, OCILobFileSetName(oci8_envhp, oci8_errhp, &lob->base.hp.lob,
+                                     RSTRING_PTR(dir_alias), RSTRING_LEN(dir_alias),
+                                     RSTRING_PTR(filename), RSTRING_LEN(filename)));
+}
+
+static VALUE oci8_bfile_initialize(int argc, VALUE *argv, VALUE self)
+{
+    oci8_lob_t *lob = DATA_PTR(self);
+    VALUE svc;
+    VALUE dir_alias;
+    VALUE filename;
+
+    rb_scan_args(argc, argv, "12", &svc, &dir_alias, &filename);
+    TO_SVCCTX(svc); /* check argument type */
+    oci_lc(OCIDescriptorAlloc(oci8_envhp, &lob->base.hp.ptr, OCI_DTYPE_LOB, 0, NULL));
+    lob->base.type = OCI_DTYPE_LOB;
+    lob->svc = svc;
+    lob->pos = 0;
+    lob->char_width = 1;
+    lob->state = S_BFILE_CLOSE;
+    if (argc != 1) {
+        StringValue(dir_alias);
+        StringValue(filename);
+        oci8_bfile_set_name(self, dir_alias, filename);
+    }
+    oci8_link_to_parent((oci8_base_t*)lob, (oci8_base_t*)DATA_PTR(svc));
+    return Qnil;
+}
+
+static VALUE oci8_bfile_get_dir_alias(VALUE self)
+{
+    VALUE dir_alias;
+
+    oci8_bfile_get_name(self, &dir_alias, NULL);
+    return dir_alias;
+}
+
+static VALUE oci8_bfile_get_filename(VALUE self)
+{
+    VALUE filename;
+
+    oci8_bfile_get_name(self, NULL, &filename);
+    return filename;
+}
+
+static VALUE oci8_bfile_set_dir_alias(VALUE self, VALUE dir_alias)
+{
+    VALUE filename;
+
+    StringValue(dir_alias);
+    oci8_bfile_get_name(self, NULL, &filename);
+    oci8_bfile_set_name(self, dir_alias, filename);
+    rb_ivar_set(self, id_dir_alias, dir_alias);
+    return dir_alias;
+}
+
+static VALUE oci8_bfile_set_filename(VALUE self, VALUE filename)
+{
+    VALUE dir_alias;
+
+    StringValue(filename);
+    oci8_bfile_get_name(self, &dir_alias, NULL);
+    oci8_bfile_set_name(self, dir_alias, filename);
+    rb_ivar_set(self, id_filename, filename);
+    return filename;
+}
+
+static VALUE oci8_bfile_exists_p(VALUE self)
+{
+    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+    boolean flag;
+
+    oci_rc(svcctx, OCILobFileExists(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &flag));
+    return flag ? Qtrue : Qfalse;
+}
+
+static VALUE oci8_bfile_error(VALUE self, VALUE dummy)
+{
+    rb_raise(rb_eRuntimeError, "cannot modify a read-only BFILE object");
+}
+
 /*
- * bind_clob/blob
+ * bind_clob/blob/bfile
  */
 
 typedef struct {
@@ -433,9 +599,29 @@ static oci8_bind_lob_class_t bind_blob_class = {
     &cOCI8BLOB
 };
 
+static oci8_bind_lob_class_t bind_bfile_class = {
+    {
+        {
+            oci8_bind_hp_obj_mark,
+            oci8_bind_free,
+            sizeof(oci8_bind_t)
+        },
+        bind_lob_get,
+        bind_lob_set,
+        bind_lob_init,
+        bind_lob_init_elem,
+        NULL,
+        NULL,
+        SQLT_BFILE
+    },
+    &cOCI8BFILE
+};
+
 void Init_oci8_lob(VALUE cOCI8)
 {
     id_plus = rb_intern("+");
+    id_dir_alias = rb_intern("@dir_alias");
+    id_filename = rb_intern("@filename");
     seek_set = rb_eval_string("::IO::SEEK_SET");
     seek_cur = rb_eval_string("::IO::SEEK_CUR");
     seek_end = rb_eval_string("::IO::SEEK_END");
@@ -443,6 +629,8 @@ void Init_oci8_lob(VALUE cOCI8)
     cOCI8LOB = oci8_define_class_under(cOCI8, "LOB", &oci8_lob_class);
     cOCI8BLOB = rb_define_class_under(cOCI8, "BLOB", cOCI8LOB);
     cOCI8CLOB = rb_define_class_under(cOCI8, "CLOB", cOCI8LOB);
+    cOCI8BFILE = rb_define_class_under(cOCI8, "BFILE", cOCI8LOB);
+
     rb_define_method(cOCI8LOB, "initialize", oci8_lob_initialize, 1);
     rb_define_private_method(cOCI8LOB, "__char_width=", oci8_lob_set_char_width, 1);
     rb_define_method(cOCI8LOB, "available?", oci8_lob_available_p, 0);
@@ -454,7 +642,7 @@ void Init_oci8_lob(VALUE cOCI8)
     rb_define_method(cOCI8LOB, "rewind", oci8_lob_rewind, 0);
     rb_define_method(cOCI8LOB, "truncate", oci8_lob_truncate, 1);
     rb_define_method(cOCI8LOB, "size=", oci8_lob_set_size, 1);
-    rb_define_method(cOCI8LOB, "read", oci8_lob_read, 1);
+    rb_define_method(cOCI8LOB, "read", oci8_lob_read, -1);
     rb_define_method(cOCI8LOB, "write", oci8_lob_write, 1);
     rb_define_method(cOCI8LOB, "close", oci8_lob_close, 0);
     rb_define_method(cOCI8LOB, "sync", oci8_lob_get_sync, 0);
@@ -462,6 +650,17 @@ void Init_oci8_lob(VALUE cOCI8)
     rb_define_method(cOCI8LOB, "flush", oci8_lob_flush, 0);
     rb_define_method(cOCI8LOB, "chunk_size", oci8_lob_get_chunk_size, 0);
 
+    rb_define_method(cOCI8BFILE, "initialize", oci8_bfile_initialize, -1);
+    rb_define_method(cOCI8BFILE, "dir_alias", oci8_bfile_get_dir_alias, 0);
+    rb_define_method(cOCI8BFILE, "filename", oci8_bfile_get_filename, 0);
+    rb_define_method(cOCI8BFILE, "dir_alias=", oci8_bfile_set_dir_alias, 1);
+    rb_define_method(cOCI8BFILE, "filename=", oci8_bfile_set_filename, 1);
+    rb_define_method(cOCI8BFILE, "exists?", oci8_bfile_exists_p, 0);
+    rb_define_method(cOCI8BFILE, "truncate", oci8_bfile_error, 1);
+    rb_define_method(cOCI8BFILE, "size=", oci8_bfile_error, 1);
+    rb_define_method(cOCI8BFILE, "write", oci8_bfile_error, 1);
+
     oci8_define_bind_class("CLOB", &bind_clob_class.bind);
     oci8_define_bind_class("BLOB", &bind_blob_class.bind);
+    oci8_define_bind_class("BFILE", &bind_bfile_class.bind);
 }
