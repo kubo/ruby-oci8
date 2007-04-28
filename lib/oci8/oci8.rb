@@ -164,8 +164,10 @@ class OCI8
     Mapping[::Date]         = ::OCI8::BindType::Date
     Mapping[::DateTime]     = ::OCI8::BindType::DateTime
     Mapping[::OCIRowid]     = ::OCI8::BindType::OCIRowid
-    Mapping[::OCI8::BLOB]   = ::OCI8::BindType::BLOB
     Mapping[::OCI8::CLOB]   = ::OCI8::BindType::CLOB
+    Mapping[::OCI8::NCLOB]  = ::OCI8::BindType::NCLOB
+    Mapping[::OCI8::BLOB]   = ::OCI8::BindType::BLOB
+    Mapping[::OCI8::BFILE]  = ::OCI8::BindType::BFILE
     Mapping[::OCI8::Cursor] = ::OCI8::BindType::Cursor
 
     # implicitly define
@@ -204,6 +206,7 @@ class OCI8
     # -------------------------------------------------
     # CLOB          SQLT_CLOB  4000    0    0
     Mapping[:clob] = ::OCI8::BindType::CLOB
+    Mapping[:nclob] = ::OCI8::BindType::NCLOB  # if OCI8::Metadata::Column#charset_form is :nchar.
 
     # datatype        type     size prec scale
     # -------------------------------------------------
@@ -248,6 +251,9 @@ class OCI8
     # INTEGER          SQLT_NUM     22   38    0
     # SMALLINT         SQLT_NUM     22   38    0
     Mapping[:number] = ::OCI8::BindType::Number
+
+    Mapping[:bfloat] = ::OCI8::BindType::Float
+    Mapping[:bdouble] = ::OCI8::BindType::Float
 
     # NamedType
     Mapping[:named_type]    = ::OCI8::BindType::TDO

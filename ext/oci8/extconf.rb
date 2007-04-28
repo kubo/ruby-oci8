@@ -37,9 +37,9 @@ have_func("OCIEnvCreate")
 have_func("OCITerminate")
 
 # OCIServerRelease
-#   8.0.5  - NG
-#   9.0.1  - OK
-have_func("OCIServerRelease")
+#   8.1.5  - NG
+#   8.1.7  - OK
+#have_func("OCIServerRelease")
 
 # OCILobOpen
 #   8.0.5  - NG
@@ -51,7 +51,14 @@ have_func("OCILobOpen")
 #   9.0.1  - OK
 have_func("OCILobClose")
 
+# OCILobCreateTemporary
+#   8.0.5  - NG
+#   8.1.5  - OK
+have_func("OCILobCreateTemporary")
+
+have_func("OCILobGetChunkSize")
 have_func("OCILobLocatorAssign")
+
 $defs.push("-DHAVE_OCIRESET") unless /80./ =~ oraconf.version
 
 have_func("OCIRowidToChar")

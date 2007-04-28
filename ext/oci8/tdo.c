@@ -100,6 +100,7 @@ static VALUE oci8_tdo_init(VALUE self, oci8_svcctx_t *svcctx, OCIParam *param)
         text *text;
         ub4 size;
         ub2 typecode;
+        ub1 csfrm;
         VALUE name_obj;
         VALUE type_obj;
 
@@ -131,6 +132,11 @@ static VALUE oci8_tdo_init(VALUE self, oci8_svcctx_t *svcctx, OCIParam *param)
             oci_lc(OCIAttrGet(tdo->deschp, OCI_HTYPE_DESCRIBE, &param, 0, OCI_ATTR_PARAM, oci8_errhp));
             oci8_tdo_init(type_obj, svcctx, param);
             break;
+        case OCI_TYPECODE_CLOB:
+            oci_lc(OCIAttrGet(param, OCI_DTYPE_PARAM, &csfrm, 0, OCI_ATTR_CHARSET_FORM, oci8_errhp));
+            if (csfrm == SQLCS_NCHAR)
+                typecode = OCI_TYPECODE_NCLOB;
+            /* pass through */
         default:
             type_obj = INT2FIX(typecode);
         }
@@ -259,6 +265,9 @@ static VALUE oraobject_to_rubyobj(VALUE tdo_obj, dvoid *instance, dvoid *null_st
             case OCI_TYPECODE_OPAQUE:
                 attr_obj = oraopaque_to_rubyobj(type, attr_value, attr_null_struct);
                 break;
+            case OCI_TYPECODE_CLOB:
+                if (type == INT2FIX(OCI_TYPECODE_NCLOB))
+                    typecode = OCI_TYPECODE_NCLOB;
             default:
                 if (!FIXNUM_P(type) || FIX2INT(type) != typecode)
                     rb_raise(rb_eRuntimeError, "unexpected type structure");
@@ -300,6 +309,8 @@ static VALUE orascalar_to_rubyobj(oci8_svcctx_t *svcctx, OCITypeCode typecode, d
         return oci8_make_float((OCINumber *)instance);
     case OCI_TYPECODE_CLOB:
         return oci8_make_clob(svcctx, *(OCILobLocator **)instance);
+    case OCI_TYPECODE_NCLOB:
+        return oci8_make_nclob(svcctx, *(OCILobLocator **)instance);
     case OCI_TYPECODE_BLOB:
         return oci8_make_blob(svcctx, *(OCILobLocator **)instance);
     case OCI_TYPECODE_BFILE:

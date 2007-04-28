@@ -5,8 +5,9 @@ static ID id_plus;
 static ID id_dir_alias;
 static ID id_filename;
 static VALUE cOCI8LOB;
-static VALUE cOCI8BLOB;
 static VALUE cOCI8CLOB;
+static VALUE cOCI8NCLOB;
+static VALUE cOCI8BLOB;
 static VALUE cOCI8BFILE;
 static VALUE seek_set;
 static VALUE seek_cur;
@@ -24,8 +25,11 @@ typedef struct {
     VALUE svc;
     ub4 pos;
     int char_width;
+    ub1 csfrm;
     enum state state;
 } oci8_lob_t;
+
+static VALUE oci8_lob_write(VALUE self, VALUE data);
 
 static VALUE oci8_make_lob(VALUE klass, oci8_svcctx_t *svcctx, OCILobLocator *s)
 {
@@ -47,6 +51,11 @@ static VALUE oci8_make_lob(VALUE klass, oci8_svcctx_t *svcctx, OCILobLocator *s)
 VALUE oci8_make_clob(oci8_svcctx_t *svcctx, OCILobLocator *s)
 {
     return oci8_make_lob(cOCI8CLOB, svcctx, s);
+}
+
+VALUE oci8_make_nclob(oci8_svcctx_t *svcctx, OCILobLocator *s)
+{
+    return oci8_make_lob(cOCI8NCLOB, svcctx, s);
 }
 
 VALUE oci8_make_blob(oci8_svcctx_t *svcctx, OCILobLocator *s)
@@ -128,11 +137,14 @@ static VALUE oci8_lob_close(VALUE self)
     return self;
 }
 
-static VALUE oci8_lob_initialize(VALUE self, VALUE svc)
+static VALUE oci8_lob_do_initialize(int argc, VALUE *argv, VALUE self, ub1 csfrm, ub1 lobtype)
 {
     oci8_lob_t *lob = DATA_PTR(self);
+    VALUE svc;
+    VALUE val;
     sword rv;
 
+    rb_scan_args(argc, argv, "11", &svc, &val);
     TO_SVCCTX(svc); /* check argument type */
     rv = OCIDescriptorAlloc(oci8_envhp, &lob->base.hp.ptr, OCI_DTYPE_LOB, 0, NULL);
     if (rv != OCI_SUCCESS)
@@ -141,8 +153,37 @@ static VALUE oci8_lob_initialize(VALUE self, VALUE svc)
     lob->svc = svc;
     lob->pos = 0;
     lob->char_width = 1;
+    lob->csfrm = csfrm;
     lob->state = S_NO_OPEN_CLOSE;
     oci8_link_to_parent((oci8_base_t*)lob, (oci8_base_t*)DATA_PTR(svc));
+    if (!NIL_P(val)) {
+#ifdef HAVE_OCILOBCREATETEMPORARY
+        oci8_svcctx_t *svcctx = oci8_get_svcctx(svc);
+        StringValue(val);
+        oci_rc(svcctx, OCILobCreateTemporary(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, 0, csfrm, lobtype, TRUE, OCI_DURATION_SESSION));
+        oci8_lob_write(self, val);
+#else
+        rb_notimplement();
+#endif
+    }
+    return Qnil;
+}
+
+static VALUE oci8_clob_initialize(int argc, VALUE *argv, VALUE self)
+{
+    oci8_lob_do_initialize(argc, argv, self, SQLCS_IMPLICIT, OCI_TEMP_CLOB);
+    return Qnil;
+}
+
+static VALUE oci8_nclob_initialize(int argc, VALUE *argv, VALUE self)
+{
+    oci8_lob_do_initialize(argc, argv, self, SQLCS_NCHAR, OCI_TEMP_CLOB);
+    return Qnil;
+}
+
+static VALUE oci8_blob_initialize(int argc, VALUE *argv, VALUE self)
+{
+    oci8_lob_do_initialize(argc, argv, self, SQLCS_IMPLICIT, OCI_TEMP_BLOB);
     return Qnil;
 }
 
@@ -284,7 +325,7 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
                 oci8_raise(oci8_errhp, rv, NULL);
             lob->state = S_BFILE_OPEN;
         }
-        oci_rc2(rv, svcctx, OCILobRead(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, buf, sizeof(buf), NULL, NULL, 0, SQLCS_IMPLICIT));
+        oci_rc2(rv, svcctx, OCILobRead(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, buf, sizeof(buf), NULL, NULL, 0, lob->csfrm));
         if (rv == OCI_ERROR && oci8_get_error_code(oci8_errhp) == 22289) {
             /* ORA-22289: cannot perform FILEREAD operation on an unopened file or LOB */
             if (lob->state == S_BFILE_CLOSE)
@@ -320,7 +361,7 @@ static VALUE oci8_lob_write(VALUE self, VALUE data)
     lob_open(lob);
     StringValue(data);
     amt = RSTRING_LEN(data);
-    oci_rc(svcctx, OCILobWrite(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, RSTRING_PTR(data), amt, OCI_ONE_PIECE, NULL, NULL, 0, SQLCS_IMPLICIT));
+    oci_rc(svcctx, OCILobWrite(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, RSTRING_PTR(data), amt, OCI_ONE_PIECE, NULL, NULL, 0, lob->csfrm));
     lob->pos += amt;
     return INT2FIX(amt);
 }
@@ -362,7 +403,7 @@ static VALUE oci8_lob_get_chunk_size(VALUE self)
     oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
     ub4 len;
 
-    oci_rc(svcctx, OCILobGetChunkSize(svcctx->hp.svc, oci8_errhp, lob->base.hp.lob, &len);
+    oci_rc(svcctx, OCILobGetChunkSize(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &len));
     return INT2FIX(len);
 #else
     rb_notimplement();
@@ -453,6 +494,7 @@ static VALUE oci8_bfile_initialize(int argc, VALUE *argv, VALUE self)
     lob->svc = svc;
     lob->pos = 0;
     lob->char_width = 1;
+    lob->csfrm = SQLCS_IMPLICIT;
     lob->state = S_BFILE_CLOSE;
     if (argc != 1) {
         StringValue(dir_alias);
@@ -581,6 +623,24 @@ static oci8_bind_lob_class_t bind_clob_class = {
     &cOCI8CLOB
 };
 
+static oci8_bind_lob_class_t bind_nclob_class = {
+    {
+        {
+            oci8_bind_hp_obj_mark,
+            oci8_bind_free,
+            sizeof(oci8_bind_t)
+        },
+        bind_lob_get,
+        bind_lob_set,
+        bind_lob_init,
+        bind_lob_init_elem,
+        NULL,
+        NULL,
+        SQLT_CLOB
+    },
+    &cOCI8NCLOB
+};
+
 static oci8_bind_lob_class_t bind_blob_class = {
     {
         {
@@ -627,11 +687,14 @@ void Init_oci8_lob(VALUE cOCI8)
     seek_end = rb_eval_string("::IO::SEEK_END");
 
     cOCI8LOB = oci8_define_class_under(cOCI8, "LOB", &oci8_lob_class);
-    cOCI8BLOB = rb_define_class_under(cOCI8, "BLOB", cOCI8LOB);
     cOCI8CLOB = rb_define_class_under(cOCI8, "CLOB", cOCI8LOB);
+    cOCI8NCLOB = rb_define_class_under(cOCI8, "NCLOB", cOCI8LOB);
+    cOCI8BLOB = rb_define_class_under(cOCI8, "BLOB", cOCI8LOB);
     cOCI8BFILE = rb_define_class_under(cOCI8, "BFILE", cOCI8LOB);
 
-    rb_define_method(cOCI8LOB, "initialize", oci8_lob_initialize, 1);
+    rb_define_method(cOCI8CLOB, "initialize", oci8_clob_initialize, -1);
+    rb_define_method(cOCI8NCLOB, "initialize", oci8_nclob_initialize, -1);
+    rb_define_method(cOCI8BLOB, "initialize", oci8_blob_initialize, -1);
     rb_define_private_method(cOCI8LOB, "__char_width=", oci8_lob_set_char_width, 1);
     rb_define_method(cOCI8LOB, "available?", oci8_lob_available_p, 0);
     rb_define_method(cOCI8LOB, "size", oci8_lob_get_size, 0);
@@ -661,6 +724,7 @@ void Init_oci8_lob(VALUE cOCI8)
     rb_define_method(cOCI8BFILE, "write", oci8_bfile_error, 1);
 
     oci8_define_bind_class("CLOB", &bind_clob_class.bind);
+    oci8_define_bind_class("NCLOB", &bind_nclob_class.bind);
     oci8_define_bind_class("BLOB", &bind_blob_class.bind);
     oci8_define_bind_class("BFILE", &bind_bfile_class.bind);
 }

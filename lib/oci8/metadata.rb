@@ -335,6 +335,10 @@ class OCI8
                                "#{name}(#{p.data_size})"
                              end
                            end]
+      # SQLT_IBFLOAT
+      DATA_TYPE_MAP[100] = [:bfloat, "BINARY_FLOAT"]
+      # SQLT_IBDOUBLE
+      DATA_TYPE_MAP[101] = [:bdouble, "BINARY_DOUBLE"]
       # SQLT_RDD
       DATA_TYPE_MAP[104] = [:rowid, "ROWID"]
       # SQLT_NTY
@@ -348,7 +352,13 @@ class OCI8
                               "#{p.schema_name}.#{p.type_name}"
                             end]
       # SQLT_CLOB
-      DATA_TYPE_MAP[112] = [:clob,
+      DATA_TYPE_MAP[112] = [Proc.new do |p|
+                              if p.charset_form == :nchar
+                                :nclob
+                              else
+                                :clob
+                              end
+                            end,
                             Proc.new do |p|
                               if p.charset_form == :nchar
                                 "NCLOB"
@@ -389,7 +399,9 @@ class OCI8
       def __data_type
         return @data_type if @data_type
         entry = DATA_TYPE_MAP[__ub2(OCI_ATTR_DATA_TYPE)]
-        @data_type = entry.nil? ? __ub2(OCI_ATTR_DATA_TYPE) : entry[0]
+        type = entry.nil? ? __ub2(OCI_ATTR_DATA_TYPE) : entry[0]
+        type = type.call(self) if type.is_a? Proc
+        @data_type = type
       end
 
       def __duration

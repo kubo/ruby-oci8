@@ -322,6 +322,7 @@ VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE desc);
 /* lob.c */
 void Init_oci8_lob(VALUE cOCI8);
 VALUE oci8_make_clob(oci8_svcctx_t *svcctx, OCILobLocator *s);
+VALUE oci8_make_nclob(oci8_svcctx_t *svcctx, OCILobLocator *s);
 VALUE oci8_make_blob(oci8_svcctx_t *svcctx, OCILobLocator *s);
 VALUE oci8_make_bfile(oci8_svcctx_t *svcctx, OCILobLocator *s);
 
