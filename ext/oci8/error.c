@@ -225,7 +225,7 @@ static VALUE oci8_error_sql(VALUE self)
 
 sb4 oci8_get_error_code(OCIError *errhp)
 {
-    sb4 errcode;
+    sb4 errcode = -1;
     OCIErrorGet(oci8_errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
     return errcode;
 }

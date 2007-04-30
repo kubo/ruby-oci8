@@ -1,3 +1,10 @@
+2007-04-30  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, ext/oci8/oci8.h, ext/oci8/oci8lib.c,
+	  ext/oci8/tdo.c: enable XML support when Oracle 10g.
+	* ext/oci8/xmldb.c: add oci8_make_rexml() to support XML for reading.
+	* ext/oci8/lob.c: fix compiler warnings.
+	* ext/oci8/error.c: fix a bit.
+
 2007-04-28  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/oci8.rb: fetch NCLOB column value as an OCI8::NCLOB. fetch
 	    BINARY_DOUBLE and BINARY_FLOAT column as a Float.

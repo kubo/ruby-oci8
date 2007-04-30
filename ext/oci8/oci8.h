@@ -22,6 +22,9 @@ extern "C" {
 #ifdef __cplusplus
 }
 #endif
+#ifdef HAVE_XMLOTN_H
+#include "xmlotn.h"
+#endif
 #include "extconf.h"
 
 #ifndef RSTRING_PTR
@@ -87,6 +90,7 @@ static ALWAYS_INLINE char *to_charptr(OraText *c)
 #define TO_CHARPTR(c) ((char*)(c))
 #endif
 #define RSTRING_ORATEXT(obj) TO_ORATEXT(RSTRING_PTR(obj))
+#define rb_str_new2_ora(str) rb_str_new2(TO_CHARPTR(str))
 
 #define rb_define_method_nodoc rb_define_method
 
@@ -345,6 +349,17 @@ VALUE oci8_make_interval_ds(OCIInterval *s);
 
 /* tdo.c */
 void Init_oci_tdo(VALUE mOCI);
+
+/* xmldb.c */
+#ifndef XMLCTX_DEFINED
+#define XMLCTX_DEFINED
+struct xmlctx; typedef struct xmlctx xmlctx;
+#endif
+#ifndef XML_TYPES
+typedef struct xmlnode xmlnode;
+#endif
+void Init_oci_xmldb(void);
+VALUE oci8_make_rexml(struct xmlctx *xctx, xmlnode *node);
 
 /* attr.c */
 VALUE oci8_get_sb1_attr(oci8_base_t *base, ub4 attrtype);

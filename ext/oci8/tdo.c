@@ -21,10 +21,22 @@ static ID id_at_types;
 static ID id_at_class;
 static ID id_at_con;
 
+enum opaque_type {
+    NO_OPAQUE = 0,
+    OPAQUE_XMLTYPE,
+    OPAQUE_ANYDATA,
+    OPAQUE_ANYTYPE,
+    OPAQUE_ANYDATASET,
+};
+
 typedef struct {
     oci8_base_t base;
     oci8_svcctx_t *svcctx;
     OCIDescribe *deschp;
+#ifdef HAVE_OCIXMLDB
+    struct xmlctx *xmlctx;
+#endif
+    enum opaque_type opaque_type;
 } oci8_tdo_t;
 
 static void oci8_tdo_mark(oci8_base_t *base)
@@ -44,6 +56,12 @@ static void oci8_tdo_free(oci8_base_t *base)
         OCIHandleFree(tdo->deschp, OCI_HTYPE_DESCRIBE);
         tdo->deschp = NULL;
     }
+#ifdef HAVE_OCIXMLDB
+    if (tdo->xmlctx != NULL) {
+        OCIXmlDbFreeXmlCtx(tdo->xmlctx);
+        tdo->xmlctx = NULL;
+    }
+#endif
 }
 
 static oci8_base_class_t oci8_tdo_class = {
@@ -66,21 +84,46 @@ static VALUE oci8_tdo_init(VALUE self, oci8_svcctx_t *svcctx, OCIParam *param)
     VALUE types;
     ub2 idx;
     ub4 name_max = 0;
+    ub2 typecode;
     char *name;
     char *str;
-    ub4 strlen;
+    ub4 slen;
 
     tdo->svcctx = svcctx;
+    /* get typecode */
+    oci_lc(OCIAttrGet(param, OCI_DTYPE_PARAM, &typecode, 0, OCI_ATTR_TYPECODE, oci8_errhp));
     /* get tdo */
     oci_lc(OCIAttrGet(param, OCI_DTYPE_PARAM, (dvoid *)&tdo_ref, 0, OCI_ATTR_REF_TDO, oci8_errhp));
     oci_lc(OCIObjectPin(oci8_envhp, oci8_errhp, tdo_ref, 0, OCI_PIN_ANY, OCI_DURATION_SESSION, OCI_LOCK_NONE, &tdo->base.hp.ptr));
     /* get schema name */
-    oci_lc(OCIAttrGet(param, OCI_DTYPE_PARAM, &str, &strlen, OCI_ATTR_SCHEMA_NAME, oci8_errhp));
-    schema_name = rb_str_new(str, strlen);
+    oci_lc(OCIAttrGet(param, OCI_DTYPE_PARAM, &str, &slen, OCI_ATTR_SCHEMA_NAME, oci8_errhp));
+    schema_name = rb_str_new(str, slen);
 
     /* get type name */
-    oci_lc(OCIAttrGet(param, OCI_DTYPE_PARAM, &str, &strlen, OCI_ATTR_NAME, oci8_errhp));
-    type_name = rb_str_new(str, strlen);
+    oci_lc(OCIAttrGet(param, OCI_DTYPE_PARAM, &str, &slen, OCI_ATTR_NAME, oci8_errhp));
+    type_name = rb_str_new(str, slen);
+
+    if (typecode == OCI_TYPECODE_OPAQUE) {
+        if (strncmp(str, "XMLTYPE", slen) == 0) {
+#ifdef HAVE_OCIXMLDB
+            tdo->xmlctx = OCIXmlDbInitXmlCtx(oci8_envhp, svcctx->base.hp.svc, oci8_errhp, NULL, 0);
+#else
+            rb_raise(rb_eRuntimeError, "SYS.XMLTYPE is not supported by this library.");
+#endif
+            tdo->opaque_type = OPAQUE_XMLTYPE;
+        } else if (strncmp(str, "ANYDATA", slen) == 0) {
+            rb_raise(rb_eRuntimeError, "SYS.ANYDATA has not been supported yet.");
+            tdo->opaque_type = OPAQUE_ANYDATA;
+        } else if (strncmp(str, "ANYTYPE", slen) == 0) {
+            rb_raise(rb_eRuntimeError, "SYS.ANYTYPE has not been supported yet.");
+            tdo->opaque_type = OPAQUE_ANYTYPE;
+        } else if (strncmp(str, "ANYDATASET", slen) == 0) {
+            rb_raise(rb_eRuntimeError, "SYS.ANYDATASET has not been supported yet.");
+            tdo->opaque_type = OPAQUE_ANYDATASET;
+        } else {
+            rb_raise(rb_eRuntimeError, "unknown opaque datatype %.*s", slen, str);
+        }
+    }
 
     /* determine klass */
     klass = rb_hash_aref(mapping, type_name);
@@ -213,7 +256,14 @@ static VALUE orascalar_to_rubyobj(oci8_svcctx_t *svcctx, OCITypeCode typecode, d
 static VALUE bind_tdo_get(oci8_bind_t *obind, void *data, void *null_struct)
 {
     void **instancepp = (void **)data;
-    return oraobject_to_rubyobj(obind->tdo, *instancepp, null_struct);
+    oci8_tdo_t *tdo;
+
+    Data_Get_Struct(obind->tdo, oci8_tdo_t, tdo);
+    if (tdo->opaque_type) {
+        return oraopaque_to_rubyobj(obind->tdo, *instancepp, null_struct);
+    } else {
+        return oraobject_to_rubyobj(obind->tdo, *instancepp, null_struct);
+    }
 }
 
 static VALUE oraobject_to_rubyobj(VALUE tdo_obj, dvoid *instance, dvoid *null_struct)
@@ -283,7 +333,23 @@ static VALUE oraobject_to_rubyobj(VALUE tdo_obj, dvoid *instance, dvoid *null_st
 
 static VALUE oraopaque_to_rubyobj(VALUE tdo_obj, dvoid *instance, dvoid *null_struct)
 {
-    return Qnil;
+    oci8_tdo_t *tdo;
+
+    Data_Get_Struct(tdo_obj, oci8_tdo_t, tdo);
+    switch (tdo->opaque_type) {
+    case OPAQUE_XMLTYPE:
+#ifdef HAVE_OCIXMLDB
+        return oci8_make_rexml(tdo->xmlctx, (xmlnode*)instance);
+#endif
+    case OPAQUE_ANYDATA:
+        rb_raise(rb_eRuntimeError, "sys.anydata has not been supported yet.");
+    case OPAQUE_ANYTYPE:
+        rb_raise(rb_eRuntimeError, "sys.anytype has not been supported yet.");
+    case OPAQUE_ANYDATASET:
+        rb_raise(rb_eRuntimeError, "sys.anydataset has not been supported yet.");
+    default:
+        return Qnil;
+    }
 }
 
 static VALUE orascalar_to_rubyobj(oci8_svcctx_t *svcctx, OCITypeCode typecode, dvoid *instance)
@@ -354,12 +420,18 @@ static void bind_tdo_init_elem(oci8_bind_t *obind, VALUE svc)
     oci8_tdo_t *tdo;
     void **instancepp = (void**)obind->valuep;
     ub4 idx = 0;
+    ub2 typecode;
 
     svcctx = oci8_get_svcctx(svc);
     Data_Get_Struct(obind->tdo, oci8_tdo_t, tdo);
+    if (tdo->opaque_type) {
+        typecode = OCI_TYPECODE_OPAQUE;
+    } else {
+        typecode = OCI_TYPECODE_OBJECT;
+    }
     do {
-        oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->base.hp.svc, OCI_TYPECODE_OBJECT, tdo->base.hp.tdo, NULL, OCI_DURATION_SESSION, 0, &instancepp[idx]));
-        oci_lc(OCIObjectGetInd(oci8_envhp, oci8_errhp, instancepp[idx], &obind->u.null_structs[idx]));
+        oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->base.hp.svc, typecode, tdo->base.hp.tdo, NULL, OCI_DURATION_SESSION, 0, &instancepp[idx]));
+        obind->u.null_structs[idx] = NULL;
     } while (++idx < obind->maxar_sz);
 }
 

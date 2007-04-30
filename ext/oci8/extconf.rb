@@ -63,6 +63,11 @@ $defs.push("-DHAVE_OCIRESET") unless /80./ =~ oraconf.version
 
 have_func("OCIRowidToChar")
 
+if oraconf.version.to_i >= 1000
+  $defs << "-DHAVE_OCIXMLDB"
+  $objs << "xmldb.o"
+end
+
 # Checking gcc or not
 if oraconf.cc_is_gcc
   $CFLAGS += " -Wall"
@@ -80,7 +85,6 @@ replace = {
 replace_keyword(File.dirname(__FILE__) + '/../../lib/oci8.rb.in', '../../lib/oci8.rb', replace)
 
 create_header()
-$defs = []
 
 # make dependency file
 open("depend", "w") do |f|

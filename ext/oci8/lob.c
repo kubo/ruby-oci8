@@ -476,8 +476,8 @@ static void oci8_bfile_set_name(VALUE self, VALUE dir_alias, VALUE filename)
 
     bfile_close(lob);
     oci_rc(svcctx, OCILobFileSetName(oci8_envhp, oci8_errhp, &lob->base.hp.lob,
-                                     RSTRING_PTR(dir_alias), RSTRING_LEN(dir_alias),
-                                     RSTRING_PTR(filename), RSTRING_LEN(filename)));
+                                     RSTRING_ORATEXT(dir_alias), RSTRING_LEN(dir_alias),
+                                     RSTRING_ORATEXT(filename), RSTRING_LEN(filename)));
 }
 
 static VALUE oci8_bfile_initialize(int argc, VALUE *argv, VALUE self)

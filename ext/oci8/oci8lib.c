@@ -154,6 +154,9 @@ Init_oci8lib()
     Init_oci_number(cOCI8);
     Init_oci_datetime();
     Init_oci_tdo(cOCI8);
+#ifdef HAVE_OCIXMLDB
+    Init_oci_xmldb();
+#endif
 
 #ifdef DEBUG_CORE_FILE
     signal(SIGSEGV, SIG_DFL);
