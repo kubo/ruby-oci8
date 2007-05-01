@@ -1939,7 +1939,7 @@ class OCI8
   def describe_any(object_name)
     __describe(object_name, OCI8::Metadata::Unknown, true)
   end
-  # returns a OCI8::Metadata::Table or a VOCI8::Metadata::iew. If the
+  # returns a OCI8::Metadata::Table or a OCI8::Metadata::View. If the
   # name is a current schema's synonym name or a public synonym name,
   # it returns a OCI8::Metadata::Table or a OCI8::Metadata::View which
   # the synonym refers.

@@ -15,9 +15,6 @@ void Init_oci8_env(void)
 {
     sword rv;
 
-#ifdef HAVE_OCIENVCREATE
-    rv = OCIEnvCreate(&oci8_envhp, OCI_OBJECT, NULL, NULL, NULL, NULL, 0, NULL);
-#else /*  HAVE_OCIENVCREATE */
 #ifndef WIN32
     /* workaround code.
      *
@@ -39,14 +36,11 @@ void Init_oci8_env(void)
 #endif /* WIN32 */
     rv = OCIInitialize(OCI_OBJECT, NULL, NULL, NULL, NULL);
     if (rv != OCI_SUCCESS) {
-        /* TODO: more proper error */
-        oci8_env_raise(h->hp, rv);
+        oci8_raise_init_error();
     }
     rv = OCIEnvInit(&oci8_envhp, OCI_DEFAULT, 0, NULL);
-#endif /*  HAVE_OCIENVCREATE */
     if (rv != OCI_SUCCESS) {
-        /* TODO: more proper error */
-        oci8_env_raise(oci8_envhp, rv);
+        oci8_raise_init_error();
     }
     rv = OCIHandleAlloc(oci8_envhp, (dvoid *)&oci8_errhp, OCI_HTYPE_ERROR, 0, NULL);
     if (rv != OCI_SUCCESS)

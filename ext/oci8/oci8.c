@@ -521,7 +521,7 @@ oci8_svcctx_t *oci8_get_svcctx(VALUE obj)
     oci8_base_t *base;
     Check_Handle(obj, cOCI8, base);
     if (base->type == 0) {
-        rb_raise(rb_eTypeError, "invalid argument %s was freed already.", rb_class2name(CLASS_OF(obj)));
+        rb_raise(eOCIException, "invalid argument %s was freed already.", rb_class2name(CLASS_OF(obj)));
     }
     return (oci8_svcctx_t *)base;
 }

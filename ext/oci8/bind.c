@@ -173,7 +173,7 @@ static void bind_long_out(oci8_bind_t *obind, ub4 idx, ub1 piece, void **valuepp
 
     if (piece == OCI_FIRST_PIECE) {
         bl->obj = Qnil;
-    } else {
+    } else if (bl->alen > 0) {
         if (!RTEST(bl->obj)) {
             bl->obj = rb_str_buf_new(bl->alen);
         }

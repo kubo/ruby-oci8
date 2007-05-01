@@ -1,3 +1,14 @@
+2007-05-01  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/bind.c: fix to return nil for LONG null column.
+	* ext/oci8/env.c: use OCIInitialize() and OCIEnvInit() instead
+	   of OCIEnvCreate() on every Oracle version.
+	* ext/oci8/env.c, ext/oci8/error.c, ext/oci8/oci8.h: raise
+	   "OCI Library Initialization Error" when Oracle can't supply
+	   the error message.
+	* ext/oci8/oci8.c: raise OCIException instead of TypeError.
+	* lib/oci8/metadata.rb: fix typo in comment.
+	* VERSION: change to 2.0-svn.
+
 2007-04-30  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, ext/oci8/oci8.h, ext/oci8/oci8lib.c,
 	  ext/oci8/tdo.c: enable XML support when Oracle 10g.

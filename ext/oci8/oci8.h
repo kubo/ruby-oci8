@@ -193,6 +193,7 @@ typedef struct  {
 
 #define oci8_raise(err, status, stmt) oci8_do_raise(err, status, stmt, __FILE__, __LINE__)
 #define oci8_env_raise(err, status) oci8_do_env_raise(err, status, __FILE__, __LINE__)
+#define oci8_raise_init_error() oci8_do_raise_init_error(__FILE__, __LINE__)
 
 /* use for local call */
 #define oci_lc(rv) do { \
@@ -290,6 +291,7 @@ extern VALUE eOCIBreak;
 void Init_oci8_error(void);
 NORETURN(void oci8_do_raise(OCIError *, sword status, OCIStmt *, const char *file, int line));
 NORETURN(void oci8_do_env_raise(OCIEnv *, sword status, const char *file, int line));
+NORETURN(void oci8_do_raise_init_error(const char *file, int line));
 sb4 oci8_get_error_code(OCIError *errhp);
 
 /* oci8.c */

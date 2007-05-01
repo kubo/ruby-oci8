@@ -29,6 +29,7 @@ static ID oci8_id_caller;
 static ID oci8_id_set_backtrace;
 
 NORETURN(static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line));
+NORETURN(static void set_backtrace_and_raise(VALUE exc, const char *file, int line));
 
 static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line)
 {
@@ -47,12 +48,6 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, c
 #endif
     int i;
     int rv;
-    VALUE backtrace;
-#ifdef _WIN32
-    char *p = strrchr(file, '\\');
-    if (p != NULL)
-        file = p + 1;
-#endif
 
     switch (status) {
     case OCI_ERROR:
@@ -148,11 +143,21 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, c
         rb_ivar_set(exc, oci8_id_sql, vsql);
     }
 #endif
-    /*
-     * make error line in C code.
-     */
+    set_backtrace_and_raise(exc, file, line);
+}
+
+static void set_backtrace_and_raise(VALUE exc, const char *file, int line)
+{
+    char errmsg[64];
+    VALUE backtrace;
+#ifdef _WIN32
+    char *p = strrchr(file, '\\');
+    if (p != NULL)
+        file = p + 1;
+#endif
     backtrace = rb_funcall(rb_cObject, oci8_id_caller, 0);
-    sprintf(errmsg, "%s:%d:in oci8lib.so", file, line);
+    snprintf(errmsg, sizeof(errmsg), "%s:%d:in oci8lib.so", file, line);
+    errmsg[sizeof(errmsg) - 1] = '\0';
     rb_ary_unshift(backtrace, rb_str_new2(errmsg));
     rb_funcall(exc, oci8_id_set_backtrace, 1, backtrace);
     rb_exc_raise(exc);
@@ -269,4 +274,14 @@ void oci8_do_raise(OCIError *errhp, sword status, OCIStmt *stmthp, const char *f
 void oci8_do_env_raise(OCIEnv *envhp, sword status, const char *file, int line)
 {
     oci8_raise2(envhp, status, OCI_HTYPE_ENV, NULL, file, line);
+}
+
+void oci8_do_raise_init_error(const char *file, int line)
+{
+  VALUE msg = rb_str_new2("OCI Library Initialization Error");
+  VALUE exc = rb_funcall(eOCIError, oci8_id_new, 1, msg);
+
+  rb_ivar_set(exc, oci8_id_code, rb_ary_new3(1, INT2FIX(-1)));
+  rb_ivar_set(exc, oci8_id_message, rb_ary_new3(1, msg));
+  set_backtrace_and_raise(exc, file, line);
 }
