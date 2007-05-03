@@ -29,6 +29,7 @@ ext/oci8/post-config.rb
 ext/oci8/rowid.c
 ext/oci8/stmt.c
 ext/oci8/tdo.c
+ext/oci8/xmldb.c
 lib/oci8.rb.in
 lib/DBD/OCI8/OCI8.rb
 lib/oci8/compat.rb
@@ -41,6 +42,7 @@ test/test_bind_raw.rb
 test/test_bind_time.rb
 test/test_break.rb
 test/test_clob.rb
+test/test_connstr.rb
 test/test_dbi.rb
 test/test_dbi_clob.rb
 test/test_oci8.rb

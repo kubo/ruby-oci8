@@ -11,7 +11,7 @@ static VALUE cOCIRowid;
 #if defined(RUNTIME_API_CHECK)
 #define USE_ROWID1
 #define USE_ROWID2
-#elif defined(HAVE_OCIROWIDTOCHAR)
+#elif BUILD_FOR_ORACLE_9_0
 #define USE_ROWID1
 #define Init_oci8_rowid1 Init_oci8_rowid
 #define oci8_get_rowid1_attr oci8_get_rowid_attr
@@ -262,13 +262,13 @@ static void bind_rowid2_set(oci8_bind_t *obind, void *data, void *null_struct, V
 
 static void bind_rowid2_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
 {
-    base->value_sz = sizeof(void *);
-    base->alloc_sz = sizeof(oci8_hp_obj_t);
+    obind->value_sz = sizeof(void *);
+    obind->alloc_sz = sizeof(oci8_hp_obj_t);
 }
 
 static void bind_rowid2_init_elem(oci8_bind_t *obind, VALUE svc)
 {
-    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)ob->valuep;
+    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)obind->valuep;
     oci8_base_t *h;
     ub4 idx = 0;
 
@@ -276,7 +276,7 @@ static void bind_rowid2_init_elem(oci8_bind_t *obind, VALUE svc)
         oho[idx].obj = rb_funcall(cOCIRowid, oci8_id_new, 0);
         h = DATA_PTR(oho[idx].obj);
         oho[idx].hp = h->hp.ptr;
-    } while (++idx < ob->maxar_sz);
+    } while (++idx < obind->maxar_sz);
 }
 
 static oci8_bind_class_t bind_rowid2_class = {

@@ -33,7 +33,7 @@ typedef struct {
     oci8_base_t base;
     oci8_svcctx_t *svcctx;
     OCIDescribe *deschp;
-#ifdef HAVE_OCIXMLDB
+#if BUILD_FOR_ORACLE_10_1
     struct xmlctx *xmlctx;
 #endif
     enum opaque_type opaque_type;
@@ -56,7 +56,7 @@ static void oci8_tdo_free(oci8_base_t *base)
         OCIHandleFree(tdo->deschp, OCI_HTYPE_DESCRIBE);
         tdo->deschp = NULL;
     }
-#ifdef HAVE_OCIXMLDB
+#if BUILD_FOR_ORACLE_10_1
     if (tdo->xmlctx != NULL) {
         OCIXmlDbFreeXmlCtx(tdo->xmlctx);
         tdo->xmlctx = NULL;
@@ -105,7 +105,7 @@ static VALUE oci8_tdo_init(VALUE self, oci8_svcctx_t *svcctx, OCIParam *param)
 
     if (typecode == OCI_TYPECODE_OPAQUE) {
         if (strncmp(str, "XMLTYPE", slen) == 0) {
-#ifdef HAVE_OCIXMLDB
+#if BUILD_FOR_ORACLE_10_1
             tdo->xmlctx = OCIXmlDbInitXmlCtx(oci8_envhp, svcctx->base.hp.svc, oci8_errhp, NULL, 0);
 #else
             rb_raise(rb_eRuntimeError, "SYS.XMLTYPE is not supported by this library.");
@@ -338,7 +338,7 @@ static VALUE oraopaque_to_rubyobj(VALUE tdo_obj, dvoid *instance, dvoid *null_st
     Data_Get_Struct(tdo_obj, oci8_tdo_t, tdo);
     switch (tdo->opaque_type) {
     case OPAQUE_XMLTYPE:
-#ifdef HAVE_OCIXMLDB
+#if BUILD_FOR_ORACLE_10_1
         return oci8_make_rexml(tdo->xmlctx, (xmlnode*)instance);
 #endif
     case OPAQUE_ANYDATA:
@@ -391,10 +391,12 @@ static VALUE orascalar_to_rubyobj(oci8_svcctx_t *svcctx, OCITypeCode typecode, d
         return oci8_make_interval_ym(*(OCIInterval**)instance);
     case OCI_TYPECODE_INTERVAL_DS:
         return oci8_make_interval_ds(*(OCIInterval**)instance);
+#if BUILD_FOR_ORACLE_10_1
     case OCI_TYPECODE_BFLOAT:
         return rb_float_new((double)*(float*)instance);
     case OCI_TYPECODE_BDOUBLE:
         return rb_float_new(*(double*)instance);
+#endif
     }
     rb_raise(rb_eRuntimeError, "unsupported typecode %d", typecode);
 }

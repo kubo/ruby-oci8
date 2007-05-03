@@ -1,3 +1,14 @@
+2007-05-03  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb: add '--with-oracle-version' option to
+	    make a binary for the specified oracle version.
+	    get the oracle client version from available OCI functions.
+	* ext/oci8/lob.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c,
+	  ext/oci8/rowid.c, ext/oci8/tdo.c, ext/oci8/xmldb.c: use
+	    BUILD_FOR_ORACLE_major_minor macros instead of HAVE_xxx
+	    macros.
+	* ext/oci8/oci8.c: delete unsed code.
+	* dist-files: add ext/oci8/xmldb.c and test/test_connstr.rb.
+
 2007-05-01  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c: fix to return nil for LONG null column.
 	* ext/oci8/env.c: use OCIInitialize() and OCIEnvInit() instead

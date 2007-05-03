@@ -154,11 +154,6 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
         StringValue(vdbname); /* 3 */
     }
     if (NIL_P(vmode)) { /* 4 */
-#if defined(HAVE_OCISESSIONGET)
-#error TODO
-#elif defined(HAVE_OCILOGON2)
-#error TODO
-#else
         rv = OCILogon(oci8_envhp, oci8_errhp, &svcctx->base.hp.svc,
                       RSTRING_ORATEXT(vusername), RSTRING_LEN(vusername),
                       RSTRING_ORATEXT(vpassword), RSTRING_LEN(vpassword),
@@ -167,7 +162,6 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
         if (rv != OCI_SUCCESS) {
             oci8_raise(oci8_errhp, rv, NULL);
         }
-#endif
         svcctx->base.type = OCI_HTYPE_SVCCTX;
         svcctx->logon_type = T_IMPLICIT;
     } else {

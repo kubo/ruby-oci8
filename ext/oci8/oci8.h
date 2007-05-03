@@ -27,6 +27,16 @@ extern "C" {
 #endif
 #include "extconf.h"
 
+#define BUILD_FOR_ORACLE_VERSION(major,minor) \
+    (BUILD_FOR_ORACLE_VERSION_MAJOR > (major) || \
+     (BUILD_FOR_ORACLE_VERSION_MAJOR == (major) && \
+      BUILD_FOR_ORACLE_VERSION_MINOR >= (minor)))
+#define BUILD_FOR_ORACLE_8_1 BUILD_FOR_ORACLE_VERSION(8, 1)
+#define BUILD_FOR_ORACLE_9_0 BUILD_FOR_ORACLE_VERSION(9, 0)
+#define BUILD_FOR_ORACLE_9_2 BUILD_FOR_ORACLE_VERSION(9, 2)
+#define BUILD_FOR_ORACLE_10_1 BUILD_FOR_ORACLE_VERSION(10, 1)
+#define BUILD_FOR_ORACLE_10_2 BUILD_FOR_ORACLE_VERSION(10, 2)
+
 #ifndef RSTRING_PTR
 #define RSTRING_PTR(obj) RSTRING(obj)->ptr
 #endif
@@ -203,7 +213,7 @@ typedef struct  {
     } \
 } while(0)
 
-#ifndef HAVE_OCIRESET
+#if BUILD_FOR_ORACLE_8_1
 #define OCIReset(svchp, errhp) do {} while(0)
 #endif
 

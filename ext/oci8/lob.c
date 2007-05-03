@@ -38,12 +38,10 @@ static VALUE oci8_make_lob(VALUE klass, oci8_svcctx_t *svcctx, OCILobLocator *s)
 
     lob_obj = rb_funcall(klass, oci8_id_new, 1, svcctx->base.self);
     lob = DATA_PTR(lob_obj);
-#ifdef HAVE_OCILOBLOCATORASSIGN
-    /* Oracle 8.1 or upper */
+#if BUILD_FOR_ORACLE_8_1
     oci_lc(OCILobLocatorAssign(svcctx->base.hp.svc, oci8_errhp, s, &lob->base.hp.lob));
 #else
-    /* Oracle 8.0 */
-    oci_lc(OCILobAssign(oci8_envhp.svc, oci8_errhp, s, &lob->base.hp.lob));
+    oci_lc(OCILobAssign(oci8_envhp, oci8_errhp, s, &lob->base.hp.lob));
 #endif
     return lob_obj;
 }
@@ -97,7 +95,7 @@ static ub4 oci8_lob_get_length(oci8_lob_t *lob)
 
 static void lob_open(oci8_lob_t *lob)
 {
-#ifdef HAVE_OCILOBOPEN
+#if BUILD_FOR_ORACLE_8_1
     if (lob->state == S_CLOSE) {
         oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
 
@@ -109,7 +107,7 @@ static void lob_open(oci8_lob_t *lob)
 
 static void lob_close(oci8_lob_t *lob)
 {
-#ifdef HAVE_OCILOBCLOSE
+#if BUILD_FOR_ORACLE_8_1
     if (lob->state == S_OPEN) {
         oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
 
@@ -157,7 +155,7 @@ static VALUE oci8_lob_do_initialize(int argc, VALUE *argv, VALUE self, ub1 csfrm
     lob->state = S_NO_OPEN_CLOSE;
     oci8_link_to_parent((oci8_base_t*)lob, (oci8_base_t*)DATA_PTR(svc));
     if (!NIL_P(val)) {
-#ifdef HAVE_OCILOBCREATETEMPORARY
+#if BUILD_FOR_ORACLE_8_1
         oci8_svcctx_t *svcctx = oci8_get_svcctx(svc);
         StringValue(val);
         oci_rc(svcctx, OCILobCreateTemporary(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, 0, csfrm, lobtype, TRUE, OCI_DURATION_SESSION));
@@ -387,7 +385,7 @@ static VALUE oci8_lob_set_sync(VALUE self, VALUE b)
 
 static VALUE oci8_lob_flush(VALUE self)
 {
-#ifdef HAVE_OCILOBCLOSE
+#if BUILD_FOR_ORACLE_8_1
     oci8_lob_t *lob = DATA_PTR(self);
     lob_close(lob);
     return self;
@@ -398,7 +396,7 @@ static VALUE oci8_lob_flush(VALUE self)
 
 static VALUE oci8_lob_get_chunk_size(VALUE self)
 {
-#ifdef HAVE_OCILOBGETCHUNKSIZE
+#if BUILD_FOR_ORACLE_8_1
     oci8_lob_t *lob = DATA_PTR(self);
     oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
     ub4 len;
@@ -419,11 +417,9 @@ static VALUE oci8_lob_clone(VALUE self)
 
     newobj = rb_funcall(CLASS_OF(self), oci8_id_new, 1, lob->svc);
     newlob = DATA_PTR(newobj);
-#ifdef HAVE_OCILOBLOCATORASSIGN
-    /* Oracle 8.1 or upper */
+#if BUILD_FOR_ORACLE_8_1
     rv = OCILobLocatorAssign(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp.lob, &newlob->base.hp.lob);
 #else
-    /* Oracle 8.0 */
     rv = OCILobAssign(oci8_envhp, oci8_errhp, lob->base.hp.lob, &newlob->base.hp.lob);
 #endif
     if (rv != OCI_SUCCESS) {

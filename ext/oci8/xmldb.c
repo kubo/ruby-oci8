@@ -1,6 +1,10 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 #include "oci8.h"
 
+#if !BUILD_FOR_ORACLE_10_1
+#error available on Oracle 10.1 or later.
+#endif
+
 #ifndef HAVE_XMLOTN_H
 /* declarations in xmlproc.h of Oracle XML Development Kit */
 typedef xmlnode xmlelemnode;
