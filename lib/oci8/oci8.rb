@@ -152,111 +152,6 @@ class OCI8
       end
     end
 
-    # bind or explicitly define
-    Mapping[::String]       = ::OCI8::BindType::String
-    Mapping[::OCINumber]    = ::OCI8::BindType::OCINumber
-    Mapping[::Fixnum]       = ::OCI8::BindType::Integer
-    Mapping[::Float]        = ::OCI8::BindType::Float
-    Mapping[::Integer]      = ::OCI8::BindType::Integer
-    Mapping[::Bignum]       = ::OCI8::BindType::Integer
-    Mapping[::OraDate]      = ::OCI8::BindType::OraDate
-    Mapping[::Time]         = ::OCI8::BindType::Time
-    Mapping[::Date]         = ::OCI8::BindType::Date
-    Mapping[::DateTime]     = ::OCI8::BindType::DateTime
-    Mapping[::OCIRowid]     = ::OCI8::BindType::OCIRowid
-    Mapping[::OCI8::CLOB]   = ::OCI8::BindType::CLOB
-    Mapping[::OCI8::NCLOB]  = ::OCI8::BindType::NCLOB
-    Mapping[::OCI8::BLOB]   = ::OCI8::BindType::BLOB
-    Mapping[::OCI8::BFILE]  = ::OCI8::BindType::BFILE
-    Mapping[::OCI8::Cursor] = ::OCI8::BindType::Cursor
-
-    # implicitly define
-
-    # datatype        type     size prec scale
-    # -------------------------------------------------
-    # CHAR(1)       SQLT_AFC      1    0    0
-    # CHAR(10)      SQLT_AFC     10    0    0
-    Mapping[:char] = ::OCI8::BindType::String
-
-    # datatype        type     size prec scale
-    # -------------------------------------------------
-    # VARCHAR(1)    SQLT_CHR      1    0    0
-    # VARCHAR(10)   SQLT_CHR     10    0    0
-    # VARCHAR2(1)   SQLT_CHR      1    0    0
-    # VARCHAR2(10)  SQLT_CHR     10    0    0
-    Mapping[:varchar2] = ::OCI8::BindType::String
-
-    # datatype        type     size prec scale
-    # -------------------------------------------------
-    # RAW(1)        SQLT_BIN      1    0    0
-    # RAW(10)       SQLT_BIN     10    0    0
-    Mapping[:raw] = ::OCI8::BindType::RAW
-
-    # datatype        type     size prec scale
-    # -------------------------------------------------
-    # LONG          SQLT_LNG      0    0    0
-    Mapping[:long] = ::OCI8::BindType::Long
-
-    # datatype        type     size prec scale
-    # -------------------------------------------------
-    # LONG RAW      SQLT_LBI      0    0    0
-    Mapping[:long_raw] = ::OCI8::BindType::LongRaw
-
-    # datatype        type     size prec scale
-    # -------------------------------------------------
-    # CLOB          SQLT_CLOB  4000    0    0
-    Mapping[:clob] = ::OCI8::BindType::CLOB
-    Mapping[:nclob] = ::OCI8::BindType::NCLOB  # if OCI8::Metadata::Column#charset_form is :nchar.
-
-    # datatype        type     size prec scale
-    # -------------------------------------------------
-    # BLOB          SQLT_BLOB  4000    0    0
-    Mapping[:blob] = ::OCI8::BindType::BLOB
-
-    # datatype        type     size prec scale
-    # -------------------------------------------------
-    # BFILE         SQLT_BFILE 4000    0    0
-    Mapping[:bfile] = ::OCI8::BindType::BFILE
-
-    # datatype        type     size prec scale
-    # -------------------------------------------------
-    # DATE          SQLT_DAT      7    0    0
-    Mapping[:date] = ::OCI8::BindType::DateTime
-
-    Mapping[:timestamp] = ::OCI8::BindType::DateTime
-    Mapping[:timestamp_tz] = ::OCI8::BindType::DateTime
-    Mapping[:timestamp_ltz] = ::OCI8::BindType::DateTime
-    Mapping[:interval_ym] = ::OCI8::BindType::IntervalYM
-    Mapping[:interval_ds] = ::OCI8::BindType::IntervalDS
-
-    # datatype        type     size prec scale
-    # -------------------------------------------------
-    # ROWID         SQLT_RDD      4    0    0
-    Mapping[:rowid] = ::OCI8::BindType::OCIRowid
-
-    # datatype           type     size prec scale
-    # -----------------------------------------------------
-    # FLOAT            SQLT_NUM     22  126 -127
-    # FLOAT(1)         SQLT_NUM     22    1 -127
-    # FLOAT(126)       SQLT_NUM     22  126 -127
-    # DOUBLE PRECISION SQLT_NUM     22  126 -127
-    # REAL             SQLT_NUM     22   63 -127
-    # NUMBER           SQLT_NUM     22    0    0
-    # NUMBER(1)        SQLT_NUM     22    1    0
-    # NUMBER(38)       SQLT_NUM     22   38    0
-    # NUMBER(1, 0)     SQLT_NUM     22    1    0
-    # NUMBER(38, 0)    SQLT_NUM     22   38    0
-    # NUMERIC          SQLT_NUM     22   38    0
-    # INT              SQLT_NUM     22   38    0
-    # INTEGER          SQLT_NUM     22   38    0
-    # SMALLINT         SQLT_NUM     22   38    0
-    Mapping[:number] = ::OCI8::BindType::Number
-
-    Mapping[:bfloat] = ::OCI8::BindType::Float
-    Mapping[:bdouble] = ::OCI8::BindType::Float
-
-    # NamedType
-    Mapping[:named_type]    = ::OCI8::BindType::TDO
   end # BindType
 
   # The instance of this class corresponds to cursor in the term of
@@ -477,8 +372,13 @@ class OCI8
       when :long, :long_raw
         datasize = @con.long_read_len
       when :named_type
-        # FIX LATER
-        datasize = OCI8::TDO.new(p.type_metadata)
+        if p.type_name == 'XMLTYPE'
+          datatype = :xmltype
+          datasize = @con.long_read_len
+        else
+          # FIXME
+          datasize = OCI8::TDO.new(p.type_metadata)
+        end
       end
 
       bind_or_define(:define, i, nil, datatype, datasize, precision, scale, true, nil)
@@ -543,3 +443,112 @@ class String
     OCINumber.new(self, format, nls_params)
   end
 end
+
+# bind or explicitly define
+OCI8::BindType::Mapping[String]       = OCI8::BindType::String
+OCI8::BindType::Mapping[OCINumber]    = OCI8::BindType::OCINumber
+OCI8::BindType::Mapping[Fixnum]       = OCI8::BindType::Integer
+OCI8::BindType::Mapping[Float]        = OCI8::BindType::Float
+OCI8::BindType::Mapping[Integer]      = OCI8::BindType::Integer
+OCI8::BindType::Mapping[Bignum]       = OCI8::BindType::Integer
+OCI8::BindType::Mapping[OraDate]      = OCI8::BindType::OraDate
+OCI8::BindType::Mapping[Time]         = OCI8::BindType::Time
+OCI8::BindType::Mapping[Date]         = OCI8::BindType::Date
+OCI8::BindType::Mapping[DateTime]     = OCI8::BindType::DateTime
+OCI8::BindType::Mapping[OCIRowid]     = OCI8::BindType::OCIRowid
+OCI8::BindType::Mapping[OCI8::CLOB]   = OCI8::BindType::CLOB
+OCI8::BindType::Mapping[OCI8::NCLOB]  = OCI8::BindType::NCLOB
+OCI8::BindType::Mapping[OCI8::BLOB]   = OCI8::BindType::BLOB
+OCI8::BindType::Mapping[OCI8::BFILE]  = OCI8::BindType::BFILE
+OCI8::BindType::Mapping[OCI8::Cursor] = OCI8::BindType::Cursor
+
+# implicitly define
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# CHAR(1)       SQLT_AFC      1    0    0
+# CHAR(10)      SQLT_AFC     10    0    0
+OCI8::BindType::Mapping[:char] = OCI8::BindType::String
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# VARCHAR(1)    SQLT_CHR      1    0    0
+# VARCHAR(10)   SQLT_CHR     10    0    0
+# VARCHAR2(1)   SQLT_CHR      1    0    0
+# VARCHAR2(10)  SQLT_CHR     10    0    0
+OCI8::BindType::Mapping[:varchar2] = OCI8::BindType::String
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# RAW(1)        SQLT_BIN      1    0    0
+# RAW(10)       SQLT_BIN     10    0    0
+OCI8::BindType::Mapping[:raw] = OCI8::BindType::RAW
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# LONG          SQLT_LNG      0    0    0
+OCI8::BindType::Mapping[:long] = OCI8::BindType::Long
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# LONG RAW      SQLT_LBI      0    0    0
+OCI8::BindType::Mapping[:long_raw] = OCI8::BindType::LongRaw
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# CLOB          SQLT_CLOB  4000    0    0
+OCI8::BindType::Mapping[:clob] = OCI8::BindType::CLOB
+OCI8::BindType::Mapping[:nclob] = OCI8::BindType::NCLOB  # if OCI8::Metadata::Column#charset_form is :nchar.
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# BLOB          SQLT_BLOB  4000    0    0
+OCI8::BindType::Mapping[:blob] = OCI8::BindType::BLOB
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# BFILE         SQLT_BFILE 4000    0    0
+OCI8::BindType::Mapping[:bfile] = OCI8::BindType::BFILE
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# DATE          SQLT_DAT      7    0    0
+OCI8::BindType::Mapping[:date] = OCI8::BindType::DateTime
+
+OCI8::BindType::Mapping[:timestamp] = OCI8::BindType::DateTime
+OCI8::BindType::Mapping[:timestamp_tz] = OCI8::BindType::DateTime
+OCI8::BindType::Mapping[:timestamp_ltz] = OCI8::BindType::DateTime
+OCI8::BindType::Mapping[:interval_ym] = OCI8::BindType::IntervalYM
+OCI8::BindType::Mapping[:interval_ds] = OCI8::BindType::IntervalDS
+
+# datatype        type     size prec scale
+# -------------------------------------------------
+# ROWID         SQLT_RDD      4    0    0
+OCI8::BindType::Mapping[:rowid] = OCI8::BindType::OCIRowid
+
+# datatype           type     size prec scale
+# -----------------------------------------------------
+# FLOAT            SQLT_NUM     22  126 -127
+# FLOAT(1)         SQLT_NUM     22    1 -127
+# FLOAT(126)       SQLT_NUM     22  126 -127
+# DOUBLE PRECISION SQLT_NUM     22  126 -127
+# REAL             SQLT_NUM     22   63 -127
+# NUMBER           SQLT_NUM     22    0    0
+# NUMBER(1)        SQLT_NUM     22    1    0
+# NUMBER(38)       SQLT_NUM     22   38    0
+# NUMBER(1, 0)     SQLT_NUM     22    1    0
+# NUMBER(38, 0)    SQLT_NUM     22   38    0
+# NUMERIC          SQLT_NUM     22   38    0
+# INT              SQLT_NUM     22   38    0
+# INTEGER          SQLT_NUM     22   38    0
+# SMALLINT         SQLT_NUM     22   38    0
+OCI8::BindType::Mapping[:number] = OCI8::BindType::Number
+
+OCI8::BindType::Mapping[:bfloat] = OCI8::BindType::Float
+OCI8::BindType::Mapping[:bdouble] = OCI8::BindType::Float
+
+# NamedType
+OCI8::BindType::Mapping[:named_type] = OCI8::BindType::TDO
+
+# XMLType (This mapping will be changed before release.)
+OCI8::BindType::Mapping[:xmltype] = OCI8::BindType::Long

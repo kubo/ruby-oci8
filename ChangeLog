@@ -1,3 +1,9 @@
+2007-05-10  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb: 1. move the location of setting
+	   OCI8::BindType::Mapping to the end of the file.
+	   2. set :xmltype to OCI8::BindType::Mapping's key when
+	   the fetched column is XMLTYPE.
+
 2007-05-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb: add '--with-oracle-version' option to
 	    make a binary for the specified oracle version.
