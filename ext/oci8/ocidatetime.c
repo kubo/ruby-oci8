@@ -248,7 +248,7 @@ static VALUE bind_datetime_get(oci8_bind_t *obind, void *data, void *null_struct
     return oci8_make_datetime_from_ocidatetime(*datepp);
 }
 
-static void bind_datetime_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
+static void bind_datetime_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     OCIDateTime **datepp = (OCIDateTime **)data;
     int ival;
@@ -447,7 +447,7 @@ static VALUE bind_interval_ym_get(oci8_bind_t *obind, void *data, void *null_str
     return oci8_make_interval_ym(*intvlpp);
 }
 
-static void bind_interval_ym_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
+static void bind_interval_ym_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     OCIInterval **intvlpp = (OCIInterval **)data;
     int months = NUM2INT(val);
@@ -543,7 +543,7 @@ static VALUE bind_interval_ds_get(oci8_bind_t *obind, void *data, void *null_str
     return oci8_make_interval_ds(*intvlpp);
 }
 
-static void bind_interval_ds_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
+static void bind_interval_ds_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     OCIInterval **intvlpp = (OCIInterval **)data;
     sb4 day;

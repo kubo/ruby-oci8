@@ -375,7 +375,7 @@ static VALUE bind_oradate_get(oci8_bind_t *obind, void *data, void *null_struct)
     return obj;
 }
 
-static void bind_oradate_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
+static void bind_oradate_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     ora_date_t *od;
 

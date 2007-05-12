@@ -620,14 +620,14 @@ static VALUE oci8_stmt_set_prefetch_rows(VALUE self, VALUE rows)
 /*
  * bind_stmt
  */
-VALUE oci8_stmt_get(oci8_bind_t *obind, void *data, void *null_structs)
+VALUE oci8_stmt_get(oci8_bind_t *obind, void *data, void *null_struct)
 {
     oci8_hp_obj_t *oho = (oci8_hp_obj_t *)data;
     rb_funcall(oho->obj, rb_intern("define_columns"), 0);
     return oho->obj;
 }
 
-static void bind_stmt_set(oci8_bind_t *obind, void *data, void *null_structs, VALUE val)
+static void bind_stmt_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     oci8_hp_obj_t *oho = (oci8_hp_obj_t *)data;
     oci8_base_t *h;

@@ -1012,12 +1012,12 @@ static VALUE bind_integer_get(oci8_bind_t *obind, void *data, void *null_struct)
     return oci8_make_integer((OCINumber*)data);
 }
 
-static void bind_ocinumber_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
+static void bind_ocinumber_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     set_oci_number_from_num((OCINumber*)data, val, 1);
 }
 
-static void bind_integer_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
+static void bind_integer_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     OCINumber num;
 

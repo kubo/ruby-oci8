@@ -401,7 +401,7 @@ static VALUE orascalar_to_rubyobj(oci8_svcctx_t *svcctx, OCITypeCode typecode, d
     rb_raise(rb_eRuntimeError, "unsupported typecode %d", typecode);
 }
 
-static void bind_tdo_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
+static void bind_tdo_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     rb_notimplement();
 }

@@ -935,7 +935,7 @@ class OCI8
       # NUMBER(precision, scale). For the case when precision is 0,
       # NUMBER(precision, scale) can be represented simply as NUMBER.
       def precision
-        @is_implicit ? __sb2(OCI_ATTR_PRECISION) : __ub1(OCI_ATTR_PRECISION)
+        __is_implicit? ? __sb2(OCI_ATTR_PRECISION) : __ub1(OCI_ATTR_PRECISION)
       end
 
       # The scale of numeric type attributes. If the precision is
@@ -1145,7 +1145,7 @@ class OCI8
       # NUMBER(precision, scale). For the case when precision is 0,
       # NUMBER(precision, scale) can be represented simply as NUMBER.
       def precision
-        @is_implicit ? __sb2(OCI_ATTR_PRECISION) : __ub1(OCI_ATTR_PRECISION)
+        __is_implicit? ? __sb2(OCI_ATTR_PRECISION) : __ub1(OCI_ATTR_PRECISION)
       end
 
       # The scale of numeric type attributes. If the precision is
@@ -1335,7 +1335,7 @@ class OCI8
       # NUMBER(precision, scale). For the case when precision is 0,
       # NUMBER(precision, scale) can be represented simply as NUMBER.
       def precision
-        @is_implicit ? __sb2(OCI_ATTR_PRECISION) : __ub1(OCI_ATTR_PRECISION)
+        __is_implicit? ? __sb2(OCI_ATTR_PRECISION) : __ub1(OCI_ATTR_PRECISION)
       end
 
       # The scale of numeric columns. If the precision is nonzero and
@@ -1440,7 +1440,7 @@ class OCI8
       # NUMBER(precision, scale). For the case when precision is 0,
       # NUMBER(precision, scale) can be represented simply as NUMBER.
       def precision
-        @is_implicit ? __sb2(OCI_ATTR_PRECISION) : __ub1(OCI_ATTR_PRECISION)
+        __is_implicit? ? __sb2(OCI_ATTR_PRECISION) : __ub1(OCI_ATTR_PRECISION)
       end
 
       # The scale of numeric arguments. If the precision is nonzero
@@ -1649,7 +1649,7 @@ class OCI8
               raise
             end
             # describe again.
-            objs = @con.describe_schema(obj_schema).list_objects
+            objs = __con.describe_schema(obj_schema).list_objects
           end
           @all_objects = objs.to_a
         end

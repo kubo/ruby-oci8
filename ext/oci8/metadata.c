@@ -14,13 +14,24 @@ static VALUE mOCI8Metadata;
 VALUE cOCI8MetadataBase;
 static VALUE ptype_to_class;
 static VALUE class_to_ptype;
-static ID id_at_is_implicit;
-static ID id_at_con;
-static ID id___desc__;
+
+typedef struct {
+    oci8_base_t base;
+    VALUE svc;
+    VALUE desc;
+    ub1 is_implicit;
+} oci8_metadata_t;
+
+static void oci8_metadata_mark(oci8_base_t *base)
+{
+    oci8_metadata_t *md = (oci8_metadata_t *)base;
+    rb_gc_mark(md->svc);
+    rb_gc_mark(md->desc);
+}
 
 VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE desc)
 {
-    oci8_base_t *base;
+    oci8_metadata_t *md;
     ub1 ptype;
     ub4 size;
     VALUE klass;
@@ -34,13 +45,13 @@ VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE desc)
     if (!RTEST(rb_obj_is_kind_of(obj, cOCI8MetadataBase))) {
         rb_raise(rb_eRuntimeError, "invalid class in PTYPE_TO_CLASS");
     }
-    base = DATA_PTR(obj);
-    base->type = OCI_DTYPE_PARAM;
-    base->hp.prm = parmhp;
-    rb_ivar_set(obj, id_at_is_implicit, RTEST(desc) ? Qfalse : Qtrue);
-    rb_ivar_set(obj, id_at_con, svc);
-    rb_ivar_set(obj, id___desc__, desc);
-    oci8_link_to_parent(base, (oci8_base_t*)DATA_PTR(svc));
+    md = DATA_PTR(obj);
+    md->base.type = OCI_DTYPE_PARAM;
+    md->base.hp.prm = parmhp;
+    md->svc = svc;
+    md->desc = desc;
+    md->is_implicit = RTEST(desc) ? 0 : 1;
+    oci8_link_to_parent(&md->base, (oci8_base_t*)DATA_PTR(svc));
     return obj;
 }
 
@@ -195,24 +206,24 @@ static VALUE metadata_get_oraint(VALUE self, VALUE idx)
 
 static VALUE metadata_get_param(VALUE self, VALUE idx)
 {
-    oci8_base_t *base = DATA_PTR(self);
+    oci8_metadata_t *md = DATA_PTR(self);
     OCIParam *value;
     ub4 size = sizeof(value);
 
-    oci_lc(OCIAttrGet(base->hp.ptr, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
+    oci_lc(OCIAttrGet(md->base.hp.ptr, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
     if (size != sizeof(OCIParam *)) {
         rb_raise(rb_eRuntimeError, "Invalid attribute size. expect %d, but %d", sizeof(OCIParam *), size);
     }
-    return oci8_metadata_create(value, rb_ivar_get(self, id_at_con), rb_ivar_get(self, id___desc__));
+    return oci8_metadata_create(value, md->svc, md->desc);
 }
 
 static VALUE metadata_get_param_at(VALUE self, VALUE idx)
 {
-    oci8_base_t *base = DATA_PTR(self);
+    oci8_metadata_t *md = DATA_PTR(self);
     OCIParam *value;
 
-    oci_lc(OCIParamGet(base->hp.ptr, OCI_DTYPE_PARAM, oci8_errhp, (dvoid *)&value, FIX2INT(idx)));
-    return oci8_metadata_create(value, rb_ivar_get(self, id_at_con), rb_ivar_get(self, id___desc__));
+    oci_lc(OCIParamGet(md->base.hp.ptr, OCI_DTYPE_PARAM, oci8_errhp, (dvoid *)&value, FIX2INT(idx)));
+    return oci8_metadata_create(value, md->svc, md->desc);
 }
 
 static VALUE metadata_get_charset_name(VALUE self, VALUE charset_id)
@@ -226,6 +237,18 @@ static VALUE metadata_get_charset_name(VALUE self, VALUE charset_id)
         return Qnil;
     }
     return rb_str_new2(buf);
+}
+
+static VALUE metadata_get_con(VALUE self)
+{
+    oci8_metadata_t *md = DATA_PTR(self);
+    return md->svc;
+}
+
+static VALUE metadata_is_implicit_p(VALUE self)
+{
+    oci8_metadata_t *md = DATA_PTR(self);
+    return md->is_implicit ? Qtrue : Qfalse;
 }
 
 static void oci8_desc_free(OCIDescribe *dschp)
@@ -285,24 +308,27 @@ static VALUE oci8_describe(VALUE self, VALUE name, VALUE klass, VALUE check_publ
 
 static VALUE metadata_get_type_metadata(VALUE self, VALUE klass)
 {
-    oci8_base_t *base = DATA_PTR(self);
+    oci8_metadata_t *md = DATA_PTR(self);
     OCIRef *ref = NULL;
 
-    oci_lc(OCIAttrGet(base->hp.ptr, OCI_DTYPE_PARAM, &ref, NULL, OCI_ATTR_REF_TDO, oci8_errhp));
-    return oci8_do_describe(rb_ivar_get(self, id_at_con), ref, 0, OCI_OTYPE_REF, klass, Qfalse);
+    oci_lc(OCIAttrGet(md->base.hp.ptr, OCI_DTYPE_PARAM, &ref, NULL, OCI_ATTR_REF_TDO, oci8_errhp));
+    return oci8_do_describe(md->svc, ref, 0, OCI_OTYPE_REF, klass, Qfalse);
 }
+
+oci8_base_class_t oci8_metadata_class = {
+    oci8_metadata_mark,
+    NULL,
+    sizeof(oci8_metadata_t),
+};
 
 void Init_oci8_metadata(VALUE cOCI8)
 {
     mOCI8Metadata = rb_define_module_under(cOCI8, "Metadata");
-    cOCI8MetadataBase = oci8_define_class_under(mOCI8Metadata, "Base", &oci8_base_class);
+    cOCI8MetadataBase = oci8_define_class_under(mOCI8Metadata, "Base", &oci8_metadata_class);
     ptype_to_class = rb_hash_new();
     class_to_ptype = rb_hash_new();
     rb_global_variable(&ptype_to_class);
     rb_global_variable(&class_to_ptype);
-    id_at_is_implicit = rb_intern("@is_implicit");
-    id_at_con = rb_intern("@con");
-    id___desc__ = rb_intern("__desc__");
 
     rb_define_singleton_method(cOCI8MetadataBase, "register_ptype", metadata_s_register_ptype, 1);
     rb_define_private_method(cOCI8MetadataBase, "__ub1", metadata_get_ub1, 1);
@@ -318,6 +344,8 @@ void Init_oci8_metadata(VALUE cOCI8)
     rb_define_private_method(cOCI8MetadataBase, "__param", metadata_get_param, 1);
     rb_define_private_method(cOCI8MetadataBase, "__param_at", metadata_get_param_at, 1);
     rb_define_private_method(cOCI8MetadataBase, "__charset_name", metadata_get_charset_name, 1);
+    rb_define_private_method(cOCI8MetadataBase, "__con", metadata_get_con, 0);
+    rb_define_private_method(cOCI8MetadataBase, "__is_implicit?", metadata_is_implicit_p, 0);
 
     rb_define_private_method(cOCI8, "__describe", oci8_describe, 3);
     rb_define_private_method(cOCI8MetadataBase, "__type_metadata", metadata_get_type_metadata, 1);

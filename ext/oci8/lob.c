@@ -569,7 +569,7 @@ static VALUE bind_lob_get(oci8_bind_t *obind, void *data, void *null_struct)
     return oci8_lob_clone(oho->obj);
 }
 
-static void bind_lob_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
+static void bind_lob_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     oci8_hp_obj_t *oho = (oci8_hp_obj_t *)data;
     oci8_bind_lob_class_t *klass = (oci8_bind_lob_class_t *)obind->base.klass;

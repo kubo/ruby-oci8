@@ -23,7 +23,7 @@ static VALUE bind_string_get(oci8_bind_t *obind, void *data, void *null_struct)
     return rb_str_new(vstr->buf, vstr->size);
 }
 
-static void bind_string_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
+static void bind_string_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     oci8_vstr_t *vstr = (oci8_vstr_t *)data;
 
@@ -117,7 +117,7 @@ static VALUE bind_long_get(oci8_bind_t *obind, void *data, void *null_struct)
     return RTEST(bl->obj) ? rb_str_dup(bl->obj) : Qnil;
 }
 
-static void bind_long_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
+static void bind_long_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     bind_long_t *bl = (bind_long_t *)data;
     bl->obj = rb_str_dup(val);
@@ -227,7 +227,7 @@ static VALUE bind_fixnum_get(oci8_bind_t *obind, void *data, void *null_struct)
     return LONG2NUM(*(long*)data);
 }
 
-static void bind_fixnum_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
+static void bind_fixnum_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     Check_Type(val, T_FIXNUM);
     *(long*)data = FIX2LONG(val);
@@ -262,7 +262,7 @@ static VALUE bind_float_get(oci8_bind_t *obind, void *data, void *null_struct)
     return rb_float_new(*(double*)data);
 }
 
-static void bind_float_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
+static void bind_float_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     Check_Type(val, T_FLOAT);
     *(double*)data = RFLOAT(val)->value;
@@ -291,17 +291,17 @@ static oci8_bind_class_t bind_float_class = {
 
 static inline VALUE oci8_get_data_at(oci8_bind_class_t *obc, oci8_bind_t *obind, ub4 idx)
 {
-    void *null_struct = NULL;
+    void **null_structp = NULL;
 
     if (NIL_P(obind->tdo)) {
         if (obind->u.inds[idx] != 0)
             return Qnil;
     } else {
-        null_struct = obind->u.null_structs[idx];
-        if (*(OCIInd*)null_struct != 0)
+        null_structp = &obind->u.null_structs[idx];
+        if (*(OCIInd*)*null_structp != 0)
             return Qnil;
     }
-    return obc->get(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_struct);
+    return obc->get(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_structp);
 }
 
 static VALUE oci8_get_data(VALUE self)

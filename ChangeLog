@@ -1,3 +1,12 @@
+2007-05-12  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/bind.c, ext/oci8/lob.c, ext/oci8/oci8.h,
+	  ext/oci8/ocidatetime.c, ext/oci8/ocinumber.c, ext/oci8/oradate.c,
+	  ext/oci8/rowid.c, ext/oci8/stmt.c, ext/oci8/tdo.c:
+	    change a callback function's argument type used internally
+	    in OCI8::BindType::Base#set().
+	* ext/oci8/metadata.c, lib/oci8/metadata.rb: change the internal
+	    structure of OCI8::Metadata::Base.
+
 2007-05-10  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/oci8.rb: 1. move the location of setting
 	   OCI8::BindType::Mapping to the end of the file.

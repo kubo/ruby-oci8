@@ -86,7 +86,7 @@ static VALUE bind_rowid1_get(oci8_bind_t *obind, void *data, void *null_struct)
     return rowid;
 }
 
-static void bind_rowid1_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
+static void bind_rowid1_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     oci8_rowid1_t *rowid;
     oci8_vstr_t *vstr = (oci8_vstr_t *)data;
@@ -248,7 +248,7 @@ static VALUE bind_rowid2_get(oci8_bind_t *obind, void *data, void *null_struct)
     return oho->obj;
 }
 
-static void bind_rowid2_set(oci8_bind_t *obind, void *data, void *null_struct, VALUE val)
+static void bind_rowid2_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     oci8_hp_obj_t *oho = (oci8_hp_obj_t *)data;
     oci8_base_t *h;
