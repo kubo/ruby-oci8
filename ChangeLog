@@ -1,3 +1,6 @@
+2007-05-17  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: add the output of sqlplus to mkmf.log
+
 2007-04-22  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/error.c: fix errors when compiled by gcc-4.1.
 	* NEWS: fix typo.
