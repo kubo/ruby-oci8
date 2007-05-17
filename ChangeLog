@@ -1,3 +1,6 @@
+2007-05-18  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: fix for Oracle 11g.
+
 2007-05-17  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: add the output of sqlplus to mkmf.log
 

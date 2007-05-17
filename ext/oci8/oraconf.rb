@@ -442,7 +442,7 @@ class OraConfFC < OraConf
       open("|#{@oracle_home}/bin/#{sqlplus} < #{dev_null}") do |f|
         while line = f.gets
           print line
-          if line =~ /(8|9|10)\.([012])\.([0-9])/
+          if line =~ /(\d+)\.(\d)\.(\d)/
             version = $1 + $2 + $3
             break
           end
