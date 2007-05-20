@@ -22,6 +22,7 @@ require 'oci8lib'
 require 'oci8/oci8.rb'
 require 'oci8/metadata.rb'
 require 'oci8/compat.rb'
+require 'oci8/object.rb'
 
 class OCI8
   VERSION = '@@OCI8_MODULE_VERSION@@'

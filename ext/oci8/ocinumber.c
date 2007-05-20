@@ -171,12 +171,20 @@ static int set_oci_number_from_num(OCINumber *result, VALUE num, int force)
     return 0;
 }
 
-static const OCINumber *get_oci_number(OCINumber *result, VALUE self)
+OCINumber *oci8_set_ocinumber(OCINumber *result, VALUE self)
 {
     set_oci_number_from_num(result, self, 1);
     return result;
 }
-#define TO_OCINUM(on, val) get_oci_number((on), (val))
+#define TO_OCINUM(on, val) oci8_set_ocinumber((on), (val))
+
+OCINumber *oci8_set_integer(OCINumber *result, VALUE self)
+{
+    OCINumber work;
+    set_oci_number_from_num(&work, self, 1);
+    oci_lc(OCINumberTrunc(oci8_errhp, &work, 0, result));
+    return result;
+}
 
 /*
  *  call-seq:

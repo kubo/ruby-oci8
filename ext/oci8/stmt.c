@@ -59,6 +59,7 @@ static VALUE oci8_stmt_initialize(int argc, VALUE *argv, VALUE self)
 
     rb_scan_args(argc, argv, "11", &svc, &sql);
 
+    oci8_get_svcctx(svc); /* check argument */
     if (argc > 1)
         StringValue(sql);
 
@@ -134,7 +135,7 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
         oci8_raise(oci8_errhp, status, stmt->base.hp.ptr);
     }
     obind->base.type = OCI_HTYPE_DEFINE;
-    if (obind->maxar_sz > 0) {
+    if (NIL_P(obind->tdo) && obind->maxar_sz > 0) {
         oci_lc(OCIDefineArrayOfStruct(obind->base.hp.dfn, oci8_errhp, obind->alloc_sz, sizeof(sb2), 0, 0));
     }
     if (RTEST(obind->tdo)) {
@@ -211,10 +212,14 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
         oci8_raise(oci8_errhp, status, stmt->base.hp.stmt);
     }
     obind->base.type = OCI_HTYPE_BIND;
-    if (obind->maxar_sz > 0) {
+    if (NIL_P(obind->tdo) && obind->maxar_sz > 0) {
         oci_lc(OCIBindArrayOfStruct(obind->base.hp.bnd, oci8_errhp, obind->alloc_sz, sizeof(sb2), 0, 0));
     }
-
+    if (!NIL_P(obind->tdo)) {
+        oci8_base_t *tdo = DATA_PTR(obind->tdo);
+        oci_lc(OCIBindObject(obind->base.hp.bnd, oci8_errhp, tdo->hp.tdo,
+                             obind->valuep, 0, obind->u.null_structs, 0));
+    }
     old_value = rb_hash_aref(stmt->binds, vplaceholder);
     if (!NIL_P(old_value)) {
         oci8_base_free((oci8_base_t*)oci8_get_bind(old_value));

@@ -153,7 +153,7 @@ Init_oci8lib()
     Init_ora_date();
     Init_oci_number(cOCI8);
     Init_oci_datetime();
-    Init_oci_tdo(cOCI8);
+    Init_oci_object(cOCI8);
 #if BUILD_FOR_ORACLE_10_1
     Init_oci_xmldb();
 #endif

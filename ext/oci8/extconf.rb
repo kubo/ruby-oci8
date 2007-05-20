@@ -83,7 +83,7 @@ $defs << "-DRBOCI_VERSION=\"#{RUBY_OCI8_VERSION}\""
 $objs = ["oci8lib.o", "env.o", "error.o", "oci8.o",
          "stmt.o", "bind.o", "metadata.o", "attr.o",
          "rowid.o", "lob.o", "oradate.o",
-         "ocinumber.o", "ocidatetime.o", "tdo.o"]
+         "ocinumber.o", "ocidatetime.o", "object.o"]
 $objs << "xmldb.o" if oci_major_version >= 10
 
 # Checking gcc or not

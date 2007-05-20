@@ -332,16 +332,15 @@ static inline void oci8_set_data_at(oci8_bind_class_t *obc, oci8_bind_t *obind, 
             *(OCIInd*)obind->u.null_structs[idx] = -1;
         }
     } else {
-        void *null_struct = NULL;
+        void **null_structp = NULL;
 
         if (NIL_P(obind->tdo)) {
-            null_struct = NULL;
+            null_structp = NULL;
             obind->u.inds[idx] = 0;
         } else {
-            null_struct = obind->u.null_structs[idx];
-            *(OCIInd*)null_struct = 0;
+            null_structp = &obind->u.null_structs[idx];
         }
-        obc->set(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_struct, val);
+        obc->set(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_structp, val);
     }
 }
 

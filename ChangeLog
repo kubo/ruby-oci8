@@ -1,3 +1,19 @@
+2007-05-20  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/object.rb, ext/oci8/object.c: add new files.
+	* ext/oci8/bind.c: fix to bind object type.
+	* ext/oci8/extconf.rb: use object.c instead of tdo.c.
+	* ext/oci8/metadata.c: add OCI8::Metadata::Base#tdo_id.
+	* ext/oci8/oci8.h: add new prototypes; oci8_set_ocinumber(),
+	    oci8_set_integer() and Init_oci_object(). delete Init_oci_tdo().
+	* ext/oci8/oci8lib.c: use Init_oci_object() instead of Init_oci_tdo().
+	* ext/oci8/ocinumber.c: export oci8_set_ocinumber() and
+	    oci8_set_integer().
+	* ext/oci8/stmt.c: fix to bind object type.
+	* lib/oci8.rb.in: add requiring 'oci8/object.rb'.
+	* lib/oci8/metadata.rb: add OCI8::Metadata::TypeMethod#has_result?
+	    fix comments.
+	* lib/oci8/oci8.rb: fix to bind object type.
+
 2007-05-12  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c, ext/oci8/lob.c, ext/oci8/oci8.h,
 	  ext/oci8/ocidatetime.c, ext/oci8/ocinumber.c, ext/oci8/oradate.c,

@@ -84,7 +84,7 @@ class OCI8
   # OCI_ATTR_IS_VIRTUAL         = 237 # virtual
   # OCI_ATTR_IS_INLINE          = 238 # inline
   # OCI_ATTR_IS_CONSTANT        = 239 # constant
-  # OCI_ATTR_HAS_RESULT         = 240 # has result
+  OCI_ATTR_HAS_RESULT         = 240 # has result
   OCI_ATTR_IS_CONSTRUCTOR     = 241 # constructor
   OCI_ATTR_IS_DESTRUCTOR      = 242 # destructor
   # OCI_ATTR_IS_OPERATOR        = 243 # operator
@@ -283,31 +283,43 @@ class OCI8
                               name = "VARCHAR2"
                             end
                             if (p.respond_to? :char_semantics) && (p.char_semantics == :char)
-                              "#{name}(#{p.char_size} CHAR)"
+                              begin
+                                "#{name}(#{p.char_size} CHAR)"
+                              rescue OCIError
+                                name
+                              end
                             else
-                              "#{name}(#{p.data_size})"
+                              begin
+                                "#{name}(#{p.data_size})"
+                              rescue OCIError
+                                name
+                              end
                             end
                           end]
       # SQLT_NUM
       DATA_TYPE_MAP[2] = [:number,
                           Proc.new do |p|
-                            case p.scale
-                            when -127
-                              case p.precision
+                            begin
+                              case p.scale
+                              when -127
+                                case p.precision
+                                when 0
+                                  "NUMBER"
+                                else
+                                  "FLOAT(#{p.precision})"
+                                end
                               when 0
-                                "NUMBER"
+                                case p.precision
+                                when 0
+                                  "NUMBER"
+                                else
+                                  "NUMBER(#{p.precision})"
+                                end
                               else
-                                "FLOAT(#{p.precision})"
+                                "NUMBER(#{p.precision},#{p.scale})"
                               end
-                            when 0
-                              case p.precision
-                              when 0
-                                "NUMBER"
-                              else
-                                "NUMBER(#{p.precision})"
-                              end
-                            else
-                              "NUMBER(#{p.precision},#{p.scale})"
+                            rescue OCIError
+                              "NUMBER"
                             end
                           end]
       # SQLT_LNG
@@ -1031,6 +1043,11 @@ class OCI8
       end
       private :list_arguments
 
+      # indicates method is has rsult
+      def has_result?
+        __boolean(OCI_ATTR_HAS_RESULT)
+      end
+
       # indicates method is a constructor
       def is_constructor?
         __boolean(OCI_ATTR_IS_CONSTRUCTOR)
@@ -1061,22 +1078,22 @@ class OCI8
         __boolean(OCI_ATTR_IS_ORDER)
       end
 
-      # indicates "Read No Data State" is set for method
+      # indicates "Read No Data State"(does not query database tables) is set.
       def is_rnds?
         __boolean(OCI_ATTR_IS_RNDS)
       end
 
-      # Indicates "Read No Process State" is set for method
+      # Indicates "Read No Package State"(does not reference the values of packaged variables) is set.
       def is_rnps?
         __boolean(OCI_ATTR_IS_RNPS)
       end
 
-      # indicates "Write No Data State" is set for method
+      # indicates "Write No Data State"(does not modify tables) is set.
       def is_wnds?
         __boolean(OCI_ATTR_IS_WNDS)
       end
 
-      # indicates "Write No Process State" is set for method
+      # indicates "Write No Package State"(does not change the values of packaged variables) is set.
       def is_wnps?
         __boolean(OCI_ATTR_IS_WNPS)
       end

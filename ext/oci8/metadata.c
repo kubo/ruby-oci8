@@ -315,6 +315,20 @@ static VALUE metadata_get_type_metadata(VALUE self, VALUE klass)
     return oci8_do_describe(md->svc, ref, 0, OCI_OTYPE_REF, klass, Qfalse);
 }
 
+static VALUE metadata_get_tdo_id(VALUE self)
+{
+    oci8_metadata_t *md = DATA_PTR(self);
+    OCIRef *tdo_ref = NULL;
+    void *tdo;
+
+    oci_lc(OCIAttrGet(md->base.hp.ptr, OCI_DTYPE_PARAM, &tdo_ref, NULL, OCI_ATTR_REF_TDO, oci8_errhp));
+    if (tdo_ref == NULL)
+        return Qnil;
+    oci_lc(OCIObjectPin(oci8_envhp, oci8_errhp, tdo_ref, 0, OCI_PIN_ANY, OCI_DURATION_SESSION, OCI_LOCK_NONE, &tdo));
+    OCIObjectUnpin(oci8_envhp, oci8_errhp, tdo);
+    return ((VALUE)tdo | (VALUE)1);
+}
+
 oci8_base_class_t oci8_metadata_class = {
     oci8_metadata_mark,
     NULL,
@@ -349,4 +363,5 @@ void Init_oci8_metadata(VALUE cOCI8)
 
     rb_define_private_method(cOCI8, "__describe", oci8_describe, 3);
     rb_define_private_method(cOCI8MetadataBase, "__type_metadata", metadata_get_type_metadata, 1);
+    rb_define_method(cOCI8MetadataBase, "tdo_id", metadata_get_tdo_id, 0);
 }

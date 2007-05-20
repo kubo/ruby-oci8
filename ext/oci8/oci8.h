@@ -351,6 +351,8 @@ OCINumber *oci8_get_ocinumber(VALUE num);
 VALUE oci8_make_ocinumber(OCINumber *s);
 VALUE oci8_make_integer(OCINumber *s);
 VALUE oci8_make_float(OCINumber *s);
+OCINumber *oci8_set_ocinumber(OCINumber *result, VALUE self);
+OCINumber *oci8_set_integer(OCINumber *result, VALUE self);
 
 /* ocidatetim.c */
 void Init_oci_datetime(void);
@@ -359,8 +361,8 @@ VALUE oci8_make_datetime_from_ocidatetime(OCIDateTime *s);
 VALUE oci8_make_interval_ym(OCIInterval *s);
 VALUE oci8_make_interval_ds(OCIInterval *s);
 
-/* tdo.c */
-void Init_oci_tdo(VALUE mOCI);
+/* object.c */
+void Init_oci_object(VALUE mOCI);
 
 /* xmldb.c */
 #ifndef XMLCTX_DEFINED

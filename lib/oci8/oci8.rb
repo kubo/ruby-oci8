@@ -75,7 +75,9 @@ class OCI8
       when :select_stmt
         if block_given?
           cursor.fetch { |row| yield(row) }   # for each row
-          cursor.row_count()
+          rv = cursor.row_count()
+          cursor.close
+          rv
         else
           ret = cursor
           cursor = nil # unset cursor to skip cursor.close in ensure block
@@ -255,7 +257,6 @@ class OCI8
         type = param
       else
         value = param
-        type ||= value.class
       end
       b = bind_or_define(:bind, key, value, type, length, nil, nil, false, max_array_size)
       self
@@ -314,23 +315,32 @@ class OCI8
 
     private
 
-    def bind_or_define(bind_type, key, val, type, length, precision, scale, strict_check, max_array_size)
-      if type.nil?
+    def bind_or_define(bind_type, key, val, typ, length, precision, scale, strict_check, max_array_size)
+      if typ.nil?
 	if val.nil?
-	  raise "bind type is not given." if type.nil?
+	  raise "bind type is not given." if typ.nil?
 	else
           if val.class == Class
-            type = val
+            typ = val
             val = nil
           else
-            type = val.class
+            if val.is_a? OCI8::NamedType::Base
+              typ = @con.get_tdo_by_class(val.class)
+            else
+              typ = val.class
+            end
           end
 	end
       end
 
-      bindclass = OCI8::BindType::Mapping[type]
+      bindclass = OCI8::BindType::Mapping[typ]
       if bindclass.nil?
-        raise "unsupported datatype: #{type}"
+        if typ.is_a? OCI8::TDO
+          bindclass = OCI8::BindType::NamedType
+          length = typ
+        else
+          raise "unsupported datatype: #{typ}"
+        end
       end
       if bindclass.respond_to?(:dispatch)
         bindclass = bindclass.dispatch(val, length, precision, scale)
@@ -377,7 +387,7 @@ class OCI8
           datasize = @con.long_read_len
         else
           # FIXME
-          datasize = OCI8::TDO.new(p.type_metadata)
+          datatype = @con.get_tdo_by_metadata(p.type_metadata)
         end
       end
 
@@ -548,7 +558,7 @@ OCI8::BindType::Mapping[:bfloat] = OCI8::BindType::Float
 OCI8::BindType::Mapping[:bdouble] = OCI8::BindType::Float
 
 # NamedType
-OCI8::BindType::Mapping[:named_type] = OCI8::BindType::TDO
+OCI8::BindType::Mapping[:named_type] = OCI8::BindType::NamedType
 
 # XMLType (This mapping will be changed before release.)
 OCI8::BindType::Mapping[:xmltype] = OCI8::BindType::Long
