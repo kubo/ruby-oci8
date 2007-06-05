@@ -208,6 +208,7 @@ EOS
       ENV[env] && ENV[env].split(File::PATH_SEPARATOR)
     end.flatten.each do |path|
       next if path.nil? or path == ''
+      path.gsub!(/\\/, '/') if /mswin32|cygwin|mingw32|bccwin32/ =~ RUBY_PLATFORM
       files = Dir.glob(File.join(path, glob_name))
       next if files.empty?
       STDOUT.flush
@@ -330,6 +331,48 @@ EOS
       $libs = original_libs
     end
   end
+
+  if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/ # when Windows
+
+    def get_libs(base_dir = oci_base_dir)
+      case RUBY_PLATFORM
+      when /cygwin/
+        open("OCI.def", "w") do |f|
+          f.puts("EXPORTS")
+          open("|nm #{base_dir}/LIB/MSVC/OCI.LIB") do |r|
+            while line = r.gets
+              f.puts($') if line =~ / T _/
+            end
+          end
+        end
+        command = "dlltool -d OCI.def -D OCI.DLL -l libOCI.a"
+        print("Running: '#{command}' ...")
+        STDOUT.flush
+        system(command)
+        puts("done")
+        "-L. -lOCI"
+      when /bccwin32/
+        # replace '/' to '\\' because bcc linker misunderstands
+        # 'C:/foo/bar/OCI.LIB' as unknown option.
+        lib = "#{base_dir}/LIB/BORLAND/OCI.LIB"
+        return lib.tr('/', '\\') if File.exist?(lib)
+        raise <<EOS
+#{lib} does not exist.
+
+Your Oracle may not support Borland C++.
+If you want to run this module, run the following command at your own risk.
+  cd #{base_dir.tr('/', '\\')}\\LIB
+  mkdir Borland
+  cd Borland
+  coff2omf ..\\MSVC\\OCI.LIB OCI.LIB
+EOS
+        exit 1
+      else
+        "\"#{base_dir}/LIB/MSVC/OCI.LIB\""
+      end
+    end
+
+  end
 end
 
 # OraConf for Full Client
@@ -398,7 +441,8 @@ class OraConfFC < OraConf
     Logging::open do
       open("|#{@oracle_home}/bin/#{sqlplus} < #{dev_null}") do |f|
         while line = f.gets
-          if line =~ /(8|9|10)\.([012])\.([0-9])/
+          print line
+          if line =~ /(\d+)\.(\d)\.(\d)/
             version = $1 + $2 + $3
             break
           end
@@ -523,47 +567,9 @@ EOS
         raise "'#{oci_base_dir}/INCLUDE/OCI.H' does not exists. Please install 'Oracle Call Interface'."
       end
       if RUBY_PLATFORM =~ /cygwin/
-        " -I#{oci_base_dir}/INCLUDE -D_int64=\"long long\""
+        " \"-I#{oci_base_dir}/INCLUDE\" -D_int64=\"long long\""
       else
-        " -I#{oci_base_dir}/INCLUDE"
-      end
-    end
-
-    def get_libs(base_dir = oci_base_dir)
-      case RUBY_PLATFORM
-      when /cygwin/
-        open("OCI.def", "w") do |f|
-          f.puts("EXPORTS")
-          open("|nm #{base_dir}/LIB/MSVC/OCI.LIB") do |r|
-            while line = r.gets
-              f.puts($') if line =~ / T _/
-            end
-          end
-        end
-        command = "dlltool -d OCI.def -D OCI.DLL -l libOCI.a"
-        print("Running: '#{command}' ...")
-        STDOUT.flush
-        system(command)
-        puts("done")
-        "-L. -lOCI"
-      when /bccwin32/
-        # replace '/' to '\\' because bcc linker misunderstands
-        # 'C:/foo/bar/OCI.LIB' as unknown option.
-        lib = "#{base_dir}/LIB/BORLAND/OCI.LIB"
-        return lib.tr('/', '\\') if File.exist?(lib)
-        raise <<EOS
-#{lib} does not exist.
-
-Your Oracle may not support Borland C++.
-If you want to run this module, run the following command at your own risk.
-  cd #{base_dir.tr('/', '\\')}\\LIB
-  mkdir Borland
-  cd Borland
-  coff2omf ..\\MSVC\\OCI.LIB OCI.LIB
-EOS
-        exit 1
-      else
-        "#{base_dir}/LIB/MSVC/OCI.LIB"
+        " \"-I#{oci_base_dir}/INCLUDE\""
       end
     end
 
@@ -653,6 +659,11 @@ EOS
           libs.gsub!(/-Wl,\+[sn](\s)*/, "")
         end
         libs.gsub!(/ -Wl,/, " ")
+      when /aix/
+        if @cc_is_gcc
+          # strip -bI:/xxx
+          libs.gsub!(/(-bI:\S+)/, '')
+        end
       end
 
       # remove object files from libs.
@@ -702,7 +713,6 @@ class OraConfIC < OraConf
     end
 
     @version = "1010"
-    @cflags = " -I#{inc_dir}"
     if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/ # when Windows
       unless File.exist?("#{ic_dir}/sdk/lib/msvc/oci.lib")
         raise <<EOS
@@ -711,10 +721,12 @@ Could not compile with Oracle instant client.
 EOS
         raise 'failed'
       end
+      @cflags = " \"-I#{inc_dir}\""
       @cflags += " -D_int64=\"long long\"" if RUBY_PLATFORM =~ /cygwin/
       @libs = get_libs("#{ic_dir}/sdk")
       ld_path = nil
     else
+      @cflags = " -I#{inc_dir}"
       # set ld_path and so_ext
       case RUBY_PLATFORM
       when /aix/

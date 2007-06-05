@@ -1,3 +1,6 @@
+2007-06-05  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: copy oraconf.rb of ruby-oci8-1.0 branch.
+
 2007-05-20  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/object.rb, ext/oci8/object.c: add new files.
 	* ext/oci8/bind.c: fix to bind object type.
