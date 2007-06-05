@@ -632,7 +632,8 @@ static oci8_bind_lob_class_t bind_nclob_class = {
         bind_lob_init_elem,
         NULL,
         NULL,
-        SQLT_CLOB
+        SQLT_CLOB,
+        SQLCS_NCHAR,
     },
     &cOCI8NCLOB
 };

@@ -1,5 +1,9 @@
 2007-06-05  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: copy oraconf.rb of ruby-oci8-1.0 branch.
+	* ext/oci8/lob.c, ext/oci8/oci8.h, ext/oci8/stmt.c: fix to bind
+	    an OCI8::NCLOB value on Oralce 9i.
+	* test/test_oci8.rb: add testcases for binary_double datatype
+	    and OCI8::NCLOB.new.
 
 2007-05-20  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/object.rb, ext/oci8/object.c: add new files.

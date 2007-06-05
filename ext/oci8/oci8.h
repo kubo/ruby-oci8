@@ -131,6 +131,7 @@ struct oci8_bind_class {
     ub1 (*in)(oci8_bind_t *obind, ub4 idx, ub1 piece, void **valuepp, ub4 **alenpp, void **indpp);
     void (*out)(oci8_bind_t *obind, ub4 idx, ub1 piece, void **valuepp, ub4 **alenpp, void **indpp);
     ub2 dty;
+    ub1 csfrm;
 };
 
 struct oci8_base {

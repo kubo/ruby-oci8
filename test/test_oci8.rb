@@ -12,6 +12,14 @@ class TestOCI8 < Test::Unit::TestCase
     @conn.logoff
   end
 
+  def server_version
+    retval = nil
+    @conn.exec('select value from database_compatible_level') do |row|
+      retval = row[0].split('.').map do |n| n.to_i; end
+    end
+    retval
+  end
+
   def test_rename
     begin
       @conn.exec("DROP TABLE test_table")
@@ -166,6 +174,68 @@ EOS
       end
       assert_equal(i, rv[6])
       assert_equal(i, rv[7])
+    end
+    assert_nil(cursor.fetch)
+    cursor.close
+    @conn.exec("DROP TABLE test_table")
+  end
+
+  def test_binary_float
+    if server_version[0] < 10
+      # Oracle 9i
+      print 'skip'
+      return
+    end
+    # Oracle 10g
+    cursor = @conn.parse("select CAST(:1 AS BINARY_FLOAT), CAST(:2 AS BINARY_DOUBLE) from dual")
+    bind_val = -1.0
+    cursor.bind_param(1, 10.0)
+    cursor.bind_param(2, nil, Float)
+    while bind_val < 10.0
+      cursor[2] = bind_val
+      cursor.exec
+      rv = cursor.fetch
+      assert_equal(10.0, rv[0])
+      assert_equal(bind_val, rv[1])
+      bind_val += 1.234
+    end
+    cursor.close
+  end
+
+  def test_clob_nclob_and_blob
+    begin
+      @conn.exec("DROP TABLE test_table")
+    rescue OCIError
+      raise if $!.code != 942 # table or view does not exist
+    end
+    sql = <<-EOS
+CREATE TABLE test_table (id number(5), C CLOB, NC NCLOB, B BLOB)
+STORAGE (
+   INITIAL 100k
+   NEXT 100k
+   MINEXTENTS 1
+   MAXEXTENTS UNLIMITED
+   PCTINCREASE 0)
+EOS
+    @conn.exec(sql)
+    cursor = @conn.parse("INSERT INTO test_table VALUES (:1, :2, :3, :4)")
+    0.upto(9) do |i|
+      val = format('%d', i) * 4096
+      cursor.exec(i, OCI8::CLOB.new(@conn, val), OCI8::NCLOB.new(@conn, val), OCI8::BLOB.new(@conn, val))
+    end
+    cursor.close
+    cursor = @conn.exec("select * from test_table order by id")
+    0.upto(9) do |i|
+      rv = cursor.fetch
+      val = format('%d', i) * 4096
+      assert_equal(i, rv[0])
+      assert_instance_of(OCI8::CLOB, rv[1])
+      assert_instance_of(OCI8::NCLOB, rv[2])
+      assert_instance_of(OCI8::BLOB, rv[3])
+      assert_equal(val, rv[1].read)
+      assert_equal(val.length, rv[2].size)
+      assert_equal(val, rv[2].read)
+      assert_equal(val, rv[3].read)
     end
     assert_nil(cursor.fetch)
     cursor.close
