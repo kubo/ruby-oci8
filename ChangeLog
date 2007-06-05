@@ -1,3 +1,9 @@
+2007-06-05  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: use 'File.exist?' instead of deprecated
+	    method 'File.exists?'.
+	* lib/oci8.rb.in: fix to bind an OCI8::NCLOB value on Oralce 9i.
+	    add a mapping to fetch a timestamp column value as an OraDate.
+
 2007-05-18  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: fix for Oracle 11g.
 

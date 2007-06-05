@@ -543,6 +543,7 @@ class OCI8
         [OCI8::SQLT_CLOB, nil, val]
       end
       def decorate(b)
+        b.attrSet(OCI_ATTR_CHARSET_FORM, SQLCS_NCHAR)
         def b.set(val)
           check_type(val)
           val = val.instance_variable_get(:@locator)
@@ -1132,6 +1133,8 @@ class OCI8
   # -------------------------------------------------
   # DATE          SQLT_DAT      7    0    0
   BindType::Mapping[OCI8::SQLT_DAT] = BindType::OraDate
+
+  BindType::Mapping[OCI8::SQLT_TIMESTAMP] = BindType::OraDate
 
   # datatype        type     size prec scale
   # -------------------------------------------------

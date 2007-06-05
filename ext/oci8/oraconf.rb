@@ -236,7 +236,7 @@ EOS
 
     if ld_path
       ocidata_basename.each do |basename|
-        if File.exists?(File.join(ld_path, "#{basename}.#{so_ext}"))
+        if File.exist?(File.join(ld_path, "#{basename}.#{so_ext}"))
           puts "#{file} looks like an instant client."
           return ld_path
         end
@@ -296,9 +296,9 @@ EOS
   def check_ruby_header
     print "checking for ruby header... "
     STDOUT.flush
-    unless File.exists?("#{Config::CONFIG['archdir']}/ruby.h")
+    unless File.exist?("#{Config::CONFIG['archdir']}/ruby.h")
       puts "ng"
-      if RUBY_PLATFORM =~ /darwin/ and File.exists?("#{Config::CONFIG['archdir']}/../universal-darwin8.0/ruby.h")
+      if RUBY_PLATFORM =~ /darwin/ and File.exist?("#{Config::CONFIG['archdir']}/../universal-darwin8.0/ruby.h")
         raise <<EOS
 #{Config::CONFIG['archdir']}/ruby.h doesn't exist.
 Run the following commands to fix the problem.
@@ -433,7 +433,7 @@ class OraConfFC < OraConf
     STDOUT.flush
     version = nil
     dev_null = RUBY_PLATFORM =~ /mswin32|mingw32|bccwin32/ ? "nul" : "/dev/null"
-    if File.exists?("#{@oracle_home}/bin/plus80.exe")
+    if File.exist?("#{@oracle_home}/bin/plus80.exe")
       sqlplus = "plus80.exe"
     else
       sqlplus = "sqlplus"
@@ -516,7 +516,7 @@ EOS
           end
           ENV['PATH'].split(path_sep).each do |path|
             path.chomp!(dir_sep)
-            if File.exists?("#{path}/OCI.DLL")
+            if File.exist?("#{path}/OCI.DLL")
               default_path = path
               break
             end
@@ -747,7 +747,7 @@ EOS
         so_ext = 'so'
       end
       # check Oracle client library.
-      unless File.exists?("#{lib_dir}/libclntsh.#{so_ext}")
+      unless File.exist?("#{lib_dir}/libclntsh.#{so_ext}")
         files = Dir.glob("#{lib_dir}/libclntsh.#{so_ext}.*")
         if files.empty?
           raise <<EOS
@@ -769,7 +769,7 @@ EOS
       end
       @libs = " -L#{lib_dir} -lclntsh "
     end
-    unless File.exists?("#{inc_dir}/oci.h")
+    unless File.exist?("#{inc_dir}/oci.h")
           raise <<EOS
 '#{inc_dir}/oci.h' does not exist.
 Install 'Instant Client SDK'.
