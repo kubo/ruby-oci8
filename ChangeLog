@@ -1,3 +1,7 @@
+2007-06-23  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: read a shared library's ELF header to
+	    check what cpu is it for. (linux x86, x86_64 and ia64 only)
+
 2007-06-05  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: use 'File.exist?' instead of deprecated
 	    method 'File.exists?'.
