@@ -93,6 +93,117 @@ module MiniRegistry
   end
 end # module MiniRegistry
 
+# minimal implementation to read information of a shared object.
+class MiniSOReader
+  attr_reader :file_format
+  attr_reader :cpu
+  attr_reader :endian
+  attr_reader :bits
+
+  def initialize(filename)
+    f = open(filename, 'rb')
+    begin
+      case file_header = f.read(2)
+      when "\177E"
+        # Linux, Solaris and HP-UX(64-bit)
+        read_elf(f) if f.read(2) == 'LF'
+      when "MZ"
+        # Windows
+        read_pe(f)
+      else
+        # HP-UX(32-bit), AIX, Mac OS X and Tru64
+        raise format("unknown file header: %02x %02x", file_header[0], file_header[1])
+      end
+    ensure
+      f.close
+    end
+  end
+
+  private
+  # ELF format
+  def read_elf(f)
+    # 0-3 "\177ELF"
+    @file_format = :elf
+    # 4
+    case f.read(1).unpack('C')[0]
+    when 1
+      @bits = 32
+    when 2
+      @bits = 64
+    else
+      raise 'Invalid ELF class'
+    end
+    # 5
+    case f.read(1).unpack('C')[0]
+    when 1
+      @endian = :little
+      pack_type_short = 'v'
+    when 2
+      @endian = :big
+      pack_type_short = 'n'
+    else
+      raise 'Invalid ELF byte order'
+    end
+    # 6
+    raise 'Invalid ELF header version' if f.read(1) != "\x01"
+    # 16-17
+    f.seek(16, IO::SEEK_SET)
+    raise 'Invalid ELF filetype' if f.read(2).unpack(pack_type_short)[0] != 3
+    # 18-19
+    case archtype = f.read(2).unpack(pack_type_short)[0]
+    when 2
+      @cpu = :sparc
+    when 3
+      @cpu = :i386
+    when 15
+      @cpu = :parisc
+    when 20
+      @cpu = :ppc
+    when 21
+      @cpu = :ppc64
+    when 22
+      @cpu = :s390
+    when 43
+      @cpu = :sparcv9
+    when 50
+      @cpu = :ia64
+    when 62
+      @cpu = :x86_64
+    else
+      raise "Invalid ELF archtype: #{archtype}"
+    end
+  end
+
+  # PE/COFF format
+  def read_pe(f)
+    # 0-1 "MZ"
+    @file_format = :pe
+    # 60-63
+    f.seek(60, IO::SEEK_SET)
+    pe_offset = f.read(4).unpack('V')[0]
+    # read PE signature
+    f.seek(pe_offset)
+    raise 'invalid pe format' if f.read(4) != "PE\000\000"
+    # read COFF header
+    case machine = f.read(2).unpack('v')[0]
+    when 0x014c
+      @cpu = :i386
+      @endian = :little
+      @bits = 32
+    when 0x0200
+      @cpu = :ia64
+      @endian = :little
+      @bits = 64
+    when 0x8664
+      @cpu = :x86_64
+      @endian = :little
+      @bits = 64
+    else
+      raise "Invalid coff machine: #{machine}"
+    end
+  end
+end
+
 class OraConf
   include MiniRegistry
 
@@ -169,15 +280,33 @@ EOS
       so_ext = 'dll'
     when /i.86-linux/
       check_proc = Proc.new do |file|
-        File.read("|file #{file}").include? "80386"
+        so = MiniSOReader.new(file)
+        if so.cpu == :i386
+          true
+        else
+          puts "  skip: #{file} is for #{so.cpu} cpu."
+          false
+        end
       end
     when /ia64-linux/
       check_proc = Proc.new do |file|
-        File.read("|file #{file}").include? "IA-64"
+        so = MiniSOReader.new(file)
+        if so.cpu == :ia64
+          true
+        else
+          puts "  skip: #{file} is for #{so.cpu} cpu."
+          false
+        end
       end
     when /x86_64-linux/
       check_proc = Proc.new do |file|
-        File.read("|file #{file}").include? "x86-64"
+        so = MiniSOReader.new(file)
+        if so.cpu == :x86_64
+          true
+        else
+          puts "  skip: #{file} is for #{so.cpu} cpu."
+          false
+        end
       end
     when /solaris/
       if [0].pack('l!').length == 8
@@ -203,8 +332,7 @@ EOS
     ld_path = nil
     file = nil
     @@ld_envs.collect do |env|
-      print "(#{env})... "
-      STDOUT.flush
+      puts "(#{env})... "
       ENV[env] && ENV[env].split(File::PATH_SEPARATOR)
     end.flatten.each do |path|
       next if path.nil? or path == ''
@@ -237,13 +365,13 @@ EOS
     if ld_path
       ocidata_basename.each do |basename|
         if File.exist?(File.join(ld_path, "#{basename}.#{so_ext}"))
-          puts "#{file} looks like an instant client."
+          puts "  found: #{file} looks like an instant client."
           return ld_path
         end
       end
-      puts "#{file} looks like a full client."
+      puts "  found: #{file} looks like a full client."
     else
-      puts "not found"
+      puts "  not found"
     end
     nil
   end
