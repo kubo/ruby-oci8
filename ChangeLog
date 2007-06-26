@@ -1,3 +1,10 @@
+2007-06-26  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8.rb.in: add external OS authentication. (suggested by Dan Fitch)
+	      conn = OCI8.new('/')
+	    or
+	      conn = OCI8.new(nil, nil)
+	* test/test_connstr.rb: fix a testcase for external OS authentication.
+
 2007-06-23  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: read a shared library's ELF header to
 	    check what cpu is it for. (linux x86, x86_64 and ia64 only)

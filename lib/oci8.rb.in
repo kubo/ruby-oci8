@@ -158,7 +158,7 @@ class OCI8
   include Util
 
   def parse_connect_string(connstr)
-    if connstr !~ /^([^(\s|\@)]+)\/([^(\s|\@)]*)(?:\@(\S+))?(?:\s+as\s+(\S*)\s*)?$/i
+    if connstr !~ /^([^(\s|\@)]*)\/([^(\s|\@)]*)(?:\@(\S+))?(?:\s+as\s+(\S*)\s*)?$/i
       raise ArgumentError, %Q{invalid connect string "#{connstr}" (expect "username/password[@(tns_name|//host[:port]/service_name)][ as (sysdba|sysoper)]")}
     end
     uid, pswd, conn, privilege = $1, $2, $3, $4
@@ -168,14 +168,24 @@ class OCI8
     when 'SYSOPER'
       privilege = :SYSOPER
     end if privilege
+    if uid.length == 0 && pswd.length == 0
+      # external credential
+      uid = nil
+      pswd = nil
+    end
     return uid, pswd, conn, privilege
   end
   private :parse_connect_string
 
-  def initialize(uid, pswd = nil, conn = nil, privilege = nil)
+  def initialize(*args)
     raise @@error_in_initialization if @@error_in_initialization
-    if pswd.nil? && conn.nil? && privilege.nil?
-      uid, pswd, conn, privilege = parse_connect_string(uid)
+    case args.length
+    when 1
+      uid, pswd, conn, privilege = parse_connect_string(args[0])
+    when 2, 3, 4
+      uid, pswd, conn, privilege = *args
+    else
+      raise ArgumentError, "wrong number of arguments (#{args.length} for 1..4)"
     end
     case privilege
     when nil
@@ -190,17 +200,25 @@ class OCI8
 
     @prefetch_rows = nil
     @ctx = [0, Mutex.new, nil, 65535]
-    if @privilege
+    if @privilege or (uid.nil? and pswd.nil?)
       @svc = @@env.alloc(OCISvcCtx)
       @srv = @@env.alloc(OCIServer)
       @auth = @@env.alloc(OCISession)
+      @privilege ||= OCI_DEFAULT
 
-      @auth.attrSet(OCI_ATTR_USERNAME, uid)
-      @auth.attrSet(OCI_ATTR_PASSWORD, pswd)
+      if uid.nil? and pswd.nil?
+        # external credential
+        cred = OCI_CRED_EXT
+      else
+        # RDBMS credential
+        cred = OCI_CRED_RDBMS
+        @auth.attrSet(OCI_ATTR_USERNAME, uid)
+        @auth.attrSet(OCI_ATTR_PASSWORD, pswd)
+      end
       do_ocicall(@ctx) { @srv.attach(conn) }
       begin
         @svc.attrSet(OCI_ATTR_SERVER, @srv)
-        do_ocicall(@ctx) { @auth.begin(@svc, OCI_CRED_RDBMS, @privilege) }
+        do_ocicall(@ctx) { @auth.begin(@svc, cred, @privilege) }
         @svc.attrSet(OCI_ATTR_SESSION, @auth)
       rescue
         @srv.detach()

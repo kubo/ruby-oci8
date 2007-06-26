@@ -55,7 +55,9 @@ class TestConnStr < RUNIT::TestCase
      ["username/password@//host:1521 as sysdba", ["username", "password", "//host:1521", :SYSDBA]],
      ["username/password@//host:1521/service_name as sysoper", ["username", "password", "//host:1521/service_name", :SYSOPER]],
      ["username/password@//host:1521/service_name as sysdba", ["username", "password", "//host:1521/service_name", :SYSDBA]],
-     ["/passwd@192.168.19.19:1521/orcl as sysdba", ArgumentError],
+     ["/passwd@192.168.19.19:1521/orcl as sysdba", ["", "passwd", "192.168.19.19:1521/orcl", :SYSDBA]],
+     ["/", [nil, nil, nil, nil]],
+     ["/ as sysdba", [nil, nil, nil, :SYSDBA]],
     ]
 
   def test_connstr
