@@ -1,3 +1,12 @@
+2007-07-01  KUBO Takehiro  <kubo@jiubao.org>
+	* NEWS: add changes between 1.0.0-rc2 and 1.0.0-rc3.
+	* VERSION: change version to 1.0.0-rc3.
+	* ext/oci8/oraconf.rb: fix a problem to compile with a
+	   third-party x86_64 rpm package. '--with-instant-client'
+	   option become obsolete and is ignored.
+	* test/test_oci8.rb: skip test_binary_float test when the testing
+	   server version is 9i or earlier.
+
 2007-06-26  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8.rb.in: add external OS authentication. (suggested by Dan Fitch)
 	      conn = OCI8.new('/')

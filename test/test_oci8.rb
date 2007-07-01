@@ -13,6 +13,14 @@ class TestOCI8 < RUNIT::TestCase
     @conn.logoff
   end
 
+  def server_version
+    retval = nil
+    @conn.exec('select value from database_compatible_level') do |row|
+      retval = row[0].split('.').map do |n| n.to_i; end
+    end
+    retval
+  end
+
   def test_select
     begin
       @conn.exec("DROP TABLE test_table")
@@ -141,6 +149,12 @@ EOS
   end
 
   def test_binary_float
+    if server_version[0] < 10
+      # Oracle 9i
+      print 'skip'
+      return
+    end
+    # Oracle 10g
     cursor = @conn.parse("select CAST(:1 AS BINARY_FLOAT), CAST(:2 AS BINARY_DOUBLE) from dual")
     cursor.bind_param(1, 10.0)
     cursor.bind_param(2, 100.1)

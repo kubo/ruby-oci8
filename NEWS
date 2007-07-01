@@ -1,3 +1,42 @@
+1.0.0-rc3:
+
+1. support external OS authentication.
+   (suggested by Dan Fitch)
+
+      conn = OCI8.new('/')
+   or
+      conn = OCI8.new(nil, nil)
+
+2. incompatible change on connect string.
+
+   You need to pass only one argument to OCI8.new to parse the
+   first argument as a SQL*Plus-like connect string.
+
+   For example, OCI8.new('scott/tiger', nil) was parsed as the
+   username is 'scott' and the password is 'tiger' in 1.0.0-rc2.
+   But from now on, it is treated as the username is 'scott/tiger'
+   and the password is nil because it has two arguments. You need
+   to use OCI8.new('scott/tiger') instead.
+
+3. fix NCLOB support on Oracle 9i.
+   (reported by Matthew Noble)
+
+   1.0.0-rc2's NCLOB support worked on Oracle 10g only.
+
+4. fix a problem to compile with a third-party x86_64 rpm package.
+   (contributed by Jeff Abbott)
+
+   The x86_64 source rpm packages are found on the following URLs.
+     http://freshrpms.net/docs/oracle/
+     http://remi.collet.free.fr/index.php?2007/01/22/279-oracle-instant-client-10203-on-x86_64
+
+5. '--with-instant-client' option become obsolete and is ignored.
+
+   Use LD_LIBRARY_PATH(Linux), PATH(Windows), etc. to indicate
+   the instant client's location.
+
+6. fix some other minor problems.
+
 1.0.0-rc2:
 
 1. support SQL*Plus-like connect strings.
