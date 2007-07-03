@@ -1,3 +1,7 @@
+2007-07-03  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/DBD/OCI8/OCI8.rb: fix for external OS authentication.
+	    (contributed by Dan Fitch)
+
 2007-06-26  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c: add external OS authentication. (suggested by Dan Fitch)
 	      conn = OCI8.new('/')
