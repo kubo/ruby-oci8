@@ -62,6 +62,11 @@ end
 class Database < DBI::BaseDatabase
   include Util
 
+  # external OS authentication
+  def default_user
+    [nil, nil]
+  end
+
   def disconnect
     @handle.logoff
   rescue OCIException => err
