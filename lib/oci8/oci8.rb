@@ -317,26 +317,26 @@ class OCI8
 
     def bind_or_define(bind_type, key, val, typ, length, precision, scale, strict_check, max_array_size)
       if typ.nil?
-	if val.nil?
-	  raise "bind type is not given." if typ.nil?
-	else
+        if val.nil?
+          raise "bind type is not given." if typ.nil?
+        else
           if val.class == Class
             typ = val
             val = nil
           else
-            if val.is_a? OCI8::NamedType::Base
+            if val.is_a? OCI8::Object::Base
               typ = @con.get_tdo_by_class(val.class)
             else
               typ = val.class
             end
           end
-	end
+        end
       end
 
       bindclass = OCI8::BindType::Mapping[typ]
       if bindclass.nil?
         if typ.is_a? OCI8::TDO
-          bindclass = OCI8::BindType::NamedType
+          bindclass = OCI8::BindType::Object
           length = typ
         else
           raise "unsupported datatype: #{typ}"
@@ -556,9 +556,6 @@ OCI8::BindType::Mapping[:number] = OCI8::BindType::Number
 
 OCI8::BindType::Mapping[:bfloat] = OCI8::BindType::Float
 OCI8::BindType::Mapping[:bdouble] = OCI8::BindType::Float
-
-# NamedType
-OCI8::BindType::Mapping[:named_type] = OCI8::BindType::NamedType
 
 # XMLType (This mapping will be changed before release.)
 OCI8::BindType::Mapping[:xmltype] = OCI8::BindType::Long

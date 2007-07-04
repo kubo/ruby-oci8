@@ -31,28 +31,28 @@ class OCI8
     name = metadata.name
     full_name = schema_name + '.' + name
 
-    klass = OCI8::NamedType::Base.get_class_by_typename(full_name)
-    klass = OCI8::NamedType::Base.get_class_by_typename(name) if klass.nil?
+    klass = OCI8::Object::Base.get_class_by_typename(full_name)
+    klass = OCI8::Object::Base.get_class_by_typename(name) if klass.nil?
     if klass.nil?
       if schema_name == username
         eval <<EOS
-module NamedType
-  class #{name.downcase.gsub(/(^|_)(.)/) { $2.upcase }} < OCI8::NamedType::Base
+module Object
+  class #{name.downcase.gsub(/(^|_)(.)/) { $2.upcase }} < OCI8::Object::Base
   end
 end
 EOS
-        klass = OCI8::NamedType::Base.get_class_by_typename(name)
+        klass = OCI8::Object::Base.get_class_by_typename(name)
       else
         eval <<EOS
-module NamedType
+module Object
   module #{schema_name.downcase.gsub(/(^|_)(.)/) { $2.upcase }}
-    class #{name.downcase.gsub(/(^|_)(.)/) { $2.upcase }} < OCI8::NamedType::Base
+    class #{name.downcase.gsub(/(^|_)(.)/) { $2.upcase }} < OCI8::Object::Base
       set_typename('#{full_name}')
     end
   end
 end
 EOS
-        klass = OCI8::NamedType::Base.get_class_by_typename(full_name)
+        klass = OCI8::Object::Base.get_class_by_typename(full_name)
       end
     end
     OCI8::TDO.new(self, metadata, klass)
@@ -67,7 +67,44 @@ EOS
     end
   end
 
-  module NamedType
+  class BindArgumentHelper
+    attr_reader :arg_str
+    def initialize(*args)
+      if args.length == 1 and args[0].is_a? Hash
+        @arg_str = args[0].keys.collect do |key| "#{key}=>:#{key}"; end.join(', ')
+        @bind_vars = args[0]
+      else
+        ary = []
+        @bind_vars = {}
+        args.each_with_index do |obj, idx|
+          key = ':' + (idx + 1).to_s
+          ary << key
+          @bind_vars[key] = obj
+        end
+        @arg_str = ary.join(', ')
+      end
+    end
+
+    def exec(con, csr)
+      @bind_vars.each do |key, val|
+        if val.is_a? OCI8::Object::Base
+          tdo = con.get_tdo_by_class(val.class)
+          csr.bind_param(key, nil, :named_type_internal, tdo)
+          csr[key].copy_attributes_from(val)
+        else
+          csr.bind_param(key, val)
+        end
+      end
+      csr.exec
+      @bind_vars.each do |key, val|
+        if val.is_a? OCI8::Object::Base
+          csr[key].copy_attributes_to(val)
+        end
+      end
+    end
+  end
+
+  module Object
     class Base
       @@class_to_name = {}
       @@name_to_class = {}
@@ -101,41 +138,28 @@ EOS
       end
 
       def initialize(*args)
+        @attributes = {}
         if args[0].is_a? OCI8
           @con = args.shift
         else
           @con = @@default_connection
         end
+        return if args.empty?
         raise "no connection is specified." if @con.nil?
         # setup a TDO object.
-        @tdo = @con.get_tdo_by_class(self.class)
-        fini_funcs = @tdo.attrs.collect do |attr|
-          if attr.fini_func
-            [attr.fini_func, attr.val_offset, attr.ind_offset]
-          end
-        end.compact
-        initialize_internal(@tdo.val_size, @tdo.ind_size, fini_funcs)
-        # initialize attributes.
-        @tdo.attrs.each do |attr|
-          if attr.init_func
-            send attr.init_func, attr.val_offset, attr.ind_offset
-          end
-        end
-        return if args.empty?
+        tdo = @con.get_tdo_by_class(self.class)
         # call constructor.
-        arg_str, bind_vars = self.class.make_sql_argument(*args)
+        bind_arg_helper = BindArgumentHelper.new(*args)
         sql = <<EOS
 BEGIN
-  :self := #{@tdo.typename}(#{arg_str});
+  :self := #{tdo.typename}(#{bind_arg_helper.arg_str});
 END;
 EOS
         csr = @con.parse(sql)
         begin
-          csr.bind_param(:self, self)
-          bind_vars.each do |key, val|
-            csr.bind_param(key, val)
-          end
-          csr.exec
+          csr.bind_param(:self, nil, :named_type_internal, tdo)
+          bind_arg_helper.exec(@con, csr)
+          csr[:self].copy_attributes_to(self)
         ensure
           csr.close
         end
@@ -152,37 +176,32 @@ EOS
         return_type = tdo.class_methods[method_id]
         if return_type == :none
           # procedure
-          arg_str, bind_vars = make_sql_argument(*args)
+          bind_arg_helper = BindArgumentHelper.new(*args)
           sql = <<EOS
 BEGIN
-  #{tdo.typename}.#{method_id}(#{arg_str});
+  #{tdo.typename}.#{method_id}(#{bind_arg_helper.arg_str});
 END;
 EOS
           csr = con.parse(sql)
           begin
-            bind_vars.each do |key, val|
-              csr.bind_param(key, val)
-            end
-            csr.exec
+            bind_arg_helper.exec(con, csr)
           ensure
             csr.close
           end
           return nil
         elsif return_type
           # function
-          arg_str, bind_vars = make_sql_argument(*args)
+          return_type = tdo.class_methods[method_id]
+          bind_arg_helper = BindArgumentHelper.new(*args)
           sql = <<EOS
 BEGIN
-  :rv := #{tdo.typename}.#{method_id}(#{arg_str});
+  :rv := #{tdo.typename}.#{method_id}(#{bind_arg_helper.arg_str});
 END;
 EOS
           csr = con.parse(sql)
           begin
             csr.bind_param(:rv, nil, return_type)
-            bind_vars.each do |key, val|
-              csr.bind_param(key, val)
-            end
-            csr.exec
+            bind_arg_helper.exec(con, csr)
             rv = csr[:rv]
           ensure
             csr.close
@@ -194,139 +213,169 @@ EOS
 
       # instance method
       def method_missing(method_id, *args)
-        return_type = @tdo.instance_methods[method_id]
+        tdo = @con.get_tdo_by_class(self.class)
+        return_type = tdo.instance_methods[method_id]
         if return_type == :none
           # procedure
-          arg_str, bind_vars = self.class.make_sql_argument(*args)
+          bind_arg_helper = BindArgumentHelper.new(*args)
           sql = <<EOS
 DECLARE
-  val #{@tdo.typename} := :self;
+  val #{tdo.typename} := :self;
 BEGIN
-  val.#{method_id}(#{arg_str});
+  val.#{method_id}(#{bind_arg_helper.arg_str});
   :self := val;
 END;
 EOS
           csr = @con.parse(sql)
           begin
-            csr.bind_param(:self, self)
-            bind_vars.each do |key, val|
-              csr.bind_param(key, val)
-            end
-            csr.exec
+            csr.bind_param(:self, nil, :named_type_internal, tdo)
+            csr[:self].copy_attributes_from(self)
+            bind_arg_helper.exec(@con, csr)
+            csr[:self].copy_attributes_to(self)
           ensure
             csr.close
           end
           return nil
         elsif return_type
           # function
-          arg_str, bind_vars = self.class.make_sql_argument(*args)
+          bind_arg_helper = BindArgumentHelper.new(*args)
           sql = <<EOS
 DECLARE
-  val #{@tdo.typename} := :self;
+  val #{tdo.typename} := :self;
 BEGIN
-  :rv := val.#{method_id}(#{arg_str});
+  :rv := val.#{method_id}(#{bind_arg_helper.arg_str});
   :self := val;
 END;
 EOS
           csr = @con.parse(sql)
           begin
-            csr.bind_param(:self, self)
+            csr.bind_param(:self, nil, :named_type_internal, tdo)
             csr.bind_param(:rv, nil, return_type)
-            bind_vars.each do |key, val|
-              csr.bind_param(key, val)
-            end
-            csr.exec
+            csr[:self].copy_attributes_from(self)
+            bind_arg_helper.exec(@con, csr)
+            csr[:self].copy_attributes_to(self)
             rv = csr[:rv]
           ensure
             csr.close
           end
           return rv
         end
-        attr = @tdo.attr_methods[method_id]
-        if attr
-          # attribute
-          return send(attr[0], attr[1], attr[2], *args)
+        # getter func
+        if tdo.attr_getters[method_id]
+          if args.length != 0
+            raise ArgumentError, "wrong number of arguments (#{args.length} for 0)"
+          end
+          return @attributes[method_id]
         end
-        super # The method is not found.
+        # setter func
+        if attr = tdo.attr_setters[method_id]
+          if args.length != 1
+            raise ArgumentError, "wrong number of arguments (#{args.length} for 1)"
+          end
+          return @attributes[attr.name] = args[0]
+        end
+        # The method is not found.
+        super
       end # method_missing
 
-      def self.make_sql_argument(*args)
-        if args.length == 1 and args[0].is_a? Hash
-          [args[0].keys.collect do |key| "#{key}=>:#{key}"; end.join(', '), args[0]]
-        else
-          str_ary = []
-          bind_vars = {}
-          args.each_with_index do |obj, idx|
-            key = ':' + (idx + 1).to_s
-            str_ary << key
-            bind_vars[key] = obj
-          end
-          [str_ary.join(', '), bind_vars]
-        end
-      end
-
       def inspect
-        return super if @tdo.nil?
+        return super if @con.nil?
         args = []
-        if is_null?
-          args << 'null'
-        else
-          @tdo.attr_methods.each do |key, val|
-            next if key.to_s[-1] == ?=
-            val = send(*val)
-            if val
-              args << "#{key}=>#{val}"
-            else
-              args << "#{key}=>null"
-            end
+        tdo = @con.get_tdo_by_class(self.class)
+        tdo.attributes.each do |attr|
+          val = @attributes[attr.name]
+          if val
+              args << "#{attr.name}=#{val.inspect}"
+          else
+            args << "#{attr.name}=nil"
           end
         end
-        "<##{self.class}: #{args.join(', ')}>"
+        "#<#{self.class}: #{args.join(', ')}>"
       end
-    end # OCI8::NamedType::Base
-  end # OCI8::NamedType
+    end # OCI8::Object::Base
+  end # OCI8::Object
 
   class TDO
+    # full-qualified object type name.
+    #  e.g.
+    #   MDSYS.SDO_GEOMETRY
     attr_reader :typename
+
+    # named_type
+    attr_reader :ruby_class
+
     attr_reader :val_size
     attr_reader :ind_size
     attr_reader :alignment
-    attr_reader :attrs
-    attr_reader :attr_methods
+
+    attr_reader :attributes
+    attr_reader :attr_getters
+    attr_reader :attr_setters
+
+    # mapping between class method's ids and their return types.
+    # :none means a procedure.
+    #    CREATE OR REPLACE TYPE foo AS OBJECT (
+    #      STATIC FUNCTION bar RETURN INTEGER,
+    #      STATIC PROCEDURE baz,
+    #    );
+    #  => {:bar => Integer, :baz => :none}
+
     attr_reader :class_methods
+    # mapping between instance method's ids and their return types.
+    # :none means a procedure.
+    #    CREATE OR REPLACE TYPE foo AS OBJECT (
+    #      MEMBER FUNCTION bar RETURN INTEGER,
+    #      MEMBER PROCEDURE baz,
+    #    );
+    #  => {:bar => Integer, :baz => :none}
     attr_reader :instance_methods
 
+    def is_collection?
+      @is_collection
+    end
+
     def initialize(con, metadata, klass)
+      @ruby_class = klass
+      @typename = metadata.schema_name + '.' + metadata.name
+
       setup(con, metadata)
       con.instance_variable_get(:@id_to_tdo)[metadata.tdo_id] = self
-      con.instance_variable_get(:@name_to_tdo)[metadata.schema_name + '.' + metadata.name] = self
+      con.instance_variable_get(:@name_to_tdo)[@typename] = self
       if metadata.schema_name == con.username
         con.instance_variable_get(:@name_to_tdo)[metadata.name] = self
       end
 
-      @con = con
-      @ruby_class = klass
-      @typename = metadata.schema_name + '.' + metadata.name
-
-      @val_size = 0
-      @ind_size = 2
-      @alignment = 1
-      @attrs = metadata.type_attrs.collect do |type_attr|
-        attr = Attr.new(con, type_attr, @val_size, @ind_size)
-        @val_size, @ind_size = attr.next_offset
-        if @alignment < attr.alignment
-          @alignment = attr.alignment
+      if metadata.typecode == :named_collection
+        @val_size = SIZE_OF_POINTER
+        @ind_size = 2
+        @alignment = ALIGNMENT_OF_POINTER
+        attr = Attr.new(con, metadata, 0, 0)
+        # bad hack
+        attr.instance_variable_set(:@name, :to_ary)
+        attr.instance_variable_set(:@datatype, NAMED_COLLECTION)
+        @attributes = [attr]
+      else
+        @val_size = 0
+        @ind_size = 2
+        @alignment = 1
+        @attributes = metadata.type_attrs.collect do |type_attr|
+          attr = Attr.new(con, type_attr, @val_size, @ind_size)
+          @val_size, @ind_size = attr.next_offset
+          if @alignment < attr.alignment
+            @alignment = attr.alignment
+          end
+          attr
         end
-        attr
+        # fix alignment
+        @val_size = (@val_size + @alignment - 1) & ~(@alignment - 1)
       end
-      # fix alignment
-      @val_size = (@val_size + @alignment - 1) & ~(@alignment - 1)
 
-      # set attr_methods
-      @attr_methods = {}
-      @attrs.each do |attr|
-        @attr_methods[attr.name.intern] = [attr.get_func, attr.val_offset, attr.ind_offset]
-        @attr_methods[(attr.name + '=').intern] = [attr.set_func, attr.val_offset, attr.ind_offset]
+      # setup attr_getters and attr_setters
+      @attr_getters = {}
+      @attr_setters = {}
+      @attributes.each do |attr|
+        @attr_getters[attr.name] = attr
+        @attr_setters[(attr.name.to_s + '=').intern] = attr
       end
 
       # set class_methods and instance_methods
@@ -339,7 +388,7 @@ EOS
         result_type = nil
         if type_method.has_result?
           # function
-          @con.exec("select result_type_owner, result_type_name from all_method_results where OWNER = :1 and TYPE_NAME = :2 and METHOD_NO = :3", metadata.schema_name, metadata.name, i + 1) do |r|
+          con.exec("select result_type_owner, result_type_name from all_method_results where OWNER = :1 and TYPE_NAME = :2 and METHOD_NO = :3", metadata.schema_name, metadata.name, i + 1) do |r|
             if r[0].nil?
               result_type = @@result_type_to_bindtype[r[1]]
             else
@@ -357,7 +406,7 @@ EOS
             @class_methods[type_method.name.downcase.intern] = result_type
           end
         else
-          puts "unsupported return type (#{schema_name}.#{name}.#{type_method.name})" if $VERBOSE
+          warn "unsupported return type (#{schema_name}.#{name}.#{type_method.name})" if $VERBOSE
         end
       end
     end
@@ -368,6 +417,7 @@ EOS
 
     @@result_type_to_bindtype = {
       'FLOAT'                   => Float,
+      'INTEGER'                 => Integer,
       'NUMBER'                  => OCINumber,
       'BINARY_FLOAT'            => :bfloat,
       'BINARY_DOUBLE'           => :bdouble,
@@ -378,62 +428,39 @@ EOS
       'INTERVAL DAY TO SECOND'  => :interval_ds,
     }
 
+    def self.check_metadata(con, metadata)
+      case metadata.typecode
+      when :char, :varchar, :varchar2
+        [ATTR_STRING,    nil, SIZE_OF_POINTER, 2, ALIGNMENT_OF_POINTER]
+      when :raw
+        [ATTR_RAW,       nil, SIZE_OF_POINTER, 2, ALIGNMENT_OF_POINTER]
+      when :number, :decimal
+        [ATTR_OCINUMBER, nil, SIZE_OF_OCINUMBER, 2, ALIGNMENT_OF_OCINUMBER]
+      when :integer, :smallint
+        [ATTR_INTEGER,   nil, SIZE_OF_OCINUMBER, 2, ALIGNMENT_OF_OCINUMBER]
+      when :real, :double, :float
+        [ATTR_FLOAT,     nil, SIZE_OF_OCINUMBER, 2, ALIGNMENT_OF_OCINUMBER]
+      when :named_type
+        tdo = con.get_tdo_by_metadata(metadata.type_metadata)
+        [ATTR_NAMED_TYPE, tdo, tdo.val_size, tdo.ind_size, tdo.alignment]
+      when :named_collection
+        datatype, typeinfo, = OCI8::TDO.check_metadata(con, metadata.type_metadata.collection_element)
+        [ATTR_NAMED_COLLECTION, [datatype, typeinfo], SIZE_OF_POINTER, 2, ALIGNMENT_OF_POINTER]
+      else
+        raise "unsupported typecode #{metadata.typecode}"
+      end
+    end
+
     class Attr
       attr_reader :name
       attr_reader :val_offset
       attr_reader :ind_offset
       attr_reader :alignment
-      attr_reader :init_func
-      attr_reader :fini_func
-      attr_reader :get_func
-      attr_reader :set_func
-      attr_reader :tdo
+      attr_reader :datatype
+      attr_reader :typeinfo
       def initialize(con, metadata, val_offset, ind_offset)
-        @name = metadata.name.downcase
-        case metadata.typecode
-        when :char, :varchar, :varchar2
-          @val_size = SIZE_OF_POINTER
-          @ind_size = 2
-          @alignment = ALIGNMENT_OF_POINTER
-          @init_func = nil
-          @fini_func = :__fini_string
-          @get_func = :__get_string
-          @set_func = :__set_string
-        when :raw
-          @val_size = SIZE_OF_POINTER
-          @ind_size = 2
-          @alignment = ALIGNMENT_OF_POINTER
-          @init_func = nil
-          @fini_func = :__fini_raw
-          @get_func = :__get_raw
-          @set_func = :__set_raw
-        when :number, :decimal
-          @val_size = SIZE_OF_OCINUMBER
-          @ind_size = 2
-          @alignment = ALIGNMENT_OF_OCINUMBER
-          @init_func = nil
-          @fini_func = nil
-          @get_func = :__get_number
-          @set_func = :__set_number
-        when :integer, :smallint
-          @val_size = SIZE_OF_OCINUMBER
-          @ind_size = 2
-          @alignment = ALIGNMENT_OF_OCINUMBER
-          @init_func = nil
-          @fini_func = nil
-          @get_func = :__get_integer
-          @set_func = :__set_number
-        when :real, :double, :float
-          @val_size = SIZE_OF_OCINUMBER
-          @ind_size = 2
-          @alignment = ALIGNMENT_OF_OCINUMBER
-          @init_func = nil
-          @fini_func = nil
-          @get_func = :__get_float
-          @set_func = :__set_number
-        else
-          raise "unsupported typecode #{metadata.typecode}"
-        end
+        @name = metadata.name.downcase.intern
+        @datatype, @typeinfo, @val_size, @ind_size, @alignment, = OCI8::TDO.check_metadata(con, metadata)
         @val_offset = (val_offset + @alignment - 1) & ~(@alignment - 1)
         @ind_offset = ind_offset
       end
@@ -442,4 +469,43 @@ EOS
       end
     end
   end
+
+  class NamedType
+    def to_value
+      copy_attributes_to(tdo.ruby_class.new)
+    end
+
+    def copy_attributes_from(obj)
+      attributes = obj.instance_variable_get(:@attributes)
+      tdo.attributes.each do |attr|
+        set_attribute(attr.datatype, attr.typeinfo, attr.val_offset, attr.ind_offset, attributes[attr.name])
+      end
+    end
+
+    def copy_attributes_to(obj)
+      attributes = obj.instance_variable_get(:@attributes)
+      tdo.attributes.each do |attr|
+        attributes[attr.name] = get_attribute(attr.datatype, attr.typeinfo, attr.val_offset, attr.ind_offset)
+      end
+      obj
+    end
+  end
 end
+
+class OCI8
+  module BindType
+    class Object < OCI8::BindType::NamedType
+      alias :get_orig get
+      def set(val)
+        get_orig.copy_attributes_from(val)
+        nil
+      end
+      def get()
+        (obj = super()) && obj.to_value
+      end
+    end
+  end
+end
+
+OCI8::BindType::Mapping[:named_type] = OCI8::BindType::Object
+OCI8::BindType::Mapping[:named_type_internal] = OCI8::BindType::NamedType

@@ -191,7 +191,7 @@ class OCI8
 
   # :startdoc:
 
-  # = OCI8 can describe describe database object's metadata.
+  # = OCI8 can describe database object's metadata.
   # [user objects]
   #     OCI8#describe_any(object_name)
   # [table or view]
@@ -765,9 +765,9 @@ class OCI8
       ## Table 6-7 Attributes Belonging to Types
 
       # to type metadata if possible
-      #def type_metadata
-      #  __type_metadata(OCI8::Metadata::Type)
-      #end
+      def type_metadata
+        self
+      end
 
       # typecode. :object or :named_collection
       def typecode
@@ -1948,7 +1948,8 @@ class OCI8
 =end
   end # OCI8::Metadata
 
-  # returns metadata object in the current schema.
+  # return a subclass of OCI8::Metadata::Base
+  # which has information about _object_name_.
   # OCI8::Metadata::Table, OCI8::Metadata::View,
   # OCI8::Metadata::Procedure, OCI8::Metadata::Function,
   # OCI8::Metadata::Package, OCI8::Metadata::Type,

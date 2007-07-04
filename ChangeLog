@@ -1,3 +1,17 @@
+2007-07-04  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/object.c, lib/oci8/object.rb, lib/oci8/oci8.rb:
+	   delete OCI8::NamedType module and OCI8::NamedType::Base class
+	   and add OCI8::Object module, OCI8::Object::Base class and 
+	   OCI8::NamedType class. In the user view, OCI8::NamedType::Base
+	   become OCI8::Object::Base. The reason is that 'named type' is used
+	   only by OCI documents, and Other Oracle manuals use Oracle Object.
+	* ext/oci8/oci8.c: free all dependent objects in advance to
+	   disconnecting a connection. 
+	* lib/oci8/metadata.rb: add OCI8::Metadata::Type#type_metadata.
+	    fix typos.
+	* test/setup_test_object.sql, test/test_object.rb: add a testcase for
+	    Oracle Objects.
+
 2007-07-03  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/DBD/OCI8/OCI8.rb: fix for external OS authentication.
 	    (contributed by Dan Fitch)

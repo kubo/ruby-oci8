@@ -12,24 +12,32 @@
 #include <orid.h>
 
 static VALUE cOCI8TDO;
-static VALUE cOCI8Object;
-static ID id_at_ruby_class;
-
-typedef struct {
-    ID id;
-    VALUE val_offset;
-    VALUE ind_offset;
-} fini_func_t;
+static VALUE cOCI8NamedType;
+static VALUE cOCI8BindNamedType;
+static ID id_to_value;
 
 typedef struct {
     oci8_base_t base;
-    int val_size;
-    int idx_size;
-    char *instance;
-    char *null_struct;
-    int fini_num;
-    fini_func_t *fini_func;
-} oci8_object_t;
+    VALUE tdo;
+    char **instancep;
+    char **null_structp;
+} oci8_named_type_t;
+
+enum {
+    ATTR_INVALID = 0,
+    ATTR_STRING,
+    ATTR_RAW,
+    ATTR_OCINUMBER,
+    ATTR_FLOAT,
+    ATTR_INTEGER,
+    ATTR_NAMED_TYPE,
+    ATTR_NAMED_COLLECTION,
+    NAMED_COLLECTION,
+};
+
+static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data, OCIInd *ind);
+static VALUE get_coll_elements(VALUE self, VALUE datatype, VALUE typeinfo, OCIColl *coll);
+static void set_attribute(VALUE datatype, VALUE typeinfo, void *data, OCIInd *ind, VALUE val);
 
 static void oci8_tdo_mark(oci8_base_t *base)
 {
@@ -74,283 +82,289 @@ static oci8_base_class_t oci8_tdo_class = {
     sizeof(oci8_base_t)
 };
 
-static void oci8_object_mark(oci8_base_t *base)
+static void oci8_named_type_mark(oci8_base_t *base)
 {
     if (base->parent != NULL) {
         rb_gc_mark(base->parent->self);
     }
 }
 
-static void oci8_object_free(oci8_base_t *base)
+static void oci8_named_type_free(oci8_base_t *base)
 {
-    oci8_object_t *obj = (oci8_object_t *)base;
-    int i;
-    if (obj->fini_func != NULL) {
-        for (i = 0; i < obj->fini_num; i++) {
-            fini_func_t *fini = &obj->fini_func[i];
-            rb_funcall(base->self, fini->id, 2, fini->val_offset, fini->ind_offset);
-        }
-        xfree(obj->fini_func);
-        obj->fini_num = 0;
-        obj->fini_func = NULL;
-    }
-    if (obj->instance != NULL) {
-        xfree(obj->instance);
-        obj->instance = NULL;
-    }
-    if (obj->null_struct != NULL) {
-        xfree(obj->null_struct);
-        obj->null_struct = NULL;
-    }
+    oci8_named_type_t *obj = (oci8_named_type_t *)base;
+    obj->instancep = NULL;
+    obj->null_structp = NULL;
 }
 
-static VALUE oci8_object_initialize_internal(VALUE self, VALUE val_size, VALUE ind_size, VALUE fini_funcs)
+static VALUE oci8_named_type_initialize(VALUE self)
 {
-    oci8_object_t *obj = DATA_PTR(self);
-    int num;
-    int i;
-    obj->val_size = NUM2INT(val_size);
-    obj->idx_size = NUM2INT(ind_size);
-    Check_Type(fini_funcs, T_ARRAY);
-    num = RARRAY_LEN(fini_funcs);
-    obj->fini_func = xmalloc(sizeof(fini_func_t) * num);
-    for (i = 0; i < num; i++) {
-        fini_func_t *fini = &obj->fini_func[i];
-        VALUE elem = RARRAY_PTR(fini_funcs)[i];
-        Check_Type(elem, T_ARRAY);
-        if (RARRAY_LEN(elem) != 3) {
-            rb_bug("bug in oci8/object.rb?");
-        }
-        Check_Type(RARRAY_PTR(elem)[0], T_SYMBOL);
-        Check_Type(RARRAY_PTR(elem)[1], T_FIXNUM);
-        Check_Type(RARRAY_PTR(elem)[2], T_FIXNUM);
-        fini->id = SYM2ID(RARRAY_PTR(elem)[0]);
-        fini->val_offset = RARRAY_PTR(elem)[1];
-        fini->ind_offset = RARRAY_PTR(elem)[2];
-    }
-    obj->fini_num = num;
-    obj->instance = xmalloc(obj->val_size);
-    obj->null_struct = xmalloc(obj->idx_size);
-    memset(obj->instance, 0, obj->val_size);
-    memset(obj->null_struct, -1, obj->idx_size);
-    *(OCIInd*)obj->null_struct = 0;
+    oci8_named_type_t *obj = DATA_PTR(self);
+
+    obj->tdo = Qnil;
+    obj->instancep = NULL;
+    obj->null_structp = NULL;
     return Qnil;
 }
 
-static void oci8_object_check_offset(VALUE self, VALUE val_offset, VALUE ind_offset, size_t val_size, void **instancep, OCIInd **indp)
+static VALUE oci8_named_type_tdo(VALUE self)
 {
-    oci8_object_t *obj = DATA_PTR(self);
+    oci8_named_type_t *obj = DATA_PTR(self);
+    return obj->tdo;
+}
 
+static void oci8_named_type_check_offset(VALUE self, VALUE val_offset, VALUE ind_offset, size_t val_size, void **instancep, OCIInd **indp)
+{
+    oci8_named_type_t *obj = DATA_PTR(self);
+    if (obj->instancep == NULL || obj->null_structp == NULL) {
+        rb_raise(rb_eRuntimeError, "%s is not initialized or freed", rb_obj_classname(self));
+    }
     Check_Type(val_offset, T_FIXNUM);
     Check_Type(ind_offset, T_FIXNUM);
-    *instancep = (void*)(obj->instance + FIX2INT(val_offset));
-    *indp = (OCIInd *)(obj->null_struct + FIX2INT(ind_offset));
-}
-
-static VALUE oci8_object_is_null_p(VALUE self)
-{
-    void *instance;
-    OCIInd *ind;
-
-    oci8_object_check_offset(self, INT2FIX(0), INT2FIX(0), 1, &instance, &ind);
-    return *ind ? Qtrue : Qfalse;
+    *instancep = (void*)(*obj->instancep + FIX2INT(val_offset));
+    *indp = (OCIInd *)(*obj->null_structp + FIX2INT(ind_offset));
 }
 
 /*
- * string attribute
+ * attribute
  */
-static VALUE oci8_object_fini_string(VALUE self, VALUE val_offset, VALUE ind_offset)
+static VALUE oci8_named_type_get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, VALUE val_offset, VALUE ind_offset)
 {
-    void *instance;
+    void *data;
     OCIInd *ind;
 
-    oci8_object_check_offset(self, val_offset, ind_offset, sizeof(OCIString*), &instance, &ind);
-    oci_lc(OCIStringResize(oci8_envhp, oci8_errhp, 0, (OCIString **)instance));
-    return Qnil;
+    oci8_named_type_check_offset(self, val_offset, ind_offset, sizeof(OCIString*), &data, &ind);
+    return get_attribute(self, datatype, typeinfo, data, ind);
 }
 
-static VALUE oci8_object_get_string(VALUE self, VALUE val_offset, VALUE ind_offset)
+static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data, OCIInd *ind)
 {
-    void *instance;
-    OCIInd *ind;
+    VALUE rv;
+    VALUE tmp_obj;
+    oci8_named_type_t *obj;
 
-    oci8_object_check_offset(self, val_offset, ind_offset, sizeof(OCIString*), &instance, &ind);
     if (*ind) {
         return Qnil;
-    } else {
-        OCIString **vs = (OCIString **)instance;
-        return rb_str_new(TO_CHARPTR(OCIStringPtr(oci8_envhp, *vs)), OCIStringSize(oci8_envhp, *vs));
+    }
+    Check_Type(datatype, T_FIXNUM);
+    switch (FIX2INT(datatype)) {
+    case ATTR_STRING:
+        return rb_str_new(TO_CHARPTR(OCIStringPtr(oci8_envhp, *(OCIString **)data)),
+                          OCIStringSize(oci8_envhp, *(OCIString **)data));
+    case ATTR_RAW:
+        return rb_str_new(TO_CHARPTR(OCIRawPtr(oci8_envhp, *(OCIRaw **)data)),
+                          OCIRawSize(oci8_envhp, *(OCIRaw **)data));
+    case ATTR_OCINUMBER:
+        return oci8_make_ocinumber((OCINumber *)data);
+    case ATTR_FLOAT:
+        return oci8_make_float((OCINumber *)data);
+    case ATTR_INTEGER:
+        return oci8_make_integer((OCINumber *)data);
+    case ATTR_NAMED_TYPE:
+        Check_Object(typeinfo, cOCI8TDO);
+        /* Be carefull. Don't use _tmp_obj_ out of this function. */
+        tmp_obj = rb_funcall(cOCI8NamedType, oci8_id_new, 0);
+        obj = DATA_PTR(tmp_obj);
+        obj->tdo = typeinfo;
+        obj->instancep = (char**)&data;
+        obj->null_structp = (char**)&ind;
+        oci8_link_to_parent(&obj->base, DATA_PTR(self));
+        rv = rb_funcall(tmp_obj, id_to_value, 0);
+        oci8_unlink_from_parent(&obj->base);
+        return rv;
+    case ATTR_NAMED_COLLECTION:
+        data = *(OCIColl**)data;
+    case NAMED_COLLECTION:
+        Check_Type(typeinfo, T_ARRAY);
+        if (RARRAY_LEN(typeinfo) != 2) {
+            rb_raise(rb_eRuntimeError, "bug?");
+        }
+        datatype = RARRAY_PTR(typeinfo)[0];
+        typeinfo = RARRAY_PTR(typeinfo)[1];
+        return get_coll_elements(self, datatype, typeinfo, (OCIColl*)data);
+
+    default:
+        rb_raise(rb_eRuntimeError, "not supported datatype");
     }
 }
 
-static VALUE oci8_object_set_string(VALUE self, VALUE val_offset, VALUE ind_offset, VALUE val)
+static VALUE oci8_named_type_get_coll_elements(VALUE self, VALUE datatype, VALUE typeinfo)
 {
-    void *instance;
+    oci8_named_type_t *obj = DATA_PTR(self);
     OCIInd *ind;
 
-    oci8_object_check_offset(self, val_offset, ind_offset, sizeof(OCIString*), &instance, &ind);
+    if (obj->instancep == NULL || obj->null_structp == NULL) {
+        rb_raise(rb_eRuntimeError, "%s is not initialized or freed", rb_obj_classname(self));
+    }
+    ind = (OCIInd*)*obj->null_structp;
+    if (*ind) {
+        return Qnil;
+    }
+    return get_coll_elements(self, datatype, typeinfo, (OCIColl*)*obj->instancep);
+}
+
+static VALUE get_coll_elements(VALUE self, VALUE datatype, VALUE typeinfo, OCIColl *coll)
+{
+    void *data;
+    OCIInd *ind;
+    VALUE ary;
+    sb4 size;
+    sb4 idx;
+
+    oci_lc(OCICollSize(oci8_envhp, oci8_errhp, coll, &size));
+    ary = rb_ary_new2(size);
+    for (idx = 0; idx < size; idx++) {
+        boolean exists;
+        oci_lc(OCICollGetElem(oci8_envhp, oci8_errhp, coll, idx, &exists, &data, (dvoid**)&ind));
+        if (exists) {
+            rb_ary_store(ary, idx, get_attribute(self, datatype, typeinfo, data, ind));
+        }
+    }
+    return ary;
+}
+
+
+static VALUE oci8_named_type_set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, VALUE val_offset, VALUE ind_offset, VALUE val)
+{
+    void *data;
+    OCIInd *ind;
+
+    oci8_named_type_check_offset(self, val_offset, ind_offset, sizeof(OCIString*), &data, &ind);
+    set_attribute(datatype, typeinfo, data, ind, val);
+    return Qnil;
+}
+
+static void set_attribute(VALUE datatype, VALUE typeinfo, void *data, OCIInd *ind, VALUE val)
+{
+    /* named collection */
+    OCIColl *coll;
+    sb4 idx;
+    void **elem_ptr;
+    OCIInd *elem_ind_ptr;
+    union {
+        OCIString *os;
+    } elem;
+    OCIInd elem_ind;
+
     if (NIL_P(val)) {
         *ind = -1;
-    } else {
-        OCIString **vs = (OCIString **)instance;
+        return;
+    }
+    Check_Type(datatype, T_FIXNUM);
+    switch (FIX2INT(datatype)) {
+    case ATTR_STRING:
         StringValue(val);
-        oci_lc(OCIStringAssignText(oci8_envhp, oci8_errhp, RSTRING_ORATEXT(val), RSTRING_LEN(val), vs));
-        *ind = 0;
-    }
-    return Qnil;
-}
-
-/*
- * raw attribute
- */
-static VALUE oci8_object_fini_raw(VALUE self, VALUE val_offset, VALUE ind_offset)
-{
-    void *instance;
-    OCIInd *ind;
-
-    oci8_object_check_offset(self, val_offset, ind_offset, sizeof(OCIRaw*), &instance, &ind);
-    oci_lc(OCIRawResize(oci8_envhp, oci8_errhp, 0, (OCIRaw **)instance));
-    return Qnil;
-}
-
-static VALUE oci8_object_get_raw(VALUE self, VALUE val_offset, VALUE ind_offset)
-{
-    void *instance;
-    OCIInd *ind;
-
-    oci8_object_check_offset(self, val_offset, ind_offset, sizeof(OCIRaw*), &instance, &ind);
-    if (*ind) {
-        return Qnil;
-    } else {
-        OCIRaw **vs = (OCIRaw **)instance;
-        return rb_str_new(TO_CHARPTR(OCIRawPtr(oci8_envhp, *vs)), OCIRawSize(oci8_envhp, *vs));
-    }
-}
-
-static VALUE oci8_object_set_raw(VALUE self, VALUE val_offset, VALUE ind_offset, VALUE val)
-{
-    void *instance;
-    OCIInd *ind;
-
-    oci8_object_check_offset(self, val_offset, ind_offset, sizeof(OCIRaw*), &instance, &ind);
-    if (NIL_P(val)) {
-        *ind = -1;
-    } else {
-        OCIRaw **vs = (OCIRaw **)instance;
+        oci_lc(OCIStringAssignText(oci8_envhp, oci8_errhp,
+                                   RSTRING_ORATEXT(val), RSTRING_LEN(val),
+                                   (OCIString **)data));
+        break;
+    case ATTR_RAW:
         StringValue(val);
-        oci_lc(OCIRawAssignBytes(oci8_envhp, oci8_errhp, RSTRING_ORATEXT(val), RSTRING_LEN(val), vs));
-        *ind = 0;
+        oci_lc(OCIRawAssignBytes(oci8_envhp, oci8_errhp,
+                                 RSTRING_ORATEXT(val), RSTRING_LEN(val),
+                                 (OCIRaw **)data));
+        break;
+    case ATTR_OCINUMBER:
+    case ATTR_FLOAT:
+        oci8_set_ocinumber((OCINumber*)data, val);
+        break;
+    case ATTR_INTEGER:
+        oci8_set_integer((OCINumber*)data, val);
+        break;
+    case ATTR_NAMED_TYPE:
+        Check_Object(typeinfo, cOCI8TDO);
+        rb_notimplement();
+    case ATTR_NAMED_COLLECTION:
+        Check_Type(typeinfo, T_ARRAY);
+        if (RARRAY_LEN(typeinfo) != 2) {
+            rb_raise(rb_eRuntimeError, "bug?");
+        }
+        datatype = RARRAY_PTR(typeinfo)[0];
+        typeinfo = RARRAY_PTR(typeinfo)[1];
+        Check_Type(datatype, T_FIXNUM);
+        Check_Type(val, T_ARRAY);
+        switch (FIX2INT(datatype)) {
+        case ATTR_STRING:
+            elem_ptr = (void**)&elem;
+            elem_ind_ptr = &elem_ind;
+            elem.os = NULL;
+            OCIStringAssignText(oci8_envhp, oci8_errhp, (text *)"dummy", 5, &elem.os);
+            break;
+        default:
+            rb_raise(rb_eRuntimeError, "not supported datatype");
+        }
+#if 0
+        oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->base.hp.svc, OCI_TYPECODE_OBJECT, tdo->hp.tdo, NULL, OCI_DURATION_SESSION, TRUE, (dvoid**)obj->instancep));
+#endif
+        coll = *(OCIColl**)data;
+        if (coll == NULL) {
+            rb_bug("coll is null");
+        }
+        for (idx = 0; idx < RARRAY_LEN(val); idx++) {
+            set_attribute(datatype, typeinfo, elem_ptr, elem_ind_ptr, RARRAY_PTR(val)[idx]);
+            oci_lc(OCICollAppend(oci8_envhp, oci8_errhp, *elem_ptr, elem_ind_ptr, coll));
+        }
+        switch (FIX2INT(datatype)) {
+        case ATTR_STRING:
+            if (elem.os != NULL) {
+                oci_lc(OCIStringResize(oci8_envhp, oci8_errhp, 0, &elem.os));
+            }
+            break;
+        default:
+            rb_raise(rb_eRuntimeError, "not supported datatype");
+        }
+        break;
+    default:
+        rb_raise(rb_eRuntimeError, "not supported datatype");
     }
-    return Qnil;
+    *ind = 0;
 }
 
-/*
- * number attribute
- */
-static VALUE oci8_object_get_number(VALUE self, VALUE val_offset, VALUE ind_offset)
-{
-    void *instance;
-    OCIInd *ind;
-
-    oci8_object_check_offset(self, val_offset, ind_offset, sizeof(OCINumber), &instance, &ind);
-    if (*ind) {
-        return Qnil;
-    } else {
-        return oci8_make_ocinumber((OCINumber *)instance);
-    }
-}
-
-static VALUE oci8_object_get_integer(VALUE self, VALUE val_offset, VALUE ind_offset)
-{
-    void *instance;
-    OCIInd *ind;
-
-    oci8_object_check_offset(self, val_offset, ind_offset, sizeof(OCINumber), &instance, &ind);
-    if (*ind) {
-        return Qnil;
-    } else {
-        return oci8_make_integer((OCINumber *)instance);
-    }
-}
-
-static VALUE oci8_object_get_float(VALUE self, VALUE val_offset, VALUE ind_offset)
-{
-    void *instance;
-    OCIInd *ind;
-
-    oci8_object_check_offset(self, val_offset, ind_offset, sizeof(OCINumber), &instance, &ind);
-    if (*ind) {
-        return Qnil;
-    } else {
-        return oci8_make_float((OCINumber *)instance);
-    }
-}
-
-static VALUE oci8_object_set_number(VALUE self, VALUE val_offset, VALUE ind_offset, VALUE val)
-{
-    void *instance;
-    OCIInd *ind;
-
-    oci8_object_check_offset(self, val_offset, ind_offset, sizeof(OCINumber), &instance, &ind);
-    if (NIL_P(val)) {
-        *ind = -1;
-    } else {
-        oci8_set_ocinumber((OCINumber*)instance, val);
-        *ind = 0;
-    }
-    return Qnil;
-}
-
-static VALUE oci8_object_set_integer(VALUE self, VALUE val_offset, VALUE ind_offset, VALUE val)
-{
-    void *instance;
-    OCIInd *ind;
-
-    oci8_object_check_offset(self, val_offset, ind_offset, sizeof(OCINumber), &instance, &ind);
-    if (NIL_P(val)) {
-        *ind = -1;
-    } else {
-        oci8_set_integer((OCINumber*)instance, val);
-        *ind = 0;
-    }
-    return Qnil;
-}
-
-static oci8_base_class_t oci8_object_class = {
-    oci8_object_mark,
-    oci8_object_free,
-    sizeof(oci8_object_t)
+static oci8_base_class_t oci8_named_type_class = {
+    oci8_named_type_mark,
+    oci8_named_type_free,
+    sizeof(oci8_named_type_t)
 };
 
-static void bind_obj_mark(oci8_base_t *base)
+static void bind_named_type_mark(oci8_base_t *base)
 {
     oci8_bind_t *obind = (oci8_bind_t *)base;
+    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)obind->valuep;
+    ub4 idx = 0;
+
+    do {
+        rb_gc_mark(oho[idx].obj);
+    } while (++idx < obind->maxar_sz);
     rb_gc_mark(obind->tdo);
 }
 
-static void bind_obj_free(oci8_base_t *base)
+static void bind_named_type_free(oci8_base_t *base)
 {
+#if 0
+    oci8_bind_t *obind = (oci8_bind_t *)base;
+    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)obind->valuep;
+    ub4 idx = 0;
+
+    do {
+        if (objs[idx] != NULL) {
+            OCIObjectFree(oci8_envhp, oci8_errhp, objs[idx], OCI_DEFAULT);
+            objs[idx] = NULL;
+        }
+    } while (++idx < obind->maxar_sz);
+#endif
 }
 
-static VALUE bind_obj_get(oci8_bind_t *obind, void *data, void *null_struct)
+static VALUE bind_named_type_get(oci8_bind_t *obind, void *data, void *null_struct)
 {
     oci8_hp_obj_t *oho = (oci8_hp_obj_t *)data;
     return oho->obj;
 }
 
-static void bind_obj_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
+static void bind_named_type_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
-    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)data;
-    oci8_object_t *obj;
-
-    Check_Object(val, rb_ivar_get(obind->tdo, id_at_ruby_class));
-    obj = DATA_PTR(val);
-    oho->hp = obj->instance;
-    oho->obj = val;
-    *null_structp = obj->null_struct;
+    rb_raise(rb_eRuntimeError, "not supported");
 }
 
-static void bind_obj_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
+static void bind_named_type_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
 {
     VALUE tdo_obj = length;
 
@@ -361,32 +375,39 @@ static void bind_obj_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE lengt
     obind->tdo = tdo_obj;
 }
 
-static void bind_obj_init_elem(oci8_bind_t *obind, VALUE svc)
+static void bind_named_type_init_elem(oci8_bind_t *obind, VALUE svc)
 {
     oci8_hp_obj_t *oho = (oci8_hp_obj_t *)obind->valuep;
-    oci8_object_t *obj;
+    oci8_base_t *tdo = DATA_PTR(obind->tdo);
+    OCITypeCode tc = OCITypeTypeCode(oci8_envhp, oci8_errhp, tdo->hp.tdo);
+    oci8_named_type_t *obj;
     oci8_svcctx_t *svcctx;
     ub4 idx = 0;
 
     svcctx = oci8_get_svcctx(svc);
     do {
-        oho[idx].obj = rb_funcall(rb_ivar_get(obind->tdo, id_at_ruby_class), oci8_id_new, 1, svc);
+        oho[idx].obj = rb_funcall(cOCI8NamedType, oci8_id_new, 0);
         obj = DATA_PTR(oho[idx].obj);
-        oho[idx].hp = obj->instance;
-        obind->u.null_structs[idx] = obj->null_struct;
+        obj->tdo = obind->tdo;
+        obj->instancep = (char**)&oho[idx].hp;
+        obj->null_structp = (char**)&obind->u.null_structs[idx];
+        oci8_link_to_parent(&obj->base, &obind->base);
+
+        oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->base.hp.svc, tc, tdo->hp.tdo, NULL, OCI_DURATION_SESSION, TRUE, (dvoid**)obj->instancep));
+        oci_lc(OCIObjectGetInd(oci8_envhp, oci8_errhp, (dvoid*)*obj->instancep, (dvoid**)obj->null_structp));
     } while (++idx < obind->maxar_sz);
 }
 
-static oci8_bind_class_t bind_obj_class = {
+static oci8_bind_class_t bind_named_type_class = {
     {
-        bind_obj_mark,
-        bind_obj_free,
+        bind_named_type_mark,
+        bind_named_type_free,
         sizeof(oci8_bind_t)
     },
-    bind_obj_get,
-    bind_obj_set,
-    bind_obj_init,
-    bind_obj_init_elem,
+    bind_named_type_get,
+    bind_named_type_set,
+    bind_named_type_init,
+    bind_named_type_init_elem,
     NULL,
     NULL,
     SQLT_NTY
@@ -394,33 +415,19 @@ static oci8_bind_class_t bind_obj_class = {
 
 void Init_oci_object(VALUE cOCI8)
 {
-    VALUE mNamedType;
-    id_at_ruby_class = rb_intern("@ruby_class");
+    id_to_value = rb_intern("to_value");
 
+    /* OCI8::TDO */
     cOCI8TDO = oci8_define_class_under(cOCI8, "TDO", &oci8_tdo_class);
     rb_define_private_method(cOCI8TDO, "setup", oci8_tdo_setup, 2);
-
-    mNamedType = rb_define_module_under(cOCI8, "NamedType");
-    cOCI8Object = oci8_define_class_under(mNamedType, "Base", &oci8_object_class);
-    rb_define_private_method(cOCI8Object, "initialize_internal", oci8_object_initialize_internal, 3);
-    rb_define_method(cOCI8Object, "is_null?", oci8_object_is_null_p, 0);
-    /* string attribute */
-    rb_define_private_method(cOCI8Object, "__fini_string", oci8_object_fini_string, 2);
-    rb_define_private_method(cOCI8Object, "__get_string", oci8_object_get_string, 2);
-    rb_define_private_method(cOCI8Object, "__set_string", oci8_object_set_string, 3);
-    /* raw attribute */
-    rb_define_private_method(cOCI8Object, "__fini_raw", oci8_object_fini_raw, 2);
-    rb_define_private_method(cOCI8Object, "__get_raw", oci8_object_get_raw, 2);
-    rb_define_private_method(cOCI8Object, "__set_raw", oci8_object_set_raw, 3);
-    /* number attribute */
-    rb_define_private_method(cOCI8Object, "__get_number", oci8_object_get_number, 2);
-    rb_define_private_method(cOCI8Object, "__get_integer", oci8_object_get_integer, 2);
-    rb_define_private_method(cOCI8Object, "__get_float", oci8_object_get_float, 2);
-    rb_define_private_method(cOCI8Object, "__set_number", oci8_object_set_number, 3);
-    rb_define_private_method(cOCI8Object, "__set_integer", oci8_object_set_integer, 3);
-
-    oci8_define_bind_class("NamedType", &bind_obj_class);
-
+    rb_define_const(cOCI8TDO, "ATTR_STRING", INT2FIX(ATTR_STRING));
+    rb_define_const(cOCI8TDO, "ATTR_RAW", INT2FIX(ATTR_RAW));
+    rb_define_const(cOCI8TDO, "ATTR_OCINUMBER", INT2FIX(ATTR_OCINUMBER));
+    rb_define_const(cOCI8TDO, "ATTR_FLOAT", INT2FIX(ATTR_FLOAT));
+    rb_define_const(cOCI8TDO, "ATTR_INTEGER", INT2FIX(ATTR_INTEGER));
+    rb_define_const(cOCI8TDO, "ATTR_NAMED_TYPE", INT2FIX(ATTR_NAMED_TYPE));
+    rb_define_const(cOCI8TDO, "ATTR_NAMED_COLLECTION", INT2FIX(ATTR_NAMED_COLLECTION));
+    rb_define_const(cOCI8TDO, "NAMED_COLLECTION", INT2FIX(NAMED_COLLECTION));
 #define ALIGNMENT_OF(type) (size_t)&(((struct {char c; type t;}*)0)->t)
     rb_define_const(cOCI8TDO, "SIZE_OF_POINTER", INT2FIX(sizeof(void *)));
     rb_define_const(cOCI8TDO, "ALIGNMENT_OF_POINTER", INT2FIX(ALIGNMENT_OF(void *)));
@@ -432,4 +439,15 @@ void Init_oci_object(VALUE cOCI8)
     rb_define_const(cOCI8TDO, "ALIGNMENT_OF_FLOAT", INT2FIX(ALIGNMENT_OF(float)));
     rb_define_const(cOCI8TDO, "SIZE_OF_DOUBLE", INT2FIX(sizeof(double)));
     rb_define_const(cOCI8TDO, "ALIGNMENT_OF_DOUBLE", INT2FIX(ALIGNMENT_OF(double)));
+
+    /* OCI8::NamedType */
+    cOCI8NamedType = oci8_define_class_under(cOCI8, "NamedType", &oci8_named_type_class);
+    rb_define_method(cOCI8NamedType, "initialize", oci8_named_type_initialize, 0);
+    rb_define_method(cOCI8NamedType, "tdo", oci8_named_type_tdo, 0);
+    rb_define_private_method(cOCI8NamedType, "get_attribute", oci8_named_type_get_attribute, 4);
+    rb_define_private_method(cOCI8NamedType, "get_coll_elements", oci8_named_type_get_coll_elements, 2);
+    rb_define_private_method(cOCI8NamedType, "set_attribute", oci8_named_type_set_attribute, 5);
+
+    /* OCI8::BindType::NamedType */
+    cOCI8BindNamedType = oci8_define_bind_class("NamedType", &bind_named_type_class);
 }

@@ -257,6 +257,9 @@ static VALUE oci8_svcctx_logoff(VALUE self)
     oci8_svcctx_t *svcctx = (oci8_svcctx_t *)DATA_PTR(self);
     sword rv;
 
+    while (svcctx->base.children != NULL) {
+        oci8_base_free(svcctx->base.children);
+    }
     switch (svcctx->logon_type) {
     case T_IMPLICIT:
         oci_rc(svcctx, OCITransRollback(svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT));
