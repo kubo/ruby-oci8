@@ -13,8 +13,10 @@
 
 static VALUE cOCI8TDO;
 static VALUE cOCI8NamedType;
+static VALUE cOCI8NamedCollection;
 static VALUE cOCI8BindNamedType;
 static ID id_to_value;
+static ID id_set_attributes;
 
 typedef struct {
     oci8_base_t base;
@@ -32,12 +34,10 @@ enum {
     ATTR_INTEGER,
     ATTR_NAMED_TYPE,
     ATTR_NAMED_COLLECTION,
-    NAMED_COLLECTION,
 };
 
 static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data, OCIInd *ind);
-static VALUE get_coll_elements(VALUE self, VALUE datatype, VALUE typeinfo, OCIColl *coll);
-static void set_attribute(VALUE datatype, VALUE typeinfo, void *data, OCIInd *ind, VALUE val);
+static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data, OCIInd *ind, VALUE val);
 
 static void oci8_tdo_mark(oci8_base_t *base)
 {
@@ -172,44 +172,40 @@ static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *dat
         oci8_unlink_from_parent(&obj->base);
         return rv;
     case ATTR_NAMED_COLLECTION:
-        data = *(OCIColl**)data;
-    case NAMED_COLLECTION:
-        Check_Type(typeinfo, T_ARRAY);
-        if (RARRAY_LEN(typeinfo) != 2) {
-            rb_raise(rb_eRuntimeError, "bug?");
-        }
-        datatype = RARRAY_PTR(typeinfo)[0];
-        typeinfo = RARRAY_PTR(typeinfo)[1];
-        return get_coll_elements(self, datatype, typeinfo, (OCIColl*)data);
-
+        Check_Object(typeinfo, cOCI8TDO);
+        /* Be carefull. Don't use _tmp_obj_ out of this function. */
+        tmp_obj = rb_funcall(cOCI8NamedCollection, oci8_id_new, 0);
+        obj = DATA_PTR(tmp_obj);
+        obj->tdo = typeinfo;
+        obj->instancep = (char**)data;
+        obj->null_structp = (char**)&ind;
+        oci8_link_to_parent(&obj->base, DATA_PTR(self));
+        rv = rb_funcall(tmp_obj, id_to_value, 0);
+        oci8_unlink_from_parent(&obj->base);
+        return rv;
     default:
         rb_raise(rb_eRuntimeError, "not supported datatype");
     }
 }
 
-static VALUE oci8_named_type_get_coll_elements(VALUE self, VALUE datatype, VALUE typeinfo)
+static VALUE oci8_named_coll_get_coll_element(VALUE self, VALUE datatype, VALUE typeinfo)
 {
     oci8_named_type_t *obj = DATA_PTR(self);
-    OCIInd *ind;
-
-    if (obj->instancep == NULL || obj->null_structp == NULL) {
-        rb_raise(rb_eRuntimeError, "%s is not initialized or freed", rb_obj_classname(self));
-    }
-    ind = (OCIInd*)*obj->null_structp;
-    if (*ind) {
-        return Qnil;
-    }
-    return get_coll_elements(self, datatype, typeinfo, (OCIColl*)*obj->instancep);
-}
-
-static VALUE get_coll_elements(VALUE self, VALUE datatype, VALUE typeinfo, OCIColl *coll)
-{
+    OCIColl *coll;
     void *data;
     OCIInd *ind;
     VALUE ary;
     sb4 size;
     sb4 idx;
 
+    if (obj->instancep == NULL || obj->null_structp == NULL) {
+        rb_raise(rb_eRuntimeError, "%s is not initialized or freed", rb_obj_classname(self));
+    }
+    coll = (OCIColl*)*obj->instancep;
+    ind = (OCIInd*)*obj->null_structp;
+    if (*ind) {
+        return Qnil;
+    }
     oci_lc(OCICollSize(oci8_envhp, oci8_errhp, coll, &size));
     ary = rb_ary_new2(size);
     for (idx = 0; idx < size; idx++) {
@@ -222,28 +218,79 @@ static VALUE get_coll_elements(VALUE self, VALUE datatype, VALUE typeinfo, OCICo
     return ary;
 }
 
-
 static VALUE oci8_named_type_set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, VALUE val_offset, VALUE ind_offset, VALUE val)
 {
     void *data;
     OCIInd *ind;
 
     oci8_named_type_check_offset(self, val_offset, ind_offset, sizeof(OCIString*), &data, &ind);
-    set_attribute(datatype, typeinfo, data, ind, val);
+    set_attribute(self, datatype, typeinfo, data, ind, val);
     return Qnil;
 }
 
-static void set_attribute(VALUE datatype, VALUE typeinfo, void *data, OCIInd *ind, VALUE val)
+static VALUE oci8_named_coll_set_coll_element(VALUE self, VALUE datatype, VALUE typeinfo, VALUE val)
 {
-    /* named collection */
+    oci8_named_type_t *obj = DATA_PTR(self);
     OCIColl *coll;
+    OCIInd *ind;
+    sb4 size;
     sb4 idx;
+
     void **elem_ptr;
     OCIInd *elem_ind_ptr;
     union {
         OCIString *os;
     } elem;
     OCIInd elem_ind;
+
+    if (obj->instancep == NULL || obj->null_structp == NULL) {
+        rb_raise(rb_eRuntimeError, "%s is not initialized or freed", rb_obj_classname(self));
+    }
+    Check_Type(val, T_ARRAY);
+    coll = (OCIColl*)*obj->instancep;
+    ind = (OCIInd*)*obj->null_structp;
+    if (NIL_P(val)) {
+        *ind = -1;
+        return Qnil;
+    }
+    switch (FIX2INT(datatype)) {
+    case ATTR_STRING:
+        elem_ptr = (void**)&elem;
+        elem_ind_ptr = &elem_ind;
+        elem.os = NULL;
+        OCIStringAssignText(oci8_envhp, oci8_errhp, (text *)"dummy", 5, &elem.os);
+        break;
+    default:
+        rb_raise(rb_eRuntimeError, "not supported datatype");
+    }
+    oci_lc(OCICollSize(oci8_envhp, oci8_errhp, coll, &size));
+    for (idx = 0; idx < RARRAY_LEN(val); idx++) {
+        set_attribute(self, datatype, typeinfo, elem_ptr, elem_ind_ptr, RARRAY_PTR(val)[idx]);
+        if (idx < size) {
+            oci_lc(OCICollAssignElem(oci8_envhp, oci8_errhp, idx, *elem_ptr, elem_ind_ptr, coll));
+        } else {
+            oci_lc(OCICollAppend(oci8_envhp, oci8_errhp, *elem_ptr, elem_ind_ptr, coll));
+        }
+    }
+    switch (FIX2INT(datatype)) {
+    case ATTR_STRING:
+        if (elem.os != NULL) {
+            oci_lc(OCIStringResize(oci8_envhp, oci8_errhp, 0, &elem.os));
+        }
+        break;
+    default:
+        rb_raise(rb_eRuntimeError, "not supported datatype");
+    }
+    if (idx < size) {
+        oci_lc(OCICollTrim(oci8_envhp, oci8_errhp, size - idx, coll));
+    }
+    return Qnil;
+}
+
+static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data, OCIInd *ind, VALUE val)
+{
+    VALUE tmp_obj;
+    oci8_named_type_t *obj;
 
     if (NIL_P(val)) {
         *ind = -1;
@@ -274,44 +321,16 @@ static void set_attribute(VALUE datatype, VALUE typeinfo, void *data, OCIInd *in
         Check_Object(typeinfo, cOCI8TDO);
         rb_notimplement();
     case ATTR_NAMED_COLLECTION:
-        Check_Type(typeinfo, T_ARRAY);
-        if (RARRAY_LEN(typeinfo) != 2) {
-            rb_raise(rb_eRuntimeError, "bug?");
-        }
-        datatype = RARRAY_PTR(typeinfo)[0];
-        typeinfo = RARRAY_PTR(typeinfo)[1];
-        Check_Type(datatype, T_FIXNUM);
-        Check_Type(val, T_ARRAY);
-        switch (FIX2INT(datatype)) {
-        case ATTR_STRING:
-            elem_ptr = (void**)&elem;
-            elem_ind_ptr = &elem_ind;
-            elem.os = NULL;
-            OCIStringAssignText(oci8_envhp, oci8_errhp, (text *)"dummy", 5, &elem.os);
-            break;
-        default:
-            rb_raise(rb_eRuntimeError, "not supported datatype");
-        }
-#if 0
-        oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->base.hp.svc, OCI_TYPECODE_OBJECT, tdo->hp.tdo, NULL, OCI_DURATION_SESSION, TRUE, (dvoid**)obj->instancep));
-#endif
-        coll = *(OCIColl**)data;
-        if (coll == NULL) {
-            rb_bug("coll is null");
-        }
-        for (idx = 0; idx < RARRAY_LEN(val); idx++) {
-            set_attribute(datatype, typeinfo, elem_ptr, elem_ind_ptr, RARRAY_PTR(val)[idx]);
-            oci_lc(OCICollAppend(oci8_envhp, oci8_errhp, *elem_ptr, elem_ind_ptr, coll));
-        }
-        switch (FIX2INT(datatype)) {
-        case ATTR_STRING:
-            if (elem.os != NULL) {
-                oci_lc(OCIStringResize(oci8_envhp, oci8_errhp, 0, &elem.os));
-            }
-            break;
-        default:
-            rb_raise(rb_eRuntimeError, "not supported datatype");
-        }
+        Check_Object(typeinfo, cOCI8TDO);
+        /* Be carefull. Don't use _tmp_obj_ out of this function. */
+        tmp_obj = rb_funcall(cOCI8NamedCollection, oci8_id_new, 0);
+        obj = DATA_PTR(tmp_obj);
+        obj->tdo = typeinfo;
+        obj->instancep = (char**)data;
+        obj->null_structp = (char**)&ind;
+        oci8_link_to_parent(&obj->base, DATA_PTR(self));
+        rb_funcall(tmp_obj, id_set_attributes, 1, val);
+        oci8_unlink_from_parent(&obj->base);
         break;
     default:
         rb_raise(rb_eRuntimeError, "not supported datatype");
@@ -380,13 +399,22 @@ static void bind_named_type_init_elem(oci8_bind_t *obind, VALUE svc)
     oci8_hp_obj_t *oho = (oci8_hp_obj_t *)obind->valuep;
     oci8_base_t *tdo = DATA_PTR(obind->tdo);
     OCITypeCode tc = OCITypeTypeCode(oci8_envhp, oci8_errhp, tdo->hp.tdo);
+    VALUE klass = Qnil;
     oci8_named_type_t *obj;
     oci8_svcctx_t *svcctx;
     ub4 idx = 0;
 
+    switch (tc) {
+    case OCI_TYPECODE_OBJECT:
+        klass = cOCI8NamedType;
+        break;
+    case OCI_TYPECODE_NAMEDCOLLECTION:
+        klass = cOCI8NamedCollection;
+        break;
+    }
     svcctx = oci8_get_svcctx(svc);
     do {
-        oho[idx].obj = rb_funcall(cOCI8NamedType, oci8_id_new, 0);
+        oho[idx].obj = rb_funcall(klass, oci8_id_new, 0);
         obj = DATA_PTR(oho[idx].obj);
         obj->tdo = obind->tdo;
         obj->instancep = (char**)&oho[idx].hp;
@@ -416,6 +444,7 @@ static oci8_bind_class_t bind_named_type_class = {
 void Init_oci_object(VALUE cOCI8)
 {
     id_to_value = rb_intern("to_value");
+    id_set_attributes = rb_intern("attributes=");
 
     /* OCI8::TDO */
     cOCI8TDO = oci8_define_class_under(cOCI8, "TDO", &oci8_tdo_class);
@@ -427,7 +456,6 @@ void Init_oci_object(VALUE cOCI8)
     rb_define_const(cOCI8TDO, "ATTR_INTEGER", INT2FIX(ATTR_INTEGER));
     rb_define_const(cOCI8TDO, "ATTR_NAMED_TYPE", INT2FIX(ATTR_NAMED_TYPE));
     rb_define_const(cOCI8TDO, "ATTR_NAMED_COLLECTION", INT2FIX(ATTR_NAMED_COLLECTION));
-    rb_define_const(cOCI8TDO, "NAMED_COLLECTION", INT2FIX(NAMED_COLLECTION));
 #define ALIGNMENT_OF(type) (size_t)&(((struct {char c; type t;}*)0)->t)
     rb_define_const(cOCI8TDO, "SIZE_OF_POINTER", INT2FIX(sizeof(void *)));
     rb_define_const(cOCI8TDO, "ALIGNMENT_OF_POINTER", INT2FIX(ALIGNMENT_OF(void *)));
@@ -445,8 +473,14 @@ void Init_oci_object(VALUE cOCI8)
     rb_define_method(cOCI8NamedType, "initialize", oci8_named_type_initialize, 0);
     rb_define_method(cOCI8NamedType, "tdo", oci8_named_type_tdo, 0);
     rb_define_private_method(cOCI8NamedType, "get_attribute", oci8_named_type_get_attribute, 4);
-    rb_define_private_method(cOCI8NamedType, "get_coll_elements", oci8_named_type_get_coll_elements, 2);
     rb_define_private_method(cOCI8NamedType, "set_attribute", oci8_named_type_set_attribute, 5);
+
+    /* OCI8::NamedCollection */
+    cOCI8NamedCollection = oci8_define_class_under(cOCI8, "NamedCollection", &oci8_named_type_class);
+    rb_define_method(cOCI8NamedCollection, "initialize", oci8_named_type_initialize, 0);
+    rb_define_method(cOCI8NamedCollection, "tdo", oci8_named_type_tdo, 0);
+    rb_define_private_method(cOCI8NamedCollection, "get_coll_element", oci8_named_coll_get_coll_element, 2);
+    rb_define_private_method(cOCI8NamedCollection, "set_coll_element", oci8_named_coll_set_coll_element, 3);
 
     /* OCI8::BindType::NamedType */
     cOCI8BindNamedType = oci8_define_bind_class("NamedType", &bind_named_type_class);

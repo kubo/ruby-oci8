@@ -1,3 +1,11 @@
+2007-07-05  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/object.rb, ext/oci8/object.c: add OCI8::NamedCollection
+	    to support collection datatypes. add OCI8::NamedType#attributes
+	    and #attributes= instead of OCI8::NamedType#copy_attributes_from
+	    and #copy_attributes_to. and others.
+	* lib/oci8/oci8.rb: add OCI8#username.
+	* test/test_object.rb: add a testcase for array of varchar2.
+
 2007-07-04  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/object.c, lib/oci8/object.rb, lib/oci8/oci8.rb:
 	   delete OCI8::NamedType module and OCI8::NamedType::Base class

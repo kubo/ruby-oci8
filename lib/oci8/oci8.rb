@@ -97,6 +97,19 @@ class OCI8
     end
   end # exec
 
+  def username
+    @username || begin
+      exec('select user from dual') do |row|
+        @username = row[0]
+      end
+      @username
+    end
+  end
+
+  def inspect
+    "#<OCI8:#{username}>"
+  end
+
   module BindType
     Mapping = {}
 

@@ -23,6 +23,7 @@ class TestObj1 < Test::Unit::TestCase
     attr_reader :integer_val
     attr_reader :float_val
     attr_reader :string_val
+    attr_reader :str_array_val
 
     def initialize
       @n = 0.0
@@ -34,6 +35,16 @@ class TestObj1 < Test::Unit::TestCase
       @float_val = @n
       @string_val = @n.to_s
       @string_val = $` if /.0$/ =~ @string_val
+      if @integer_val == 1
+        @str_array_val = nil
+      else
+        @str_array_val = []
+        0.upto(2) do |i|
+          val = (@n + i).to_s
+          val = $` if /.0$/ =~ val
+          @str_array_val[i] = val
+        end
+      end
       @n <= 20
     end
   end
@@ -43,6 +54,7 @@ class TestObj1 < Test::Unit::TestCase
     assert_equal(exp.integer_val, obj.integer_val)
     assert_in_delta(exp.float_val, obj.float_val, @@delta)
     assert_equal(exp.string_val, obj.string_val)
+    assert_equal(exp.str_array_val, obj.str_array_val && obj.str_array_val.to_ary)
   end
 
   def test_select1
@@ -102,7 +114,7 @@ class TestObj1 < Test::Unit::TestCase
   def _test_implicit_constructor # TODO
     expected_val = ExpectedVal.new
     while expected_val.next
-      obj = RbTestObj.new(expected_val.integer_val, expected_val.float_val, expected_val.string_val)
+      obj = RbTestObj.new(expected_val.integer_val, expected_val.float_val, expected_val.string_val, expected_val.str_array_val)
       assert_rb_test_obj(expected_val, obj)
     end
   end
@@ -141,6 +153,7 @@ class TestObj1 < Test::Unit::TestCase
       obj.integer_val = expected_val.integer_val - 1
       obj.float_val = expected_val.float_val
       obj.string_val = expected_val.string_val
+      obj.str_array_val = expected_val.str_array_val
       RbTestObj.class_proc2(obj)
       assert_rb_test_obj(expected_val, obj)
     end

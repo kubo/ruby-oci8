@@ -58,15 +58,6 @@ EOS
     OCI8::TDO.new(self, metadata, klass)
   end
 
-  def username
-    @username || begin
-      exec('select user from dual') do |row|
-        @username = row[0]
-      end
-      @username
-    end
-  end
-
   class BindArgumentHelper
     attr_reader :arg_str
     def initialize(*args)
@@ -90,7 +81,7 @@ EOS
         if val.is_a? OCI8::Object::Base
           tdo = con.get_tdo_by_class(val.class)
           csr.bind_param(key, nil, :named_type_internal, tdo)
-          csr[key].copy_attributes_from(val)
+          csr[key].attributes = val
         else
           csr.bind_param(key, val)
         end
@@ -98,7 +89,7 @@ EOS
       csr.exec
       @bind_vars.each do |key, val|
         if val.is_a? OCI8::Object::Base
-          csr[key].copy_attributes_to(val)
+          val.instance_variable_set(:@attributes, csr[key].attributes)
         end
       end
     end
@@ -159,7 +150,7 @@ EOS
         begin
           csr.bind_param(:self, nil, :named_type_internal, tdo)
           bind_arg_helper.exec(@con, csr)
-          csr[:self].copy_attributes_to(self)
+          @attributes = csr[:self].attributes
         ensure
           csr.close
         end
@@ -214,6 +205,10 @@ EOS
       # instance method
       def method_missing(method_id, *args)
         tdo = @con.get_tdo_by_class(self.class)
+        if tdo.is_collection?
+          return @attributes if method_id == :to_ary
+          super
+        end
         return_type = tdo.instance_methods[method_id]
         if return_type == :none
           # procedure
@@ -229,9 +224,9 @@ EOS
           csr = @con.parse(sql)
           begin
             csr.bind_param(:self, nil, :named_type_internal, tdo)
-            csr[:self].copy_attributes_from(self)
+            csr[:self].attributes = self
             bind_arg_helper.exec(@con, csr)
-            csr[:self].copy_attributes_to(self)
+            @attributes = csr[:self].attributes
           ensure
             csr.close
           end
@@ -251,9 +246,9 @@ EOS
           begin
             csr.bind_param(:self, nil, :named_type_internal, tdo)
             csr.bind_param(:rv, nil, return_type)
-            csr[:self].copy_attributes_from(self)
+            csr[:self].attributes = self
             bind_arg_helper.exec(@con, csr)
-            csr[:self].copy_attributes_to(self)
+            @attributes = csr[:self].attributes
             rv = csr[:rv]
           ensure
             csr.close
@@ -277,21 +272,6 @@ EOS
         # The method is not found.
         super
       end # method_missing
-
-      def inspect
-        return super if @con.nil?
-        args = []
-        tdo = @con.get_tdo_by_class(self.class)
-        tdo.attributes.each do |attr|
-          val = @attributes[attr.name]
-          if val
-              args << "#{attr.name}=#{val.inspect}"
-          else
-            args << "#{attr.name}=nil"
-          end
-        end
-        "#<#{self.class}: #{args.join(', ')}>"
-      end
     end # OCI8::Object::Base
   end # OCI8::Object
 
@@ -309,6 +289,7 @@ EOS
     attr_reader :alignment
 
     attr_reader :attributes
+    attr_reader :coll_attr
     attr_reader :attr_getters
     attr_reader :attr_setters
 
@@ -331,7 +312,7 @@ EOS
     attr_reader :instance_methods
 
     def is_collection?
-      @is_collection
+      @coll_attr ? true : false
     end
 
     def initialize(con, metadata, klass)
@@ -345,30 +326,28 @@ EOS
         con.instance_variable_get(:@name_to_tdo)[metadata.name] = self
       end
 
-      if metadata.typecode == :named_collection
-        @val_size = SIZE_OF_POINTER
-        @ind_size = 2
-        @alignment = ALIGNMENT_OF_POINTER
-        attr = Attr.new(con, metadata, 0, 0)
-        # bad hack
-        attr.instance_variable_set(:@name, :to_ary)
-        attr.instance_variable_set(:@datatype, NAMED_COLLECTION)
-        @attributes = [attr]
-      else
-        @val_size = 0
-        @ind_size = 2
-        @alignment = 1
-        @attributes = metadata.type_attrs.collect do |type_attr|
-          attr = Attr.new(con, type_attr, @val_size, @ind_size)
-          @val_size, @ind_size = attr.next_offset
-          if @alignment < attr.alignment
-            @alignment = attr.alignment
-          end
-          attr
-        end
-        # fix alignment
-        @val_size = (@val_size + @alignment - 1) & ~(@alignment - 1)
+      case metadata.typecode
+      when :named_type
+        initialize_named_type(con, metadata)
+      when :named_collection
+        initialize_named_collection(con, metadata)
       end
+    end
+
+    def initialize_named_type(con, metadata)
+      @val_size = 0
+      @ind_size = 2
+      @alignment = 1
+      @attributes = metadata.type_attrs.collect do |type_attr|
+        attr = Attr.new(con, type_attr, @val_size, @ind_size)
+        @val_size, @ind_size = attr.next_offset
+        if @alignment < attr.alignment
+          @alignment = attr.alignment
+        end
+        attr
+      end
+      # fix alignment
+      @val_size = (@val_size + @alignment - 1) & ~(@alignment - 1)
 
       # setup attr_getters and attr_setters
       @attr_getters = {}
@@ -410,9 +389,18 @@ EOS
         end
       end
     end
+    private :initialize_named_type
+
+    def initialize_named_collection(con, metadata)
+      @val_size = SIZE_OF_POINTER
+      @ind_size = 2
+      @alignment = ALIGNMENT_OF_POINTER
+      @coll_attr = Attr.new(con, metadata.collection_element, 0, 0)
+    end
+    private :initialize_named_collection
 
     def inspect
-      "<##{self.class}:#@typename>"
+      "#<#{self.class}:#@typename>"
     end
 
     @@result_type_to_bindtype = {
@@ -444,8 +432,10 @@ EOS
         tdo = con.get_tdo_by_metadata(metadata.type_metadata)
         [ATTR_NAMED_TYPE, tdo, tdo.val_size, tdo.ind_size, tdo.alignment]
       when :named_collection
-        datatype, typeinfo, = OCI8::TDO.check_metadata(con, metadata.type_metadata.collection_element)
-        [ATTR_NAMED_COLLECTION, [datatype, typeinfo], SIZE_OF_POINTER, 2, ALIGNMENT_OF_POINTER]
+        #datatype, typeinfo, = OCI8::TDO.check_metadata(con, metadata.type_metadata.collection_element)
+        #[ATTR_NAMED_COLLECTION, [datatype, typeinfo], SIZE_OF_POINTER, 2, ALIGNMENT_OF_POINTER]
+        tdo = con.get_tdo_by_metadata(metadata.type_metadata)
+        [ATTR_NAMED_COLLECTION, tdo, tdo.val_size, tdo.ind_size, tdo.alignment]
       else
         raise "unsupported typecode #{metadata.typecode}"
       end
@@ -459,7 +449,9 @@ EOS
       attr_reader :datatype
       attr_reader :typeinfo
       def initialize(con, metadata, val_offset, ind_offset)
-        @name = metadata.name.downcase.intern
+        if metadata.respond_to? :name
+          @name = metadata.name.downcase.intern
+        end
         @datatype, @typeinfo, @val_size, @ind_size, @alignment, = OCI8::TDO.check_metadata(con, metadata)
         @val_offset = (val_offset + @alignment - 1) & ~(@alignment - 1)
         @ind_offset = ind_offset
@@ -472,22 +464,42 @@ EOS
 
   class NamedType
     def to_value
-      copy_attributes_to(tdo.ruby_class.new)
-    end
-
-    def copy_attributes_from(obj)
-      attributes = obj.instance_variable_get(:@attributes)
-      tdo.attributes.each do |attr|
-        set_attribute(attr.datatype, attr.typeinfo, attr.val_offset, attr.ind_offset, attributes[attr.name])
-      end
-    end
-
-    def copy_attributes_to(obj)
-      attributes = obj.instance_variable_get(:@attributes)
-      tdo.attributes.each do |attr|
-        attributes[attr.name] = get_attribute(attr.datatype, attr.typeinfo, attr.val_offset, attr.ind_offset)
-      end
+      obj = tdo.ruby_class.new
+      obj.instance_variable_set(:@attributes, self.attributes)
       obj
+    end
+
+    def attributes
+      attrs = {}
+      tdo.attributes.each do |attr|
+        attrs[attr.name] = get_attribute(attr.datatype, attr.typeinfo, attr.val_offset, attr.ind_offset)
+      end
+      attrs
+    end
+
+    def attributes=(obj)
+      obj = obj.instance_variable_get(:@attributes) unless obj.is_a? Hash
+      tdo.attributes.each do |attr|
+        set_attribute(attr.datatype, attr.typeinfo, attr.val_offset, attr.ind_offset, obj[attr.name])
+      end
+    end
+  end
+
+  class NamedCollection
+    def to_value
+      obj = tdo.ruby_class.new
+      obj.instance_variable_set(:@attributes, self.attributes)
+      obj
+    end
+
+    def attributes
+      attr = tdo.coll_attr
+      get_coll_element(attr.datatype, attr.typeinfo)
+    end
+
+    def attributes=(obj)
+      attr = tdo.coll_attr
+      set_coll_element(attr.datatype, attr.typeinfo, obj.to_ary)
     end
   end
 end
@@ -497,7 +509,7 @@ class OCI8
     class Object < OCI8::BindType::NamedType
       alias :get_orig get
       def set(val)
-        get_orig.copy_attributes_from(val)
+        get_orig.attributes = val
         nil
       end
       def get()
