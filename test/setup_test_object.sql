@@ -6,11 +6,14 @@ drop type rb_test_obj
 /
 create or replace type rb_test_str_array as array(50) of varchar2(50)
 /
+create or replace type rb_test_num_array as array(50) of number(10,1)
+/
 create type rb_test_obj as object (
   integer_val integer,
   float_val float,
   string_val varchar2(50),
   str_array_val rb_test_str_array,
+  num_array_val rb_test_num_array,
 
   constructor function rb_test_obj(n number) return self as result,
   static function class_func(n number) return rb_test_obj,
@@ -29,6 +32,7 @@ create or replace type body rb_test_obj is
     self.string_val := to_char(n);
     if self.integer_val != 1 then
       self.str_array_val := rb_test_str_array(to_char(n), to_char(n + 1), to_char(n + 2));
+      self.num_array_val := rb_test_num_array(n, n + 1, n + 2);
     end if;
     return;
   end;

@@ -24,6 +24,7 @@ class TestObj1 < Test::Unit::TestCase
     attr_reader :float_val
     attr_reader :string_val
     attr_reader :str_array_val
+    attr_reader :num_array_val
 
     def initialize
       @n = 0.0
@@ -37,12 +38,15 @@ class TestObj1 < Test::Unit::TestCase
       @string_val = $` if /.0$/ =~ @string_val
       if @integer_val == 1
         @str_array_val = nil
+        @num_array_val = nil
       else
         @str_array_val = []
+        @num_array_val = []
         0.upto(2) do |i|
           val = (@n + i).to_s
           val = $` if /.0$/ =~ val
           @str_array_val[i] = val
+          @num_array_val[i] = @n + i
         end
       end
       @n <= 20
@@ -55,6 +59,7 @@ class TestObj1 < Test::Unit::TestCase
     assert_in_delta(exp.float_val, obj.float_val, @@delta)
     assert_equal(exp.string_val, obj.string_val)
     assert_equal(exp.str_array_val, obj.str_array_val && obj.str_array_val.to_ary)
+    assert_equal(exp.num_array_val, obj.num_array_val && obj.num_array_val.to_ary)
   end
 
   def test_select1
@@ -76,6 +81,8 @@ class TestObj1 < Test::Unit::TestCase
       assert_equal(expected_val.integer_val, row[0])
       assert_in_delta(expected_val.float_val, row[1], @@delta)
       assert_equal(expected_val.string_val, row[2])
+      assert_equal(expected_val.str_array_val, row[3] && row[3].to_ary)
+      assert_equal(expected_val.num_array_val, row[4] && row[4].to_ary)
     end
     assert(!expected_val.next)
   end
@@ -114,7 +121,7 @@ class TestObj1 < Test::Unit::TestCase
   def _test_implicit_constructor # TODO
     expected_val = ExpectedVal.new
     while expected_val.next
-      obj = RbTestObj.new(expected_val.integer_val, expected_val.float_val, expected_val.string_val, expected_val.str_array_val)
+      obj = RbTestObj.new(expected_val.integer_val, expected_val.float_val, expected_val.string_val, expected_val.str_array_val, expected_val.num_array_val)
       assert_rb_test_obj(expected_val, obj)
     end
   end
@@ -154,6 +161,7 @@ class TestObj1 < Test::Unit::TestCase
       obj.float_val = expected_val.float_val
       obj.string_val = expected_val.string_val
       obj.str_array_val = expected_val.str_array_val
+      obj.num_array_val = expected_val.num_array_val
       RbTestObj.class_proc2(obj)
       assert_rb_test_obj(expected_val, obj)
     end

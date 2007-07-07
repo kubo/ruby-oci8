@@ -1,3 +1,8 @@
+2007-07-07  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/object.c: support array of number in OCI8::NamedCollection.
+	* test/setup_test_object.sql, test/test_object.rb: fix a testcase
+	    to test array of number.
+
 2007-07-05  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/object.rb, ext/oci8/object.c: add OCI8::NamedCollection
 	    to support collection datatypes. add OCI8::NamedType#attributes
