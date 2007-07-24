@@ -322,6 +322,7 @@ EOS
       setup(con, metadata)
       con.instance_variable_get(:@id_to_tdo)[metadata.tdo_id] = self
       con.instance_variable_get(:@name_to_tdo)[@typename] = self
+      con.instance_variable_get(:@name_to_tdo)[klass.typename] = self
       if metadata.schema_name == con.username
         con.instance_variable_get(:@name_to_tdo)[metadata.name] = self
       end
@@ -428,6 +429,10 @@ EOS
         [ATTR_INTEGER,   nil, SIZE_OF_OCINUMBER, 2, ALIGNMENT_OF_OCINUMBER]
       when :real, :double, :float
         [ATTR_FLOAT,     nil, SIZE_OF_OCINUMBER, 2, ALIGNMENT_OF_OCINUMBER]
+      when :bdouble
+        [ATTR_BINARY_DOUBLE, nil, SIZE_OF_DOUBLE, 2, ALIGNMENT_OF_DOUBLE]
+      when :bfloat
+        [ATTR_BINARY_FLOAT, nil, SIZE_OF_FLOAT, 2, ALIGNMENT_OF_FLOAT]
       when :named_type
         tdo = con.get_tdo_by_metadata(metadata.type_metadata)
         [ATTR_NAMED_TYPE, tdo, tdo.val_size, tdo.ind_size, tdo.alignment]

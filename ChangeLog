@@ -1,3 +1,11 @@
+2007-07-24  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/object.c, lib/oci8/object.rb: support binary_double,
+	   binary_float and object member of object datatype.
+	* test/setup_test_object.sql, test/test_object.rb: add testcase for
+	   binary_double, binary_float, embedded object, array of raw, array
+	   of binary_double, array of binary_float, array of object in object
+	   datatype.
+
 2007-07-07  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/object.c: support array of number in OCI8::NamedCollection.
 	* test/setup_test_object.sql, test/test_object.rb: fix a testcase

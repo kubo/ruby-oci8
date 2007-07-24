@@ -32,6 +32,8 @@ enum {
     ATTR_OCINUMBER,
     ATTR_FLOAT,
     ATTR_INTEGER,
+    ATTR_BINARY_DOUBLE,
+    ATTR_BINARY_FLOAT,
     ATTR_NAMED_TYPE,
     ATTR_NAMED_COLLECTION,
 };
@@ -159,9 +161,13 @@ static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *dat
         return oci8_make_float((OCINumber *)data);
     case ATTR_INTEGER:
         return oci8_make_integer((OCINumber *)data);
+    case ATTR_BINARY_DOUBLE:
+        return rb_float_new(*(double*)data);
+    case ATTR_BINARY_FLOAT:
+        return rb_float_new((double)*(float*)data);
     case ATTR_NAMED_TYPE:
         Check_Object(typeinfo, cOCI8TDO);
-        /* Be carefull. Don't use _tmp_obj_ out of this function. */
+        /* Be carefull. Don't use *tmp_obj* out of this function. */
         tmp_obj = rb_funcall(cOCI8NamedType, oci8_id_new, 0);
         obj = DATA_PTR(tmp_obj);
         obj->tdo = typeinfo;
@@ -173,7 +179,7 @@ static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *dat
         return rv;
     case ATTR_NAMED_COLLECTION:
         Check_Object(typeinfo, cOCI8TDO);
-        /* Be carefull. Don't use _tmp_obj_ out of this function. */
+        /* Be carefull. Don't use *tmp_obj* out of this function. */
         tmp_obj = rb_funcall(cOCI8NamedCollection, oci8_id_new, 0);
         obj = DATA_PTR(tmp_obj);
         obj->tdo = typeinfo;
@@ -212,6 +218,11 @@ static VALUE oci8_named_coll_get_coll_element(VALUE self, VALUE datatype, VALUE 
         boolean exists;
         oci_lc(OCICollGetElem(oci8_envhp, oci8_errhp, coll, idx, &exists, &data, (dvoid**)&ind));
         if (exists) {
+            void *tmp;
+            if (datatype == INT2FIX(ATTR_NAMED_COLLECTION)) {
+                tmp = data;
+                data = &tmp;
+            }
             rb_ary_store(ary, idx, get_attribute(self, datatype, typeinfo, data, ind));
         }
     }
@@ -234,10 +245,11 @@ typedef struct {
     VALUE typeinfo;
     VALUE val;
     OCIColl *coll;
-    int is_val;
     union {
         void *ptr;
         OCINumber num;
+        double dbl;
+        float flt;
     } data;
 } set_coll_element_cb_data_t;
 
@@ -255,6 +267,7 @@ static VALUE oci8_named_coll_set_coll_element(VALUE self, VALUE datatype, VALUE 
     if (obj->instancep == NULL || obj->null_structp == NULL) {
         rb_raise(rb_eRuntimeError, "%s is not initialized or freed", rb_obj_classname(self));
     }
+    Check_Type(datatype, T_FIXNUM);
     ind = (OCIInd*)*obj->null_structp;
     if (NIL_P(val)) {
         *ind = -1;
@@ -283,8 +296,13 @@ static VALUE oci8_named_coll_set_coll_element(VALUE self, VALUE datatype, VALUE 
     case ATTR_OCINUMBER:
     case ATTR_FLOAT:
     case ATTR_INTEGER:
-        cb_data.is_val = 1;
         OCINumberSetZero(oci8_errhp, &cb_data.data.num);
+        break;
+    case ATTR_BINARY_DOUBLE:
+        cb_data.data.dbl = 0.0;
+        break;
+    case ATTR_BINARY_FLOAT:
+        cb_data.data.flt = 0.0;
         break;
     case ATTR_NAMED_TYPE:
         Check_Object(typeinfo, cOCI8TDO);
@@ -299,7 +317,13 @@ static VALUE oci8_named_coll_set_coll_element(VALUE self, VALUE datatype, VALUE 
     default:
         rb_raise(rb_eRuntimeError, "not supported datatype");
     }
+#if 0
+    /* TODO: */
     rb_ensure(set_coll_element_func, (VALUE)&cb_data, set_coll_element_ensure, (VALUE)&cb_data);
+#else
+    set_coll_element_func(&cb_data);
+    set_coll_element_ensure(&cb_data);
+#endif
     return Qnil;
 }
 
@@ -312,6 +336,7 @@ static VALUE set_coll_element_func(set_coll_element_cb_data_t *cb_data)
     OCIColl *coll = cb_data->coll;
     sb4 size;
     sb4 idx;
+    void *elem_ptr;
     OCIInd *elem_ind_ptr;
     OCIInd elem_ind;
 
@@ -322,11 +347,30 @@ static VALUE set_coll_element_func(set_coll_element_cb_data_t *cb_data)
         oci_lc(OCICollTrim(oci8_envhp, oci8_errhp, size - RARRAY_LEN(val), coll));
     }
     for (idx = 0; idx < RARRAY_LEN(val); idx++) {
-        set_attribute(self, datatype, typeinfo, (void*)&cb_data->data, elem_ind_ptr, RARRAY_PTR(val)[idx]);
+        switch (datatype) {
+        case INT2FIX(ATTR_NAMED_TYPE):
+            set_attribute(self, datatype, typeinfo, cb_data->data.ptr, elem_ind_ptr, RARRAY_PTR(val)[idx]);
+            break;
+        default:
+            set_attribute(self, datatype, typeinfo, (void*)&cb_data->data, elem_ind_ptr, RARRAY_PTR(val)[idx]);
+            break;
+        }
+        switch (datatype) {
+        case INT2FIX(ATTR_OCINUMBER):
+        case INT2FIX(ATTR_FLOAT):
+        case INT2FIX(ATTR_INTEGER):
+        case INT2FIX(ATTR_BINARY_DOUBLE):
+        case INT2FIX(ATTR_BINARY_FLOAT):
+            elem_ptr = &cb_data->data;
+            break;
+        default:
+            elem_ptr = cb_data->data.ptr;
+            break;
+        }
         if (idx < size) {
-            oci_lc(OCICollAssignElem(oci8_envhp, oci8_errhp, idx, cb_data->is_val ? &cb_data->data : cb_data->data.ptr, elem_ind_ptr, cb_data->coll));
+            oci_lc(OCICollAssignElem(oci8_envhp, oci8_errhp, idx, elem_ptr, elem_ind_ptr, cb_data->coll));
         } else {
-            oci_lc(OCICollAppend(oci8_envhp, oci8_errhp, cb_data->is_val ? &cb_data->data : cb_data->data.ptr, elem_ind_ptr, coll));
+            oci_lc(OCICollAppend(oci8_envhp, oci8_errhp, elem_ptr, elem_ind_ptr, coll));
         }
     }
     return Qnil;
@@ -348,6 +392,8 @@ static VALUE set_coll_element_ensure(set_coll_element_cb_data_t *cb_data)
     case ATTR_OCINUMBER:
     case ATTR_FLOAT:
     case ATTR_INTEGER:
+    case ATTR_BINARY_DOUBLE:
+    case ATTR_BINARY_FLOAT:
         break;
     }
     return Qnil;
@@ -384,12 +430,27 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
     case ATTR_INTEGER:
         oci8_set_integer((OCINumber*)data, val);
         break;
+    case ATTR_BINARY_DOUBLE:
+        *(double*)data = NUM2DBL(val);
+        break;
+    case ATTR_BINARY_FLOAT:
+        *(float*)data = (float)NUM2DBL(val);
+        break;
     case ATTR_NAMED_TYPE:
         Check_Object(typeinfo, cOCI8TDO);
-        rb_notimplement();
+        /* Be carefull. Don't use *tmp_obj* out of this function. */
+        tmp_obj = rb_funcall(cOCI8NamedType, oci8_id_new, 0);
+        obj = DATA_PTR(tmp_obj);
+        obj->tdo = typeinfo;
+        obj->instancep = (char**)&data;
+        obj->null_structp = (char**)&ind;
+        oci8_link_to_parent(&obj->base, DATA_PTR(self));
+        rb_funcall(tmp_obj, id_set_attributes, 1, val);
+        oci8_unlink_from_parent(&obj->base);
+        break;
     case ATTR_NAMED_COLLECTION:
         Check_Object(typeinfo, cOCI8TDO);
-        /* Be carefull. Don't use _tmp_obj_ out of this function. */
+        /* Be carefull. Don't use *tmp_obj* out of this function. */
         tmp_obj = rb_funcall(cOCI8NamedCollection, oci8_id_new, 0);
         obj = DATA_PTR(tmp_obj);
         obj->tdo = typeinfo;
@@ -519,6 +580,8 @@ void Init_oci_object(VALUE cOCI8)
     rb_define_const(cOCI8TDO, "ATTR_OCINUMBER", INT2FIX(ATTR_OCINUMBER));
     rb_define_const(cOCI8TDO, "ATTR_FLOAT", INT2FIX(ATTR_FLOAT));
     rb_define_const(cOCI8TDO, "ATTR_INTEGER", INT2FIX(ATTR_INTEGER));
+    rb_define_const(cOCI8TDO, "ATTR_BINARY_DOUBLE", INT2FIX(ATTR_BINARY_DOUBLE));
+    rb_define_const(cOCI8TDO, "ATTR_BINARY_FLOAT", INT2FIX(ATTR_BINARY_FLOAT));
     rb_define_const(cOCI8TDO, "ATTR_NAMED_TYPE", INT2FIX(ATTR_NAMED_TYPE));
     rb_define_const(cOCI8TDO, "ATTR_NAMED_COLLECTION", INT2FIX(ATTR_NAMED_COLLECTION));
 #define ALIGNMENT_OF(type) (size_t)&(((struct {char c; type t;}*)0)->t)
