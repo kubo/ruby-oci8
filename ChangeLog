@@ -1,3 +1,7 @@
+2007-10-11  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/DBD/OCI8/OCI8.rb: fix external OS authentication.
+	    I applied Dan Fitch's patch to improper location.
+
 2007-07-24  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/object.c, lib/oci8/object.rb: support binary_double,
 	   binary_float and object member of object datatype.
