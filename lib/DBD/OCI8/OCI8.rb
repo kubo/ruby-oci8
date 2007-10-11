@@ -4,6 +4,36 @@
 # Copyright (c) 2002-2007 KUBO Takehiro <kubo@jiubao.org>
 #
 # copied some code from DBD::Oracle.
+# DBD::Oracle's copyright is as follows:
+# --------------------- begin -------------------
+#
+# Copyright (c) 2001, 2002, 2003, 2004 Michael Neumann <mneumann@ntecs.de>
+# 
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without 
+# modification, are permitted provided that the following conditions 
+# are met:
+# 1. Redistributions of source code must retain the above copyright 
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright 
+#    notice, this list of conditions and the following disclaimer in the 
+#    documentation and/or other materials provided with the distribution.
+# 3. The name of the author may not be used to endorse or promote products
+#    derived from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES,
+# INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY
+# AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
+# THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# --------------------- end -------------------
 
 require 'oci8'
 
@@ -111,6 +141,78 @@ class Database < DBI::BaseDatabase
     rows = stmt.fetch_all || []
     stmt.finish
     rows.collect {|row| row[0]} 
+  end
+
+  # from Jim Menard <jimm@io.com>
+  # copied from DBD::Oracle
+  ORACLE_TO_SQL = {
+    'BLOB' => SQL_BLOB,
+    'CHAR' => SQL_CHAR,
+    'CLOB' => SQL_CLOB,
+    'DATE' => SQL_DATE,
+    'TIME' => SQL_TIME,
+    'TIMESTAMP' => SQL_TIMESTAMP,
+    'LONG' => SQL_LONGVARCHAR,
+    'LONG RAW' => SQL_LONGVARBINARY,
+    'RAW' => SQL_VARBINARY,
+    'NUMBER' => SQL_NUMERIC,
+    'FLOAT' => SQL_FLOAT,
+    'ROWID' => SQL_DECIMAL, # That's a guess. Anyone?
+    'VARCHAR' => SQL_VARCHAR,
+    'VARCHAR2' => SQL_VARCHAR
+  }
+
+  # SQLs are copied from DBD::Oracle.
+  def columns(table)
+    dbh = DBI::DatabaseHandle.new(self)
+
+    pk_index_name = nil
+    dbh.select_all(<<EOS, table) do |row|
+select index_name
+  from user_constraints
+ where constraint_type = 'P'
+   and table_name = upper(:1)
+EOS
+      pk_index_name = row[0]
+    end
+
+    indices = {}
+    primaries = {}
+    uniques = {}
+    dbh.select_all(<<EOS, table) do |row|
+select a.column_name, a.index_name, b.uniqueness
+  from user_ind_columns a, user_indexes b
+ where a.index_name = b.index_name
+   and a.table_name = b.table_name
+   and a.table_name = upper(:1)
+EOS
+      col_name, index_name, uniqueness = row
+      indices[col_name] = true
+      primaries[col_name] = true if index_name == pk_index_name
+      uniques[col_name] = true if uniqueness == 'UNIQUE'
+    end
+
+    # Find column type and size info.
+    dbh.select_all(<<EOS, table).collect do |row|
+select column_name, data_type, data_length, data_precision, nullable, data_default
+  from user_tab_columns
+ where table_name = upper(:1)
+EOS
+      col_name, oracle_type, size, precision, nullable, default = row
+
+      col = {}
+      col['name']      = col_name
+      col['sql_type']  = ORACLE_TO_SQL[oracle_type] || SQL_OTHER
+      col['type_name'] = oracle_type
+      col['nullable']  = nullable == 'Y'
+      col['indexed']   = indices[col_name]   || false
+      col['primary']   = primaries[col_name] || false
+      col['unique']    = uniques[col_name]   || false
+      col['precision'] = size && size.to_i     # Number of bytes or digits
+      col['scale']     = precision && precision.to_i    # number of digits to right
+      col['default']   = default
+      col
+    end
   end
 
   def [](attr)
