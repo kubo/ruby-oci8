@@ -1,7 +1,7 @@
 #
 # DBD::OCI8
 #
-# Copyright (c) 2002-2006 KUBO Takehiro <kubo@jiubao.org>
+# Copyright (c) 2002-2007 KUBO Takehiro <kubo@jiubao.org>
 #
 # copied some code from DBD::Oracle.
 
@@ -50,6 +50,12 @@ class Driver < DBI::BaseDriver # :nodoc:
     super(USED_DBD_VERSION)
   end
 
+  # external OS authentication
+  # (contributed by Dan Fitch)
+  def default_user
+    [nil, nil]
+  end
+
   def connect( dbname, user, auth, attr )
     handle = ::OCI8.new(user, auth, dbname, attr['Privilege'])
     handle.non_blocking = true if attr['NonBlocking']
@@ -61,11 +67,6 @@ end
 
 class Database < DBI::BaseDatabase
   include Util
-
-  # external OS authentication
-  def default_user
-    [nil, nil]
-  end
 
   def disconnect
     @handle.logoff
