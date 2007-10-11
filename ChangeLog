@@ -1,4 +1,8 @@
 2007-10-11  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/DBD/OCI8/OCI8.rb: add DatabaseHandle#columns for DBI.
+	    (suggested by Venkat Pa)
+
+2007-10-11  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/DBD/OCI8/OCI8.rb: fix external OS authentication.
 	    I applied Dan Fitch's patch to improper location.
 
