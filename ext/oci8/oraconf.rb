@@ -222,7 +222,16 @@ class OraConf
     ic_dir = nil
     begin
       # check Oracle instant client
-      ic_dir = with_config('instant-client') || check_ic_dir
+      if with_config('instant-client')
+        puts <<EOS
+=======================================================
+
+  '--with-instant-client' is an obsolete option. ignore it.
+
+=======================================================
+EOS
+      end
+      ic_dir = check_ic_dir
       if ic_dir
         OraConfIC.new(ic_dir)
       else
@@ -820,27 +829,16 @@ class OraConfIC < OraConf
   def initialize(ic_dir)
     init
 
-    if ic_dir.is_a? String
-      if ic_dir =~ /^\/usr\/lib\/oracle\/(\d+\.\d+\.\d+\.\d+)\/client\/lib/
-        # rpm package
-        lib_dir = ic_dir
-        inc_dir = "/usr/include/oracle/#{$1}/client"
-      else
-        # zip package
-        lib_dir = ic_dir
-        inc_dir = "#{ic_dir}/sdk/include"
-      end
-    else
+    if ic_dir =~ /^\/usr\/lib(?:64)?\/oracle\/(\d+\.\d+\.\d+\.\d+)\/client\/lib(?:64)?/
       # rpm package
-      lib_dirs = Dir.glob("/usr/lib/oracle/*/client/lib")
-      if lib_dirs.empty?
-        raise 'Oracle Instant Client not found at /usr/lib/oracle/*/client/lib'
-      end
-      lib_dir = lib_dirs.sort[-1]
-      inc_dir = lib_dir.gsub(%r{^/usr/lib/oracle/(.*)/client/lib}, "/usr/include/oracle/\\1/client")
+      lib_dir = ic_dir
+      inc_dir = "/usr/include/oracle/#{$1}/client"
+    else
+      # zip package
+      lib_dir = ic_dir
+      inc_dir = "#{ic_dir}/sdk/include"
     end
 
-    @version = "1010"
     if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/ # when Windows
       unless File.exist?("#{ic_dir}/sdk/lib/msvc/oci.lib")
         raise <<EOS
@@ -904,7 +902,17 @@ Install 'Instant Client SDK'.
 EOS
     end
     $CFLAGS += @cflags
-    return if try_link_oci()
+    if try_link_oci()
+      major = try_constant("OCI_MAJOR_VERSION", "oci.h")
+      minor = try_constant("OCI_MINOR_VERSION", "oci.h")
+      if major and minor
+        @version = format('%d%d0', major, minor)
+      else
+        # 10.1.0 doesn't have OCI_MAJOR_VERSION and OCI_MINOR_VERSION in oci.h.
+        @version = "1010"
+      end
+      return
+    end
 
     if RUBY_PLATFORM =~ /i.*-darwin/
       open('mkmf.log', 'r') do |f|
