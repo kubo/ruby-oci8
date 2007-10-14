@@ -4,6 +4,8 @@
 	   option become obsolete and is ignored.
 	* ext/oci8/oraconf.rb: fix for FreeBSD oracle8-client port.
 	   Not all tests are passed on FreeBSD yet.
+	* lib/oci8/object.rb: fix a problem when convertion ruby class
+	   name to oracle object name fails.
 
 2007-10-11  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/DBD/OCI8/OCI8.rb: add DatabaseHandle#columns for DBI.

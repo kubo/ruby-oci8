@@ -38,6 +38,7 @@ class OCI8
         eval <<EOS
 module Object
   class #{name.downcase.gsub(/(^|_)(.)/) { $2.upcase }} < OCI8::Object::Base
+    set_typename('#{name}')
   end
 end
 EOS
