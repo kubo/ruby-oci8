@@ -1,3 +1,7 @@
+2007-10-14  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: fix for FreeBSD oracle8-client port.
+	   Not all tests are passed on FreeBSD yet.
+
 2007-10-11  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/DBD/OCI8/OCI8.rb: add DatabaseHandle#columns for DBI.
 	    (suggested by Venkat Pa)

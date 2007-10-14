@@ -518,7 +518,11 @@ class OraConfFC < OraConf
     init
 
     @oracle_home = get_home()
-    @version = get_version()
+    if RUBY_PLATFORM =~ /freebsd/ && @oracle_home == '/usr/local/oracle8-client'
+      @version = '817'
+    else
+      @version = get_version()
+    end
     @cflags = get_cflags()
     $CFLAGS += @cflags
 
