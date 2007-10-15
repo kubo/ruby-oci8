@@ -205,11 +205,32 @@ EOS
 
       # instance method
       def method_missing(method_id, *args)
-        tdo = @con.get_tdo_by_class(self.class)
-        if tdo.is_collection?
+        if @attributes.is_a? Array
           return @attributes if method_id == :to_ary
           super
         end
+        # getter func
+        if @attributes.has_key?(method_id)
+          if args.length != 0
+            raise ArgumentError, "wrong number of arguments (#{args.length} for 0)"
+          end
+          return @attributes[method_id]
+        end
+        # setter func
+        method_name = method_id.to_s
+        if method_name[-1] == ?=
+          attr = method_name[0...-1].intern
+          if @attributes.has_key?(attr)
+            if args.length != 1
+              raise ArgumentError, "wrong number of arguments (#{args.length} for 1)"
+            end
+            return @attributes[attr] = args[0]
+          end
+        end
+
+        super if @con.nil?
+
+        tdo = @con.get_tdo_by_class(self.class)
         return_type = tdo.instance_methods[method_id]
         if return_type == :none
           # procedure
@@ -255,20 +276,6 @@ EOS
             csr.close
           end
           return rv
-        end
-        # getter func
-        if tdo.attr_getters[method_id]
-          if args.length != 0
-            raise ArgumentError, "wrong number of arguments (#{args.length} for 0)"
-          end
-          return @attributes[method_id]
-        end
-        # setter func
-        if attr = tdo.attr_setters[method_id]
-          if args.length != 1
-            raise ArgumentError, "wrong number of arguments (#{args.length} for 1)"
-          end
-          return @attributes[attr.name] = args[0]
         end
         # The method is not found.
         super
