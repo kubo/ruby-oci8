@@ -76,6 +76,13 @@ static void check_bind_type(ub4 type, oci8_handle_t *stmth, VALUE vtype, VALUE v
       value_sz = sizeof(bh->value.handle);
       klass = cOCIStmt;
       break;
+#ifdef SQLT_IBDOUBLE
+    case SQLT_IBDOUBLE:
+      bind_type = BIND_FLOAT;
+      *dty = SQLT_BDOUBLE;
+      value_sz = sizeof(double);
+      break;
+#endif
     default:
       rb_raise(rb_eArgError, "Not supported type (%d)", FIX2INT(vtype));
     }

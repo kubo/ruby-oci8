@@ -31,6 +31,9 @@ static oci8_names_t oci8_typecode[] = {
   ENTRY(OCI_TYPECODE_UNSIGNED8),        /* 23(SQLT_BIN) */
   ENTRY(OCI_TYPECODE_RAW),              /* 95(SQLT_LVB) */
   ENTRY(OCI_TYPECODE_CHAR),             /* 96(SQLT_AFC) */
+#ifdef OCI_TYPECODE_BDOUBLE
+  ENTRY(OCI_TYPECODE_BDOUBLE),          /* 101(SQLT_IBDOUBLE) */
+#endif
   ENTRY(OCI_TYPECODE_OBJECT),           /* 108(SQLT_NTY) */
   ENTRY(OCI_TYPECODE_BLOB),             /* 113(SQLT_BLOB) */
   ENTRY(OCI_TYPECODE_CLOB),             /* 112(SQLT_CLOB) */

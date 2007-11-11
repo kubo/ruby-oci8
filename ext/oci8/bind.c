@@ -86,6 +86,7 @@ VALUE oci8_get_value(oci8_bind_handle_t *hp)
       id_local = rb_intern("local");
     return rb_funcall(rb_cTime, id_local, 6, INT2FIX(year), INT2FIX(month), INT2FIX(day), INT2FIX(hour), INT2FIX(minute), INT2FIX(second));
   case BIND_FLOAT:
+  case BIND_BINARY_DOUBLE:
     return rb_float_new(hp->value.dbl);
   case BIND_ORA_DATE:
     obj = Data_Make_Struct(cOraDate, ora_date_t, NULL, xfree, od);
@@ -148,6 +149,7 @@ void oci8_set_value(oci8_bind_handle_t *hp, VALUE val)
     oci8_set_ora_date(&(hp->value.od), year, mon, day, hour, min, sec);
     break;
   case BIND_FLOAT:
+  case BIND_BINARY_DOUBLE:
     Check_Type(val, T_FLOAT);
     hp->value.dbl = RFLOAT(val)->value;
     break;

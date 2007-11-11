@@ -136,12 +136,17 @@ EOS
     # Oracle 10g or upper
     def test_binary_float
       cursor = @conn.parse("select CAST(:1 AS BINARY_FLOAT), CAST(:2 AS BINARY_DOUBLE) from dual")
+      bind_val = -1.0
       cursor.bind_param(1, 10.0)
-      cursor.bind_param(2, 100.1)
-      cursor.exec
-      rv = cursor.fetch
-      assert_equal(10.0, rv[0])
-      assert_equal(100.1, rv[1])
+      cursor.bind_param(2, nil, OCI8::SQLT_IBDOUBLE)
+      while bind_val < 10.0
+        cursor[2] = bind_val
+        cursor.exec
+        rv = cursor.fetch
+        assert_equal(10.0, rv[0])
+        assert_equal(bind_val, rv[1])
+        bind_val += 1.234
+      end
       cursor.close
     end
   end

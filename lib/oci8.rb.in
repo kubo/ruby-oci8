@@ -428,6 +428,15 @@ class OCI8
       end
     end
 
+    if defined? OCI_TYPECODE_BDOUBLE
+      BinaryDouble = Object.new
+      class << BinaryDouble
+        def fix_type(env, val, length, precision, scale)
+          [SQLT_IBDOUBLE, val, nil]
+        end
+      end
+    end
+
     # get/set Fixnum
     Fixnum = Object.new
     class << Fixnum
@@ -1197,13 +1206,15 @@ class OCI8
 
   # datatype         type       size prec scale
   # -------------------------------------------------
-  # BINARY FLOAT   SQLT_IBFLOAT  4    0    0
-  BindType::Mapping[OCI8::SQLT_IBFLOAT] = BindType::Float
-
-  # datatype         type        size prec scale
-  # -------------------------------------------------
+  # BINARY FLOAT   SQLT_IBFLOAT   4    0    0
   # BINARY DOUBLE  SQLT_IBDOUBLE  8    0    0
-  BindType::Mapping[OCI8::SQLT_IBDOUBLE] = BindType::Float
+  if defined? BindType::BinaryDouble
+    BindType::Mapping[OCI8::SQLT_IBFLOAT] = BindType::BinaryDouble
+    BindType::Mapping[OCI8::SQLT_IBDOUBLE] = BindType::BinaryDouble
+  else
+    BindType::Mapping[OCI8::SQLT_IBFLOAT] = BindType::Float
+    BindType::Mapping[OCI8::SQLT_IBDOUBLE] = BindType::Float
+  end
 end # OCI8
 
 class OraDate
