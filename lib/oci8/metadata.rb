@@ -348,9 +348,9 @@ class OCI8
                              end
                            end]
       # SQLT_IBFLOAT
-      DATA_TYPE_MAP[100] = [:bfloat, "BINARY_FLOAT"]
+      DATA_TYPE_MAP[100] = [:binary_float, "BINARY_FLOAT"]
       # SQLT_IBDOUBLE
-      DATA_TYPE_MAP[101] = [:bdouble, "BINARY_DOUBLE"]
+      DATA_TYPE_MAP[101] = [:binary_double, "BINARY_DOUBLE"]
       # SQLT_RDD
       DATA_TYPE_MAP[104] = [:rowid, "ROWID"]
       # SQLT_NTY
@@ -457,8 +457,8 @@ class OCI8
         when  29; :signed32    # OCI_TYPECODE_SIGNED32
         when  21; :real        # OCI_TYPECODE_REAL
         when  22; :double      # OCI_TYPECODE_DOUBLE
-        when 100; :bfloat      # OCI_TYPECODE_BFLOAT
-        when 101; :bdouble     # OCI_TYPECODE_BDOUBLE
+        when 100; :binary_float  # OCI_TYPECODE_BFLOAT
+        when 101; :binary_double # OCI_TYPECODE_BDOUBLE
         when   4; :float       # OCI_TYPECODE_FLOAT
         when   2; :number      # OCI_TYPECODE_NUMBER
         when   7; :decimal     # OCI_TYPECODE_DECIMAL

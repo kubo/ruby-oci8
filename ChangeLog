@@ -2,6 +2,17 @@
 	* test/config.rb, test/test_dbi.rb, test/test_oci8.rb:
 	   add 'purge' option to 'drop table' statement when Oracle 10g
 	   or upper.
+	* ext/oci8/bind.c: add OCI8::BindType::BinaryDouble when SQLT_BDOUBLE
+	   is defined.
+	* lib/oci8/compat.rb: add OCI8::SQLT_IBFLOAT, OCI8::SQLT_IBDOUBLE and
+	   OCI8::SQLT_BFILE for compatibility with 1.0.
+	* lib/oci8/metadata.rb, lib/oci8/object.rb, lib/oci8/oci8.rb:
+	   rename :bfloat and :bdouble to :binary_float and :binary_double
+	   respectively.
+	* lib/oci8/oci8.rb: use OCI8::BindType::BinaryDouble for :binary_float
+	   and :binary_double column when BinaryDouble is available.
+	* test/test_oci8.rb: bind as binary_double explicitly in
+	   test_binary_float.
 
 2007-10-15  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/object.rb: quick fix to get and set object

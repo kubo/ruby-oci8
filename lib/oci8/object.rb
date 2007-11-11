@@ -416,8 +416,8 @@ EOS
       'FLOAT'                   => Float,
       'INTEGER'                 => Integer,
       'NUMBER'                  => OCINumber,
-      'BINARY_FLOAT'            => :bfloat,
-      'BINARY_DOUBLE'           => :bdouble,
+      'BINARY_FLOAT'            => :binary_float,
+      'BINARY_DOUBLE'           => :binary_double,
       'TIMESTAMP'               => :timestamp,
       'TIMESTAMP WITH TZ'       => :timestamp_tz,
       'TIMESTAMP WITH LOCAL TZ' => :timestamp_ltz,
@@ -437,9 +437,9 @@ EOS
         [ATTR_INTEGER,   nil, SIZE_OF_OCINUMBER, 2, ALIGNMENT_OF_OCINUMBER]
       when :real, :double, :float
         [ATTR_FLOAT,     nil, SIZE_OF_OCINUMBER, 2, ALIGNMENT_OF_OCINUMBER]
-      when :bdouble
+      when :binary_double
         [ATTR_BINARY_DOUBLE, nil, SIZE_OF_DOUBLE, 2, ALIGNMENT_OF_DOUBLE]
-      when :bfloat
+      when :binary_float
         [ATTR_BINARY_FLOAT, nil, SIZE_OF_FLOAT, 2, ALIGNMENT_OF_FLOAT]
       when :named_type
         tdo = con.get_tdo_by_metadata(metadata.type_metadata)

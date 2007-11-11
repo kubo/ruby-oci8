@@ -172,7 +172,7 @@ EOS
       cursor = @conn.parse("select CAST(:1 AS BINARY_FLOAT), CAST(:2 AS BINARY_DOUBLE) from dual")
       bind_val = -1.0
       cursor.bind_param(1, 10.0)
-      cursor.bind_param(2, nil, Float)
+      cursor.bind_param(2, nil, :binary_double)
       while bind_val < 10.0
         cursor[2] = bind_val
         cursor.exec

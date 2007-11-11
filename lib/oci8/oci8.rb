@@ -567,8 +567,13 @@ OCI8::BindType::Mapping[:rowid] = OCI8::BindType::OCIRowid
 # SMALLINT         SQLT_NUM     22   38    0
 OCI8::BindType::Mapping[:number] = OCI8::BindType::Number
 
-OCI8::BindType::Mapping[:bfloat] = OCI8::BindType::Float
-OCI8::BindType::Mapping[:bdouble] = OCI8::BindType::Float
+if defined? OCI8::BindType::BinaryDouble
+  OCI8::BindType::Mapping[:binary_float] = OCI8::BindType::BinaryDouble
+  OCI8::BindType::Mapping[:binary_double] = OCI8::BindType::BinaryDouble
+else
+  OCI8::BindType::Mapping[:binary_float] = OCI8::BindType::Float
+  OCI8::BindType::Mapping[:binary_double] = OCI8::BindType::Float
+end
 
 # XMLType (This mapping will be changed before release.)
 OCI8::BindType::Mapping[:xmltype] = OCI8::BindType::Long

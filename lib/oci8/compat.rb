@@ -40,12 +40,18 @@ class OCI8
   SQLT_LBI = :long_raw
   # char
   SQLT_AFC = :char
+  # binary_float
+  SQLT_IBFLOAT = :binary_float
+  # binary_double
+  SQLT_IBDOUBLE = :binary_double
   # rowid
   SQLT_RDD = :rowid
   # clob
   SQLT_CLOB = :clob
   # blob
   SQLT_BLOB = :blob
+  # bfile
+  SQLT_BFILE = :bfile
   # ref cursor
   SQLT_RSET = 116
   # timestamp
