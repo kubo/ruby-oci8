@@ -1,5 +1,5 @@
 VERSION = `cat VERSION`
-RUBY = ruby
+RUBY = ruby -w
 
 all: build
 

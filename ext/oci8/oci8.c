@@ -58,6 +58,7 @@ static oci8_base_class_t oci8_svcctx_class = {
 static VALUE sym_SYSDBA;
 static VALUE sym_SYSOPER;
 static ID id_at_prefetch_rows;
+static ID id_at_username;
 static ID id_set_prefetch_rows;
 
 #define CONN_STR_REGEX "^([^(\\s|\\@)]*)\\/([^(\\s|\\@)]*)(?:\\@(\\S+))?(?:\\s+as\\s+(\\S*)\\s*)?$"
@@ -156,6 +157,8 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
         rb_scan_args(argc, argv, "22", &vusername, &vpassword, &vdbname, &vmode);
     }
 
+    rb_ivar_set(self, id_at_prefetch_rows, Qnil);
+    rb_ivar_set(self, id_at_username, Qnil);
     if (NIL_P(vusername) && NIL_P(vpassword)) {
         /* external credential */
         logon_type = T_EXPLICIT;
@@ -509,6 +512,7 @@ VALUE Init_oci8(void)
     sym_SYSDBA = ID2SYM(rb_intern("SYSDBA"));
     sym_SYSOPER = ID2SYM(rb_intern("SYSOPER"));
     id_at_prefetch_rows = rb_intern("@prefetch_rows");
+    id_at_username = rb_intern("@username");
     id_set_prefetch_rows = rb_intern("prefetch_rows=");
 
     rb_define_private_method(cOCI8, "parse_connect_string", oci8_parse_connect_string, 1);

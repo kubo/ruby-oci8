@@ -192,20 +192,22 @@ EOS
     cursor.exec
     assert_equal(DateTime.parse('2006-12-31 23:59:59.999999'), cursor[:out])
     # test utc_offset (Time)
-    def obj.utc_offset; 9 * 60 * 60; end
+    def obj.utc_offset; @utc_offset; end
+    obj.instance_variable_set(:@utc_offset, 9 * 60 * 60)
     cursor[:in] = obj
     cursor.exec
     assert_equal(DateTime.parse('2006-12-31 23:59:59.999999 +09:00'), cursor[:out])
-    def obj.utc_offset; -5 * 60 * 60; end
+    obj.instance_variable_set(:@utc_offset, -5 * 60 * 60)
     cursor[:in] = obj
     cursor.exec
     assert_equal(DateTime.parse('2006-12-31 23:59:59.999999 -05:00'), cursor[:out])
     # test offset (DateTime)
-    def obj.offset; 9.to_r / 24; end
+    def obj.offset; @offset; end
+    obj.instance_variable_set(:@offset, 9.to_r / 24)
     cursor[:in] = obj
     cursor.exec
     assert_equal(DateTime.parse('2006-12-31 23:59:59.999999 +09:00'), cursor[:out])
-    def obj.offset; -5.to_r / 24; end
+    obj.instance_variable_set(:@offset, -5.to_r / 24)
     cursor[:in] = obj
     cursor.exec
     assert_equal(DateTime.parse('2006-12-31 23:59:59.999999 -05:00'), cursor[:out])

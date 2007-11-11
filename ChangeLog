@@ -1,4 +1,9 @@
 2007-11-11  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c, lib/oci8/metadata.rb, test/test_datetime.rb:
+	   suppress warnings 'instance variable @xxxx not initialized' when
+	   running ruby with '-w' option. (suggested by Daniel Berger.)
+
+2007-11-11  KUBO Takehiro  <kubo@jiubao.org>
 	* test/config.rb, test/test_dbi.rb, test/test_oci8.rb:
 	   add 'purge' option to 'drop table' statement when Oracle 10g
 	   or upper.

@@ -409,7 +409,7 @@ class OCI8
                             end]
 
       def __data_type
-        return @data_type if @data_type
+        return @data_type if defined? @data_type
         entry = DATA_TYPE_MAP[__ub2(OCI_ATTR_DATA_TYPE)]
         type = entry.nil? ? __ub2(OCI_ATTR_DATA_TYPE) : entry[0]
         type = type.call(self) if type.is_a? Proc
