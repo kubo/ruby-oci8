@@ -66,11 +66,7 @@ EOS
   end
 
   def test_describe_table_and_columns
-    begin
-      @stmt.prepare("DROP TABLE test_table").execute(@svc)
-    rescue OCIError
-      raise if $!.code != 942 # table or view does not exist
-    end
+    drop_table('test_table')
     sql = <<-EOS
 CREATE TABLE test_table
   (C CHAR(10) NOT NULL,
@@ -126,7 +122,7 @@ EOS
     assert_equal(true, col[2].attrGet(OCI_ATTR_IS_NULL))
     assert_equal(true, col[3].attrGet(OCI_ATTR_IS_NULL))
     assert_equal(true, col[4].attrGet(OCI_ATTR_IS_NULL))
-    @stmt.prepare("DROP TABLE test_table").execute(@svc)
+    drop_table('test_table')
   end
 
   def teardown

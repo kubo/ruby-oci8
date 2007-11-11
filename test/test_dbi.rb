@@ -11,11 +11,7 @@ class TestDBI < RUNIT::TestCase
   end
 
   def test_select
-    begin
-      @dbh.do("DROP TABLE test_table")
-    rescue DBI::DatabaseError
-      raise if $!.err != 942 # table or view does not exist
-    end
+    drop_table('test_table')
     sql = <<-EOS
 CREATE TABLE test_table
   (C CHAR(10) NOT NULL,
@@ -46,15 +42,11 @@ EOS
     assert_equal(10, @dbh.select_one("SELECT COUNT(*) FROM test_table")[0])
     @dbh.rollback()
     assert_equal(0, @dbh.select_one("SELECT COUNT(*) FROM test_table")[0])
-    @dbh.do("DROP TABLE test_table")
+    drop_table('test_table')
   end
 
   def test_ref_cursor
-    begin
-      @dbh.do("DROP TABLE test_table")
-    rescue DBI::DatabaseError
-      raise if $!.err != 942 # table or view does not exist
-    end
+    drop_table('test_table')
     sql = <<-EOS
 CREATE TABLE test_table
   (C CHAR(10) NOT NULL,
@@ -84,15 +76,11 @@ EOS
       assert_equal(i, rv[2])
     end
     @dbh.rollback()
-    @dbh.do("DROP TABLE test_table")
+    drop_table('test_table')
   end
 
   def test_define
-    begin
-      @dbh.do("DROP TABLE test_table")
-    rescue DBI::DatabaseError
-      raise if $!.err != 942 # table or view does not exist
-    end
+    drop_table('test_table')
     sql = <<-EOS
 CREATE TABLE test_table
   (C CHAR(10) NOT NULL,
@@ -151,7 +139,7 @@ EOS
     end
     assert_nil(sth.fetch)
     sth.finish
-    @dbh.execute("DROP TABLE test_table")
+    drop_table('test_table')
   end
 
   def test_bind_dbi_data_type

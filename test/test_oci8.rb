@@ -13,20 +13,8 @@ class TestOCI8 < RUNIT::TestCase
     @conn.logoff
   end
 
-  def server_version
-    retval = nil
-    @conn.exec('select value from database_compatible_level') do |row|
-      retval = row[0].split('.').map do |n| n.to_i; end
-    end
-    retval
-  end
-
   def test_select
-    begin
-      @conn.exec("DROP TABLE test_table")
-    rescue OCIError
-      raise if $!.code != 942 # table or view does not exist
-    end
+    drop_table('test_table')
     sql = <<-EOS
 CREATE TABLE test_table
   (C CHAR(10) NOT NULL,
@@ -82,15 +70,11 @@ EOS
     end
     assert_nil(cursor.fetch)
     cursor.close
-    @conn.exec("DROP TABLE test_table")
+    drop_table('test_table')
   end
 
   def test_bind_cursor
-    begin
-      @conn.exec("DROP TABLE test_table")
-    rescue OCIError
-      raise if $!.code != 942 # table or view does not exist
-    end
+    drop_table('test_table')
     sql = <<-EOS
 CREATE TABLE test_table
   (C CHAR(10) NOT NULL,
@@ -145,32 +129,25 @@ EOS
     end
     assert_nil(cursor.fetch)
     cursor.close
-    @conn.exec("DROP TABLE test_table")
+    drop_table('test_table')
   end
 
-  def test_binary_float
-    if server_version[0] < 10
-      # Oracle 9i
-      print 'skip'
-      return
+  if $oracle_version >= 1000
+    # Oracle 10g or upper
+    def test_binary_float
+      cursor = @conn.parse("select CAST(:1 AS BINARY_FLOAT), CAST(:2 AS BINARY_DOUBLE) from dual")
+      cursor.bind_param(1, 10.0)
+      cursor.bind_param(2, 100.1)
+      cursor.exec
+      rv = cursor.fetch
+      assert_equal(10.0, rv[0])
+      assert_equal(100.1, rv[1])
+      cursor.close
     end
-    # Oracle 10g
-    cursor = @conn.parse("select CAST(:1 AS BINARY_FLOAT), CAST(:2 AS BINARY_DOUBLE) from dual")
-    cursor.bind_param(1, 10.0)
-    cursor.bind_param(2, 100.1)
-    cursor.exec
-    rv = cursor.fetch
-    assert_equal(10.0, rv[0])
-    assert_equal(100.1, rv[1])
-    cursor.close
   end
 
   def test_clob_nclob_and_blob
-    begin
-      @conn.exec("DROP TABLE test_table")
-    rescue OCIError
-      raise if $!.code != 942 # table or view does not exist
-    end
+    drop_table('test_table')
     sql = <<-EOS
 CREATE TABLE test_table (id number(5), C CLOB, NC NCLOB, B BLOB)
 STORAGE (
@@ -201,7 +178,7 @@ EOS
     end
     assert_nil(cursor.fetch)
     cursor.close
-    @conn.exec("DROP TABLE test_table")
+    drop_table('test_table')
   end
 end # TestOCI8
 
