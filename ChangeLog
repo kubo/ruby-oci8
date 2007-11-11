@@ -1,3 +1,8 @@
+2007-11-11  KUBO Takehiro  <kubo@jiubao.org>
+	* test/config.rb, test/test_dbi.rb, test/test_oci8.rb:
+	   add 'purge' option to 'drop table' statement when Oracle 10g
+	   or upper.
+
 2007-10-15  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/object.rb: quick fix to get and set object
 	   attributes without explicitly setting default_connection.

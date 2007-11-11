@@ -21,40 +21,30 @@ class TestOCI8 < Test::Unit::TestCase
   end
 
   def test_rename
-    begin
-      @conn.exec("DROP TABLE test_table")
-      @conn.exec("DROP TABLE test_rename_table")
-    rescue OCIError
-      raise if $!.code != 942 # table or view does not exist
-    end
+    drop_table('test_table')
+    drop_table('test_rename_table')
     sql = <<-EOS
 CREATE TABLE test_rename_table
   (C CHAR(10) NOT NULL)
 EOS
     @conn.exec(sql)
     @conn.exec("RENAME test_rename_table TO test_table")
+    drop_table('test_rename_table')
   end
 
   def test_long_type
-    begin
-      @conn.exec("DROP TABLE test_table")
-    rescue OCIError
-      raise if $!.code != 942 # table or view does not exist
-    end
+    drop_table('test_table')
     sql = <<-EOS
 CREATE TABLE test_table
   (C CHAR(10) NOT NULL)
 EOS
     @conn.exec(sql)
     @conn.exec("SELECT column_name, data_default FROM all_tab_columns where owner = '#{$dbuser}' and table_name = 'TEST_TABLE'")
+    drop_table('test_table')
   end
 
   def test_select
-    begin
-      @conn.exec("DROP TABLE test_table")
-    rescue OCIError
-      raise if $!.code != 942 # table or view does not exist
-    end
+    drop_table('test_table')
     sql = <<-EOS
 CREATE TABLE test_table
   (C CHAR(10) NOT NULL,
@@ -112,15 +102,11 @@ EOS
     end
     assert_nil(cursor.fetch)
     cursor.close
-    @conn.exec("DROP TABLE test_table")
+    drop_table('test_table')
   end
 
   def test_bind_cursor
-    begin
-      @conn.exec("DROP TABLE test_table")
-    rescue OCIError
-      raise if $!.code != 942 # table or view does not exist
-    end
+    drop_table('test_table')
     sql = <<-EOS
 CREATE TABLE test_table
   (C CHAR(10) NOT NULL,
@@ -177,37 +163,30 @@ EOS
     end
     assert_nil(cursor.fetch)
     cursor.close
-    @conn.exec("DROP TABLE test_table")
+    drop_table('test_table')
   end
 
-  def test_binary_float
-    if server_version[0] < 10
-      # Oracle 9i
-      print 'skip'
-      return
+  if $oracle_version >= 1000
+    # Oracle 10g or upper
+    def test_binary_float
+      cursor = @conn.parse("select CAST(:1 AS BINARY_FLOAT), CAST(:2 AS BINARY_DOUBLE) from dual")
+      bind_val = -1.0
+      cursor.bind_param(1, 10.0)
+      cursor.bind_param(2, nil, Float)
+      while bind_val < 10.0
+        cursor[2] = bind_val
+        cursor.exec
+        rv = cursor.fetch
+        assert_equal(10.0, rv[0])
+        assert_equal(bind_val, rv[1])
+        bind_val += 1.234
+      end
+      cursor.close
     end
-    # Oracle 10g
-    cursor = @conn.parse("select CAST(:1 AS BINARY_FLOAT), CAST(:2 AS BINARY_DOUBLE) from dual")
-    bind_val = -1.0
-    cursor.bind_param(1, 10.0)
-    cursor.bind_param(2, nil, Float)
-    while bind_val < 10.0
-      cursor[2] = bind_val
-      cursor.exec
-      rv = cursor.fetch
-      assert_equal(10.0, rv[0])
-      assert_equal(bind_val, rv[1])
-      bind_val += 1.234
-    end
-    cursor.close
   end
 
   def test_clob_nclob_and_blob
-    begin
-      @conn.exec("DROP TABLE test_table")
-    rescue OCIError
-      raise if $!.code != 942 # table or view does not exist
-    end
+    drop_table('test_table')
     sql = <<-EOS
 CREATE TABLE test_table (id number(5), C CLOB, NC NCLOB, B BLOB)
 STORAGE (
@@ -239,7 +218,7 @@ EOS
     end
     assert_nil(cursor.fetch)
     cursor.close
-    @conn.exec("DROP TABLE test_table")
+    drop_table('test_table')
   end
 
 end # TestOCI8

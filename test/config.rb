@@ -18,19 +18,34 @@ else
 end
 $lobreadnum = 256 # counts in charactors
 
-case OCI8::CLIENT_VERSION
-when "805"
+# don't modify below.
+
+# $oracle_server_version: database compatible level of the Oracle server.
+# $oracle_client_version: Oracle client library version for which oci8 is compiled.
+# $oracle_version: lower value of $oracle_server_version and $oracle_client_version.
+conn = OCI8.new($dbuser, $dbpass, $dbname)
+conn.exec('select value from database_compatible_level') do |row|
+  ver = row[0].split('.')
+  $oracle_server_version = (ver[0] + ver[1] + ver[2]).to_i
+end
+conn.logoff
+$oracle_client_version = OCI8::CLIENT_VERSION.to_i
+if $oracle_server_version < $oracle_client_version
+  $oracle_version = $oracle_server_version
+else
+  $oracle_version = $oracle_client_version
+end
+
+if $oracle_version <= 805
   $describe_need_object_mode = true
   $test_clob = false
-when /80./
+elsif $oracle_version < 810
   $describe_need_object_mode = false
   $test_clob = false
 else
   $describe_need_object_mode = false
   $test_clob = true
 end
-
-# don't modify below.
 
 $env_is_initialized = false
 def setup_lowapi()
@@ -47,3 +62,34 @@ def setup_lowapi()
   stmt = env.alloc(OCIStmt)
   return env, svc, stmt
 end
+
+module Test
+  module Unit
+    class TestCase
+      def drop_table(table_name)
+        if $oracle_server_version < 1000
+          # Oracle 8 - 9i
+          sql = "DROP TABLE #{table_name}"
+        else
+          # Oracle 10g -
+          sql = "DROP TABLE #{table_name} PURGE"
+        end
+
+        if defined? @conn
+          begin
+            @conn.exec(sql)
+          rescue OCIError
+            raise if $!.code != 942 # table or view does not exist
+          end
+        elsif instance_variable_get(:@dbh)
+          begin
+            @dbh.do(sql)
+          rescue DBI::DatabaseError
+            raise if $!.err != 942 # table or view does not exist
+          end
+        end
+      end # drop_table
+    end
+  end
+end
+
