@@ -18,6 +18,9 @@ static VALUE oci8_sym_alter_stmt;
 static VALUE oci8_sym_begin_stmt;
 static VALUE oci8_sym_declare_stmt;
 static VALUE oci8_sym_other;
+static ID id_at_column_metadata;
+static ID id_at_names;
+static ID id_at_con;
 
 VALUE cOCIStmt;
 
@@ -70,8 +73,9 @@ static VALUE oci8_stmt_initialize(int argc, VALUE *argv, VALUE self)
     stmt->svc = svc;
     stmt->binds = rb_hash_new();
     stmt->defns = rb_ary_new();
-    rb_iv_set(stmt->base.self, "@names", rb_ary_new());
-    rb_iv_set(stmt->base.self, "@con", svc);
+    rb_ivar_set(stmt->base.self, id_at_column_metadata, rb_ary_new());
+    rb_ivar_set(stmt->base.self, id_at_names, Qnil);
+    rb_ivar_set(stmt->base.self, id_at_con, svc);
 
     if (argc > 1) {
         rv = OCIStmtPrepare(stmt->base.hp.stmt, oci8_errhp, RSTRING_ORATEXT(sql), RSTRING_LEN(sql), OCI_NTV_SYNTAX, OCI_DEFAULT);
@@ -382,16 +386,16 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
         ub4 *alenp;
         void *indp;
 
-        if (obind->base.type != OCI_HTYPE_DEFINE)
-            continue;
-        bind_class = (oci8_bind_class_t *)obind->base.klass;
-        if (bind_class->out != NULL) {
-            if (obind->maxar_sz == 0) {
-                bind_class->out(obind, 0, 0, &valuep, &alenp, &indp);
-            } else {
-                ub4 idx;
-                for (idx = 0; idx < obind->curar_sz; idx++) {
-                    bind_class->out(obind, idx, 0, &valuep, &alenp, &indp);
+        if (obind->base.type == OCI_HTYPE_DEFINE) {
+            bind_class = (oci8_bind_class_t *)obind->base.klass;
+            if (bind_class->out != NULL) {
+                if (obind->maxar_sz == 0) {
+                    bind_class->out(obind, 0, 0, &valuep, &alenp, &indp);
+                } else {
+                    ub4 idx;
+                    for (idx = 0; idx < obind->curar_sz; idx++) {
+                        bind_class->out(obind, idx, 0, &valuep, &alenp, &indp);
+                    }
                 }
             }
         }
@@ -445,7 +449,7 @@ static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
     if (rv != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, rv, NULL);
     }
-    return oci8_metadata_create(parmhp, stmt->svc, Qnil);
+    return oci8_metadata_create(parmhp, stmt->svc, self);
 }
 
 /*
@@ -700,6 +704,9 @@ void Init_oci8_stmt(VALUE cOCI8)
     oci8_sym_begin_stmt = ID2SYM(rb_intern("begin_stmt"));
     oci8_sym_declare_stmt = ID2SYM(rb_intern("declare_stmt"));
     oci8_sym_other = ID2SYM(rb_intern("other"));
+    id_at_column_metadata = rb_intern("@column_metadata");
+    id_at_names = rb_intern("@names");
+    id_at_con = rb_intern("@con");
 
     rb_define_private_method(cOCIStmt, "initialize", oci8_stmt_initialize, -1);
     rb_define_private_method(cOCIStmt, "__defineByPos", oci8_define_by_pos, 2);

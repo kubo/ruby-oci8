@@ -18,20 +18,21 @@ static VALUE class_to_ptype;
 typedef struct {
     oci8_base_t base;
     VALUE svc;
-    VALUE desc;
     ub1 is_implicit;
 } oci8_metadata_t;
 
 static void oci8_metadata_mark(oci8_base_t *base)
 {
     oci8_metadata_t *md = (oci8_metadata_t *)base;
+    if (base->parent != NULL)
+        rb_gc_mark(base->parent->self);
     rb_gc_mark(md->svc);
-    rb_gc_mark(md->desc);
 }
 
-VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE desc)
+VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE parent)
 {
     oci8_metadata_t *md;
+    oci8_base_t *p;
     ub1 ptype;
     ub4 size;
     VALUE klass;
@@ -49,9 +50,14 @@ VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE desc)
     md->base.type = OCI_DTYPE_PARAM;
     md->base.hp.prm = parmhp;
     md->svc = svc;
-    md->desc = desc;
-    md->is_implicit = RTEST(desc) ? 0 : 1;
-    oci8_link_to_parent(&md->base, (oci8_base_t*)DATA_PTR(svc));
+
+    p = DATA_PTR(parent);
+    if (p->type == OCI_HTYPE_STMT) {
+        md->is_implicit = 1;
+    } else {
+        md->is_implicit = 0;
+    }
+    oci8_link_to_parent(&md->base, p);
     return obj;
 }
 
@@ -214,7 +220,7 @@ static VALUE metadata_get_param(VALUE self, VALUE idx)
     if (size != sizeof(OCIParam *)) {
         rb_raise(rb_eRuntimeError, "Invalid attribute size. expect %d, but %d", sizeof(OCIParam *), size);
     }
-    return oci8_metadata_create(value, md->svc, md->desc);
+    return oci8_metadata_create(value, md->svc, self);
 }
 
 static VALUE metadata_get_param_at(VALUE self, VALUE idx)
@@ -223,7 +229,7 @@ static VALUE metadata_get_param_at(VALUE self, VALUE idx)
     OCIParam *value;
 
     oci_lc(OCIParamGet(md->base.hp.ptr, OCI_DTYPE_PARAM, oci8_errhp, (dvoid *)&value, FIX2INT(idx)));
-    return oci8_metadata_create(value, md->svc, md->desc);
+    return oci8_metadata_create(value, md->svc, self);
 }
 
 static VALUE metadata_get_charset_name(VALUE self, VALUE charset_id)

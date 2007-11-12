@@ -334,7 +334,7 @@ VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype);
 /* metadata.c */
 extern VALUE cOCI8MetadataBase;
 void Init_oci8_metadata(VALUE cOCI8);
-VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE desc);
+VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE parent);
 
 /* lob.c */
 void Init_oci8_lob(VALUE cOCI8);

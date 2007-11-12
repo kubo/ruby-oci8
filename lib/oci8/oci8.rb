@@ -305,13 +305,17 @@ class OCI8
     # Gets the names of select-list as array. Please use this
     # method after exec.
     def get_col_names
-      @names
+      @names ||= @column_metadata.collect { |md| md.name }
     end # get_col_names
+
+    def column_metadata
+      @column_metadata
+    end
 
     def fetch_hash
       if rs = fetch()
         ret = {}
-        @names.each do |name|
+        get_col_names.each do |name|
           ret[name] = rs.shift
         end
         ret
@@ -374,8 +378,7 @@ class OCI8
       1.upto(num_cols) do |i|
         parm = __paramGet(i)
         define_a_column(i, parm) unless __defiend?(i)
-        @names[i - 1] = parm.name
-        parm.free
+        @column_metadata[i - 1] = parm
       end
       num_cols
     end # define_columns
