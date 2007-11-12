@@ -9,8 +9,9 @@
 
 #include "ruby.h"
 #include "rubyio.h"
+#ifndef RUBY_VM
 #include "intern.h"
-#include "version.h"
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,7 +52,11 @@ extern "C" {
 #define RARRAY_LEN(obj) RARRAY(obj)->len
 #endif
 
-#if RUBY_VERSION_CODE < 190
+#ifndef RCLASS_SUPER
+#define RCLASS_SUPER(c) RCLASS(c)->super
+#endif
+
+#ifndef RUBY_VM
 #define rb_errinfo() ruby_errinfo
 #endif
 
@@ -274,7 +279,12 @@ typedef struct  {
 
 /* env.c */
 extern OCIEnv *oci8_envhp;
+#ifdef RUBY_VM
+OCIError *oci8_get_errhp(void);
+#define oci8_errhp oci8_get_errhp()
+#else
 extern OCIError *oci8_errhp;
+#endif
 void Init_oci8_env(void);
 
 /* oci8lib.c */

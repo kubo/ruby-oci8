@@ -66,7 +66,11 @@ static void oci8_do_parse_connect_string(VALUE conn_str, VALUE *user, VALUE *pas
 {
     static VALUE re = Qnil;
     if (NIL_P(re)) {
+#ifdef RUBY_VM
+        re = rb_reg_new(rb_str_new2(CONN_STR_REGEX), FIX2INT(rb_eval_string("Regexp::IGNORECASE")));
+#else
         re = rb_reg_new(CONN_STR_REGEX, strlen(CONN_STR_REGEX), FIX2INT(rb_eval_string("Regexp::IGNORECASE")));
+#endif
         rb_global_variable(&re);
     }
     StringValue(conn_str);

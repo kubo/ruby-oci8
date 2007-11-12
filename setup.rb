@@ -91,7 +91,7 @@ end
 # Config
 #
 
-if arg = ARGV.detect{|arg| /\A--rbconfig=/ =~ arg }
+if arg = ARGV.detect{|a| /\A--rbconfig=/ =~ a }
   ARGV.delete(arg)
   require arg.split(/=/, 2)[1]
   $".push 'rbconfig.rb'
@@ -145,7 +145,7 @@ class ConfigTable
     sodir      = "$site-ruby/#{c['arch']}"
   end
 
-  if arg = c['configure_args'].split.detect {|arg| /--with-make-prog=/ =~ arg }
+  if arg = c['configure_args'].split.detect {|a| /--with-make-prog=/ =~ a }
     makeprog = arg.sub(/'/, '').split(/=/, 2)[1]
   else
     makeprog = 'make'

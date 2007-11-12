@@ -4,6 +4,9 @@
 	   the lifetime of OCI8::Metadata::Base. It depended on the connection,
 	   but now it depends on what it describes. For example OCI8::cursor
 	   for OCI8::Cursor#column_metadata.
+	* ext/oci8/env.c, ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c,
+	   ext/oci8/oraconf.rb, setup.rb: fix for ruby 1.9. Not full tests are
+	   not passed on ruby 1.9.
 
 2007-11-11  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c, lib/oci8/metadata.rb, test/test_datetime.rb:

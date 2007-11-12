@@ -247,7 +247,7 @@ EOS
       print <<EOS
 ---------------------------------------------------
 error messages:
-#{$!.to_str}
+#{$!.to_s}
 ---------------------------------------------------
 See:
  * http://ruby-oci8.rubyforge.org/#{lang}/HowToInstall.html
@@ -433,7 +433,8 @@ EOS
   def check_ruby_header
     print "checking for ruby header... "
     STDOUT.flush
-    unless File.exist?("#{Config::CONFIG['archdir']}/ruby.h")
+    rubyhdrdir = Config::CONFIG["rubyhdrdir"] || Config::CONFIG['archdir']
+    unless File.exist?(rubyhdrdir + '/ruby.h')
       puts "ng"
       if RUBY_PLATFORM =~ /darwin/ and File.exist?("#{Config::CONFIG['archdir']}/../universal-darwin8.0/ruby.h")
         raise <<EOS
