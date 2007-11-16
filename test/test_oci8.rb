@@ -37,7 +37,7 @@ EOS
       else
 	dt = OraDate.new(2000 + i, 8, 3, 23, 59, 59)
       end
-      cursor.exec(format("%10d", i * 10), i.to_s, i, dt, dt, dt, dt, i, i)
+      cursor.exec(format("%10d", i * 10), i.to_s, i, dt, dt, dt, dt, i * 11111111111, i * 10000000000)
     end
     cursor.close
     cursor = @conn.parse("SELECT * FROM test_table ORDER BY c")
@@ -65,8 +65,8 @@ EOS
 	assert_equal(dt.to_date, rv[5])
 	assert_equal(dt.to_datetime, rv[6]) if defined? DateTime
       end
-      assert_equal(i, rv[7])
-      assert_equal(i, rv[8])
+      assert_equal(i * 11111111111, rv[7])
+      assert_equal(i * 10000000000, rv[8])
     end
     assert_nil(cursor.fetch)
     cursor.close
