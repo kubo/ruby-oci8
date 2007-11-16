@@ -750,6 +750,12 @@ class OCI8
     # add alias compatible with 'Oracle7 Module for Ruby'.
     alias getColNames get_col_names
 
+    def column_metadata
+      @parms.collect do |p|
+        OCI8::Metadata::Column.new(p)
+      end
+    end
+
     def fetch
       if iterator?
         while ret = fetch_a_row()
@@ -1256,6 +1262,259 @@ class OraNumber
   def to_yaml(opts = {}) # :nodoc:
     YAML.quick_emit(object_id, opts) do |out|
       out.scalar(taguri, self.to_s, :plain)
+    end
+  end
+end
+
+
+#
+# OCI8::Metadata::Column
+#
+class OCI8
+  module Metadata
+
+    # Abstract super class for Metadata classes.
+    class Base
+      # This class's code was copied from svn trunk whick will be ruby-oci8 2.0.
+
+      # SQLT values to name
+      DATA_TYPE_MAP = {} # :nodoc:
+      TYPE_PROC_MAP = {} # :nodoc:
+
+      # SQLT_CHR
+      DATA_TYPE_MAP[1] = :varchar2
+      TYPE_PROC_MAP[1] = Proc.new do |p|
+        if p.charset_form == :nchar
+          "NVARCHAR2(#{p.char_size})"
+        else
+          if (p.respond_to? :char_used?) && (p.char_used?)
+            "VARCHAR2(#{p.char_size} CHAR)"
+          else
+            "VARCHAR2(#{p.data_size})"
+          end
+        end
+      end
+
+      # SQLT_NUM
+      DATA_TYPE_MAP[2] = :number
+      TYPE_PROC_MAP[2] = Proc.new do |p|
+        begin
+          case p.scale
+          when -127
+            case p.precision
+            when 0
+              "NUMBER"
+            when 126
+              "FLOAT"
+            else
+              "FLOAT(#{p.precision})"
+            end
+          when 0
+            case p.precision
+            when 0
+              "NUMBER"
+            else
+              "NUMBER(#{p.precision})"
+            end
+          else
+            "NUMBER(#{p.precision},#{p.scale})"
+          end
+        rescue OCIError
+          "NUMBER"
+        end
+      end
+
+      # SQLT_LNG
+      DATA_TYPE_MAP[8] = :long
+      TYPE_PROC_MAP[8] = "LONG"
+
+      # SQLT_DAT
+      DATA_TYPE_MAP[12] = :date
+      TYPE_PROC_MAP[12] = "DATE"
+
+      # SQLT_BIN
+      DATA_TYPE_MAP[23] = :raw
+      TYPE_PROC_MAP[23] = Proc.new do |p|
+        "RAW(#{p.data_size})"
+      end
+
+      # SQLT_LBI
+      DATA_TYPE_MAP[24] = :long_raw
+      TYPE_PROC_MAP[24] = "LONG RAW"
+
+      # SQLT_AFC
+      DATA_TYPE_MAP[96] = :char
+      TYPE_PROC_MAP[96] = Proc.new do |p|
+        if p.charset_form == :nchar
+          "NCHAR(#{p.char_size})"
+        else
+          if (p.respond_to? :char_used?) && (p.char_used?)
+            "CHAR(#{p.char_size} CHAR)"
+          else
+            "CHAR(#{p.data_size})"
+          end
+        end
+      end
+
+      # SQLT_IBFLOAT
+      DATA_TYPE_MAP[100] = :binary_float
+      TYPE_PROC_MAP[100] = "BINARY_FLOAT"
+
+      # SQLT_IBDOUBLE
+      DATA_TYPE_MAP[101] = :binary_double
+      TYPE_PROC_MAP[101] = "BINARY_DOUBLE"
+
+      # SQLT_RDD
+      DATA_TYPE_MAP[104] = :rowid
+      TYPE_PROC_MAP[104] = "ROWID"
+
+      # SQLT_NTY
+      DATA_TYPE_MAP[108] = :named_type
+      TYPE_PROC_MAP[108] = "Object"
+
+      # SQLT_REF
+      DATA_TYPE_MAP[110] = :ref
+      TYPE_PROC_MAP[110] = "REF"
+
+      # SQLT_CLOB
+      DATA_TYPE_MAP[112] = :clob
+      TYPE_PROC_MAP[112] = Proc.new do |p|
+        if p.charset_form == :nchar
+          "NCLOB"
+        else
+          "CLOB"
+        end
+      end
+
+      # SQLT_BLOB
+      DATA_TYPE_MAP[113] = :blob
+      TYPE_PROC_MAP[113] = "BLOB"
+
+      # SQLT_BFILE
+      DATA_TYPE_MAP[114] = :bfile
+      TYPE_PROC_MAP[114] = "BFILE"
+
+      # SQLT_TIMESTAMP
+      DATA_TYPE_MAP[187] = :timestamp
+      TYPE_PROC_MAP[187] = Proc.new do |p|
+        fsprecision = p.fsprecision
+        if fsprecision == 6
+          "TIMESTAMP"
+        else
+          "TIMESTAMP(#{fsprecision})"
+        end
+      end
+
+      # SQLT_TIMESTAMP_TZ
+      DATA_TYPE_MAP[188] = :timestamp_tz
+      TYPE_PROC_MAP[188] = Proc.new do |p|
+        fsprecision = p.fsprecision
+        if fsprecision == 6
+          "TIMESTAMP WITH TIME ZONE"
+        else
+          "TIMESTAMP(#{fsprecision}) WITH TIME ZONE"
+        end
+      end
+
+      # SQLT_INTERVAL_YM
+      DATA_TYPE_MAP[189] = :interval_ym
+      TYPE_PROC_MAP[189] = Proc.new do |p|
+        lfprecision = p.lfprecision
+        if lfprecision == 2
+          "INTERVAL YEAR TO MONTH"
+        else
+          "INTERVAL YEAR(#{lfprecision}) TO MONTH"
+        end
+      end
+
+      # SQLT_INTERVAL_DS
+      DATA_TYPE_MAP[190] = :interval_ds
+      TYPE_PROC_MAP[190] = Proc.new do |p|
+        lfprecision = p.lfprecision
+        fsprecision = p.fsprecision
+        if lfprecision == 2 && fsprecision == 6
+          "INTERVAL DAY TO SECOND"
+        else
+          "INTERVAL DAY(#{lfprecision}) TO SECOND(#{fsprecision})"
+        end
+      end
+
+      # SQLT_TIMESTAMP_LTZ
+      DATA_TYPE_MAP[232] = :timestamp_ltz
+      TYPE_PROC_MAP[232] = Proc.new do |p|
+        fsprecision = p.fsprecision
+        if fsprecision == 6
+          "TIMESTAMP WITH LOCAL TIME ZONE"
+        else
+          "TIMESTAMP(#{fsprecision}) WITH LOCAL TIME ZONE"
+        end
+      end
+
+      def __data_type(p)
+        DATA_TYPE_MAP[p.attrGet(OCI_ATTR_DATA_TYPE)] || p.attrGet(OCI_ATTR_DATA_TYPE)
+      end
+
+      def __type_string(p)
+        type = TYPE_PROC_MAP[p.attrGet(OCI_ATTR_DATA_TYPE)] || "unknown(#{p.attrGet(OCI_ATTR_DATA_TYPE)})"
+        type = type.call(self) if type.is_a? Proc
+        if respond_to?(:is_null?) && !is_null?
+          type + " NOT NULL"
+        else
+          type
+        end
+      end
+    end
+
+    class Column < Base
+      attr_reader :name
+      attr_reader :data_type
+
+      # string data type
+      attr_reader :data_size
+      def char_used?; @char_used; end if defined? OCI_ATTR_CHAR_USED
+      attr_reader :char_size if defined? OCI_ATTR_CHAR_SIZE
+
+      attr_reader :precision
+      attr_reader :scale
+      def is_null?; @is_null; end
+      attr_reader :charset_id
+      attr_reader :charset_form
+      attr_reader :fsprecision
+      attr_reader :lfprecision
+
+      def initialize(param)
+        @name = param.attrGet(OCI_ATTR_NAME)
+        @data_type = __data_type(param)
+
+        @data_size = param.attrGet(OCI_ATTR_DATA_SIZE)
+        @char_used = param.attrGet(OCI_ATTR_CHAR_USED) if defined? OCI_ATTR_CHAR_USED
+        @char_size = param.attrGet(OCI_ATTR_CHAR_SIZE) if defined? OCI_ATTR_CHAR_SIZE
+
+        @precision = param.attrGet(OCI_ATTR_PRECISION)
+        @scale = param.attrGet(OCI_ATTR_SCALE)
+        @is_null = param.attrGet(OCI_ATTR_IS_NULL)
+        @charset_id = param.attrGet(OCI_ATTR_CHARSET_ID)
+        @charset_form = case param.attrGet(OCI_ATTR_CHARSET_FORM)
+                        when 0: nil
+                        when 1; :implicit
+                        when 2; :nchar
+                        when 3; :explicit
+                        when 4; :flexible
+                        when 5; :lit_null
+                        else raise "unknown charset_form #{param.attrGet(OCI_ATTR_CHARSET_FORM)}"
+                        end
+        @fsprecision = param.attrGet(OCI_ATTR_FSPRECISION)
+        @lfprecision = param.attrGet(OCI_ATTR_LFPRECISION)
+        @type_string = __type_string(param)
+      end
+
+      def to_s
+        @type_string
+      end
+
+      def inspect # :nodoc:
+        "#<#{self.class.name}: #{@name} #{@type_string}>"
+      end
     end
   end
 end

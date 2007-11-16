@@ -1,4 +1,10 @@
 2007-11-16  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8.rb.in: add OCI8::Cursor#column_metadata and a new class
+	   OCI8::Metadata::Column.
+	* test/test_all.rb, test/test_metadata.rb: add testcases for
+	   OCI8::Metadata::Column.
+
+2007-11-16  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocinumber.c, test/test_oci8.rb: fix a BUG to bind
 	   Bignum. This bug was added in ruby-oci8 1.0.0-rc2.
 
