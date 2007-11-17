@@ -283,14 +283,6 @@ static VALUE oci8_do_describe(VALUE self, void *objptr, ub4 objlen, ub1 objtype,
     }
     oci_rc2(rv, svcctx, OCIDescribeAny(svcctx->base.hp.svc, oci8_errhp, objptr, objlen,
                                        objtype, OCI_DEFAULT, FIX2INT(type), dschp));
-    if (rv == OCI_ERROR) {
-        if (oci8_get_error_code(oci8_errhp) == 4043) {
-            /* ORA-04043: object xxxx does not exist */
-            OCIHandleFree(dschp, OCI_HTYPE_DESCRIBE);
-            DATA_PTR(desc) = NULL;
-            return Qnil;
-        }
-    }
     if (rv != OCI_SUCCESS) {
         OCIHandleFree(dschp, OCI_HTYPE_DESCRIBE);
         DATA_PTR(desc) = NULL;

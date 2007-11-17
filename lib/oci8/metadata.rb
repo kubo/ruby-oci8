@@ -223,7 +223,7 @@ class OCI8
   #  conn = OCI8.new('ruby', 'oci8')
   #  table = conn.describe_table('EMPLOYEES')
   #  table.columns.each do |col|
-  #    if col.char_semantics == :char
+  #    if col.char_used
   #      col_width = col.char_size
   #    else
   #      col_width = col.data_size
@@ -278,22 +278,11 @@ class OCI8
       DATA_TYPE_MAP[1] = [:varchar2,
                           Proc.new do |p|
                             if p.charset_form == :nchar
-                              name = "NVARCHAR2"
+                              "NVARCHAR2(#{p.char_size})"
+                            elsif (p.respond_to? :char_used?) && (p.char_used?)
+                              "VARCHAR2(#{p.char_size} CHAR)"
                             else
-                              name = "VARCHAR2"
-                            end
-                            if (p.respond_to? :char_semantics) && (p.char_semantics == :char)
-                              begin
-                                "#{name}(#{p.char_size} CHAR)"
-                              rescue OCIError
-                                name
-                              end
-                            else
-                              begin
-                                "#{name}(#{p.data_size})"
-                              rescue OCIError
-                                name
-                              end
+                              "VARCHAR2(#{p.data_size})"
                             end
                           end]
       # SQLT_NUM
@@ -305,6 +294,8 @@ class OCI8
                                 case p.precision
                                 when 0
                                   "NUMBER"
+                                when 126
+                                  "FLOAT"
                                 else
                                   "FLOAT(#{p.precision})"
                                 end
@@ -337,14 +328,11 @@ class OCI8
       DATA_TYPE_MAP[96] = [:char,
                            Proc.new do |p|
                              if p.charset_form == :nchar
-                               name = "NCHAR"
+                               "NCHAR(#{p.char_size})"
+                             elsif (p.respond_to? :char_used?) && (p.char_used?)
+                               "CHAR(#{p.char_size} CHAR)"
                              else
-                               name = "CHAR"
-                             end
-                             if (p.respond_to? :char_semantics) && (p.char_semantics == :char)
-                               "#{name}(#{p.char_size} CHAR)"
-                             else
-                               "#{name}(#{p.data_size})"
+                               "CHAR(#{p.data_size})"
                              end
                            end]
       # SQLT_IBFLOAT
@@ -364,13 +352,7 @@ class OCI8
                               "#{p.schema_name}.#{p.type_name}"
                             end]
       # SQLT_CLOB
-      DATA_TYPE_MAP[112] = [Proc.new do |p|
-                              if p.charset_form == :nchar
-                                :nclob
-                              else
-                                :clob
-                              end
-                            end,
+      DATA_TYPE_MAP[112] = [:clob,
                             Proc.new do |p|
                               if p.charset_form == :nchar
                                 "NCLOB"
@@ -385,27 +367,53 @@ class OCI8
       # SQLT_TIMESTAMP
       DATA_TYPE_MAP[187] = [:timestamp,
                             Proc.new do |p|
-                              "TIMESTAMP(#{p.precision})"
+                              fsprecision = p.fsprecision
+                              if fsprecision == 6
+                                "TIMESTAMP"
+                              else
+                                "TIMESTAMP(#{fsprecision})"
+                              end
                             end]
       # SQLT_TIMESTAMP_TZ
       DATA_TYPE_MAP[188] = [:timestamp_tz,
                             Proc.new do |p|
-                              "TIMESTAMP(#{p.precision}) WITH TIME ZONE"
+                              fsprecision = p.fsprecision
+                              if fsprecision == 6
+                                "TIMESTAMP WITH TIME ZONE"
+                              else
+                                "TIMESTAMP(#{fsprecision}) WITH TIME ZONE"
+                              end
                             end]
       # SQLT_INTERVAL_YM
       DATA_TYPE_MAP[189] = [:interval_ym,
                             Proc.new do |p|
-                              "INTERVAL YEAR(#{p.fsprecision}) TO MONTH"
+                              lfprecision = p.lfprecision
+                              if lfprecision == 2
+                                "INTERVAL YEAR TO MONTH"
+                              else
+                                "INTERVAL YEAR(#{lfprecision}) TO MONTH"
+                              end
                             end]
       # SQLT_INTERVAL_DS
       DATA_TYPE_MAP[190] = [:interval_ds,
                             Proc.new do |p|
-                              "INTERVAL DAY(#{p.lfprecision}) TO SECOND(#{p.fsprecision})"
+                              lfprecision = p.lfprecision
+                              fsprecision = p.fsprecision
+                              if lfprecision == 2 && fsprecision == 6
+                                "INTERVAL DAY TO SECOND"
+                              else
+                                "INTERVAL DAY(#{lfprecision}) TO SECOND(#{fsprecision})"
+                              end
                             end]
       # SQLT_TIMESTAMP_LTZ
       DATA_TYPE_MAP[232] = [:timestamp_ltz,
                             Proc.new do |p|
-                              "TIMESTAMP(#{p.precision}) WITH LOCAL TIME ZONE"
+                              fsprecision = p.fsprecision
+                              if fsprecision == 6
+                                "TIMESTAMP WITH LOCAL TIME ZONE"
+                              else
+                                "TIMESTAMP(#{fsprecision}) WITH LOCAL TIME ZONE"
+                              end
                             end]
 
       def __data_type
@@ -1319,8 +1327,8 @@ class OCI8
       # returns the type of length semantics of the column.
       # [<tt>:byte</tt>]  byte-length semantics
       # [<tt>:char</tt>]  character-length semantics.
-      def char_semantics # char_used
-        __ub4(OCI_ATTR_CHAR_USED) == 0 ? :byte : :char
+      def char_used?
+        __ub4(OCI_ATTR_CHAR_USED) != 0
       end
 
       # returns the column character length which is the number of
@@ -1375,17 +1383,24 @@ class OCI8
       # type name of the named datatype pointed to by the REF is
       # returned
       def type_name
-        __text(OCI_ATTR_TYPE_NAME)
+        rv = __text(OCI_ATTR_TYPE_NAME)
+        rv.length == 0 ? nil : rv
       end
 
       # Returns a string with the schema name under which the type has been created
       def schema_name
-        __text(OCI_ATTR_SCHEMA_NAME)
+        rv = __text(OCI_ATTR_SCHEMA_NAME)
+        rv.length == 0 ? nil : rv
       end
 
       # to type metadata if possible
       def type_metadata
-        __type_metadata(OCI8::Metadata::Type)
+        case __ub2(OCI_ATTR_DATA_TYPE)
+        when 108, 110 # named_type or ref
+          __type_metadata(OCI8::Metadata::Type)
+        else
+          nil
+        end
       end
 
       # The character set id, if the column is of a string/character type
@@ -1414,6 +1429,14 @@ class OCI8
       # The character set name, if the column is of a string/character type
       def charset_name
         __charset_name(charset_id)
+      end
+
+      def type_string
+        __type_string
+      end
+
+      def to_s
+        %Q{"#{name}" #{__type_string}}
       end
 
       def inspect # :nodoc:
@@ -1977,7 +2000,7 @@ class OCI8
       when OCI8::Metadata::Synonym
         describe_table(metadata.translated_name)
       else
-        nil
+        raise OCIError.new("ORA-04043: object #{table_name} does not exist", 4043)
       end
     end
   end

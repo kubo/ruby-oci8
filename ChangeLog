@@ -1,4 +1,12 @@
 2007-11-17  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/error.c: add OCIError#initialize(msg, code = nil).
+	* ext/oci8/metadata.c, lib/oci8/metadata.rb: rename char_semantics
+	   method to "char_used?". change the return value of data_type
+	   method when the data_type is NCHAR, NVARCHAR2 or NCLOB.
+	* test/test_all.rb, test/test_metadata.rb: add a testcase for
+	   OCI8::Cursor#column_metadata and OCI8#describe_table.
+
+2007-11-17  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/oci8.rb: OCI8::Cursor#fetch_hash accepts a block now.
 	* test/test_oci8.rb: add a test for fetch_hash with a block.
 	* ext/oci8/metadata.c: fix for 64-bit windows.

@@ -163,6 +163,19 @@ static void set_backtrace_and_raise(VALUE exc, const char *file, int line)
     rb_exc_raise(exc);
 }
 
+static VALUE oci8_error_initialize(int argc, VALUE *argv, VALUE self)
+{
+    VALUE msg;
+    VALUE code;
+
+    rb_scan_args(argc, argv, "02", &msg, &code);
+    rb_call_super(argc > 1 ? 1 : argc, argv);
+    if (!NIL_P(code)) {
+        rb_ivar_set(self, oci8_id_code, rb_ary_new3(1, code));
+    }
+    return Qnil;
+}
+
 /*
 =begin
 --- OCIError#code()
@@ -255,6 +268,7 @@ void Init_oci8_error(void)
     eOCIContinue = rb_define_class("OCIContinue", eOCIException);
     eOCISuccessWithInfo = rb_define_class("OCISuccessWithInfo", eOCIError);
 
+    rb_define_method(eOCIError, "initialize", oci8_error_initialize, -1);
     rb_define_method(eOCIError, "code", oci8_error_code, 0);
     rb_define_method(eOCIError, "codes", oci8_error_code_array, 0);
     rb_define_method(eOCIError, "messages", oci8_error_message_array, 0);
