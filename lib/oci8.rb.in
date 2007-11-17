@@ -347,6 +347,30 @@ class OCI8
     @ctx[OCI8::Util::CTX_LONG_READ_LEN] = len
   end
 
+  def describe_table(table_name)
+    desc = @@env.alloc(OCIDescribe)
+    desc.attrSet(OCI_ATTR_DESC_PUBLIC, -1)
+    desc.describeAny(@svc, table_name.to_s, OCI_PTYPE_UNK)
+    param = desc.attrGet(OCI_ATTR_PARAM)
+
+    case param.attrGet(OCI_ATTR_PTYPE)
+    when OCI_PTYPE_TABLE, OCI_PTYPE_VIEW
+      OCI8::Metadata::Table.new(param)
+    when OCI_PTYPE_SYN
+      schema_name = param.attrGet(OCI_ATTR_SCHEMA_NAME)
+      name = param.attrGet(OCI_ATTR_NAME)
+      link = param.attrGet(OCI_ATTR_LINK)
+      if link.length != 0
+        translated_name = schema_name + '.' + name + '@' + link
+      else
+        translated_name = schema_name + '.' + name
+      end
+      describe_table(translated_name)
+    else
+      raise OCIError.new("ORA-04043: object #{table_name} does not exist", 4043)
+    end
+  end
+
   module BindType
     # get/set String
     String = Object.new
@@ -1462,6 +1486,12 @@ class OCI8
         end
       end
 
+      def inspect # :nodoc:
+        "#<#{self.class.name}:(#{@obj_id}) #{@obj_schema}.#{@obj_name}>"
+      end
+
+      private
+
       def __data_type(p)
         DATA_TYPE_MAP[p.attrGet(OCI_ATTR_DATA_TYPE)] || p.attrGet(OCI_ATTR_DATA_TYPE)
       end
@@ -1475,22 +1505,60 @@ class OCI8
           type
         end
       end
+
+      def initialize_table_or_view(param)
+        @num_cols = param.attrGet(OCI_ATTR_NUM_COLS)
+        @obj_id = param.attrGet(OCI_ATTR_OBJ_ID)
+        @obj_name = param.attrGet(OCI_ATTR_OBJ_NAME)
+        @obj_schema = param.attrGet(OCI_ATTR_OBJ_SCHEMA)
+        colparam = param.attrGet(OCI_ATTR_LIST_COLUMNS)
+        @columns = []
+        1.upto @num_cols do |i|
+          @columns << OCI8::Metadata::Column.new(colparam.paramGet(i))
+        end
+      end
+    end
+
+    class Table < Base
+      attr_reader :num_cols
+      attr_reader :obj_name
+      attr_reader :obj_schema
+      attr_reader :columns
+
+      def initialize(param)
+        initialize_table_or_view(param)
+      end
+    end
+
+    class View < Base
+      attr_reader :num_cols
+      attr_reader :obj_name
+      attr_reader :obj_schema
+      attr_reader :columns
+
+      def initialize(param)
+        initialize_table_or_view(param)
+      end
     end
 
     class Column < Base
       attr_reader :name
+      attr_reader :type_string
       attr_reader :data_type
+      attr_reader :charset_form
+      def is_null?; @is_null; end
 
       # string data type
-      attr_reader :data_size
       def char_used?; @char_used; end if defined? OCI_ATTR_CHAR_USED
       attr_reader :char_size if defined? OCI_ATTR_CHAR_SIZE
+      attr_reader :data_size
+      attr_reader :charset_id
 
+      # number data type
       attr_reader :precision
       attr_reader :scale
-      def is_null?; @is_null; end
-      attr_reader :charset_id
-      attr_reader :charset_form
+
+      # interval
       attr_reader :fsprecision
       attr_reader :lfprecision
 
@@ -1521,7 +1589,7 @@ class OCI8
       end
 
       def to_s
-        @type_string
+        %Q{"#{@name}" #{@type_string}}
       end
 
       def inspect # :nodoc:

@@ -123,6 +123,20 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, c
   rb_exc_raise(exc);
 }
 
+static VALUE oci8_error_initialize(int argc, VALUE *argv, VALUE self)
+{
+  VALUE msg;
+  VALUE code;
+
+  rb_scan_args(argc, argv, "02", &msg, &code);
+  rb_call_super(argc > 1 ? 1 : argc, argv);
+  if (!NIL_P(code)) {
+    rb_ivar_set(self, oci8_id_code, rb_ary_new3(1, code));
+  }
+  return Qnil;
+}
+
+
 /*
 =begin
 --- OCIError#code()
@@ -131,6 +145,10 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, c
 static VALUE oci8_error_code(VALUE self)
 {
   VALUE ary = rb_ivar_get(self, oci8_id_code);
+  if (NIL_P(ary)) {
+    return Qnil;
+  }
+  Check_Type(ary, T_ARRAY);
   if (RARRAY_LEN(ary) == 0) {
     return Qnil;
   }
@@ -193,6 +211,7 @@ void Init_oci8_error(void)
   oci8_id_caller = rb_intern("caller");
   oci8_id_set_backtrace = rb_intern("set_backtrace");
 
+  rb_define_method(eOCIError, "initialize", oci8_error_initialize, -1);
   rb_define_method(eOCIError, "code", oci8_error_code, 0);
   rb_define_method(eOCIError, "codes", oci8_error_code_array, 0);
   rb_define_method(eOCIError, "messages", oci8_error_message_array, 0);

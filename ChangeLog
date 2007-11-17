@@ -1,4 +1,11 @@
 2007-11-17  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/error.c: add OCIError#initialize(msg, code = nil).
+	* lib/oci8.rb.in: add OCI8#describe_table(table_name),
+	   OCI8::Metadata::Table and OCI8::Metadata::View.
+	* test/test_metadata.rb: fix test_metadata for OCI8#describe_table.
+	   add test_error_describe_table.
+
+2007-11-17  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8.rb.in: OCI8::Cursor#fetch_hash accepts a block now.
 	   OCI8#commit and OCI8#rollback return self now. They had returned
 	   an OCISvcCtx which is internally used.
