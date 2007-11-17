@@ -1,3 +1,8 @@
+2007-11-17  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb: OCI8::Cursor#fetch_hash accepts a block now.
+	* test/test_oci8.rb: add a test for fetch_hash with a block.
+	* ext/oci8/metadata.c: fix for 64-bit windows.
+
 2007-11-12  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/stmt.c, lib/oci8/oci8.rb: add OCI8::Cursor#column_metadata.
 	* ext/oci8/metadata.c, ext/oci8/oci8.h, ext/oci8/stmt.c: Change

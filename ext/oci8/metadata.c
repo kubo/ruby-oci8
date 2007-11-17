@@ -332,7 +332,11 @@ static VALUE metadata_get_tdo_id(VALUE self)
         return Qnil;
     oci_lc(OCIObjectPin(oci8_envhp, oci8_errhp, tdo_ref, 0, OCI_PIN_ANY, OCI_DURATION_SESSION, OCI_LOCK_NONE, &tdo));
     OCIObjectUnpin(oci8_envhp, oci8_errhp, tdo);
+#if SIZEOF_LONG == SIZEOF_VOIDP
     return ((VALUE)tdo | (VALUE)1);
+#else
+    return LL2NUM(((LONG_LONG)tdo) >>1);
+#endif
 }
 
 oci8_base_class_t oci8_metadata_class = {

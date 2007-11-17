@@ -12,14 +12,6 @@ class TestOCI8 < Test::Unit::TestCase
     @conn.logoff
   end
 
-  def server_version
-    retval = nil
-    @conn.exec('select value from database_compatible_level') do |row|
-      retval = row[0].split('.').map do |n| n.to_i; end
-    end
-    retval
-  end
-
   def test_rename
     drop_table('test_table')
     drop_table('test_rename_table')
@@ -67,7 +59,7 @@ EOS
       else
 	dt = OraDate.new(2000 + i, 8, 3, 23, 59, 59)
       end
-      cursor.exec(format("%10d", i * 10), i.to_s, i, dt, dt, dt, dt, i, i)
+      cursor.exec(format("%10d", i * 10), i.to_s, i, dt, dt, dt, dt, i * 11111111111, i * 10000000000)
     end
     cursor.close
     cursor = @conn.parse("SELECT * FROM test_table ORDER BY c")
@@ -97,10 +89,38 @@ EOS
 	assert_equal(dt, rv[5])
 	assert_equal(dttm, rv[6])
       end
-      assert_equal(i, rv[7])
-      assert_equal(i, rv[8])
+      assert_equal(i * 11111111111, rv[7])
+      assert_equal(i * 10000000000, rv[8])
     end
     assert_nil(cursor.fetch)
+
+    # fetch_hash with block
+    cursor.exec
+    i = 1
+    cursor.fetch_hash do |row|
+      assert_equal(format("%10d", i * 10), row['C'])
+      assert_equal(i.to_s, row['V'])
+      assert_equal(i, row['N'])
+      if i == 1
+	assert_nil(row['D1'])
+	assert_nil(row['D2'])
+	assert_nil(row['D3'])
+	assert_nil(row['D4'])
+      else
+        tm = Time.local(2000 + i, 8, 3, 23, 59, 59)
+	dt = Date.civil(2000 + i, 8, 3)
+	dttm = DateTime.civil(2000 + i, 8, 3, 23, 59, 59, Time.now.utc_offset.to_r/86400)
+	assert_equal(dttm, row['D1'])
+	assert_equal(tm, row['D2'])
+	assert_equal(dt, row['D3'])
+	assert_equal(dttm, row['D4'])
+      end
+      assert_equal(i * 11111111111, row['INT'])
+      assert_equal(i * 10000000000, row['BIGNUM'])
+      i += 1
+    end
+    assert_equal(11, i)
+
     cursor.close
     drop_table('test_table')
   end

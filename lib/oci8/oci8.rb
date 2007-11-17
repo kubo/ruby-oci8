@@ -313,14 +313,12 @@ class OCI8
     end
 
     def fetch_hash
-      if rs = fetch()
-        ret = {}
-        get_col_names.each do |name|
-          ret[name] = rs.shift
+      if iterator?
+        while ret = fetch_a_hash_row()
+          yield(ret)
         end
-        ret
-      else 
-        nil
+      else
+        fetch_a_hash_row
       end
     end # fetch_hash
 
@@ -419,6 +417,18 @@ class OCI8
 	end
       end
     end # bind_params
+
+    def fetch_a_hash_row
+      if rs = fetch()
+        ret = {}
+        get_col_names.each do |name|
+          ret[name] = rs.shift
+        end
+        ret
+      else 
+        nil
+      end
+    end # fetch_a_hash_row
 
   end # OCI8::Cursor
 end # OCI8
