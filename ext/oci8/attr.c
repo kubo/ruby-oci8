@@ -358,10 +358,10 @@ VALUE oci8_attr_set(VALUE self, VALUE vtype, VALUE value)
   char attr_type_flag;
 
   Get_Handle(self, h); /* 0 */
-  type = NUM2INT(vtype); /* 1 */
+  type = NUM2UINT(vtype); /* 1 */
 
   /* check range. */
-  if (type < 0 || oci8_attr_size <= type)
+  if (oci8_attr_size <= type)
     rb_raise(rb_eArgError, "invalid OCI_ATTR_ type");
 
   /* check attribute type */
@@ -395,10 +395,10 @@ VALUE oci8_attr_get(VALUE self, VALUE vtype)
   char attr_type_flag;
 
   Get_Handle(self, h); /* 0 */
-  type = NUM2INT(vtype); /* 1 */
+  type = NUM2UINT(vtype); /* 1 */
 
   /* check range. */
-  if (type < 0 || oci8_attr_size <= type)
+  if (oci8_attr_size <= type)
     rb_raise(rb_eArgError, "invalid OCI_ATTR_ type");
 
   /* check attribute type */

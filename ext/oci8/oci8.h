@@ -127,7 +127,7 @@ struct oci8_handle {
   /* End of common part */
   union {
     struct {
-      char is_implicit:1;
+      char is_implicit;
     } param;
 #ifndef OCI8_USE_CALLBACK_LOB_READ
     struct {

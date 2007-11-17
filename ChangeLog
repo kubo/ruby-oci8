@@ -1,3 +1,14 @@
+2007-11-17  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8.rb.in: OCI8::Cursor#fetch_hash accepts a block now.
+	   OCI8#commit and OCI8#rollback return self now. They had returned
+	   an OCISvcCtx which is internally used.
+	* test/test_oci8.rb: add a test for fetch_hash with a block.
+	* ext/oci8/oci8.h: fix a potential bug.
+	     http://rubyforge.org/forum/forum.php?thread_id=19213&forum_id=1078
+	* ext/oci8/attr.c: fix signedness. Logically this won't be related with
+	   the following URL's problem. But there is a few possibility.
+	     http://rubyforge.org/forum/forum.php?thread_id=15158&forum_id=1078
+
 2007-11-16  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8.rb.in: add OCI8::Cursor#column_metadata and a new class
 	   OCI8::Metadata::Column.

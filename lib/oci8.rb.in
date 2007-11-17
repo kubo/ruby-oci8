@@ -280,10 +280,12 @@ class OCI8
 
   def commit
     do_ocicall(@ctx) { @svc.commit }
+    self
   end # commit
 
   def rollback
     do_ocicall(@ctx) { @svc.rollback }
+    self
   end # rollback
 
   def autocommit?
@@ -767,14 +769,12 @@ class OCI8
     end # fetch
 
     def fetch_hash
-      if rs = fetch_a_row()
-        ret = {}
-        @parms.each do |p|
-          ret[p.attrGet(OCI_ATTR_NAME)] = rs.shift
+      if iterator?
+        while ret = fetch_a_hash_row()
+          yield(ret)
         end
-        ret
-      else 
-        nil
+      else
+        fetch_a_hash_row
       end
     end # fetch_hash
 
@@ -896,6 +896,18 @@ class OCI8
       return nil if res.nil?
       res.collect do |r| r.get() end
     end # fetch_a_row
+
+    def fetch_a_hash_row
+      if rs = fetch_a_row()
+        ret = {}
+        @parms.each do |p|
+          ret[p.attrGet(OCI_ATTR_NAME)] = rs.shift
+        end
+        ret
+      else 
+        nil
+      end
+    end # fetch_a_hash_row
 
     def free_defns
       unless @defns.nil?

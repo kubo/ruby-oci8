@@ -69,6 +69,32 @@ EOS
       assert_equal(i * 10000000000, rv[8])
     end
     assert_nil(cursor.fetch)
+
+    # fetch_hash with block
+    cursor.exec
+    i = 1
+    cursor.fetch_hash do |row|
+      assert_equal(format("%10d", i * 10), row['C'])
+      assert_equal(i.to_s, row['V'])
+      assert_equal(i, row['N'])
+      if i == 1
+	assert_nil(row['D1'])
+	assert_nil(row['D2'])
+	assert_nil(row['D3'])
+	assert_nil(row['D4'])
+      else
+	dt = OraDate.new(2000 + i, 8, 3, 23, 59, 59)
+	assert_equal(dt, row['D1'])
+	assert_equal(dt.to_time, row['D2'])
+	assert_equal(dt.to_date, row['D3'])
+	assert_equal(dt.to_datetime, row['D4']) if defined? DateTime
+      end
+      assert_equal(i * 11111111111, row['INT'])
+      assert_equal(i * 10000000000, row['BIGNUM'])
+      i += 1
+    end
+    assert_equal(i, 11)
+
     cursor.close
     drop_table('test_table')
   end
