@@ -156,6 +156,157 @@ EOS
     assert_equal(inval.to_time, outval.to_time)
   end
 
+  def test_column_info
+    # data_size factor for nchar charset_form.
+    sth = @dbh.execute("select CAST('1' AS NCHAR(1)) from dual")
+    cfrm = sth.column_info[0]['precision']
+    if $oracle_version >=  900
+      # data_size factor for char semantics.
+      sth = @dbh.execute("select CAST('1' AS CHAR(1 char)) from dual")
+      csem = sth.column_info[0]['precision']
+    end
+
+    coldef =
+      [
+       # oracle_version, definition,    sql_type,        type_name, nullable, precision,scale,indexed,primary,unique,default
+       [800, "CHAR(10) NOT NULL",        DBI::SQL_CHAR,    'CHAR',     false,        10, nil, true, true, true, nil],
+       [900, "CHAR(10 CHAR)",            DBI::SQL_CHAR,    'CHAR',     true,  10 * csem, nil, false,false,false,nil],
+       [800, "NCHAR(10)",                DBI::SQL_CHAR,    'NCHAR',    true,  10 * cfrm, nil, true, false,true, nil],
+       [800, "VARCHAR2(10) DEFAULT 'a''b'", DBI::SQL_VARCHAR, 'VARCHAR2', true,         10, nil, true, false,false, "a'b"],
+       [900, "VARCHAR2(10 CHAR)",        DBI::SQL_VARCHAR, 'VARCHAR2', true,  10 * csem, nil, false,false,false,nil],
+       [800, "NVARCHAR2(10)",            DBI::SQL_VARCHAR, 'NVARCHAR2',true,  10 * cfrm, nil, false,false,false,nil],
+       [800, "RAW(10)",                  DBI::SQL_VARBINARY, 'RAW',    true,         10, nil, false,false,false,nil],
+       [800, "CLOB",                     DBI::SQL_CLOB,    'CLOB',     true,       4000, nil, false,false,false,nil],
+       [800, "NCLOB",                    DBI::SQL_CLOB,    'NCLOB',    true,       4000, nil, false,false,false,nil],
+       [800, "BLOB",                     DBI::SQL_BLOB,    'BLOB',     true,       4000, nil, false,false,false,nil],
+       [800, "BFILE",                    DBI::SQL_BLOB,    'BFILE',    true,       4000, nil, false,false,false,nil],
+       [800, "NUMBER",                   DBI::SQL_NUMERIC, 'NUMBER',   true,         38, nil, false,false,false,nil],
+       [800, "NUMBER(10)",               DBI::SQL_NUMERIC, 'NUMBER',   true,         10,   0, false,false,false,nil],
+       [800, "NUMBER(10,2)",             DBI::SQL_NUMERIC, 'NUMBER',   true,         10,   2, false,false,false,nil],
+       [800, "FLOAT",                    DBI::SQL_FLOAT,   'FLOAT',    true, (126 * 0.30103).ceil, nil, false,false,false,nil],
+       [800, "FLOAT(10)",                DBI::SQL_FLOAT,   'FLOAT',    true, (10 * 0.30103).ceil, nil, false,false,false,nil],
+       [1000,"BINARY_FLOAT",             DBI::SQL_FLOAT,   'BINARY_FLOAT', true,      7, nil, false,false,false,nil],
+       [1000,"BINARY_DOUBLE",            DBI::SQL_DOUBLE,  'BINARY_DOUBLE', true,    16, nil, false,false,false,nil],
+       [800, "DATE",                     DBI::SQL_DATE,    'DATE',     true,         19, nil, false,false,false,nil],
+       [900, "TIMESTAMP",                DBI::SQL_TIMESTAMP, 'TIMESTAMP', true,  20 + 6, nil, false,false,false,nil],
+       [900, "TIMESTAMP(9)",             DBI::SQL_TIMESTAMP, 'TIMESTAMP', true,  20 + 9, nil, false,false,false,nil],
+       [900, "TIMESTAMP WITH TIME ZONE",          DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH TIME ZONE', true,  27 + 6, nil, false,false,false,nil],
+       [900, "TIMESTAMP(9) WITH TIME ZONE",       DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH TIME ZONE', true,  27 + 9, nil, false,false,false,nil],
+       [900, "TIMESTAMP WITH LOCAL TIME ZONE",    DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH LOCAL TIME ZONE', true,  20 + 6, nil, false,false,false,nil],
+       [900, "TIMESTAMP(9) WITH LOCAL TIME ZONE", DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH LOCAL TIME ZONE', true,  20 + 9, nil, false,false,false,nil],
+       [900, "INTERVAL YEAR TO MONTH",      DBI::SQL_OTHER, 'INTERVAL YEAR TO MONTH', true, 2 + 3, nil, false,false,false,nil],
+       [900, "INTERVAL YEAR(4) TO MONTH",   DBI::SQL_OTHER, 'INTERVAL YEAR TO MONTH', true, 4 + 3, nil, false,false,false,nil],
+       [900, "INTERVAL DAY TO SECOND",      DBI::SQL_OTHER, 'INTERVAL DAY TO SECOND', true, 2 + 10 + 6, nil, false,false,false,nil],
+       [900, "INTERVAL DAY(4) TO SECOND(9)",DBI::SQL_OTHER, 'INTERVAL DAY TO SECOND', true, 4 + 10 + 9, nil, false,false,false,nil],
+      ]
+
+    coldef.reject! do |c| c[0] > $oracle_version end
+
+    drop_table('test_table')
+    @dbh.execute(<<-EOS)
+CREATE TABLE test_table (#{i = 0; coldef.collect do |c| i += 1; "C#{i} " + c[1] + (c[8] ? ' PRIMARY KEY' : ''); end.join(',')})
+STORAGE (
+   INITIAL 100k
+   NEXT 100k
+   MINEXTENTS 1
+   MAXEXTENTS UNLIMITED
+   PCTINCREASE 0)
+EOS
+    coldef.each_with_index do |col, idx|
+      next if col[8] # primary
+      if col[7] # indexed
+        @dbh.execute(<<-EOS)
+CREATE #{col[9] ? 'UNIQUE' : ''} INDEX test_table_idx#{idx + 1} ON test_table(C#{idx + 1})
+STORAGE (
+   INITIAL 100k
+   NEXT 100k
+   MINEXTENTS 1
+   MAXEXTENTS UNLIMITED
+   PCTINCREASE 0)
+EOS
+      end
+    end
+
+    @dbh.columns('test_table').each_with_index do |ci, i|
+      assert_equal("C#{i + 1}",  ci['name'],      "'#{coldef[i][1]}': name")
+      assert_equal(coldef[i][2], ci['sql_type'],  "'#{coldef[i][1]}': sql_type")
+      assert_equal(coldef[i][3], ci['type_name'], "'#{coldef[i][1]}': type_name")
+      assert_equal(coldef[i][4], ci['nullable'],  "'#{coldef[i][1]}': nullable")
+      assert_equal(coldef[i][5], ci['precision'], "'#{coldef[i][1]}': precision")
+      assert_equal(coldef[i][6], ci['scale'],     "'#{coldef[i][1]}': scale")
+      assert_equal(coldef[i][7], ci['indexed'],   "'#{coldef[i][1]}': indexed")
+      assert_equal(coldef[i][8], ci['primary'],   "'#{coldef[i][1]}': primary")
+      assert_equal(coldef[i][9], ci['unique'],    "'#{coldef[i][1]}': unique")
+      assert_equal(coldef[i][10],ci['default'],   "'#{coldef[i][1]}': default")
+    end
+
+    # temporarily change OCI8::BindType::Mapping.
+    saved_mapping = {}
+    [OCI8::SQLT_TIMESTAMP_TZ,
+     OCI8::SQLT_TIMESTAMP_LTZ,
+     OCI8::SQLT_INTERVAL_YM,
+     OCI8::SQLT_INTERVAL_DS].each do |sqlt_type|
+      saved_mapping[sqlt_type] = OCI8::BindType::Mapping[sqlt_type]
+      OCI8::BindType::Mapping[sqlt_type] = OCI8::BindType::String
+    end
+    begin
+      sth = @dbh.execute("SELECT * FROM test_table")
+    ensure
+      saved_mapping.each do |key, val|
+        OCI8::BindType::Mapping[key] = val
+      end
+    end
+    sth.column_info.each_with_index do |ci, i|
+      assert_equal("C#{i + 1}",  ci['name'],      "'#{coldef[i][1]}': name")
+      assert_equal(coldef[i][2], ci['sql_type'],  "'#{coldef[i][1]}': sql_type")
+      assert_equal(coldef[i][3], ci['type_name'], "'#{coldef[i][1]}': type_name")
+      assert_equal(coldef[i][4], ci['nullable'],  "'#{coldef[i][1]}': nullable")
+      assert_equal(coldef[i][5], ci['precision'], "'#{coldef[i][1]}': precision")
+      assert_equal(coldef[i][6], ci['scale'],     "'#{coldef[i][1]}': scale")
+      assert_equal(nil,          ci['indexed'],   "'#{coldef[i][1]}': indexed")
+      assert_equal(nil,          ci['primary'],   "'#{coldef[i][1]}': primary")
+      assert_equal(nil,          ci['unique'],    "'#{coldef[i][1]}': unique")
+      assert_equal(nil,          ci['default'],   "'#{coldef[i][1]}': default")
+    end
+
+    drop_table('test_table')
+  end
+
+  def test_column_info_of_tab
+    coldef =
+      [
+       # name,      sql_type,        type_name, nullable,precision,scale,indexed,primary,unique,default
+       ["TNAME",    DBI::SQL_VARCHAR,'VARCHAR2',false,   30,       nil,  false,  false,  false, nil],
+       ["TABTYPE",  DBI::SQL_VARCHAR,'VARCHAR2',true,     7,       nil,  false,  false,  false, nil],
+       ["CLUSTERID",DBI::SQL_NUMERIC,'NUMBER',  true,    38,       nil,  false,  false,  false, nil],
+      ]
+    @dbh.columns('tab').each_with_index do |ci, i|
+      assert_equal(coldef[i][0], ci['name'],      "'#{coldef[i][0]}': name")
+      assert_equal(coldef[i][1], ci['sql_type'],  "'#{coldef[i][0]}': sql_type")
+      assert_equal(coldef[i][2], ci['type_name'], "'#{coldef[i][0]}': type_name")
+      assert_equal(coldef[i][3], ci['nullable'],  "'#{coldef[i][0]}': nullable")
+      assert_equal(coldef[i][4], ci['precision'], "'#{coldef[i][0]}': precision")
+      assert_equal(coldef[i][5], ci['scale'],     "'#{coldef[i][0]}': scale")
+      assert_equal(coldef[i][6], ci['indexed'],   "'#{coldef[i][0]}': indexed")
+      assert_equal(coldef[i][7], ci['primary'],   "'#{coldef[i][0]}': primary")
+      assert_equal(coldef[i][8], ci['unique'],    "'#{coldef[i][0]}': unique")
+      assert_equal(coldef[i][9], ci['default'],    "'#{coldef[i][0]}': default")
+    end
+
+    @dbh.execute("SELECT * FROM tab").column_info.each_with_index do |ci, i|
+      assert_equal(coldef[i][0], ci['name'],      "'#{coldef[i][0]}': name")
+      assert_equal(coldef[i][1], ci['sql_type'],  "'#{coldef[i][0]}': sql_type")
+      assert_equal(coldef[i][2], ci['type_name'], "'#{coldef[i][0]}': type_name")
+      assert_equal(coldef[i][3], ci['nullable'],  "'#{coldef[i][0]}': nullable")
+      assert_equal(coldef[i][4], ci['precision'], "'#{coldef[i][0]}': precision")
+      assert_equal(coldef[i][5], ci['scale'],     "'#{coldef[i][0]}': scale")
+      assert_equal(nil,          ci['indexed'],   "'#{coldef[i][0]}': indexed")
+      assert_equal(nil,          ci['primary'],   "'#{coldef[i][0]}': primary")
+      assert_equal(nil,          ci['unique'],    "'#{coldef[i][0]}': unique")
+      assert_equal(nil,          ci['default'],   "'#{coldef[i][0]}': default")
+    end
+  end
+
 end # TestDBI
 
 if $0 == __FILE__

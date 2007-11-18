@@ -1,3 +1,9 @@
+2007-11-18  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/DBD/OCI8/OCI8.rb: add StatementHandle#column_info.
+	   refine DatabaseHandle#columns.
+	* test/test_dbi.rb: add a testcase for StatementHandle#column_info
+	   and DatabaseHandle#columns.
+
 2007-11-17  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/error.c: add OCIError#initialize(msg, code = nil).
 	* lib/oci8.rb.in: add OCI8#describe_table(table_name),
