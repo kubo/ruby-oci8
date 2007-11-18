@@ -71,6 +71,72 @@ module Util
     exc.set_backtrace(err.backtrace)
     raise
   end
+
+  def column_metadata_to_column_info(col)
+    sql_type, type_name, precision, scale =
+      case col.data_type
+      when :char
+        [SQL_CHAR, col.charset_form == :nchar ? "NCHAR" : "CHAR", col.data_size, nil]
+      when :varchar2
+        [SQL_VARCHAR, col.charset_form == :nchar ? "NVARCHAR2" : "VARCHAR2", col.data_size, nil]
+      when :raw
+        [SQL_VARBINARY, "RAW", col.data_size, nil]
+      when :long
+        [SQL_LONGVARCHAR, "LONG", 4000, nil]
+      when :long_raw
+        [SQL_LONGVARBINARY, "LONG RAW", 4000, nil]
+      when :clob
+        [SQL_CLOB, col.charset_form == :nchar ? "NCLOB" : "CLOB", 4000, nil]
+      when :blob
+        [SQL_BLOB, "BLOB", 4000, nil]
+      when :bfile
+        [SQL_BLOB, "BFILE", 4000, nil]
+      when :number
+        if col.scale == -127 && col.precision != 0
+          # To convert from binary to decimal precision, multiply n by 0.30103.
+          [SQL_FLOAT, "FLOAT", (col.precision * 0.30103).ceil , nil]
+        elsif col.precision == 0
+          # NUMBER or calculated value (eg. col * 1.2).
+          [SQL_NUMERIC, "NUMBER", 38, nil]
+        else
+          [SQL_NUMERIC, "NUMBER", col.precision, col.scale]
+        end
+      when :binary_float
+        # (23 * 0.30103).ceil => 7
+        [SQL_FLOAT, "BINARY_FLOAT", 7, nil]
+      when :binary_double
+        # (52 * 0.30103).ceil => 16
+        [SQL_DOUBLE, "BINARY_DOUBLE", 16, nil]
+      when :date
+        # yyyy-mm-dd hh:mi:ss
+        [SQL_DATE, "DATE", 19, nil]
+      when :timestamp
+        # yyyy-mm-dd hh:mi:ss.SSSS
+        [SQL_TIMESTAMP, "TIMESTAMP", 20 + col.fsprecision, nil]
+      when :timestamp_tz
+        # yyyy-mm-dd hh:mi:ss.SSSS +HH:MM
+        [SQL_TIMESTAMP, "TIMESTAMP WITH TIME ZONE", 27 + col.fsprecision, nil]
+      when :timestamp_ltz
+        # yyyy-mm-dd hh:mi:ss.SSSS
+        [SQL_TIMESTAMP, "TIMESTAMP WITH LOCAL TIME ZONE", 20 + col.fsprecision, nil]
+      when :interval_ym
+        # yyyy-mm
+        [SQL_OTHER, 'INTERVAL YEAR TO MONTH', col.lfprecision + 3, nil]
+      when :interval_ds
+        # dd hh:mi:ss.SSSSS
+        [SQL_OTHER, 'INTERVAL DAY TO SECOND', col.lfprecision + 10 + col.fsprecision, nil]
+      else
+        [SQL_OTHER, col.data_type.to_s, nil, nil]
+      end
+    {'name' => col.name,
+      'sql_type' => sql_type,
+      'type_name' => type_name,
+      'nullable' => col.is_null?,
+      'precision' => precision,
+      'scale' => scale,
+    }
+  end
+  private :column_metadata_to_column_info
 end
 
 class Driver < DBI::BaseDriver # :nodoc:
@@ -143,35 +209,23 @@ class Database < DBI::BaseDatabase
     rows.collect {|row| row[0]} 
   end
 
-  # from Jim Menard <jimm@io.com>
-  # copied from DBD::Oracle
-  ORACLE_TO_SQL = {
-    'BLOB' => SQL_BLOB,
-    'CHAR' => SQL_CHAR,
-    'CLOB' => SQL_CLOB,
-    'DATE' => SQL_DATE,
-    'TIME' => SQL_TIME,
-    'TIMESTAMP' => SQL_TIMESTAMP,
-    'LONG' => SQL_LONGVARCHAR,
-    'LONG RAW' => SQL_LONGVARBINARY,
-    'RAW' => SQL_VARBINARY,
-    'NUMBER' => SQL_NUMERIC,
-    'FLOAT' => SQL_FLOAT,
-    'ROWID' => SQL_DECIMAL, # That's a guess. Anyone?
-    'VARCHAR' => SQL_VARCHAR,
-    'VARCHAR2' => SQL_VARCHAR
-  }
-
   # SQLs are copied from DBD::Oracle.
   def columns(table)
+    tab = @handle.describe_table(table)
+    cols = tab.columns
+    cols.collect! do |col|
+      column_metadata_to_column_info(col)
+    end
+
     dbh = DBI::DatabaseHandle.new(self)
 
     pk_index_name = nil
-    dbh.select_all(<<EOS, table) do |row|
+    dbh.select_all(<<EOS, tab.obj_schema, tab.obj_name) do |row|
 select index_name
-  from user_constraints
+  from all_constraints
  where constraint_type = 'P'
-   and table_name = upper(:1)
+   and owner = :1
+   and table_name = :2
 EOS
       pk_index_name = row[0]
     end
@@ -179,12 +233,13 @@ EOS
     indices = {}
     primaries = {}
     uniques = {}
-    dbh.select_all(<<EOS, table) do |row|
+    dbh.select_all(<<EOS, tab.obj_schema, tab.obj_name) do |row|
 select a.column_name, a.index_name, b.uniqueness
-  from user_ind_columns a, user_indexes b
+  from all_ind_columns a, all_indexes b
  where a.index_name = b.index_name
-   and a.table_name = b.table_name
-   and a.table_name = upper(:1)
+   and a.index_owner = b.owner
+   and a.table_owner = :1
+   and a.table_name = :2
 EOS
       col_name, index_name, uniqueness = row
       indices[col_name] = true
@@ -192,27 +247,29 @@ EOS
       uniques[col_name] = true if uniqueness == 'UNIQUE'
     end
 
-    # Find column type and size info.
-    dbh.select_all(<<EOS, table).collect do |row|
-select column_name, data_type, data_length, data_precision, nullable, data_default
-  from user_tab_columns
- where table_name = upper(:1)
+    dbh.select_all(<<EOS, tab.obj_schema, tab.obj_name).collect do |row|
+select column_id, column_name, data_default
+  from all_tab_columns
+ where owner = :1
+   and table_name = :2
 EOS
-      col_name, oracle_type, size, precision, nullable, default = row
+      col_id, col_name, default = row
 
-      col = {}
-      col['name']      = col_name
-      col['sql_type']  = ORACLE_TO_SQL[oracle_type] || SQL_OTHER
-      col['type_name'] = oracle_type
-      col['nullable']  = nullable == 'Y'
+      col = cols[col_id.to_i - 1]
+      col_name = col['name']
+
+      if default && default[0] == ?'
+        default = default[1..-2].gsub(/''/, "'")
+      end
+
       col['indexed']   = indices[col_name]   || false
       col['primary']   = primaries[col_name] || false
       col['unique']    = uniques[col_name]   || false
-      col['precision'] = size && size.to_i     # Number of bytes or digits
-      col['scale']     = precision && precision.to_i    # number of digits to right
       col['default']   = default
       col
     end
+  rescue OCIException => err
+    raise_dbierror(err)
   end
 
   def [](attr)
@@ -286,7 +343,14 @@ class Statement < DBI::BaseStatement
 
   def column_info
     # minimum implementation.
-    @cursor.get_col_names.collect do |name| {'name' => name} end
+    @cursor.column_metadata.collect do |md|
+      col = column_metadata_to_column_info(md)
+      col['indexed']   = nil
+      col['primary']   = nil
+      col['unique']    = nil
+      col['default']   = nil
+      col
+    end
   rescue OCIException => err
     raise_dbierror(err)
   end
@@ -313,7 +377,7 @@ end
 
 if defined? ::OCI8::BindType::Base
   ##
-  ## ruby-oci8 0.2 bind classes.
+  ## ruby-oci8 2.0 bind classes.
   ##
 
   module BindType # :nodoc:
@@ -407,7 +471,7 @@ if defined? ::OCI8::BindType::Base
 
 else
   ##
-  ## ruby-oci8 0.1 bind classes.
+  ## ruby-oci8 1.0 bind classes.
   ##
 
   module BindType # :nodoc:
