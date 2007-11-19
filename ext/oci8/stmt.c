@@ -709,7 +709,7 @@ void Init_oci8_stmt(VALUE cOCI8)
     id_at_con = rb_intern("@con");
 
     rb_define_private_method(cOCIStmt, "initialize", oci8_stmt_initialize, -1);
-    rb_define_private_method(cOCIStmt, "__defineByPos", oci8_define_by_pos, 2);
+    rb_define_private_method(cOCIStmt, "__define", oci8_define_by_pos, 2);
     rb_define_private_method(cOCIStmt, "__bind", oci8_bind, 2);
     rb_define_private_method(cOCIStmt, "__execute", oci8_stmt_execute, 0);
     rb_define_method(cOCIStmt, "fetch", oci8_stmt_fetch, 0);

@@ -35,6 +35,7 @@ static VALUE hour_base;
 static VALUE minute_base;
 static VALUE sec_base;
 static VALUE fsec_base;
+static VALUE fsec_mul;
 
 typedef struct {
     oci8_bind_t obind;
@@ -330,7 +331,7 @@ static void bind_datetime_set(oci8_bind_t *obind, void *data, void **null_struct
             /* if fs < 0 */
             rb_raise(rb_eRangeError, "sec_fraction is less then zero.");
         }
-        fs = rb_funcall(fs, id_mul, 1, fsec_base);
+        fs = rb_funcall(fs, id_mul, 1, fsec_mul);
         if (RTEST(rb_funcall(INT2FIX(1000000000), id_less, 1, fs))) {
             /* if 1000000000 < fs */
             rb_raise(rb_eRangeError, "sec_fraction is greater than or equals to one second.");
@@ -709,10 +710,12 @@ void Init_oci_datetime(void)
     minute_base = rb_funcall(hour_base, id_mul, 1, INT2FIX(60));
     sec_base = rb_funcall(minute_base, id_mul, 1, INT2FIX(60));
     fsec_base = rb_funcall(sec_base, id_mul, 1, INT2FIX(1000000000));
+    fsec_mul = rb_eval_string("(100_000_000 / DateTime.parse('00:00:00.1').sec_fraction).to_i");
     rb_global_variable(&hour_base);
     rb_global_variable(&minute_base);
     rb_global_variable(&sec_base);
     rb_global_variable(&fsec_base);
+    rb_global_variable(&fsec_mul);
 
     oci8_define_bind_class("DateTime", &bind_datetime_class);
     oci8_define_bind_class("IntervalYM", &bind_interval_ym_class);

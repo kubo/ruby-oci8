@@ -241,4 +241,33 @@ EOS
     drop_table('test_table')
   end
 
+  def test_select_number
+    drop_table('test_table')
+    @conn.exec(<<EOS)
+CREATE TABLE test_table (n NUMBER, n14 NUMBER(14), n14_2 NUMBER(14,2), n15_2 NUMBER(15,2), flt FLOAT)
+STORAGE (
+   INITIAL 100k
+   NEXT 100k
+   MINEXTENTS 1
+   MAXEXTENTS UNLIMITED
+   PCTINCREASE 0)
+EOS
+    @conn.exec(<<EOS)
+INSERT INTO test_table values(12345678901234, 12345678901234, 123456789012.34, 1234567890123.45, 1234.5)
+EOS
+    @conn.exec("select * from test_table") do |row|
+      assert_equal(row[0], 12345678901234)
+      assert_equal(row[1], 12345678901234)
+      assert_equal(row[2], 123456789012.34)
+      assert_equal(row[3], 1234567890123.45)
+      assert_equal(row[4], 1234.5)
+      assert_instance_of(OCINumber, row[0])
+      assert_instance_of(Bignum, row[1])
+      assert_instance_of(Float, row[2])
+      assert_instance_of(OCINumber, row[3])
+      assert_instance_of(Float, row[4])
+    end
+    drop_table('test_table')
+  end
+
 end # TestOCI8

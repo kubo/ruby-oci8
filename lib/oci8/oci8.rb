@@ -113,6 +113,12 @@ class OCI8
   module BindType
     Mapping = {}
 
+    class Base
+      def self.create(con, val, param, max_array_size)
+        self.new(con, val, param, max_array_size)
+      end
+    end
+
     # get/set Time
     class Time < OCI8::BindType::OraDate
       def set(val)
@@ -135,38 +141,99 @@ class OCI8
 
     # get/set Number (for OCI8::SQLT_NUM)
     class Number
-      def self.dispatch(val, length, precision, scale) # :nodoc:
+      def self.create(con, val, param, max_array_size)
+        if param.is_a? OCI8::Metadata::Base
+          precision = param.precision
+          scale = param.scale
+        end
         if scale == -127
           if precision == 0
             # NUMBER declared without its scale and precision. (Oracle 9.2.0.3 or above)
-            bind_type = OCI8::Cursor.instance_eval do ::OCI8::Cursor.bind_default_number end
+            klass = OCI8::Cursor.instance_eval do ::OCI8::Cursor.bind_default_number end
           else
             # FLOAT or FLOAT(p)
-            bind_type = OCI8::BindType::Float
+            klass = OCI8::BindType::Float
           end
         elsif scale == 0
           if precision == 0
             # NUMBER whose scale and precision is unknown
             # or
             # NUMBER declared without its scale and precision. (Oracle 9.2.0.2 or below)
-            bind_type = OCI8::Cursor.instance_eval do ::OCI8::Cursor.bind_unknown_number end
+            klass = OCI8::Cursor.instance_eval do ::OCI8::Cursor.bind_unknown_number end
           else
             # NUMBER(p, 0)
-            bind_type = OCI8::BindType::Integer
+            klass = OCI8::BindType::Integer
           end
         else
           # NUMBER(p, s)
           if precision < 15 # the precision of double.
-            bind_type = OCI8::BindType::Float
+            klass = OCI8::BindType::Float
           else
             # use BigDecimal instead?
-            bind_type = OCI8::BindType::OCINumber
+            klass = OCI8::BindType::OCINumber
           end
         end
-        bind_type
+        klass.new(con, val, nil, max_array_size)
       end
     end
 
+    class String
+      def self.create(con, val, param, max_array_size)
+        case param
+        when Hash
+          length = param[:length] || 4000
+        when OCI8::Metadata::Base
+          case param.data_type
+          when :char, :varchar2
+            length = param.data_size
+            # character size may become large on character set conversion.
+            # The length of a Japanese half-width kana is one in Shift_JIS,
+            # two in EUC-JP, three in UTF-8.
+            length *= 3 unless param.char_used?
+          when :raw
+            # HEX needs twice space.
+            length = param.data_size * 2
+          else
+            length = 100
+          end
+        end
+        self.new(con, val, length, max_array_size)
+      end
+    end
+
+    class RAW
+      def self.create(con, val, param, max_array_size)
+        case param
+        when Hash
+          length = param[:length] || 4000
+        when OCI8::Metadata::Base
+          length = param.data_size
+        end
+        self.new(con, val, length, max_array_size)
+      end
+    end
+
+    class Long
+      def self.create(con, val, param, max_array_size)
+        self.new(con, val, con.long_read_len, max_array_size)
+      end
+    end
+
+    class LongRaw
+      def self.create(con, val, param, max_array_size)
+        self.new(con, val, con.long_read_len, max_array_size)
+      end
+    end
+
+    class CLOB
+      def self.create(con, val, param, max_array_size)
+        if param.is_a? OCI8::Metadata::Base and param.charset_form == :nchar
+          OCI8::BindType::NCLOB.new(con, val, nil, max_array_size)
+        else
+          OCI8::BindType::CLOB.new(con, val, nil, max_array_size)
+        end
+      end
+    end
   end # BindType
 
   # The instance of this class corresponds to cursor in the term of
@@ -210,10 +277,7 @@ class OCI8
     #  cursor.define(2, Time)       # fetch the second column as Time.
     #  cursor.exec()
     def define(pos, type, length = nil)
-      if type == String and length.nil?
-	length = 4000
-      end
-      b = bind_or_define(:define, pos, nil, type, length, nil, nil, false, nil)
+      __define(pos, make_bind_object(:type => type, :length => length))
       self
     end # define
 
@@ -261,17 +325,12 @@ class OCI8
     def bind_param(key, param, type = nil, length = nil)
       case param
       when Hash
-        value = param[:value];
-        type = param[:type]
-        length = param[:length]
-        max_array_size = param[:max_array_size]
       when Class
-        value = nil
-        type = param
+        param = {:value => nil,   :type => param, :length => length}
       else
-        value = param
+        param = {:value => param, :type => type,  :length => length}
       end
-      b = bind_or_define(:bind, key, value, type, length, nil, nil, false, max_array_size)
+      __bind(key, make_bind_object(param))
       self
     end # bind_param
 
@@ -326,50 +385,46 @@ class OCI8
     def close
       free()
       @names = nil
+      @column_metadata = nil
     end # close
 
     private
 
-    def bind_or_define(bind_type, key, val, typ, length, precision, scale, strict_check, max_array_size)
-      if typ.nil?
-        if val.nil?
-          raise "bind type is not given." if typ.nil?
-        else
-          if val.class == Class
-            typ = val
-            val = nil
+    def make_bind_object(param)
+      case param
+      when Hash
+        key = param[:type]
+        val = param[:value]
+        max_array_size = param[:max_array_size]
+
+        if key.nil?
+          if val.nil?
+            raise "bind type is not given."
+          elsif val.is_a? OCI8::Object::Base
+            key = :named_type
+            param = @con.get_tdo_by_class(val.class)
           else
-            if val.is_a? OCI8::Object::Base
-              typ = @con.get_tdo_by_class(val.class)
-            else
-              typ = val.class
-            end
+            key = val.class
           end
         end
-      end
-
-      bindclass = OCI8::BindType::Mapping[typ]
-      if bindclass.nil?
-        if typ.is_a? OCI8::TDO
-          bindclass = OCI8::BindType::Object
-          length = typ
-        else
-          raise "unsupported datatype: #{typ}"
+      when OCI8::Metadata::Base
+        key = param.data_type
+        case key
+        when :named_type
+          if param.type_name == 'XMLTYPE'
+            key = :xmltype
+          else
+            param = @con.get_tdo_by_metadata(param.type_metadata)
+          end
         end
+      else
+        raise "unknown param #{param.intern}"
       end
-      if bindclass.respond_to?(:dispatch)
-        bindclass = bindclass.dispatch(val, length, precision, scale)
-      end
-      bindobj = bindclass.new(__connection, val, length, max_array_size)
 
-      case bind_type
-      when :bind
-        b = __bind(key, bindobj)
-      when :define
-	b = __defineByPos(key, bindobj)
-      end
-      b
-    end # bind_or_define
+      bindclass = OCI8::BindType::Mapping[key]
+      raise "unsupported datatype: #{key}" if bindclass.nil?
+      bindclass.create(__connection, val, param, max_array_size)
+    end
 
     def define_columns
       num_cols = __param_count
@@ -381,31 +436,8 @@ class OCI8
       num_cols
     end # define_columns
 
-    def define_a_column(i, p)
-      datatype = p.data_type
-      datasize = p.data_size
-      precision = p.precision
-      scale = p.scale
-
-      case datatype
-      when :varchar2, :char
-        # character size may become large on character set conversion.
-        # The length of a half-width kana is one in Shift_JIS, two in EUC-JP,
-        # three in UTF-8.
-        datasize *= 3
-      when :long, :long_raw
-        datasize = @con.long_read_len
-      when :named_type
-        if p.type_name == 'XMLTYPE'
-          datatype = :xmltype
-          datasize = @con.long_read_len
-        else
-          # FIXME
-          datatype = @con.get_tdo_by_metadata(p.type_metadata)
-        end
-      end
-
-      bind_or_define(:define, i, nil, datatype, datasize, precision, scale, true, nil)
+    def define_a_column(pos, param)
+      __define(pos, make_bind_object(param))
     end # define_a_column
 
     def bind_params(*bindvars)
@@ -534,7 +566,7 @@ OCI8::BindType::Mapping[:long_raw] = OCI8::BindType::LongRaw
 # -------------------------------------------------
 # CLOB          SQLT_CLOB  4000    0    0
 OCI8::BindType::Mapping[:clob] = OCI8::BindType::CLOB
-OCI8::BindType::Mapping[:nclob] = OCI8::BindType::NCLOB  # if OCI8::Metadata::Column#charset_form is :nchar.
+OCI8::BindType::Mapping[:nclob] = OCI8::BindType::NCLOB
 
 # datatype        type     size prec scale
 # -------------------------------------------------

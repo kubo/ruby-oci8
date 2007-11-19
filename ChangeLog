@@ -1,3 +1,13 @@
+2007-11-19  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/ocidatetime.c, test/test_datetime.rb: fix for a change
+	   of DateTime#fsec_fractions in ruby 1.9.
+	* ext/oci8/stmt.c: rename OCI8::Cursor#__defineByPos to
+	   OCI8::Cursor#__define.
+	* test/test_oci8.rb: add test_select_number.
+	* lib/oci8/oci8.rb: add OCI8::BindType::Base.create which acts as
+	   a factory method. move bindtype specific code to create method
+	   of OCI8::BindType::Base's subclasses.
+
 2007-11-18  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/DBD/OCI8/OCI8.rb: add StatementHandle#column_info.
 	   refine DatabaseHandle#columns.

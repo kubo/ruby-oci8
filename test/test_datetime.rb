@@ -187,7 +187,7 @@ EOS
     cursor.exec
     assert_equal(DateTime.parse('2006-12-31 23:59:59'), cursor[:out])
     # test sec_fraction
-    def obj.sec_fraction; 999999.to_r / (24 * 60 * 60 * 1000000) ; end
+    def obj.sec_fraction; DateTime.parse('00:00:00.000001').sec_fraction * 999999 ; end
     cursor[:in] = obj
     cursor.exec
     assert_equal(DateTime.parse('2006-12-31 23:59:59.999999'), cursor[:out])
