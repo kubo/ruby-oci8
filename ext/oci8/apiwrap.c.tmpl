@@ -1,0 +1,106 @@
+/* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
+<%= header_comment
+# This file is processed by apiwrap.rb.
+%>
+#include "apiwrap.h"
+
+#ifndef RUBY_VM
+typedef struct rb_thread_struct rb_thread_t;
+typedef VALUE rb_blocking_function_t(rb_thread_t *th, void *);
+#endif
+
+#ifdef RUBY_VM
+static void rboci_unblock_func(rb_thread_t *th, void *user_data)
+{
+    oci8_svcctx_t *svcctx = (oci8_svcctx_t *)user_data;
+    if (svcctx->base.hp.ptr != NULL) {
+        OCIBreak(svcctx->base.hp.ptr, oci8_errhp);
+    }
+}
+
+static sword rboci_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data)
+{
+    if (svcctx->non_blocking) {
+        sword rv;
+        if (svcctx->executing_thread != NB_STATE_NOT_EXECUTING) {
+            rb_raise(rb_eRuntimeError /* FIXME */, "executing in another thread");
+        }
+        svcctx->executing_thread = rb_thread_current();
+        rv = (sword)rb_thread_blocking_region(func, data, rboci_unblock_func, svcctx);
+        svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
+        if (rv == OCI_ERROR) {
+            if (oci8_get_error_code(oci8_errhp) == 1013) {
+                OCIReset(svcctx->base.hp.ptr, oci8_errhp);
+                svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
+                rb_raise(eOCIBreak, "Canceled by user request.");
+            }
+        }
+        return rv;
+    } else {
+        return (sword)func(NULL /* dummy */, data);
+    }
+}
+#else
+
+static sword rboci_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data)
+{
+    struct timeval tv;
+    sword rv;
+    if (svcctx->executing_thread != NB_STATE_NOT_EXECUTING) {
+        rb_raise(rb_eRuntimeError /* FIXME */, "executing in another thread");
+    }
+    tv.tv_sec = 0;
+    tv.tv_usec = 100000;
+    svcctx->executing_thread = rb_thread_current();
+    while ((rv = func(NULL /* dummy */, data)) == OCI_STILL_EXECUTING) {
+        rb_thread_wait_for(tv);
+        if (tv.tv_usec < 500000)
+            tv.tv_usec <<= 1;
+    }
+    if (rv == OCI_ERROR) {
+       if (oci8_get_error_code(oci8_errhp) == 1013) {
+            OCIReset(svcctx->base.hp.ptr, oci8_errhp);
+            svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
+            rb_raise(eOCIBreak, "Canceled by user request.");
+       }
+    }
+    svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
+    return rv;
+}
+#endif
+
+<% funcs.each do |f|
+     case f.type
+     when :nb
+%>
+/*
+ * <%=f.name%>
+ */
+
+typedef struct {
+<% f.args.each do |a|
+%>    <%= a.dcl %>;
+<% end
+%>} <%=f.name%>_data_t;
+
+static VALUE <%=f.name%>_cb(rb_thread_t *th, void *user_data)
+{
+    <%=f.name%>_data_t *data = (<%=f.name%>_data_t *)user_data;
+    return (VALUE)<%=f.name%>(<%= f.args.collect do |a| 'data->' + a.name; end.join(', ') %>);
+}
+
+sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>)
+{
+    <%=f.name%>_data_t data;
+<% f.args.each do |a|
+%>    data.<%=a.name%> = <%=a.name%>;
+<% end
+%>    return rboci_blocking_region(svcctx, <%=f.name%>_cb, &data);
+}
+
+<%
+     else
+       raiase "unknown type #{f.type}"
+     end # case f.type
+   end # funcs.each
+%>

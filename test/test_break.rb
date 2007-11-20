@@ -23,14 +23,15 @@ class TestBreak < Test::Unit::TestCase
     th = Thread.start do 
       begin
 	conn.exec("BEGIN DBMS_LOCK.SLEEP(#{TIME_IN_PLSQL}); END;")
-	assert_equal(expect[PLSQL_DONE], (Time.now - $start_time + MARGIN).to_i)
+	assert_equal(expect[PLSQL_DONE], (Time.now - $start_time + MARGIN).to_i, 'PLSQL_DONE')
       rescue OCIBreak
-	assert_equal(expect[OCIBREAK], (Time.now - $start_time + MARGIN).to_i)
+	assert_equal(expect[OCIBREAK], (Time.now - $start_time + MARGIN).to_i, 'OCIBREAK')
       end
     end
 
+    sleep(0.01) # make a time to run DBMS_LOCK.SLEEP
     sleep(TIME_TO_BREAK)
-    assert_equal(expect[SEND_BREAK], (Time.now - $start_time + MARGIN).to_i)
+    assert_equal(expect[SEND_BREAK], (Time.now - $start_time + MARGIN).to_i, 'SEND_BREAK')
     conn.break()
     th.join
   end

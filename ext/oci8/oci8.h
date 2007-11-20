@@ -177,11 +177,14 @@ enum logon_type_t {T_NOT_LOGIN = 0, T_IMPLICIT, T_EXPLICIT};
 
 typedef struct  {
     oci8_base_t base;
-    VALUE executing_thread;
+    volatile VALUE executing_thread;
     enum logon_type_t logon_type;
     OCISession *authhp;
     OCIServer *srvhp;
-    int is_autocommit;
+    char is_autocommit;
+#ifdef RUBY_VM
+    char non_blocking;
+#endif
     VALUE long_read_len;
 } oci8_svcctx_t;
 
@@ -392,6 +395,8 @@ VALUE oci8_get_ub2_attr(oci8_base_t *base, ub4 attrtype);
 VALUE oci8_get_sb2_attr(oci8_base_t *base, ub4 attrtype);
 VALUE oci8_get_ub4_attr(oci8_base_t *base, ub4 attrtype);
 VALUE oci8_get_string_attr(oci8_base_t *base, ub4 attrtype);
+
+#include "apiwrap.h"
 
 #define _D_ fprintf(stderr, "%s:%d - %s\n", __FILE__, __LINE__, __FUNCTION__)
 #endif

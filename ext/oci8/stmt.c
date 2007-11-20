@@ -244,14 +244,14 @@ static sword oci8_call_stmt_execute(oci8_svcctx_t *svcctx, oci8_stmt_t *stmt, ub
 {
     sword rv;
 
-    oci_rc2(rv, svcctx, OCIStmtExecute(svcctx->base.hp.svc, stmt->base.hp.stmt, oci8_errhp, iters, 0, NULL, NULL, mode));
+    rv = OCIStmtExecute_nb(svcctx, svcctx->base.hp.svc, stmt->base.hp.stmt, oci8_errhp, iters, 0, NULL, NULL, mode);
     if (rv == OCI_ERROR) {
         if (oci8_get_error_code(oci8_errhp) == 1000) {
             /* run GC to close unreferred cursors
              * when ORA-01000 (maximum open cursors exceeded).
              */
             rb_gc();
-            oci_rc2(rv, svcctx, OCIStmtExecute(svcctx->base.hp.svc, stmt->base.hp.stmt, oci8_errhp, iters, 0, NULL, NULL, mode));
+            rv = OCIStmtExecute_nb(svcctx, svcctx->base.hp.svc, stmt->base.hp.stmt, oci8_errhp, iters, 0, NULL, NULL, mode);
         }
     }
     return rv;
@@ -333,7 +333,7 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
     oci8_bind_t *obind;
     oci8_bind_class_t *bind_class;
 
-    oci_rc2(rv, svcctx, OCIStmtFetch(stmt->base.hp.stmt, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT));
+    rv = OCIStmtFetch_nb(svcctx, stmt->base.hp.stmt, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT);
     while (rv == OCI_NEED_DATA) {
         /* get piece info. */
         dvoid *hp;
@@ -371,7 +371,7 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
         if (obind == (oci8_bind_t*)stmt) {
             rb_bug("ruby-oci8: No define handle is found.");
         }
-        oci_rc2(rv, svcctx, OCIStmtFetch(stmt->base.hp.stmt, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT));
+        rv = OCIStmtFetch_nb(svcctx, stmt->base.hp.stmt, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT);
     }
     if (rv == OCI_NO_DATA) {
         return Qnil;

@@ -1,5 +1,6 @@
 require 'mkmf'
 require File.dirname(__FILE__) + '/oraconf'
+require File.dirname(__FILE__) + '/apiwrap'
 
 RUBY_OCI8_VERSION = File.read("#{File.dirname(__FILE__)}/../../VERSION").chomp
 
@@ -83,7 +84,7 @@ $defs << "-DRBOCI_VERSION=\"#{RUBY_OCI8_VERSION}\""
 $objs = ["oci8lib.o", "env.o", "error.o", "oci8.o",
          "stmt.o", "bind.o", "metadata.o", "attr.o",
          "rowid.o", "lob.o", "oradate.o",
-         "ocinumber.o", "ocidatetime.o", "object.o"]
+         "ocinumber.o", "ocidatetime.o", "object.o", "apiwrap.o"]
 $objs << "xmldb.o" if oci_major_version >= 10
 
 # Checking gcc or not
@@ -121,9 +122,13 @@ open("depend", "w") do |f|
   f.puts("Makefile: $(srcdir)/extconf.rb $(srcdir)/oraconf.rb")
   f.puts("\t$(RUBY) $(srcdir)/extconf.rb#{extconf_opt}")
   $objs.each do |obj|
-    f.puts("#{obj}: $(srcdir)/#{obj.sub(/\.o$/, ".c")} $(srcdir)/oci8.h Makefile")
+    f.puts("#{obj}: $(srcdir)/#{obj.sub(/\.o$/, ".c")} $(srcdir)/oci8.h apiwrap.h Makefile")
   end
+  f.puts("apiwrap.c apiwrap.h: $(srcdir)/apiwrap.c.tmpl $(srcdir)/apiwrap.h.tmpl $(srcdir)/apiwrap.yml $(srcdir)/apiwrap.rb")
+  f.puts("\t$(RUBY) $(srcdir)/apiwrap.rb")
 end
+
+create_apiwrap()
 
 create_makefile("oci8lib")
 

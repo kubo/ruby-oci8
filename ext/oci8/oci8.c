@@ -242,6 +242,9 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
     }
     svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
     svcctx->is_autocommit = 0;
+#ifdef RUBY_VM
+    svcctx->non_blocking = 0;
+#endif
     svcctx->long_read_len = INT2FIX(65535);
     return Qnil;
 }
@@ -358,6 +361,9 @@ static VALUE oci8_rollback(VALUE self)
 static VALUE oci8_non_blocking_p(VALUE self)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
+#ifdef RUBY_VM
+    return svcctx->non_blocking ? Qtrue : Qfalse;
+#else
     sb1 non_blocking;
 
     if (svcctx->srvhp == NULL) {
@@ -365,6 +371,7 @@ static VALUE oci8_non_blocking_p(VALUE self)
     }
     oci_lc(OCIAttrGet(svcctx->srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp));
     return non_blocking ? Qtrue : Qfalse;
+#endif
 }
 
 /*
@@ -389,6 +396,9 @@ static VALUE oci8_non_blocking_p(VALUE self)
 static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
+#ifdef RUBY_VM
+    svcctx->non_blocking = RTEST(val);
+#else
     sb1 non_blocking;
 
     if (svcctx->srvhp == NULL) {
@@ -399,6 +409,7 @@ static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
         /* toggle blocking / non-blocking. */
         oci_lc(OCIAttrSet(svcctx->srvhp, OCI_HTYPE_SERVER, 0, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp));
     }
+#endif
     return val;
 }
 
@@ -477,17 +488,18 @@ static VALUE oci8_set_long_read_len(VALUE self, VALUE val)
 static VALUE oci8_break(VALUE self)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
+#ifndef RUBY_VM
     sword rv;
+#endif
 
     if (svcctx->executing_thread == NB_STATE_NOT_EXECUTING) {
         return Qfalse;
     }
-    if (svcctx->executing_thread == NB_STATE_CANCELING) {
-        return Qtrue;
-    }
+#ifndef RUBY_VM
     rv = OCIBreak(svcctx->base.hp.ptr, oci8_errhp);
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);
+#endif
     rb_thread_wakeup(svcctx->executing_thread);
     return Qtrue;
 }

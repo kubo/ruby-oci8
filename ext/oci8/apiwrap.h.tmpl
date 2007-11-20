@@ -1,0 +1,56 @@
+/* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
+<%= header_comment
+# This file is processed by apiwrap.rb.
+%>
+#ifndef APIWRAP_H
+#define APIWRAP_H 1
+#include <oci8.h>
+<% funcs.each do |f|
+     case f.type
+     when :nb
+%>
+/*
+ * <%=f.name%> (non-blocking version)
+ */
+sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
+<%
+     when :nb_fn
+%>
+/*
+ * <%=f.name%> (non-blocking version with existance-check)
+ */
+#if defined RUNTIME_API_CHECK
+typedef sword <%=f.name%>_nb_fn_t(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
+#define HAVE_<%=f.name%>_nb_fn (<%=f.name%>_nb_fn != NULL)
+extern <%=f.name%>_nb_fn_t <%=f.name%>_nb_fn;
+#elif defined HAVE_<%=f.name.upcase%>
+#define HAVE_<%=f.name%>_nb_fn 1
+sword <%=f.name%>_nb_fn(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
+#else
+#define HAVE_<%=f.name%>_nb_fn 0
+#define <%=f.name%>_nb_fn(svcctx, <%=f.args.collect {|arg| arg.name}.join(', ')%>) (0)
+#endif
+<%
+     when :fn
+%>
+/*
+ * <%=f.name%> (with existance-check)
+ */
+#if defined RUNTIME_API_CHECK
+typedef sword <%=f.name%>_fn_t(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
+#define HAVE_<%=f.name%>_fn (<%=f.name%>_fn != NULL)
+extern <%=f.name%>_fn_t <%=f.name%>_fn;
+#elif defined HAVE_<%=f.name.upcase%>
+#define HAVE_<%=f.name%>_fn 1
+#define <%=f.name%>_fn <%=f.name%>
+#else
+#define HAVE_<%=f.name%>_fn 0
+#define <%=f.name%>_fn(<%=f.args.collect {|arg| arg.name}.join(', ')%>) (0)
+#endif
+<%
+     else
+       raiase "unknown type #{f.type}"
+     end # case f.type
+   end # funcs.each
+%>
+#endif /* APIWRAP_H */

@@ -1,3 +1,15 @@
+2007-11-20  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, , ext/oci8/apiwrap.c.tmpl,
+	  ext/oci8/apiwrap.h.tmpl, ext/oci8/apiwrap.rb,
+	  ext/oci8/apiwrap.yml: add new files for non-blocking
+	    executions. These use rb_thread_blocking_region in
+	    ruby 1.9.
+	* ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/stmt.c:
+	    use new non-blocking execution API for OCI8#exec and
+	    OCI8::CUrsor#fetch.
+	* test/test_break.rb: add comment and add sleep to pass
+	    test_blocking_mode.
+
 2007-11-19  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocidatetime.c, test/test_datetime.rb: fix for a change
 	   of DateTime#fsec_fractions in ruby 1.9.
