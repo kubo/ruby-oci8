@@ -28,6 +28,13 @@ oci_minor_version = try_constant("OCI_MINOR_VERSION", "oci.h")
 oci_major_version &&= oci_major_version.to_i
 oci_minor_version &&= oci_minor_version.to_i
 
+# new in Oracle 9.0
+have_func("OCIRowidToChar")
+
+# new in Oracle 8.1
+have_func("OCILobIsTemporary")
+have_func("OCILobLocatorAssign")
+
 saved_defs = $defs
 if oci_major_version.nil? or oci_minor_version.nil?
   if have_func("OCIPing")

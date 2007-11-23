@@ -2,12 +2,12 @@
 <%= header_comment
 # This file is processed by apiwrap.rb.
 %>
-#include "apiwrap.h"
-
-#ifndef RUBY_VM
-typedef struct rb_thread_struct rb_thread_t;
-typedef VALUE rb_blocking_function_t(rb_thread_t *th, void *);
+#ifdef __linux__
+#define _GNU_SOURCE
+#include <dlfcn.h>
 #endif
+#define API_WRAP_C 1
+#include "apiwrap.h"
 
 #ifdef RUBY_VM
 static void rboci_unblock_func(rb_thread_t *th, void *user_data)
@@ -41,6 +41,8 @@ static sword rboci_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t
     }
 }
 #else
+typedef struct rb_thread_struct rb_thread_t;
+typedef VALUE rb_blocking_function_t(rb_thread_t *th, void *);
 
 static sword rboci_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data)
 {
@@ -68,15 +70,14 @@ static sword rboci_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t
     return rv;
 }
 #endif
-
-<% funcs.each do |f|
-     case f.type
-     when :nb
+<%
+funcs.each do |f|
+  if f.version == 800
+    if f.remote
 %>
 /*
  * <%=f.name%>
  */
-
 typedef struct {
 <% f.args.each do |a|
 %>    <%= a.dcl %>;
@@ -97,10 +98,107 @@ sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.jo
 <% end
 %>    return rboci_blocking_region(svcctx, <%=f.name%>_cb, &data);
 }
-
 <%
-     else
-       raiase "unknown type #{f.type}"
-     end # case f.type
-   end # funcs.each
+    end
+  else # f.version == 800
+    if f.remote
 %>
+/*
+ * <%=f.name%>
+ */
+typedef struct {
+<% f.args.each do |a|
+%>    <%= a.dcl %>;
+<% end
+%>} <%=f.name%>_data_t;
+
+#if defined RUNTIME_API_CHECK
+typedef sword (*<%=f.name%>_func_t)(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
+static <%=f.name%>_func_t <%=f.name%>_func;
+<%=f.name%>_nb_func_t <%=f.name%>_nb;
+
+static VALUE <%=f.name%>_cb(rb_thread_t *th, void *user_data)
+{
+    <%=f.name%>_data_t *data = (<%=f.name%>_data_t *)user_data;
+    return (VALUE)<%=f.name%>_func(<%= f.args.collect do |a| 'data->' + a.name; end.join(', ') %>);
+}
+
+sword <%=f.name%>_nb_func(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>)
+{
+    <%=f.name%>_data_t data;
+<% f.args.each do |a|
+%>    data.<%=a.name%> = <%=a.name%>;
+<% end
+%>    return rboci_blocking_region(svcctx, <%=f.name%>_cb, &data);
+}
+#elif defined HAVE_<%=f.name.upcase%>
+static VALUE <%=f.name%>_cb(rb_thread_t *th, void *user_data)
+{
+    <%=f.name%>_data_t *data = (<%=f.name%>_data_t *)user_data;
+    return (VALUE)<%=f.name%>(<%= f.args.collect do |a| 'data->' + a.name; end.join(', ') %>);
+}
+
+sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>)
+{
+    <%=f.name%>_data_t data;
+<% f.args.each do |a|
+%>    data.<%=a.name%> = <%=a.name%>;
+<% end
+%>    return rboci_blocking_region(svcctx, <%=f.name%>_cb, &data);
+}
+#else
+sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>)
+{
+    rb_bug("undefined OCI function %s is called", "<%=f.name%>_nb");
+}
+#endif
+<%
+    else
+%>
+/*
+ * <%=f.name%>
+ */
+#if defined RUNTIME_API_CHECK
+<%=f.name%>_func_t <%=f.name%>_func;
+#elif !defined HAVE_<%=f.name.upcase%>
+sword <%=f.name%>_func(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>)
+{
+    rb_bug("undefined OCI function %s is called", "<%=f.name%>");
+}
+#endif
+<%
+    end
+  end
+end # funcs.each
+%>
+#if defined RUNTIME_API_CHECK
+static void *find_symbol(const char *symbol_name)
+{
+#if defined _WIN32
+    static HMODULE hModule = GetModuleHandle("OCI.DLL");
+    return GetProcAddress(hModule, symbol_name);
+#elif defined RTLD_DEFAULT
+    return dlsym(RTLD_DEFAULT, symbol_name);
+#else
+#error RUNTIME_API_CHECK is not supported on this platform.
+#endif
+}
+
+void Init_oci8_apiwrap(void)
+{
+<%
+funcs.each do |f|
+  if f.version != 800
+    if f.remote
+%>    <%=f.name%>_func = (<%=f.name%>_func_t)find_symbol("<%=f.name%>");
+    if (<%=f.name%>_func != NULL)
+        <%=f.name%>_nb = <%=f.name%>_nb_func;
+<%
+    else
+%>    <%=f.name%>_func = (<%=f.name%>_func_t)find_symbol("<%=f.name%>");
+<%
+    end
+  end
+end
+%>}
+#endif /* RUNTIME_API_CHECK */

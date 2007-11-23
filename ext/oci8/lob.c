@@ -38,11 +38,8 @@ static VALUE oci8_make_lob(VALUE klass, oci8_svcctx_t *svcctx, OCILobLocator *s)
 
     lob_obj = rb_funcall(klass, oci8_id_new, 1, svcctx->base.self);
     lob = DATA_PTR(lob_obj);
-#if BUILD_FOR_ORACLE_8_1
-    oci_lc(OCILobLocatorAssign(svcctx->base.hp.svc, oci8_errhp, s, &lob->base.hp.lob));
-#else
+    /* If 's' is a temporary lob, use OCILobLocatorAssign instead. */
     oci_lc(OCILobAssign(oci8_envhp, oci8_errhp, s, &lob->base.hp.lob));
-#endif
     return lob_obj;
 }
 
@@ -414,14 +411,18 @@ static VALUE oci8_lob_clone(VALUE self)
     oci8_lob_t *newlob;
     VALUE newobj;
     sword rv;
+    boolean is_temporary;
 
     newobj = rb_funcall(CLASS_OF(self), oci8_id_new, 1, lob->svc);
     newlob = DATA_PTR(newobj);
-#if BUILD_FOR_ORACLE_8_1
-    rv = OCILobLocatorAssign(TO_SVCCTX(lob->svc), oci8_errhp, lob->base.hp.lob, &newlob->base.hp.lob);
-#else
-    rv = OCILobAssign(oci8_envhp, oci8_errhp, lob->base.hp.lob, &newlob->base.hp.lob);
-#endif
+    if (have_OCILobLocatorAssign_nb && have_OCILobIsTemporary
+        && OCILobIsTemporary(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_temporary) == OCI_SUCCESS
+        && is_temporary) {
+        oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+        rv = OCILobLocatorAssign_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &newlob->base.hp.lob);
+    } else {
+        rv = OCILobAssign(oci8_envhp, oci8_errhp, lob->base.hp.lob, &newlob->base.hp.lob);
+    }
     if (rv != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, rv, NULL);
     }

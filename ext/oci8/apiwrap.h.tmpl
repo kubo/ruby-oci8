@@ -5,52 +5,77 @@
 #ifndef APIWRAP_H
 #define APIWRAP_H 1
 #include <oci8.h>
-<% funcs.each do |f|
-     case f.type
-     when :nb
+
+#if defined RUNTIME_API_CHECK
+void Init_oci8_apiwrap(void);
+#endif
+<%
+funcs.each do |f|
+  if f.version == 800
+    if f.remote
 %>
 /*
- * <%=f.name%> (non-blocking version)
+ * <%=f.name%>
+ *   version: <%=f.version%>
+ *   remote:  <%=f.remote%>
  */
 sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
 <%
-     when :nb_fn
+    end
+  else # f.version == 800
+    if f.remote
 %>
 /*
- * <%=f.name%> (non-blocking version with existance-check)
+ * <%=f.name%>
+ *   version: <%=f.version%>
+ *   remote:  true
  */
 #if defined RUNTIME_API_CHECK
-typedef sword <%=f.name%>_nb_fn_t(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
-#define HAVE_<%=f.name%>_nb_fn (<%=f.name%>_nb_fn != NULL)
-extern <%=f.name%>_nb_fn_t <%=f.name%>_nb_fn;
+/* runtime check */
+typedef sword (*<%=f.name%>_nb_func_t)(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
+#define have_<%=f.name%>_nb (<%=f.name%>_nb != NULL)
+extern <%=f.name%>_nb_func_t <%=f.name%>_nb;
 #elif defined HAVE_<%=f.name.upcase%>
-#define HAVE_<%=f.name%>_nb_fn 1
-sword <%=f.name%>_nb_fn(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
+/* found on compilation */
+#define have_<%=f.name%>_nb (1)
+sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
 #else
-#define HAVE_<%=f.name%>_nb_fn 0
-#define <%=f.name%>_nb_fn(svcctx, <%=f.args.collect {|arg| arg.name}.join(', ')%>) (0)
+/* not found on compilation */
+#define have_<%=f.name%>_nb (0)
+sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
 #endif
 <%
-     when :fn
+    else
 %>
 /*
- * <%=f.name%> (with existance-check)
+ * <%=f.name%>
+ *   version: <%=f.version%>
+ *   remote:  false
  */
 #if defined RUNTIME_API_CHECK
-typedef sword <%=f.name%>_fn_t(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
-#define HAVE_<%=f.name%>_fn (<%=f.name%>_fn != NULL)
-extern <%=f.name%>_fn_t <%=f.name%>_fn;
+/* runtime check */
+typedef sword (*<%=f.name%>_func_t)(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
+#define have_<%=f.name%> (<%=f.name%> != NULL)
+extern <%=f.name%>_func_t <%=f.name%>_func;
+#ifndef API_WRAP_C
+#undef <%=f.name%>
+#define <%=f.name%> <%=f.name%>_func
+#endif
 #elif defined HAVE_<%=f.name.upcase%>
-#define HAVE_<%=f.name%>_fn 1
-#define <%=f.name%>_fn <%=f.name%>
+/* found on compilation */
+#define have_<%=f.name%> (1)
 #else
-#define HAVE_<%=f.name%>_fn 0
-#define <%=f.name%>_fn(<%=f.args.collect {|arg| arg.name}.join(', ')%>) (0)
+/* not found on compilation */
+#define have_<%=f.name%> (0)
+sword <%=f.name%>_func(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
+#ifndef API_WRAP_C
+#undef <%=f.name%>
+#define <%=f.name%> <%=f.name%>_func
+#endif
 #endif
 <%
-     else
-       raiase "unknown type #{f.type}"
-     end # case f.type
-   end # funcs.each
+    end
+  end  # f.version == 800
+end # funcs.each
 %>
 #endif /* APIWRAP_H */

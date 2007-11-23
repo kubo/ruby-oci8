@@ -1,18 +1,49 @@
-- :name: OCIStmtExecute
-  :type: :nb
-  :args: - OCISvcCtx *svchp
-         - OCIStmt *stmtp
-         - OCIError *errhp
-         - ub4 iters
-         - ub4 rowoff
-         - const OCISnapshot *snap_in
-         - OCISnapshot *snap_out
-         - ub4 mode
+# round trip: 0 (not docmented. I guess.)
+OCIRowidToChar:
+  :version: 900
+  :remote:  false
+  :args:    - OCIRowid *rowidDesc
+            - OraText *outbfp
+            - ub2 *outbflp
+            - OCIError *errhp
 
-- :name: OCIStmtFetch
-  :type: :nb
-  :args: - OCIStmt *stmtp
-         - OCIError *errhp
-         - ub4 nrows
-         - ub2 orientation
-         - ub4 mode
+# round trip: 1 if either destination or source lob is a temporary, otherwise 0
+OCILobLocatorAssign:
+  :version: 810
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - const OCILobLocator *src_locp
+            - OCILobLocator **dst_locpp
+
+# round trip: 0
+OCILobIsTemporary:
+  :version: 810
+  :remote:  false
+  :args:    - OCIEnv *envp
+            - OCIError *errhp
+            - OCILobLocator *locp
+            - boolean *is_temporary
+
+# round trip: 1
+OCIStmtExecute:
+  :version: 800
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIStmt *stmtp
+            - OCIError *errhp
+            - ub4 iters
+            - ub4 rowoff
+            - const OCISnapshot *snap_in
+            - OCISnapshot *snap_out
+            - ub4 mode
+
+# round trip: 0 if a next row is in pre-fetch buffer, otherwise 1
+OCIStmtFetch:
+  :version: 800
+  :remote:  true
+  :args:    - OCIStmt *stmtp
+            - OCIError *errhp
+            - ub4 nrows
+            - ub2 orientation
+            - ub4 mode

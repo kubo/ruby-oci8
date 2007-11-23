@@ -303,11 +303,6 @@ VALUE oci8_define_bind_class(const char *name, oci8_bind_class_t *oci8_bind_clas
 void oci8_link_to_parent(oci8_base_t *base, oci8_base_t *parent);
 void oci8_unlink_from_parent(oci8_base_t *base);
 extern oci8_base_class_t oci8_base_class;
-#ifdef RUNTIME_API_CHECK
-typedef sword (*rboci8_OCIRowidToChar_t)(OCIRowid *, OraText *, ub2 *, OCIError *);
-extern rboci8_OCIRowidToChar_t rboci8_OCIRowidToChar;
-#define OCIRowidToChar rboci8_OCIRowidToChar
-#endif
 
 /* error.c */
 extern VALUE eOCIException;

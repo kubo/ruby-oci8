@@ -1,3 +1,13 @@
+2007-11-23  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.c.tmpl, ext/oci8/apiwrap.h.tmpl, ext/oci8/apiwrap.rb
+	  ext/oci8/apiwrap.yml, ext/oci8/extconf.rb, ext/oci8/oci8.h
+	  ext/oci8/oci8lib.c: add a framework to check whether an OCI functions
+	    exists at run-time.
+	* ext/oci8/lob.c: check whether OCILobIsTemporary and OCILobLocatorAssign
+	    exist at run-time.
+	* ext/oci8/rowid.c: use new framework to check whether OCIRowidToChar
+	    exists at run-time.
+
 2007-11-20  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, , ext/oci8/apiwrap.c.tmpl,
 	  ext/oci8/apiwrap.h.tmpl, ext/oci8/apiwrap.rb,

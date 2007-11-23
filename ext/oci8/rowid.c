@@ -11,7 +11,7 @@ static VALUE cOCIRowid;
 #if defined(RUNTIME_API_CHECK)
 #define USE_ROWID1
 #define USE_ROWID2
-#elif BUILD_FOR_ORACLE_9_0
+#elif have_OCIRowidToChar
 #define USE_ROWID1
 #define Init_oci8_rowid1 Init_oci8_rowid
 #define oci8_get_rowid1_attr oci8_get_rowid_attr
@@ -322,7 +322,7 @@ void Init_oci8_rowid2(void)
 #ifdef RUNTIME_API_CHECK
 void Init_oci8_rowid(void)
 {
-    if (rboci8_OCIRowidToChar != NULL) {
+    if (have_OCIRowidToChar) {
         Init_oci8_rowid1();
     } else {
         Init_oci8_rowid2();
@@ -331,7 +331,7 @@ void Init_oci8_rowid(void)
 
 VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype)
 {
-    if (rboci8_OCIRowidToChar != NULL) {
+    if (have_OCIRowidToChar) {
         return oci8_get_rowid1_attr(base, attrtype);
     } else {
         return oci8_get_rowid2_attr(base, attrtype);

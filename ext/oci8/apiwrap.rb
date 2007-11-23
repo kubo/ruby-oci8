@@ -14,23 +14,31 @@ end
 
 class FuncDef
   attr_reader :name
-  attr_reader :type
+  attr_reader :version
+  attr_reader :remote
   attr_reader :args
 
-  def initialize(f)
-    @name = f[:name]
-    @type = f[:type]
-    @args = f[:args].collect do |arg|
+  def initialize(key, val)
+    @name = key
+    @version = val[:version]
+    @remote = val[:remote]
+    @args = val[:args].collect do |arg|
       ArgDef.new(arg)
     end
   end
 end
 
 def create_apiwrap
-  funcs = YAML.load(open(File.dirname(__FILE__) + '/apiwrap.yml'))
-
-  funcs.collect! do |f|
-    FuncDef.new(f)
+  funcs = []
+  YAML.load(open(File.dirname(__FILE__) + '/apiwrap.yml')).each do |key, val|
+    funcs << FuncDef.new(key, val)
+  end
+  funcs.sort! do |a, b|
+    if a.version == b.version
+      a.name <=> b.name
+    else
+      b.version <=> a.version
+    end
   end
 
   header_comment = <<EOS.chomp
