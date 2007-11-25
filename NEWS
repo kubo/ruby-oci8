@@ -65,6 +65,8 @@
 6. [dbi] add DatabaseHandle#columns and improve StatementHandle#column_info
    (suggested by Venkat Pa)
 
+7. [bug] fix a problem when binding ''(empty string) via dbi.
+
 1.0.0-rc3:
 
 1. support external OS authentication.

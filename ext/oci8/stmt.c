@@ -36,6 +36,8 @@ static void check_bind_type(ub4 type, oci8_handle_t *stmth, VALUE vtype, VALUE v
       if (NIL_P(vlength))
 	rb_raise(rb_eArgError, "the length of String is not specified.");
       value_sz = NUM2INT(vlength) + 4;
+      if (value_sz < 5)
+        value_sz = 5; /* at least 5 bytes */
       break;
     case SQLT_LVB: /* OCI_TYPECODE_RAW */
     case SQLT_BIN: /* OCI_TYPECODE_UNSIGNED8 */
@@ -44,6 +46,8 @@ static void check_bind_type(ub4 type, oci8_handle_t *stmth, VALUE vtype, VALUE v
       if (NIL_P(vlength))
 	rb_raise(rb_eArgError, "the length of String is not specified.");
       value_sz = NUM2INT(vlength) + 4;
+      if (value_sz < 5)
+        value_sz = 5; /* at least 5 bytes */
       break;
     case SQLT_DAT:
       bind_type = BIND_ORA_DATE;
@@ -104,6 +108,8 @@ static void check_bind_type(ub4 type, oci8_handle_t *stmth, VALUE vtype, VALUE v
     if (NIL_P(vlength))
       rb_raise(rb_eArgError, "the length of String is not specified.");
     value_sz = NUM2INT(vlength) + 4;
+    if (value_sz < 5)
+      value_sz = 5; /* at least 5 bytes */
   } else if (vtype == rb_cFloat) {
     bind_type = BIND_FLOAT;
     *dty = SQLT_FLT;
