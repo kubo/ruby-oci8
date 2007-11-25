@@ -1,3 +1,13 @@
+2007-11-25  KUBO Takehiro  <kubo@jiubao.org>
+	* NEWS: add changes between 1.0.0-rc3 and 1.0.0.
+	* VERSION: change version to 1.0.0.
+	* dist-files: add test/test_metadata.rb.
+	* lib/DBD/OCI8/OCI8.rb, lib/oci8.rb.in, test/test_metadata.rb:
+	    rename OCI8::Metadata::Column#is_null? to 
+	    OCI8::Metadata::Column#nullable?.
+	* test/test_oci8.rb: add asserts binding Nan, +Infinity and
+	    -Inifinty.
+
 2007-11-18  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/DBD/OCI8/OCI8.rb: add StatementHandle#column_info.
 	   refine DatabaseHandle#columns.

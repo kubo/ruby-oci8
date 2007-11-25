@@ -354,8 +354,10 @@ class OCI8
     param = desc.attrGet(OCI_ATTR_PARAM)
 
     case param.attrGet(OCI_ATTR_PTYPE)
-    when OCI_PTYPE_TABLE, OCI_PTYPE_VIEW
+    when OCI_PTYPE_TABLE
       OCI8::Metadata::Table.new(param)
+    when OCI_PTYPE_VIEW
+      OCI8::Metadata::View.new(param)
     when OCI_PTYPE_SYN
       schema_name = param.attrGet(OCI_ATTR_SCHEMA_NAME)
       name = param.attrGet(OCI_ATTR_NAME)
@@ -680,7 +682,7 @@ class OCI8
       @svc = svc
       @ctx = ctx
       @binds = nil
-      @parms = nil
+      @parms = []
       @defns = nil
       if stmt.nil?
         @stmt = @env.alloc(OCIStmt)
@@ -694,7 +696,7 @@ class OCI8
 
     def parse(sql)
       free_binds()
-      @parms = nil
+      @parms = []
       @stmt.prepare(sql)
       @stmttype = do_ocicall(@ctx) { @stmt.attrGet(OCI_ATTR_STMT_TYPE) }
     end # parse
@@ -767,7 +769,6 @@ class OCI8
     end
 
     def get_col_names
-      return [] if @parms.nil?
       @parms.collect do |p|
         do_ocicall(@ctx) { p.attrGet(OCI_ATTR_NAME) }
       end
@@ -871,7 +872,6 @@ class OCI8
 
     def define_columns
       num_cols = @stmt.attrGet(OCI_ATTR_PARAM_COUNT)
-      @parms = Array.new(num_cols)
       1.upto(num_cols) do |i|
         @parms[i - 1] = @stmt.paramGet(i)
       end
@@ -900,6 +900,8 @@ class OCI8
         datasize = @ctx[OCI8::Util::CTX_LONG_READ_LEN]
       when SQLT_CLOB
         datatype = :nclob if p.attrGet(OCI_ATTR_CHARSET_FORM) == SQLCS_NCHAR
+      when SQLT_BIN
+        datasize *= 2 if OCI8::BindType::Mapping[datatype] == OCI8::BindType::String
       end
 
       bind_or_define(:define, i, nil, datatype, datasize, precision, scale, true)
@@ -1499,7 +1501,7 @@ class OCI8
       def __type_string(p)
         type = TYPE_PROC_MAP[p.attrGet(OCI_ATTR_DATA_TYPE)] || "unknown(#{p.attrGet(OCI_ATTR_DATA_TYPE)})"
         type = type.call(self) if type.is_a? Proc
-        if respond_to?(:is_null?) && !is_null?
+        if respond_to?(:nullable?) && !nullable?
           type + " NOT NULL"
         else
           type
@@ -1546,7 +1548,7 @@ class OCI8
       attr_reader :type_string
       attr_reader :data_type
       attr_reader :charset_form
-      def is_null?; @is_null; end
+      def nullable?; @nullable; end
 
       # string data type
       def char_used?; @char_used; end if defined? OCI_ATTR_CHAR_USED
@@ -1572,7 +1574,7 @@ class OCI8
 
         @precision = param.attrGet(OCI_ATTR_PRECISION)
         @scale = param.attrGet(OCI_ATTR_SCALE)
-        @is_null = param.attrGet(OCI_ATTR_IS_NULL)
+        @nullable = param.attrGet(OCI_ATTR_IS_NULL)
         @charset_id = param.attrGet(OCI_ATTR_CHARSET_ID)
         @charset_form = case param.attrGet(OCI_ATTR_CHARSET_FORM)
                         when 0: nil

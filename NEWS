@@ -1,3 +1,70 @@
+1.0.0:
+
+1. fix a BUG when binding a Bignum. This bug was added in
+   ruby-oci8 1.0.0-rc2. (reported by Daniel Berger)
+
+2. add OCI8#describe_table(table_name), OCI8::Cursor#column_metadata,
+   OCI8::Metadata::Table, OCI8::Metadata::View and OCI8::Metadata::Column.
+
+   table information:
+     con = OCI8.new('username/password')
+     table_info = con.describe_table('table_name') #=> OCI8::Metadata::Table
+     table_info.columns #=> an array of OCI8::Metadata::Column.
+
+   query information:
+     con = OCI8.new('username/password')
+     csr = con.exec('select * from table_name')
+     csr.column_metadata #=> an array of OCI8::Metadata::Column.
+
+5. add OCI8::BindType::BinaryDouble if oci8lib.so is compiled for
+   Oracle 10g client. You can fetch exactly same values in Oracle.
+
+   You could fetch the values in previous version by adding the
+   following line.
+
+     OCI8::BindType::Mapping[101] = OCI8::BindType::Float
+     (This is default in ruby-oci8 1.0.0-rc2.)
+
+   But a fetched value may not be exactly same with the value in
+   Oracle. That's because OCI8::BindType::Float's network
+   representation is Oracle NUMBER data type. A BINARY_DOUBLE
+   value in Oracle become NUMBER on the network and is converted
+   to Float on the client side. It makes a bit difference by
+   round-off error.
+
+   In addition, Oracle NUMBER doesn't have NaN, +Infinity and -Infinity.
+   You cannot fetch the values by older versions.
+
+   Note: When you bind a Float value, it is bound by
+   OCI8::BindType::Float by default. You have two ways to bind
+   it by OCI8::BindType::BinaryDouble.
+
+   a. bind explicitly.
+
+      con = OCI8.new('ruby/oci8')
+      csr = con.parse('insert into table_name values (:1)')
+      csr.bind_param(1, 10.5, OCI8::SQLT_IBDOUBLE)
+      csr.exec
+
+   b. change the default behaviour if and only if you are sure that
+      the Oracle client version and Oracle server version are both
+      10g or upper.
+
+      # use OCI8::BindType::BinaryDouble for ruby's Float values.
+      OCI8::BindType::Mapping[Float] = OCI8::BindType::BinaryDouble
+      con = OCI8.new('ruby/oci8')
+      csr = con.exec('insert into table_name values (:1)', 10.5)
+
+4. OCI8::Cursor#fetch_hash accepts a block as a iterator.
+
+5. [dbi] support external OS authentication.
+   (contributed by Dan Fitch)
+
+     dbh = DBI.connect('dbi:OCI8', nil, nil)
+
+6. [dbi] add DatabaseHandle#columns and improve StatementHandle#column_info
+   (suggested by Venkat Pa)
+
 1.0.0-rc3:
 
 1. support external OS authentication.

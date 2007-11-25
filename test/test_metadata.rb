@@ -25,7 +25,7 @@ class TestMetadata < RUNIT::TestCase
 
     coldef =
       [
-       # oracle_version, definition,    data_type,  csfrm,    null?,csem?,csize, data_size,prec,scale,fsprec,lfprec
+       # oracle_version, definition,    data_type,  csfrm,     null,csem?,csize, data_size,prec,scale,fsprec,lfprec
        [800, "CHAR(10) NOT NULL",       :char,      :implicit, false, false, 10,        10,   0,    0,    0,    0],
        [900, "CHAR(10 CHAR)",           :char,      :implicit, true,  true,  10, 10 * csem,   0,    0,    0,    0],
        [800, "NCHAR(10)",               :char,      :nchar,    true,  true,  10, 10 * cfrm,   0,    0,    0,    0],
@@ -162,7 +162,7 @@ EOS
       assert_equal(coldef[i][1], md.type_string, "'#{coldef[i][1]}': type_string")
       assert_equal(coldef[i][2], md.data_type, "'#{coldef[i][1]}': data_type")
       assert_equal(coldef[i][3], md.charset_form, "'#{coldef[i][1]}': charset_form")
-      assert_equal(coldef[i][4], md.is_null?, "'#{coldef[i][1]}': is_null? ")
+      assert_equal(coldef[i][4], md.nullable?, "'#{coldef[i][1]}': nullable? ")
       # string type
       if $oracle_version >=  900
         assert_equal(coldef[i][5], md.char_used?, "'#{coldef[i][1]}': char_used? ")
@@ -198,7 +198,7 @@ EOS
       assert_equal(coldef[i][1], md.type_string, "'#{coldef[i][1]}': type_string")
       assert_equal(coldef[i][2], md.data_type, "'#{coldef[i][1]}': data_type")
       assert_equal(coldef[i][3], md.charset_form, "'#{coldef[i][1]}': charset_form")
-      assert_equal(coldef[i][4], md.is_null?, "'#{coldef[i][1]}': is_null? ")
+      assert_equal(coldef[i][4], md.nullable?, "'#{coldef[i][1]}': nullable? ")
       # string type
       if $oracle_version >=  900
         assert_equal(coldef[i][5], md.char_used?, "'#{coldef[i][1]}': char_used? ")

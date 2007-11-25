@@ -65,3 +65,4 @@ test/test_describe.rb
 test/test_oci8.rb
 test/test_oradate.rb
 test/test_oranumber.rb
+test/test_metadata.rb
