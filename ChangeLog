@@ -1,3 +1,20 @@
+2007-12-03  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.c.tmpl: move rboci_blocking_region() and
+	    find_symbol() to ext/oci8/oci8lib.c and rename to
+	    oci8_blocking_region() and oci8_find_symbol() respectively.
+	* ext/oci8/bind.c: use RFLOAT_VALUE macro for ruby 1.9.
+	* ext/oci8/oci8.h: define a macro RFLOAT_VALUE if it is not defined.
+	    add prototypes oci8_blocking_region() and oci8_find_symbol().
+	* ext/oci8/oci8lib.c: add oci8_blocking_region() and oci8_find_symbol().
+	* ext/oci8/ocidatetime.c: add workaround code for ruby 1.9 VM bug.
+	* lib/DBD/OCI8/OCI8.rb, lib/oci8/metadata.rb, test/test_metadata.rb:
+	    rename OCI8::Metadata::Column#is_null? to
+	    OCI8::Metadata::Column#nullable? as ruby 1.0.0 does.
+	* test/test_dbi.rb: add testcase to check binding ''(empty string)
+	    via dbi as ruby 1.0.0 does.
+	* test/test_oci8.rb: add asserts binding Nan, +Infinity and
+	    -Inifinty as ruby 1.0.0 does.
+
 2007-11-23  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.c.tmpl, ext/oci8/apiwrap.h.tmpl, ext/oci8/apiwrap.rb
 	  ext/oci8/apiwrap.yml, ext/oci8/extconf.rb, ext/oci8/oci8.h

@@ -10,6 +10,23 @@
  */
 #include "oci8.h"
 
+#ifdef RUBY_VM
+/* workaround NODE_ZSUPER BUG */
+static VALUE oci8_funcall0(VALUE obj, ID id)
+{
+    static VALUE proc = Qfalse;
+    static ID id_call;
+    if (proc == Qfalse) {
+        proc = rb_eval_string("Proc.new {|obj, id| obj.send(id)}");
+        rb_global_variable(&proc);
+        id_call = rb_intern("call");
+    }
+    return rb_funcall(proc, id_call, 2, obj, ID2SYM(id));
+}
+#else
+#define oci8_funcall0(obj, id) rb_funcall(obj, id, 0);
+#endif
+
 static VALUE cDateTime;
 static ID id_parse;
 static ID id_civil;
@@ -296,7 +313,7 @@ static void bind_datetime_set(oci8_bind_t *obind, void *data, void **null_struct
     day = (ub1)ival;
     /* hour */
     if (rb_respond_to(val, id_hour)) {
-        ival = NUM2INT(rb_funcall(val, id_hour, 0));
+        ival = NUM2INT(oci8_funcall0(val, id_hour));
     } else {
         ival = 0;
     }
@@ -306,7 +323,7 @@ static void bind_datetime_set(oci8_bind_t *obind, void *data, void **null_struct
     hour = (ub1)ival;
     /* minute */
     if (rb_respond_to(val, id_min)) {
-        ival = NUM2INT(rb_funcall(val, id_min, 0));
+        ival = NUM2INT(oci8_funcall0(val, id_min));
         if (ival < 0 || 60 < ival) {
             rb_raise(rb_eRuntimeError, "out of minute range: %d", ival);
         }
@@ -316,7 +333,7 @@ static void bind_datetime_set(oci8_bind_t *obind, void *data, void **null_struct
     }
     /* second */
     if (rb_respond_to(val, id_sec)) {
-        ival = NUM2INT(rb_funcall(val, id_sec, 0));
+        ival = NUM2INT(oci8_funcall0(val, id_sec));
         if (ival < 0 || 61 < ival) {
             rb_raise(rb_eRuntimeError, "out of second range: %d", ival);
         }
@@ -326,7 +343,7 @@ static void bind_datetime_set(oci8_bind_t *obind, void *data, void **null_struct
     }
     /* sec_fraction */
     if (rb_respond_to(val, id_sec_fraction)) {
-        VALUE fs = rb_funcall(val, id_sec_fraction, 0);
+        VALUE fs = oci8_funcall0(val, id_sec_fraction);
         if (RTEST(rb_funcall(fs, id_less, 1, INT2FIX(0)))) {
             /* if fs < 0 */
             rb_raise(rb_eRangeError, "sec_fraction is less then zero.");
@@ -342,7 +359,7 @@ static void bind_datetime_set(oci8_bind_t *obind, void *data, void **null_struct
     }
     /* time zone */
     if (rb_respond_to(val, id_offset)) {
-        VALUE of = rb_funcall(val, id_offset, 0);
+        VALUE of = oci8_funcall0(val, id_offset);
         char sign = '+';
         ival = NUM2INT(rb_funcall(of, id_mul, 1, INT2FIX(1440)));
         if (ival < 0) {

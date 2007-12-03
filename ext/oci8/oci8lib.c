@@ -2,6 +2,12 @@
 /*
  * Copyright (C) 2002-2007 KUBO Takehiro <kubo@jiubao.org>
  */
+
+#ifdef __linux__ /* for RTLD_DEFAULT */
+#define _GNU_SOURCE
+#include <dlfcn.h>
+#endif
+
 #include "oci8.h"
 
 #define DEBUG_CORE_FILE 1
@@ -213,3 +219,82 @@ void oci8_unlink_from_parent(oci8_base_t *base)
     }
     base->parent = NULL;
 }
+
+#ifdef RUBY_VM
+static void oci8_unblock_func(void *user_data)
+{
+    oci8_svcctx_t *svcctx = (oci8_svcctx_t *)user_data;
+    if (svcctx->base.hp.ptr != NULL) {
+        OCIBreak(svcctx->base.hp.ptr, oci8_errhp);
+    }
+}
+
+/* ruby 1.9 */
+sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data)
+{
+    if (svcctx->non_blocking) {
+        sword rv;
+
+        if (svcctx->executing_thread != NB_STATE_NOT_EXECUTING) {
+            rb_raise(rb_eRuntimeError /* FIXME */, "executing in another thread");
+        }
+        svcctx->executing_thread = rb_thread_current();
+        rv = (sword)rb_thread_blocking_region(func, data, oci8_unblock_func, svcctx);
+        svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
+        if (rv == OCI_ERROR) {
+            if (oci8_get_error_code(oci8_errhp) == 1013) {
+                rb_raise(eOCIBreak, "Canceled by user request.");
+            }
+        }
+        return rv;
+    } else {
+        return (sword)func(data);
+    }
+}
+#else /* RUBY_VM */
+
+/* ruby 1.8 */
+sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data)
+{
+    struct timeval tv;
+    sword rv;
+
+    if (svcctx->executing_thread != NB_STATE_NOT_EXECUTING) {
+        rb_raise(rb_eRuntimeError /* FIXME */, "executing in another thread");
+    }
+    tv.tv_sec = 0;
+    tv.tv_usec = 100000;
+    svcctx->executing_thread = rb_thread_current();
+    while ((rv = func(data)) == OCI_STILL_EXECUTING) {
+        rb_thread_wait_for(tv);
+        if (tv.tv_usec < 500000)
+            tv.tv_usec <<= 1;
+    }
+    if (rv == OCI_ERROR) {
+       if (oci8_get_error_code(oci8_errhp) == 1013) {
+            OCIReset(svcctx->base.hp.ptr, oci8_errhp);
+            svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
+            rb_raise(eOCIBreak, "Canceled by user request.");
+       }
+    }
+    svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
+    return rv;
+}
+#endif /* RUBY_VM */
+
+#if defined RUNTIME_API_CHECK
+void *oci8_find_symbol(const char *symbol_name)
+{
+#if defined _WIN32
+    static HMODULE hModule = NULL;
+    if (hModule == NULL) {
+        hModule = GetModuleHandle("OCI.DLL");
+    }
+    return GetProcAddress(hModule, symbol_name);
+#elif defined RTLD_DEFAULT
+    return dlsym(RTLD_DEFAULT, symbol_name);
+#else
+#error RUNTIME_API_CHECK is not supported on this platform.
+#endif
+}
+#endif /* RUNTIME_API_CHECK */

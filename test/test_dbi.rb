@@ -103,10 +103,12 @@ EOS
     1.upto(10) do |i|
       if i == 1
 	dt = nil
+        v = ''
       else
 	dt = OraDate.new(2000 + i, 8, 3, 23, 59, 59)
+        v = i.to_s
       end
-      sth.execute(format("%10d", i * 10), i.to_s, i, dt, dt, dt, dt, i, i)
+      sth.execute(format("%10d", i * 10), v, i, dt, dt, dt, dt, i, i)
     end
     sth.finish
     sth = @dbh.prepare("SELECT * FROM test_table ORDER BY c")
@@ -120,14 +122,15 @@ EOS
     1.upto(10) do |i|
       rv = sth.fetch
       assert_equal(format("%10d", i * 10), rv[0])
-      assert_equal(i.to_s, rv[1])
       assert_equal(i, rv[2])
       if i == 1
+	assert_nil(rv[1])
 	assert_nil(rv[3])
 	assert_nil(rv[4])
 	assert_nil(rv[5])
 	assert_nil(rv[6])
       else
+	assert_equal(i.to_s, rv[1])
         tm = Time.local(2000 + i, 8, 3, 23, 59, 59)
 	dt = Date.civil(2000 + i, 8, 3)
 	dttm = DateTime.civil(2000 + i, 8, 3, 23, 59, 59, Time.now.utc_offset.to_r/86400)

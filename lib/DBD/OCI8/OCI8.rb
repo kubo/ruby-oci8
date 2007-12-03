@@ -131,7 +131,7 @@ module Util
     {'name' => col.name,
       'sql_type' => sql_type,
       'type_name' => type_name,
-      'nullable' => col.is_null?,
+      'nullable' => col.nullable?,
       'precision' => precision,
       'scale' => scale,
     }

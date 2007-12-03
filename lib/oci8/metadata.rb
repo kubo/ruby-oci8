@@ -449,7 +449,7 @@ class OCI8
         entry = DATA_TYPE_MAP[__ub2(OCI_ATTR_DATA_TYPE)]
         type = entry.nil? ? "unknown(#{__ub2(OCI_ATTR_DATA_TYPE)})" : entry[1]
         type = type.call(self) if type.is_a? Proc
-        if respond_to?(:is_null?) && !is_null?
+        if respond_to?(:nullable?) && !nullable?
           type + " NOT NULL"
         else
           type
@@ -1372,7 +1372,7 @@ class OCI8
       end
 
       # Returns 0 if null values are not permitted for the column
-      def is_null?
+      def nullable?
         __boolean(OCI_ATTR_IS_NULL)
       end
 
@@ -1524,7 +1524,7 @@ class OCI8
       end
 
       # doesn't work.
-      # def is_null?
+      # def nullable?
       #   __boolean(OCI_ATTR_IS_NULL)
       # end
 

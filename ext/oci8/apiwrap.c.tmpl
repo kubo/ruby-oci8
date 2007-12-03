@@ -2,74 +2,9 @@
 <%= header_comment
 # This file is processed by apiwrap.rb.
 %>
-#ifdef __linux__
-#define _GNU_SOURCE
-#include <dlfcn.h>
-#endif
 #define API_WRAP_C 1
 #include "apiwrap.h"
 
-#ifdef RUBY_VM
-static void rboci_unblock_func(rb_thread_t *th, void *user_data)
-{
-    oci8_svcctx_t *svcctx = (oci8_svcctx_t *)user_data;
-    if (svcctx->base.hp.ptr != NULL) {
-        OCIBreak(svcctx->base.hp.ptr, oci8_errhp);
-    }
-}
-
-static sword rboci_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data)
-{
-    if (svcctx->non_blocking) {
-        sword rv;
-        if (svcctx->executing_thread != NB_STATE_NOT_EXECUTING) {
-            rb_raise(rb_eRuntimeError /* FIXME */, "executing in another thread");
-        }
-        svcctx->executing_thread = rb_thread_current();
-        rv = (sword)rb_thread_blocking_region(func, data, rboci_unblock_func, svcctx);
-        svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
-        if (rv == OCI_ERROR) {
-            if (oci8_get_error_code(oci8_errhp) == 1013) {
-                OCIReset(svcctx->base.hp.ptr, oci8_errhp);
-                svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
-                rb_raise(eOCIBreak, "Canceled by user request.");
-            }
-        }
-        return rv;
-    } else {
-        return (sword)func(NULL /* dummy */, data);
-    }
-}
-#else
-typedef struct rb_thread_struct rb_thread_t;
-typedef VALUE rb_blocking_function_t(rb_thread_t *th, void *);
-
-static sword rboci_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data)
-{
-    struct timeval tv;
-    sword rv;
-    if (svcctx->executing_thread != NB_STATE_NOT_EXECUTING) {
-        rb_raise(rb_eRuntimeError /* FIXME */, "executing in another thread");
-    }
-    tv.tv_sec = 0;
-    tv.tv_usec = 100000;
-    svcctx->executing_thread = rb_thread_current();
-    while ((rv = func(NULL /* dummy */, data)) == OCI_STILL_EXECUTING) {
-        rb_thread_wait_for(tv);
-        if (tv.tv_usec < 500000)
-            tv.tv_usec <<= 1;
-    }
-    if (rv == OCI_ERROR) {
-       if (oci8_get_error_code(oci8_errhp) == 1013) {
-            OCIReset(svcctx->base.hp.ptr, oci8_errhp);
-            svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
-            rb_raise(eOCIBreak, "Canceled by user request.");
-       }
-    }
-    svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
-    return rv;
-}
-#endif
 <%
 funcs.each do |f|
   if f.version == 800
@@ -84,7 +19,7 @@ typedef struct {
 <% end
 %>} <%=f.name%>_data_t;
 
-static VALUE <%=f.name%>_cb(rb_thread_t *th, void *user_data)
+static VALUE <%=f.name%>_cb(void *user_data)
 {
     <%=f.name%>_data_t *data = (<%=f.name%>_data_t *)user_data;
     return (VALUE)<%=f.name%>(<%= f.args.collect do |a| 'data->' + a.name; end.join(', ') %>);
@@ -96,7 +31,7 @@ sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.jo
 <% f.args.each do |a|
 %>    data.<%=a.name%> = <%=a.name%>;
 <% end
-%>    return rboci_blocking_region(svcctx, <%=f.name%>_cb, &data);
+%>    return oci8_blocking_region(svcctx, <%=f.name%>_cb, &data);
 }
 <%
     end
@@ -117,7 +52,7 @@ typedef sword (*<%=f.name%>_func_t)(<%=f.args.collect {|arg| arg.dcl}.join(', ')
 static <%=f.name%>_func_t <%=f.name%>_func;
 <%=f.name%>_nb_func_t <%=f.name%>_nb;
 
-static VALUE <%=f.name%>_cb(rb_thread_t *th, void *user_data)
+static VALUE <%=f.name%>_cb(void *user_data)
 {
     <%=f.name%>_data_t *data = (<%=f.name%>_data_t *)user_data;
     return (VALUE)<%=f.name%>_func(<%= f.args.collect do |a| 'data->' + a.name; end.join(', ') %>);
@@ -129,10 +64,10 @@ sword <%=f.name%>_nb_func(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dc
 <% f.args.each do |a|
 %>    data.<%=a.name%> = <%=a.name%>;
 <% end
-%>    return rboci_blocking_region(svcctx, <%=f.name%>_cb, &data);
+%>    return oci8_blocking_region(svcctx, <%=f.name%>_cb, &data);
 }
 #elif defined HAVE_<%=f.name.upcase%>
-static VALUE <%=f.name%>_cb(rb_thread_t *th, void *user_data)
+static VALUE <%=f.name%>_cb(void *user_data)
 {
     <%=f.name%>_data_t *data = (<%=f.name%>_data_t *)user_data;
     return (VALUE)<%=f.name%>(<%= f.args.collect do |a| 'data->' + a.name; end.join(', ') %>);
@@ -144,7 +79,7 @@ sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.jo
 <% f.args.each do |a|
 %>    data.<%=a.name%> = <%=a.name%>;
 <% end
-%>    return rboci_blocking_region(svcctx, <%=f.name%>_cb, &data);
+%>    return oci8_blocking_region(svcctx, <%=f.name%>_cb, &data);
 }
 #else
 sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>)
@@ -172,30 +107,18 @@ sword <%=f.name%>_func(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>)
 end # funcs.each
 %>
 #if defined RUNTIME_API_CHECK
-static void *find_symbol(const char *symbol_name)
-{
-#if defined _WIN32
-    static HMODULE hModule = GetModuleHandle("OCI.DLL");
-    return GetProcAddress(hModule, symbol_name);
-#elif defined RTLD_DEFAULT
-    return dlsym(RTLD_DEFAULT, symbol_name);
-#else
-#error RUNTIME_API_CHECK is not supported on this platform.
-#endif
-}
-
 void Init_oci8_apiwrap(void)
 {
 <%
 funcs.each do |f|
   if f.version != 800
     if f.remote
-%>    <%=f.name%>_func = (<%=f.name%>_func_t)find_symbol("<%=f.name%>");
+%>    <%=f.name%>_func = (<%=f.name%>_func_t)oci8_find_symbol("<%=f.name%>");
     if (<%=f.name%>_func != NULL)
         <%=f.name%>_nb = <%=f.name%>_nb_func;
 <%
     else
-%>    <%=f.name%>_func = (<%=f.name%>_func_t)find_symbol("<%=f.name%>");
+%>    <%=f.name%>_func = (<%=f.name%>_func_t)oci8_find_symbol("<%=f.name%>");
 <%
     end
   end

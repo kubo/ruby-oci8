@@ -161,7 +161,7 @@ EOS
       assert_equal(coldef[i][1], md.type_string, "'#{coldef[i][1]}': type_string")
       assert_equal(coldef[i][2], md.data_type, "'#{coldef[i][1]}': data_type")
       assert_equal(coldef[i][3], md.charset_form, "'#{coldef[i][1]}': charset_form")
-      assert_equal(coldef[i][4], md.is_null?, "'#{coldef[i][1]}': is_null? ")
+      assert_equal(coldef[i][4], md.nullable?, "'#{coldef[i][1]}': nullable? ")
       # string type
       if $oracle_version >=  900
         assert_equal(coldef[i][5], md.char_used?, "'#{coldef[i][1]}': char_used? ")
@@ -197,7 +197,7 @@ EOS
       assert_equal(coldef[i][1], md.type_string, "'#{coldef[i][1]}': type_string")
       assert_equal(coldef[i][2], md.data_type, "'#{coldef[i][1]}': data_type")
       assert_equal(coldef[i][3], md.charset_form, "'#{coldef[i][1]}': charset_form")
-      assert_equal(coldef[i][4], md.is_null?, "'#{coldef[i][1]}': is_null? ")
+      assert_equal(coldef[i][4], md.nullable?, "'#{coldef[i][1]}': nullable? ")
       # string type
       if $oracle_version >=  900
         assert_equal(coldef[i][5], md.char_used?, "'#{coldef[i][1]}': char_used? ")

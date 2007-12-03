@@ -265,7 +265,7 @@ static VALUE bind_float_get(oci8_bind_t *obind, void *data, void *null_struct)
 static void bind_float_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     Check_Type(val, T_FLOAT);
-    *(double*)data = RFLOAT(val)->value;
+    *(double*)data = RFLOAT_VALUE(val);
 }
 
 static void bind_float_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)

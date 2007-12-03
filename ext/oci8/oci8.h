@@ -38,13 +38,15 @@ extern "C" {
 #define BUILD_FOR_ORACLE_10_1 BUILD_FOR_ORACLE_VERSION(10, 1)
 #define BUILD_FOR_ORACLE_10_2 BUILD_FOR_ORACLE_VERSION(10, 2)
 
+/* new macros in ruby 1.8.6.
+ * define compatible macros for ruby 1.8.5 or lower.
+ */
 #ifndef RSTRING_PTR
 #define RSTRING_PTR(obj) RSTRING(obj)->ptr
 #endif
 #ifndef RSTRING_LEN
 #define RSTRING_LEN(obj) RSTRING(obj)->len
 #endif
-
 #ifndef RARRAY_PTR
 #define RARRAY_PTR(obj) RARRAY(obj)->ptr
 #endif
@@ -52,8 +54,14 @@ extern "C" {
 #define RARRAY_LEN(obj) RARRAY(obj)->len
 #endif
 
+/* new macros in ruby 1.9.
+ * define compatible macros for ruby 1.8 or lower.
+ */
 #ifndef RCLASS_SUPER
 #define RCLASS_SUPER(c) RCLASS(c)->super
+#endif
+#ifndef RFLOAT_VALUE
+#define RFLOAT_VALUE(obj) RFLOAT(obj)->value
 #endif
 
 #ifndef RUBY_VM
@@ -302,6 +310,13 @@ VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_class_t *
 VALUE oci8_define_bind_class(const char *name, oci8_bind_class_t *oci8_bind_class);
 void oci8_link_to_parent(oci8_base_t *base, oci8_base_t *parent);
 void oci8_unlink_from_parent(oci8_base_t *base);
+#ifndef RUBY_VM
+typedef VALUE rb_blocking_function_t(void *);
+#endif
+sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data);
+#if defined RUNTIME_API_CHECK
+void *oci8_find_symbol(const char *symbol_name);
+#endif
 extern oci8_base_class_t oci8_base_class;
 
 /* error.c */
