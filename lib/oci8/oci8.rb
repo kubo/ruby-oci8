@@ -423,7 +423,7 @@ class OCI8
 
       bindclass = OCI8::BindType::Mapping[key]
       raise "unsupported datatype: #{key}" if bindclass.nil?
-      bindclass.create(__connection, val, param, max_array_size)
+      bindclass.create(@con, val, param, max_array_size)
     end
 
     def define_columns

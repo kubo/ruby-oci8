@@ -518,12 +518,6 @@ static VALUE oci8_stmt_get_param_count(VALUE self)
     return oci8_get_ub4_attr(DATA_PTR(self), OCI_ATTR_PARAM_COUNT);
 }
 
-static VALUE oci8_stmt_connection(VALUE self)
-{
-    oci8_stmt_t *stmt = DATA_PTR(self);
-    return stmt->svc;
-}
-
 /*
  * Gets the value of the bind variable.
  *
@@ -718,7 +712,6 @@ void Init_oci8_stmt(VALUE cOCI8)
     rb_define_method(cOCIStmt, "row_count", oci8_stmt_get_row_count, 0);
     rb_define_method(cOCIStmt, "rowid", oci8_stmt_get_rowid, 0);
     rb_define_private_method(cOCIStmt, "__param_count", oci8_stmt_get_param_count, 0);
-    rb_define_private_method(cOCIStmt, "__connection", oci8_stmt_connection, 0);
     rb_define_method(cOCIStmt, "[]", oci8_stmt_aref, 1);
     rb_define_method(cOCIStmt, "[]=", oci8_stmt_aset, 2);
     rb_define_method(cOCIStmt, "keys", oci8_stmt_keys, 0);

@@ -1,4 +1,8 @@
 2007-12-04  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/stmt.c, lib/oci8/oci8.rb: delete a private method
+	    OCI8::Curosr#__connection and use @con instead.
+
+2007-12-04  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb: compile xmldb.o by default.
 	* ext/oci8/lob.c, ext/oci8/metadata.c, ext/oci8/oci8.c: use
 	    functions which ends with _nb instead of normal OCI functions
