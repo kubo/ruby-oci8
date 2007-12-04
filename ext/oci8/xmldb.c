@@ -1,9 +1,7 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 #include "oci8.h"
 
-#if !BUILD_FOR_ORACLE_10_1
-#error available on Oracle 10.1 or later.
-#endif
+#if 0 /* disabled for a while. */ && (ORACLE_CLIENT_VERSION >= 1000 || defined RUNTIME_API_CHECK)
 
 #ifndef HAVE_XMLOTN_H
 /* declarations in xmlproc.h of Oracle XML Development Kit */
@@ -373,3 +371,14 @@ static VALUE add_nodemap(VALUE obj, struct xmlctx *xctx, xmlnamedmap *map)
     }
     return obj;
 }
+
+#else
+void Init_oci_xmldb(void)
+{
+}
+
+VALUE oci8_make_rexml(struct xmlctx *xctx, xmlnode *node)
+{
+    rb_notimplement();
+}
+#endif

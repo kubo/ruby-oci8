@@ -154,7 +154,9 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
     enum logon_type_t logon_type = T_IMPLICIT;
     ub4 cred = OCI_CRED_RDBMS;
     ub4 mode = OCI_DEFAULT;
+    OCISvcCtx *svchp = NULL;
 
+    svcctx->executing_thread = Qnil;
     if (argc == 1) {
         oci8_do_parse_connect_string(argv[0], &vusername, &vpassword, &vdbname, &vmode);
     } else {
@@ -188,16 +190,17 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
     }
     switch (logon_type) {
     case T_IMPLICIT:
-        rv = OCILogon(oci8_envhp, oci8_errhp, &svcctx->base.hp.svc,
+        rv = OCILogon_nb(svcctx, oci8_envhp, oci8_errhp, &svchp,
                       RSTRING_ORATEXT(vusername), RSTRING_LEN(vusername),
                       RSTRING_ORATEXT(vpassword), RSTRING_LEN(vpassword),
                       NIL_P(vdbname) ? NULL : RSTRING_ORATEXT(vdbname),
                       NIL_P(vdbname) ? 0 : RSTRING_LEN(vdbname));
+        svcctx->base.hp.svc = svchp;
+        svcctx->base.type = OCI_HTYPE_SVCCTX;
+        svcctx->logon_type = T_IMPLICIT;
         if (rv != OCI_SUCCESS) {
             oci8_raise(oci8_errhp, rv, NULL);
         }
-        svcctx->base.type = OCI_HTYPE_SVCCTX;
-        svcctx->logon_type = T_IMPLICIT;
         break;
     case T_EXPLICIT:
         /* allocate OCI handles. */
@@ -223,7 +226,7 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
         }
 
         /* attach to server and set to OCISvcCtx. */
-        rv = OCIServerAttach(svcctx->srvhp, oci8_errhp,
+        rv = OCIServerAttach_nb(svcctx, svcctx->srvhp, oci8_errhp,
                              NIL_P(vdbname) ? NULL : RSTRING_ORATEXT(vdbname),
                              NIL_P(vdbname) ? 0 : RSTRING_LEN(vdbname), OCI_DEFAULT);
         if (rv != OCI_SUCCESS)
@@ -231,7 +234,7 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
         oci_lc(OCIAttrSet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp));
 
         /* begin session. */
-        rv = OCISessionBegin(svcctx->base.hp.ptr, oci8_errhp, svcctx->authhp, cred, mode);
+        rv = OCISessionBegin_nb(svcctx, svcctx->base.hp.ptr, oci8_errhp, svcctx->authhp, cred, mode);
         if (rv != OCI_SUCCESS)
             oci8_raise(oci8_errhp, rv, NULL);
         oci_lc(OCIAttrSet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, svcctx->authhp, 0, OCI_ATTR_SESSION, oci8_errhp));
@@ -240,7 +243,6 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
     default:
         break;
     }
-    svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
     svcctx->is_autocommit = 0;
 #ifdef RUBY_VM
     svcctx->non_blocking = 0;
@@ -272,8 +274,8 @@ static VALUE oci8_svcctx_logoff(VALUE self)
     }
     switch (svcctx->logon_type) {
     case T_IMPLICIT:
-        oci_rc(svcctx, OCITransRollback(svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT));
-        oci_rc2(rv, svcctx, OCILogoff(svcctx->base.hp.svc, oci8_errhp));
+        oci_lc(OCITransRollback_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT));
+        rv = OCILogoff_nb(svcctx, svcctx->base.hp.svc, oci8_errhp);
         svcctx->base.type = 0;
         svcctx->logon_type = T_NOT_LOGIN;
         if (rv != OCI_SUCCESS)
@@ -282,10 +284,10 @@ static VALUE oci8_svcctx_logoff(VALUE self)
         svcctx->srvhp = NULL;
         break;
     case T_EXPLICIT:
-        oci_rc(svcctx, OCITransRollback(svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT));
-        oci_rc2(rv, svcctx, OCISessionEnd(svcctx->base.hp.svc, oci8_errhp, svcctx->authhp, OCI_DEFAULT));
+        oci_lc(OCITransRollback_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT));
+        rv = OCISessionEnd_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, svcctx->authhp, OCI_DEFAULT);
         if (rv == OCI_SUCCESS) {
-            oci_rc2(rv, svcctx, OCIServerDetach(svcctx->srvhp, oci8_errhp, OCI_DEFAULT));
+            rv = OCIServerDetach_nb(svcctx, svcctx->srvhp, oci8_errhp, OCI_DEFAULT);
         }
         svcctx->logon_type = T_NOT_LOGIN;
         if (rv != OCI_SUCCESS)
@@ -328,7 +330,7 @@ static VALUE oci8_svcctx_parse(VALUE self, VALUE sql)
 static VALUE oci8_commit(VALUE self)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
-    oci_rc(svcctx, OCITransCommit(svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT));
+    oci_lc(OCITransCommit_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT));
     return self;
 }
 
@@ -347,7 +349,7 @@ static VALUE oci8_commit(VALUE self)
 static VALUE oci8_rollback(VALUE self)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
-    oci_rc(svcctx, OCITransRollback(svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT));
+    oci_lc(OCITransRollback_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT));
     return self;
 }
 
@@ -492,7 +494,7 @@ static VALUE oci8_break(VALUE self)
     sword rv;
 #endif
 
-    if (svcctx->executing_thread == NB_STATE_NOT_EXECUTING) {
+    if (NIL_P(svcctx->executing_thread)) {
         return Qfalse;
     }
 #ifndef RUBY_VM

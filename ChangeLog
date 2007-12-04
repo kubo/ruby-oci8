@@ -1,4 +1,16 @@
 2007-12-04  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb: compile xmldb.o by default.
+	* ext/oci8/lob.c, ext/oci8/metadata.c, ext/oci8/oci8.c: use
+	    functions which ends with _nb instead of normal OCI functions
+	    if they may block ruby itself. delete BUILD_FOR_ORACLE_* macros
+	    and use have_OCI* instead.
+	* ext/oci8/oci8.h: delete unused macros; BUILD_FOR_ORACLE_*,
+	    Get_Int_With_Default, oci_rc2, oci_rc, and _D_.
+	* ext/oci8/oci8lib.c, ext/oci8/oci8.c: change the default value
+	    of executing_thread member in oci8_svcctx_t.
+	* ext/oci8/xmldb.c: disabled for a while.
+
+2007-12-04  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.c.tmpl, ext/oci8/apiwrap.h.tmpl, ext/oci8/apiwrap.rb:
 	    change function declares of runtime-check.
 	    add oracle_client_version.

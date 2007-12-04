@@ -59,8 +59,8 @@ end
 $objs = ["oci8lib.o", "env.o", "error.o", "oci8.o",
          "stmt.o", "bind.o", "metadata.o", "attr.o",
          "rowid.o", "lob.o", "oradate.o",
-         "ocinumber.o", "ocidatetime.o", "object.o", "apiwrap.o"]
-$objs << "xmldb.o" if oci_client_version >= 1000
+         "ocinumber.o", "ocidatetime.o", "object.o", "apiwrap.o",
+         "xmldb.o"]
 
 # Checking gcc or not
 if oraconf.cc_is_gcc

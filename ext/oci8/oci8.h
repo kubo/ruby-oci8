@@ -28,14 +28,6 @@ extern "C" {
 #endif
 #include "extconf.h"
 
-#define BUILD_FOR_ORACLE_VERSION(major,minor) \
-    (ORACLE_CLIENT_VERSION >= major * 100 + minor * 10)
-#define BUILD_FOR_ORACLE_8_1 BUILD_FOR_ORACLE_VERSION(8, 1)
-#define BUILD_FOR_ORACLE_9_0 BUILD_FOR_ORACLE_VERSION(9, 0)
-#define BUILD_FOR_ORACLE_9_2 BUILD_FOR_ORACLE_VERSION(9, 2)
-#define BUILD_FOR_ORACLE_10_1 BUILD_FOR_ORACLE_VERSION(10, 1)
-#define BUILD_FOR_ORACLE_10_2 BUILD_FOR_ORACLE_VERSION(10, 2)
-
 #if ACTUAL_ORACLE_CLIENT_VERSION < 1020
 typedef struct OCIAdmin OCIAdmin;
 #endif
@@ -68,15 +60,6 @@ typedef struct OCIAdmin OCIAdmin;
 
 #ifndef RUBY_VM
 #define rb_errinfo() ruby_errinfo
-#endif
-
-#define DEBUG_CORE_FILE 1
-#define OCI8_DEBUG 1
-#ifdef OCI8_DEBUG
-#define ASSERT(v) if (!(v)) { rb_bug("%s:%d: " #v, __FILE__, __LINE__); }
-#define ASSERT_(v) if (!(v)) { abort(); }
-#else
-#define ASSERT(v)
 #endif
 
 #ifdef _WIN32
@@ -211,69 +194,17 @@ typedef struct  {
   } \
 } while (0)
 
-#define Get_Int_With_Default(argc, pos, vval, cval, def) do { \
-  if (argc >= pos) { \
-    Check_Type(vval, T_FIXNUM); \
-    cval = FIX2INT(vval); \
-  } else { \
-    cval = def; \
-  } \
-} while (0)
-
 #define oci8_raise(err, status, stmt) oci8_do_raise(err, status, stmt, __FILE__, __LINE__)
 #define oci8_env_raise(err, status) oci8_do_env_raise(err, status, __FILE__, __LINE__)
 #define oci8_raise_init_error() oci8_do_raise_init_error(__FILE__, __LINE__)
 
-/* use for local call */
+/* raise on error */
 #define oci_lc(rv) do { \
     sword __rv = (rv); \
     if (__rv != OCI_SUCCESS) { \
         oci8_raise(oci8_errhp, __rv, NULL); \
     } \
 } while(0)
-
-#define NB_STATE_NOT_EXECUTING INT2FIX(0)
-#define NB_STATE_CANCELING     INT2FIX(1)
-/* remote call without check */
-#define oci_rc2(rv, svcctx, func) do { \
-    struct timeval __time; \
-    sword __r; \
-    if (svcctx->executing_thread != NB_STATE_NOT_EXECUTING) { \
-        rb_raise(rb_eRuntimeError /* FIXME */, "executing in another thread"); \
-    } \
-    __time.tv_sec = 0; \
-    __time.tv_usec = 100000; \
-    svcctx->executing_thread = rb_thread_current(); \
-    while ((__r = (func)) == OCI_STILL_EXECUTING) { \
-        rb_thread_wait_for(__time); \
-        if (svcctx->executing_thread == NB_STATE_CANCELING) { \
-            svcctx->executing_thread = NB_STATE_NOT_EXECUTING; \
-            OCIReset(svcctx->base.hp.ptr, oci8_errhp); \
-            rb_raise(eOCIBreak, "Canceled by user request."); \
-        } \
-        if (__time.tv_usec < 500000) \
-        __time.tv_usec <<= 1; \
-    } \
-    if (__r == OCI_ERROR) { \
-       if (oci8_get_error_code(oci8_errhp) == 1013) { \
-            svcctx->executing_thread = NB_STATE_NOT_EXECUTING; \
-            OCIReset(svcctx->base.hp.ptr, oci8_errhp); \
-            rb_raise(eOCIBreak, "Canceled by user request."); \
-       } \
-    } \
-    svcctx->executing_thread = NB_STATE_NOT_EXECUTING; \
-    (rv) = __r; \
-} while (0)
-
-/* remote call */
-#define oci_rc(svcctx, func) do { \
-    sword __rv; \
-    oci_rc2(__rv, svcctx, func); \
-    if (__rv != OCI_SUCCESS) { \
-        oci8_raise(oci8_errhp, __rv, NULL); \
-    } \
-} while (0)
-
 
 #if SIZEOF_LONG > 4
 #define UB4_TO_NUM INT2FIX
@@ -406,5 +337,4 @@ VALUE oci8_get_string_attr(oci8_base_t *base, ub4 attrtype);
 
 #include "apiwrap.h"
 
-#define _D_ fprintf(stderr, "%s:%d - %s\n", __FILE__, __LINE__, __FUNCTION__)
 #endif

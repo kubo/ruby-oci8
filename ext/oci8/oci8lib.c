@@ -152,9 +152,7 @@ Init_oci8lib()
     Init_oci_number(cOCI8);
     Init_oci_datetime();
     Init_oci_object(cOCI8);
-#if BUILD_FOR_ORACLE_10_1
     Init_oci_xmldb();
-#endif
 
 #ifdef DEBUG_CORE_FILE
     signal(SIGSEGV, SIG_DFL);
@@ -235,12 +233,12 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
     if (svcctx->non_blocking) {
         sword rv;
 
-        if (svcctx->executing_thread != NB_STATE_NOT_EXECUTING) {
+        if (!NIL_P(svcctx->executing_thread)) {
             rb_raise(rb_eRuntimeError /* FIXME */, "executing in another thread");
         }
         svcctx->executing_thread = rb_thread_current();
         rv = (sword)rb_thread_blocking_region(func, data, oci8_unblock_func, svcctx);
-        svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
+        svcctx->executing_thread = Qnil;
         if (rv == OCI_ERROR) {
             if (oci8_get_error_code(oci8_errhp) == 1013) {
                 rb_raise(eOCIBreak, "Canceled by user request.");
@@ -259,7 +257,7 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
     struct timeval tv;
     sword rv;
 
-    if (svcctx->executing_thread != NB_STATE_NOT_EXECUTING) {
+    if (!NIL_P(svcctx->executing_thread)) {
         rb_raise(rb_eRuntimeError /* FIXME */, "executing in another thread");
     }
     tv.tv_sec = 0;
@@ -272,12 +270,13 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
     }
     if (rv == OCI_ERROR) {
        if (oci8_get_error_code(oci8_errhp) == 1013) {
-            OCIReset(svcctx->base.hp.ptr, oci8_errhp);
-            svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
-            rb_raise(eOCIBreak, "Canceled by user request.");
+           if (have_OCIReset)
+               OCIReset(svcctx->base.hp.ptr, oci8_errhp);
+           svcctx->executing_thread = Qnil;
+           rb_raise(eOCIBreak, "Canceled by user request.");
        }
     }
-    svcctx->executing_thread = NB_STATE_NOT_EXECUTING;
+    svcctx->executing_thread = Qnil;
     return rv;
 }
 #endif /* RUBY_VM */

@@ -86,32 +86,32 @@ static ub4 oci8_lob_get_length(oci8_lob_t *lob)
     oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
     ub4 len;
 
-    oci_rc(svcctx, OCILobGetLength(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &len));
+    oci_lc(OCILobGetLength_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &len));
     return len;
 }
 
 static void lob_open(oci8_lob_t *lob)
 {
-#if BUILD_FOR_ORACLE_8_1
     if (lob->state == S_CLOSE) {
-        oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+        if (have_OCILobOpen_nb) {
+            oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
 
-        oci_rc(svcctx, OCILobOpen(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, OCI_DEFAULT));
+            oci_lc(OCILobOpen_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, OCI_DEFAULT));
+        }
         lob->state = S_OPEN;
     }
-#endif
 }
 
 static void lob_close(oci8_lob_t *lob)
 {
-#if BUILD_FOR_ORACLE_8_1
     if (lob->state == S_OPEN) {
-        oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+        if (have_OCILobClose_nb) {
+            oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
 
-        oci_rc(svcctx, OCILobClose(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob));
+            oci_lc(OCILobClose_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob));
+        }
         lob->state = S_CLOSE;
     }
-#endif
 }
 
 static void bfile_close(oci8_lob_t *lob)
@@ -119,7 +119,7 @@ static void bfile_close(oci8_lob_t *lob)
     if (lob->state == S_BFILE_OPEN) {
         oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
 
-        oci_rc(svcctx, OCILobFileClose(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob));
+        oci_lc(OCILobFileClose_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob));
         lob->state = S_BFILE_CLOSE;
     }
 }
@@ -152,14 +152,14 @@ static VALUE oci8_lob_do_initialize(int argc, VALUE *argv, VALUE self, ub1 csfrm
     lob->state = S_NO_OPEN_CLOSE;
     oci8_link_to_parent((oci8_base_t*)lob, (oci8_base_t*)DATA_PTR(svc));
     if (!NIL_P(val)) {
-#if BUILD_FOR_ORACLE_8_1
-        oci8_svcctx_t *svcctx = oci8_get_svcctx(svc);
-        StringValue(val);
-        oci_rc(svcctx, OCILobCreateTemporary(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, 0, csfrm, lobtype, TRUE, OCI_DURATION_SESSION));
-        oci8_lob_write(self, val);
-#else
-        rb_notimplement();
-#endif
+        if (have_OCILobCreateTemporary_nb) {
+            oci8_svcctx_t *svcctx = oci8_get_svcctx(svc);
+            StringValue(val);
+            oci_lc(OCILobCreateTemporary_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, 0, csfrm, lobtype, TRUE, OCI_DURATION_SESSION));
+            oci8_lob_write(self, val);
+        } else {
+            rb_raise(rb_eRuntimeError, "creating a temporary lob is not supported on this Oracle version");
+        }
     }
     return Qnil;
 }
@@ -261,7 +261,7 @@ static VALUE oci8_lob_truncate(VALUE self, VALUE len)
     oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
 
     lob_open(lob);
-    oci_rc(svcctx, OCILobTrim(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, NUM2INT(len)));
+    oci_lc(OCILobTrim_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, NUM2INT(len)));
     return self;
 }
 
@@ -300,7 +300,7 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
     buf_size_in_char = sizeof(buf) / lob->char_width;
     do {
         if (lob->state == S_BFILE_CLOSE) {
-            oci_rc2(rv, svcctx, OCILobFileOpen(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, OCI_FILE_READONLY));
+            rv = OCILobFileOpen_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, OCI_FILE_READONLY);
             if (rv == OCI_ERROR && oci8_get_error_code(oci8_errhp) == 22290) {
                 /* ORA-22290: operation would exceed the maximum number of opened files or LOBs */
                 /* close all opened BFILE implicitly. */
@@ -313,14 +313,14 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
                         }
                     }
                 }
-                oci_rc(svcctx, OCILobFileCloseAll(svcctx->base.hp.svc, oci8_errhp));
+                oci_lc(OCILobFileCloseAll_nb(svcctx, svcctx->base.hp.svc, oci8_errhp));
                 continue;
             }
             if (rv != OCI_SUCCESS)
                 oci8_raise(oci8_errhp, rv, NULL);
             lob->state = S_BFILE_OPEN;
         }
-        oci_rc2(rv, svcctx, OCILobRead(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, buf, sizeof(buf), NULL, NULL, 0, lob->csfrm));
+        rv = OCILobRead_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, buf, sizeof(buf), NULL, NULL, 0, lob->csfrm);
         if (rv == OCI_ERROR && oci8_get_error_code(oci8_errhp) == 22289) {
             /* ORA-22289: cannot perform FILEREAD operation on an unopened file or LOB */
             if (lob->state == S_BFILE_CLOSE)
@@ -356,7 +356,7 @@ static VALUE oci8_lob_write(VALUE self, VALUE data)
     lob_open(lob);
     StringValue(data);
     amt = RSTRING_LEN(data);
-    oci_rc(svcctx, OCILobWrite(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, RSTRING_PTR(data), amt, OCI_ONE_PIECE, NULL, NULL, 0, lob->csfrm));
+    oci_lc(OCILobWrite_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, RSTRING_PTR(data), amt, OCI_ONE_PIECE, NULL, NULL, 0, lob->csfrm));
     lob->pos += amt;
     return INT2FIX(amt);
 }
@@ -382,27 +382,23 @@ static VALUE oci8_lob_set_sync(VALUE self, VALUE b)
 
 static VALUE oci8_lob_flush(VALUE self)
 {
-#if BUILD_FOR_ORACLE_8_1
     oci8_lob_t *lob = DATA_PTR(self);
     lob_close(lob);
     return self;
-#else
-    rb_notimplement();
-#endif
 }
 
 static VALUE oci8_lob_get_chunk_size(VALUE self)
 {
-#if BUILD_FOR_ORACLE_8_1
-    oci8_lob_t *lob = DATA_PTR(self);
-    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
-    ub4 len;
+    if (have_OCILobGetChunkSize_nb) {
+        oci8_lob_t *lob = DATA_PTR(self);
+        oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+        ub4 len;
 
-    oci_rc(svcctx, OCILobGetChunkSize(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &len));
-    return INT2FIX(len);
-#else
-    rb_notimplement();
-#endif
+        oci_lc(OCILobGetChunkSize_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &len));
+        return INT2FIX(len);
+    } else {
+        rb_notimplement();
+    }
 }
 
 static VALUE oci8_lob_clone(VALUE self)
@@ -444,7 +440,6 @@ static void oci8_bfile_get_name(VALUE self, VALUE *dir_alias_p, VALUE *filename_
     }
     if (need_get) {
         oci8_lob_t *lob = DATA_PTR(self);
-        oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
         char d_buf[31];
         ub2 d_length = sizeof(d_buf);
         char f_buf[256];
@@ -452,7 +447,7 @@ static void oci8_bfile_get_name(VALUE self, VALUE *dir_alias_p, VALUE *filename_
         VALUE dir_alias;
         VALUE filename;
 
-        oci_rc(svcctx, OCILobFileGetName(oci8_envhp, oci8_errhp, lob->base.hp.lob, TO_ORATEXT(d_buf), &d_length, TO_ORATEXT(f_buf), &f_length));
+        oci_lc(OCILobFileGetName(oci8_envhp, oci8_errhp, lob->base.hp.lob, TO_ORATEXT(d_buf), &d_length, TO_ORATEXT(f_buf), &f_length));
         dir_alias = rb_str_new(d_buf, d_length);
         filename = rb_str_new(f_buf, f_length);
         rb_ivar_set(self, id_dir_alias, dir_alias);
@@ -469,12 +464,11 @@ static void oci8_bfile_get_name(VALUE self, VALUE *dir_alias_p, VALUE *filename_
 static void oci8_bfile_set_name(VALUE self, VALUE dir_alias, VALUE filename)
 {
     oci8_lob_t *lob = DATA_PTR(self);
-    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
 
     bfile_close(lob);
-    oci_rc(svcctx, OCILobFileSetName(oci8_envhp, oci8_errhp, &lob->base.hp.lob,
-                                     RSTRING_ORATEXT(dir_alias), RSTRING_LEN(dir_alias),
-                                     RSTRING_ORATEXT(filename), RSTRING_LEN(filename)));
+    oci_lc(OCILobFileSetName(oci8_envhp, oci8_errhp, &lob->base.hp.lob,
+                               RSTRING_ORATEXT(dir_alias), RSTRING_LEN(dir_alias),
+                               RSTRING_ORATEXT(filename), RSTRING_LEN(filename)));
 }
 
 static VALUE oci8_bfile_initialize(int argc, VALUE *argv, VALUE self)
@@ -546,7 +540,7 @@ static VALUE oci8_bfile_exists_p(VALUE self)
     oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
     boolean flag;
 
-    oci_rc(svcctx, OCILobFileExists(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &flag));
+    oci_lc(OCILobFileExists_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &flag));
     return flag ? Qtrue : Qfalse;
 }
 
