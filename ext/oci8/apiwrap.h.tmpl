@@ -8,6 +8,9 @@
 
 #if defined RUNTIME_API_CHECK
 void Init_oci8_apiwrap(void);
+extern int oracle_client_version;
+#else
+#define oracle_client_version ORACLE_CLIENT_VERSION
 #endif
 <%
 funcs.each do |f|
@@ -30,19 +33,13 @@ sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.jo
  *   version: <%=f.version%>
  *   remote:  true
  */
+sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
 #if defined RUNTIME_API_CHECK
-/* runtime check */
-typedef sword (*<%=f.name%>_nb_func_t)(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
-#define have_<%=f.name%>_nb (<%=f.name%>_nb != NULL)
-extern <%=f.name%>_nb_func_t <%=f.name%>_nb;
-#elif defined HAVE_<%=f.name.upcase%>
-/* found on compilation */
+extern int have_<%=f.name%>_nb;
+#elif ORACLE_CLIENT_VERSION >= <%=f.version%>
 #define have_<%=f.name%>_nb (1)
-sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
 #else
-/* not found on compilation */
 #define have_<%=f.name%>_nb (0)
-sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
 #endif
 <%
     else
@@ -52,26 +49,17 @@ sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.jo
  *   version: <%=f.version%>
  *   remote:  false
  */
+sword <%=f.name%>_fn(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
 #if defined RUNTIME_API_CHECK
-/* runtime check */
-typedef sword (*<%=f.name%>_func_t)(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
-#define have_<%=f.name%> (<%=f.name%> != NULL)
-extern <%=f.name%>_func_t <%=f.name%>_func;
-#ifndef API_WRAP_C
-#undef <%=f.name%>
-#define <%=f.name%> <%=f.name%>_func
-#endif
-#elif defined HAVE_<%=f.name.upcase%>
-/* found on compilation */
+extern int have_<%=f.name%>;
+#elif ORACLE_CLIENT_VERSION >= <%=f.version%>
 #define have_<%=f.name%> (1)
 #else
-/* not found on compilation */
 #define have_<%=f.name%> (0)
-sword <%=f.name%>_func(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
+#endif
 #ifndef API_WRAP_C
 #undef <%=f.name%>
-#define <%=f.name%> <%=f.name%>_func
-#endif
+#define <%=f.name%> <%=f.name%>_fn
 #endif
 <%
     end

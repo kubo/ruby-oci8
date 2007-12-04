@@ -37,7 +37,7 @@ def create_apiwrap
     if a.version == b.version
       a.name <=> b.name
     else
-      b.version <=> a.version
+      a.version <=> b.version
     end
   end
 

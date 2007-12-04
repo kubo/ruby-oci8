@@ -29,14 +29,16 @@ extern "C" {
 #include "extconf.h"
 
 #define BUILD_FOR_ORACLE_VERSION(major,minor) \
-    (BUILD_FOR_ORACLE_VERSION_MAJOR > (major) || \
-     (BUILD_FOR_ORACLE_VERSION_MAJOR == (major) && \
-      BUILD_FOR_ORACLE_VERSION_MINOR >= (minor)))
+    (ORACLE_CLIENT_VERSION >= major * 100 + minor * 10)
 #define BUILD_FOR_ORACLE_8_1 BUILD_FOR_ORACLE_VERSION(8, 1)
 #define BUILD_FOR_ORACLE_9_0 BUILD_FOR_ORACLE_VERSION(9, 0)
 #define BUILD_FOR_ORACLE_9_2 BUILD_FOR_ORACLE_VERSION(9, 2)
 #define BUILD_FOR_ORACLE_10_1 BUILD_FOR_ORACLE_VERSION(10, 1)
 #define BUILD_FOR_ORACLE_10_2 BUILD_FOR_ORACLE_VERSION(10, 2)
+
+#if ACTUAL_ORACLE_CLIENT_VERSION < 1020
+typedef struct OCIAdmin OCIAdmin;
+#endif
 
 /* new macros in ruby 1.8.6.
  * define compatible macros for ruby 1.8.5 or lower.
@@ -229,10 +231,6 @@ typedef struct  {
         oci8_raise(oci8_errhp, __rv, NULL); \
     } \
 } while(0)
-
-#if BUILD_FOR_ORACLE_8_1
-#define OCIReset(svchp, errhp) do {} while(0)
-#endif
 
 #define NB_STATE_NOT_EXECUTING INT2FIX(0)
 #define NB_STATE_CANCELING     INT2FIX(1)

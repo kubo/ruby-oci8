@@ -22,77 +22,45 @@ end
 $CFLAGS += oraconf.cflags
 $libs += oraconf.libs
 
-oci_major_version = try_constant("OCI_MAJOR_VERSION", "oci.h")
-oci_minor_version = try_constant("OCI_MINOR_VERSION", "oci.h")
-
-oci_major_version &&= oci_major_version.to_i
-oci_minor_version &&= oci_minor_version.to_i
-
-# new in Oracle 9.0
-have_func("OCIRowidToChar")
-
-# new in Oracle 8.1
-have_func("OCILobIsTemporary")
-have_func("OCILobLocatorAssign")
-
-saved_defs = $defs
-if oci_major_version.nil? or oci_minor_version.nil?
-  if have_func("OCIPing")
-    oci_major_version = 10
-    oci_minor_version = 1
-  elsif have_func("OCISessionPoolCreate") and
-      have_func("OCISessionGet") and
-      have_func("OCIEnvNlsCreate") and
-      have_func("OCIStmtPrepare2") and
-      have_func("OCINlsCharSetNameToId")
-    oci_major_version = 9
-    oci_minor_version = 2
-  elsif have_func("OCIRowidToChar") and
-      have_func("OCIFEnvCreate") and
-      have_func("OCILogon2") and
-      have_func("OCIStmtFetch2") and
-      have_func("OCIAnyDataGetType") and
-      have_func("OCIConnectionPoolCreate")
-    oci_major_version = 9
-    oci_minor_version = 0
-  elsif have_func("OCIEnvCreate") and
-      have_func("OCITerminate") and
-      have_func("OCILobOpen") and
-      have_func("OCILobClose") and
-      have_func("OCILobCreateTemporary") and
-      have_func("OCILobGetChunkSize") and
-      have_func("OCILobLocatorAssign") and
-      have_func("OCIReset")
-    oci_major_version = 8
-    oci_minor_version = 1
-  else
-    oci_major_version = 8
-    oci_minor_version = 0
-  end
+oci_actual_client_version = 800
+funcs = {}
+YAML.load(open(File.dirname(__FILE__) + '/apiwrap.yml')).each do |key, val|
+  funcs[val[:version]] ||= []
+  funcs[val[:version]] << key
 end
-$defs = saved_defs
-puts "checking Oracle client version... #{oci_major_version}.#{oci_minor_version}"
-
-if specified_oracle_version = with_config("oracle-version")
-  major, minor, = specified_oracle_version.split('.').map { |v| v.to_i }
-  if major > oci_major_version or
-      (major == oci_major_version and minor > oci_minor_version)
-    raise "the specified Oracle version #{specified_oracle_version} is larger than #{oci_major_version}.#{oci_minor_version}."
+funcs.keys.sort.each do |version|
+  next if version == 800
+  puts "checking for Oracle #{version.to_s.gsub(/(.)(.)$/, '.\1.\2')} API - start"
+  result = catch :result do
+    funcs[version].sort.each do |func|
+      unless have_func(func)
+        throw :result, "fail"
+      end
+    end
+    oci_actual_client_version = version
+    "pass"
   end
-  oci_major_version = major
-  oci_minor_version = minor
+  puts "checking for Oracle #{version.to_s.gsub(/(.)(.)$/, '.\1.\2')} API - #{result}"
+  break if result == 'fail'
 end
-puts "build for Oracle client version... #{oci_major_version}.#{oci_minor_version}"
+$defs << "-DACTUAL_ORACLE_CLIENT_VERSION=#{oci_actual_client_version}"
 
-$defs << "-DBUILD_FOR_ORACLE_VERSION_MAJOR=#{oci_major_version}"
-$defs << "-DBUILD_FOR_ORACLE_VERSION_MINOR=#{oci_minor_version}"
-$defs << "-DRBOCI_VERSION=\"#{RUBY_OCI8_VERSION}\""
+if with_config('oracle-version')
+  oci_client_version = with_config('oracle-version').to_i
+else
+  oci_client_version = oci_actual_client_version
+end
+$defs << "-DORACLE_CLIENT_VERSION=#{oci_client_version}"
+
+if with_config('runtime-check')
+  $defs << "-DRUNTIME_API_CHECK=1"
+end
 
 $objs = ["oci8lib.o", "env.o", "error.o", "oci8.o",
          "stmt.o", "bind.o", "metadata.o", "attr.o",
          "rowid.o", "lob.o", "oradate.o",
          "ocinumber.o", "ocidatetime.o", "object.o", "apiwrap.o"]
-$objs << "xmldb.o" if oci_major_version >= 10
+$objs << "xmldb.o" if oci_client_version >= 1000
 
 # Checking gcc or not
 if oraconf.cc_is_gcc
@@ -115,7 +83,7 @@ create_header()
 # make dependency file
 open("depend", "w") do |f|
   extconf_opt = ''
-  ['instant-client', 'oracle-version'].each do |arg|
+  ['oracle-version', 'runtime-check'].each do |arg|
     opt = with_config(arg)
     case opt
     when String

@@ -24,7 +24,7 @@ static VALUE oci8_funcall0(VALUE obj, ID id)
     return rb_funcall(proc, id_call, 2, obj, ID2SYM(id));
 }
 #else
-#define oci8_funcall0(obj, id) rb_funcall(obj, id, 0);
+#define oci8_funcall0(obj, id) rb_funcall((obj), (id), 0)
 #endif
 
 static VALUE cDateTime;

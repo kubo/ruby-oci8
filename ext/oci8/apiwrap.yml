@@ -1,29 +1,185 @@
-# round trip: 0 (not docmented. I guess.)
-OCIRowidToChar:
-  :version: 900
-  :remote:  false
-  :args:    - OCIRowid *rowidDesc
-            - OraText *outbfp
-            - ub2 *outbflp
+#
+# Oracle 8.0
+#
+
+# round trip: 0, 1, or 2
+OCIAttrGet:
+  :version: 800
+  :remote:  true
+  :args:    - const dvoid *trgthndlp
+            - ub4 trghndltyp
+            - dvoid *attributep
+            - ub4 *sizep
+            - ub4 attrtype
             - OCIError *errhp
 
-# round trip: 1 if either destination or source lob is a temporary, otherwise 0
-OCILobLocatorAssign:
-  :version: 810
+# round trip: 1
+OCIDescribeAny:
+  :version: 800
   :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
-            - const OCILobLocator *src_locp
-            - OCILobLocator **dst_locpp
+            - dvoid *objptr
+            - ub4 objnm_len
+            - ub1 objptr_typ
+            - ub1 info_level
+            - ub1 objtyp
+            - OCIDescribe *dschp
 
-# round trip: 0
-OCILobIsTemporary:
-  :version: 810
-  :remote:  false
-  :args:    - OCIEnv *envp
+# round trip: 1
+OCILobFileClose:
+  :version: 800
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCILobLocator *filep
+
+# round trip: 1
+OCILobFileCloseAll:
+  :version: 800
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+
+# round trip: 1
+OCILobFileExists:
+  :version: 800
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCILobLocator *filep
+            - boolean *flag
+
+# round trip: 1
+OCILobFileOpen:
+  :version: 800
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCILobLocator *filep
+            - ub1 mode
+
+# round trip: 1
+OCILobGetLength:
+  :version: 800
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCILobLocator *locp
-            - boolean *is_temporary
+            - ub4 *lenp
+
+# round trip: 0 or 1
+OCILobRead:
+  :version: 800
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCILobLocator *locp
+            - ub4 *amtp
+            - ub4 offset
+            - dvoid *bufp
+            - ub4 bufl
+            - dvoid *ctxp
+            - OCICallbackLobRead cbfp
+            - ub2 csid
+            - ub1 csfrm
+
+# round trip: 1
+OCILobTrim:
+  :version: 800
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCILobLocator *locp
+            - ub4 newlen
+
+# round trip: 0 or 1
+OCILobWrite:
+  :version: 800
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCILobLocator *locp
+            - ub4 *amtp
+            - ub4 offset
+            - dvoid *bufp
+            - ub4 buflen
+            - ub1 piece
+            - dvoid *ctxp
+            - OCICallbackLobWrite cbfp
+            - ub2 csid
+            - ub1 csfrm
+
+# round trip: 1
+OCILogoff:
+  :version: 800
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+
+# round trip: 1
+OCILogon:
+  :version: 800
+  :remote:  true
+  :args:    - OCIEnv *envhp
+            - OCIError *errhp
+            - OCISvcCtx **svchp
+            - const text *username
+            - ub4 uname_len
+            - const text *password
+            - ub4 passwd_len
+            - const text *dbname
+            - ub4 dbname_len
+
+# round trip: 0 or 1
+OCIObjectPin:
+  :version: 800
+  :remote:  true
+  :args:    - OCIEnv *env
+            - OCIError *err
+            - OCIRef *object_ref
+            - OCIComplexObject *corhdl
+            - OCIPinOpt pin_option
+            - OCIDuration pin_duration
+            - OCILockOpt lock_option
+            - dvoid **object
+
+# round trip: 1
+OCISessionBegin:
+  :version: 800
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCISession *usrhp
+            - ub4 credt
+            - ub4 mode
+
+# round trip: 1
+OCISessionEnd:
+  :version: 800
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCISession *usrhp
+            - ub4 mode
+
+# round trip: 1
+OCIServerAttach:
+  :version: 800
+  :remote:  true
+  :args:    - OCIServer *srvhp
+            - OCIError *errhp
+            - const text *dblink
+            - sb4 dblink_len
+            - ub4 mode
+
+# round trip: 1
+OCIServerDetach:
+  :version: 800
+  :remote:  true
+  :args:    - OCIServer *srvhp
+            - OCIError *errhp
+            - ub4 mode
 
 # round trip: 1
 OCIStmtExecute:
@@ -47,3 +203,223 @@ OCIStmtFetch:
             - ub4 nrows
             - ub2 orientation
             - ub4 mode
+
+# round trip: 1
+OCITransCommit:
+  :version: 800
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - ub4 flags
+
+# round trip: 1
+OCITransRollback:
+  :version: 800
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - ub4 flags
+
+
+#
+# Oracle 8.1
+#
+
+# round trip: 1
+OCILobClose:
+  :version: 810
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCILobLocator *locp
+
+# round trip: 1
+OCILobCreateTemporary:
+  :version: 810
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCILobLocator *locp
+            - ub2 csid
+            - ub1 csfrm
+            - ub1 lobtype
+            - boolean cache
+            - OCIDuration duration
+
+# round trip: 1
+OCILobGetChunkSize:
+  :version: 810
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCILobLocator *locp
+            - ub4 *chunksizep
+
+# round trip: 0
+OCILobIsTemporary:
+  :version: 810
+  :remote:  false
+  :args:    - OCIEnv *envp
+            - OCIError *errhp
+            - OCILobLocator *locp
+            - boolean *is_temporary
+
+# round trip: 1 if either destination or source lob is a temporary, otherwise 0
+OCILobLocatorAssign:
+  :version: 810
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - const OCILobLocator *src_locp
+            - OCILobLocator **dst_locpp
+
+# round trip 1
+OCILobOpen:
+  :version: 810
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCILobLocator *locp
+            - ub1 mode
+
+# round trip: 0
+OCIReset:
+  :version: 810
+  :remote:  false
+  :args:    - dvoid *hndlp
+            - OCIError *errhp
+
+#
+# Oracle 9.0
+#
+
+# round trip: 0 (not docmented. I guess.)
+OCIRowidToChar:
+  :version: 900
+  :remote:  false
+  :args:    - OCIRowid *rowidDesc
+            - OraText *outbfp
+            - ub2 *outbflp
+            - OCIError *errhp
+
+#
+# Oracle 9.2
+#
+
+# round trip: 0 (not docmented. I guess.)
+OCINlsCharSetIdToName:
+  :version: 920
+  :remote:  false
+  :args:    - dvoid *envhp
+            - oratext *buf
+            - size_t buflen
+            - ub2 id
+
+#
+# Oracle 10.1
+#
+
+# round trip: 1
+OCILobGetLength2:
+  :version: 1010
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCILobLocator *locp
+            - oraub8 *lenp
+
+# round trip: 0 or 1
+OCILobRead2:
+  :version: 1010
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCILobLocator *locp
+            - oraub8 *byte_amtp
+            - oraub8 *char_amtp
+            - oraub8 offset
+            - dvoid *bufp
+            - oraub8 bufl
+            - ub1 piece
+            - dvoid *ctxp
+            - OCICallbackLobRead2 cbfp
+            - ub2 csid
+            - ub1 csfrm
+
+# round trip: 1
+OCILobTrim2:
+  :version: 1010
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCILobLocator *locp
+            - oraub8 newlen
+
+# round trip: 0 or 1
+OCILobWrite2:
+  :version: 1010
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCILobLocator *locp
+            - oraub8 *byte_amtp
+            - oraub8 *char_amtp
+            - oraub8 offset
+            - dvoid *bufp
+            - oraub8 buflen
+            - ub1 piece
+            - dvoid *ctxp
+            - OCICallbackLobWrite2 cbfp
+            - ub2 csid
+            - ub1 csfrm
+
+#
+# Oracle 10.2
+#
+
+# round trip: 1
+OCIDBStartup:
+  :version: 1020
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCIAdmin *admhp
+            - ub4 mode
+            - ub4 flags
+
+# round trip: 1
+OCIDBShutdown:
+  :version: 1020
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCIAdmin *admhp
+            - ub4 mode
+
+# round trip: 1
+OCIPing:
+  :version: 1020
+  :remote:  true
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - ub4 mode
+
+#
+# Oracle 11.1
+#
+
+OCIArrayDescriptorAlloc:
+  :version: 1110
+  :remote:  false
+  :args:    - const void *parenth
+            - void **descpp
+            - const ub4 type
+            - ub4 array_size
+            - const size_t xtramem_sz
+            - void **usrmempp
+
+OCIArrayDescriptorFree:
+  :version: 1110
+  :remote:  false
+  :args:    - void **descp
+            - const ub4 type

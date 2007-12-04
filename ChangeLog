@@ -1,3 +1,17 @@
+2007-12-04  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.c.tmpl, ext/oci8/apiwrap.h.tmpl, ext/oci8/apiwrap.rb:
+	    change function declares of runtime-check.
+	    add oracle_client_version.
+	* ext/oci8/apiwrap.yml: add OCI function prototypes.
+	* ext/oci8/extconf.rb: check oracle_client_version by existent functions
+	    in OCI libraries. delete BUILD_FOR_ORACLE_VERSION_MAJOR and
+	    BUILD_FOR_ORACLE_VERSION_MINOR macros. add ORACLE_CLIENT_VERSION.
+	* ext/oci8/oci8.h: use ORACLE_CLIENT_VERSION instead of
+	    BUILD_FOR_ORACLE_VERSION_MAJOR and BUILD_FOR_ORACLE_VERSION_MINOR
+	    macros.
+	* ext/oci8/ocidatetime.c: fix for ruby 1.8.
+	* ext/oci8/tdo.c: delete an unused file.
+
 2007-12-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.c.tmpl: move rboci_blocking_region() and
 	    find_symbol() to ext/oci8/oci8lib.c and rename to
