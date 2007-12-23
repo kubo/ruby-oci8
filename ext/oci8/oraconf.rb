@@ -833,10 +833,23 @@ class OraConfIC < OraConf
   def initialize(ic_dir)
     init
 
-    if ic_dir =~ /^\/usr\/lib(?:64)?\/oracle\/(\d+\.\d+\.\d+\.\d+)\/client\/lib(?:64)?/
+    if ic_dir =~ /^\/usr\/lib(?:64)?\/oracle\/(\d+\.\d+\.\d+\.\d+)\/client(64)?\/lib(?:64)?/
       # rpm package
+      #   official x86 rpms:
+      #    library: /usr/lib/oracle/X.X.X.X.X/client/lib/
+      #    include: /usr/include/oracle/X.X.X.X.X/client/
+      #
+      #   official x86_64 rpms:
+      #    library: /usr/lib/oracle/X.X.X.X.X/client64/lib/
+      #    include: /usr/include/oracle/X.X.X.X.X/client64/
+      #
+      #   third-party x86_64 rpms:
+      #    library: /usr/lib64/oracle/X.X.X.X.X/client/lib/
+      #          or /usr/lib64/oracle/X.X.X.X.X/client/lib64/
+      #    include: /usr/include/oracle/X.X.X.X.X/client/
+      #
       lib_dir = ic_dir
-      inc_dir = "/usr/include/oracle/#{$1}/client"
+      inc_dir = "/usr/include/oracle/#{$1}/client#{$2}"
     else
       # zip package
       lib_dir = ic_dir

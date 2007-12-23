@@ -1,3 +1,7 @@
+2007-12-23  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: fix for official x86_64 rpms.
+	    (contributed by Pat.)
+
 2007-11-25  KUBO Takehiro  <kubo@jiubao.org>
 	release as 1.0.0 again.
 	* ext/oci8/stmt.c, test/test_dbi.rb: fix a problem when binding
