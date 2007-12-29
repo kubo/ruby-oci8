@@ -1,3 +1,11 @@
+2007-12-29  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/metadata.rb, lib/oci8/oci8.rb: support cursors in a
+	    result set. For example:
+	      SELECT column1 A, column2 B, CURSOR(SELECT * FROM table2) C
+	        FROM table1
+	    (port from changes in 1.0.0, which is contributed by Randy Gordon)
+	* test/test_oci8.rb: add a testcase for cursors in a result set.
+
 2007-12-23  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: fix for official x86_64 rpms.
 	    (contributed by Pat.)

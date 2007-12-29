@@ -364,6 +364,8 @@ class OCI8
       DATA_TYPE_MAP[113] = [:blob, "BLOB"]
       # SQLT_BFILE
       DATA_TYPE_MAP[114] = [:bfile, "BFILE"]
+      # SQLT_RSET
+      DATA_TYPE_MAP[116] = [:cursor, "CURSOR"]
       # SQLT_TIMESTAMP
       DATA_TYPE_MAP[187] = [:timestamp,
                             Proc.new do |p|

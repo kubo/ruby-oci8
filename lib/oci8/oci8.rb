@@ -620,5 +620,8 @@ else
   OCI8::BindType::Mapping[:binary_double] = OCI8::BindType::Float
 end
 
+# Cursor
+OCI8::BindType::Mapping[:cursor] = OCI8::BindType::Cursor
+
 # XMLType (This mapping will be changed before release.)
 OCI8::BindType::Mapping[:xmltype] = OCI8::BindType::Long
