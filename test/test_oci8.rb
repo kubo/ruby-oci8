@@ -158,6 +158,46 @@ EOS
     drop_table('test_table')
   end
 
+  def test_cursor_in_result_set
+    drop_table('test_table')
+    sql = <<-EOS
+CREATE TABLE test_table (N NUMBER(10, 2))
+STORAGE (
+   INITIAL 4k
+   NEXT 4k
+   MINEXTENTS 1
+   MAXEXTENTS UNLIMITED
+   PCTINCREASE 0)
+EOS
+    @conn.exec(sql)
+    cursor = @conn.parse("INSERT INTO test_table VALUES (:1)")
+    1.upto(10) do |i|
+      cursor.exec(i)
+    end
+    cursor.close
+    cursor = @conn.exec(<<EOS)
+select a.n, cursor (select a.n + b.n
+                      from test_table b
+                     order by n)
+  from test_table a
+ order by n
+EOS
+    1.upto(10) do |i|
+      row = cursor.fetch
+      assert_equal(i, row[0])
+      cursor_in_result_set = row[1]
+      1.upto(10) do |j|
+        row2 = cursor_in_result_set.fetch
+        assert_equal(i + j, row2[0])
+      end
+      assert_nil(cursor_in_result_set.fetch) # check end of row data
+      cursor_in_result_set.close
+      cursor.define(2, OCI8::Cursor) # bad hack. fix later.
+    end
+    assert_nil(cursor.fetch) # check end of row data
+    drop_table('test_table')
+  end
+
   if $oracle_version >= 1000
     # Oracle 10g or upper
     def test_binary_float

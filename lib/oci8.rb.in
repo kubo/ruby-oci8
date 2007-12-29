@@ -29,9 +29,10 @@ end
 
 class OCIDefine # :nodoc:
   # define handle of OCILobLocator needs @env and @svc.
-  def set_handle(env, svc) 
+  def set_handle(env, svc, ctx) 
     @env = env
     @svc = svc
+    @ctx = ctx
   end
 end
 
@@ -855,11 +856,10 @@ class OCI8
         else
           b = @stmt.bindByName(key, type, option)
         end
-        b.set_handle(@env, @svc, @ctx)
       when :define
         b = @stmt.defineByPos(key, type, option)
-        b.set_handle(@env, @svc)
       end
+      b.set_handle(@env, @svc, @ctx)
 
       if binder && binder.respond_to?(:decorate)
         # decorate the bind handle.
@@ -1259,6 +1259,9 @@ class OCI8
     BindType::Mapping[OCI8::SQLT_IBFLOAT] = BindType::Float
     BindType::Mapping[OCI8::SQLT_IBDOUBLE] = BindType::Float
   end
+
+  # cursor in result set.
+  BindType::Mapping[SQLT_RSET] = BindType::Cursor
 end # OCI8
 
 class OraDate
