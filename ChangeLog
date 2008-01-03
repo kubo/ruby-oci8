@@ -1,3 +1,7 @@
+2008-01-03  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/error.c: fix a SEGV bug when an error is raised in GC.
+	    make a custom backtrace entry only when 'caller' returns an Array.
+
 2007-12-29  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/metadata.rb, lib/oci8/oci8.rb: support cursors in a
 	    result set. For example:
