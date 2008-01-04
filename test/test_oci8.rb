@@ -192,7 +192,6 @@ EOS
       end
       assert_nil(cursor_in_result_set.fetch) # check end of row data
       cursor_in_result_set.close
-      cursor.define(2, OCI8::Cursor) # bad hack. fix later.
     end
     assert_nil(cursor.fetch) # check end of row data
     drop_table('test_table')

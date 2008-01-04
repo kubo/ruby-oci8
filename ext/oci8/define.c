@@ -37,7 +37,17 @@ static VALUE oci8_get_data(VALUE self)
   return obj;
 }
 
+static VALUE oci8_set_data(VALUE self, VALUE val)
+{
+  oci8_bind_handle_t *hp;
+
+  Data_Get_Struct(self, oci8_bind_handle_t, hp);
+  oci8_set_value(hp, val);
+  return self;
+}
+
 void Init_oci8_define(void)
 {
   rb_define_method(cOCIDefine, "get", oci8_get_data, 0);
+  rb_define_method(cOCIDefine, "set", oci8_set_data, 1);
 }

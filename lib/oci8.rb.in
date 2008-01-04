@@ -643,11 +643,11 @@ class OCI8
         [OCI8::SQLT_RSET, nil, val]
       end
       def decorate(b)
-        def b.set(val)
-          raise NotImplementedError
-        end
         def b.get()
           (val = super()) && OCI8::Cursor.new(@env, @svc, @ctx, val)
+        end
+        def b.pre_fetch_hook()
+          set(@env.alloc(OCIStmt))
         end
       end
     end
@@ -918,6 +918,9 @@ class OCI8
     end # bind_params
 
     def fetch_a_row
+      @defns.each do |d|
+        d.pre_fetch_hook if d.respond_to? :pre_fetch_hook
+      end
       res = do_ocicall(@ctx) { @stmt.fetch() }
       return nil if res.nil?
       res.collect do |r| r.get() end

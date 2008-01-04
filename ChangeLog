@@ -1,3 +1,9 @@
+2008-01-04  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/define.c, lib/oci8.rb.in: support cursors in a result
+	    set without re-defining the define handle.
+	* test/test_oci8.rb: delete re-defining in a test case for cursors
+	    in a result set.
+
 2007-12-29  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8.rb.in: support cursors in a result set. For example:
 	    SELECT column1 A, column2 B, CURSOR(SELECT * FROM table2) C
