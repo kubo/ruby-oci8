@@ -384,7 +384,7 @@ static void bind_oradate_set(oci8_bind_t *obind, void *data, void **null_structp
     memcpy(data, od, sizeof(ora_date_t));
 }
 
-static void bind_oradate_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
+static void bind_oradate_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
     obind->value_sz = sizeof(ora_date_t);
     obind->alloc_sz = sizeof(ora_date_t);
@@ -409,6 +409,7 @@ static oci8_bind_class_t bind_oradate_class = {
     bind_oradate_set,
     bind_oradate_init,
     bind_oradate_init_elem,
+    NULL,
     NULL,
     NULL,
     SQLT_DAT,

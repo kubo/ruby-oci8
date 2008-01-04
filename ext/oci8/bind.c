@@ -35,15 +35,15 @@ static void bind_string_set(oci8_bind_t *obind, void *data, void **null_structp,
     vstr->size = RSTRING_LEN(val);
 }
 
-static void bind_string_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
+static void bind_string_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
     sb4 sz;
     if (NIL_P(length)) {
-        if (NIL_P(*val)) {
+        if (NIL_P(val)) {
             rb_raise(rb_eArgError, "value and length are both null.");
         }
-        StringValue(*val);
-        sz = RSTRING_LEN(*val);
+        StringValue(val);
+        sz = RSTRING_LEN(val);
     } else {
         sz = NUM2INT(length);
     }
@@ -67,6 +67,7 @@ static oci8_bind_class_t bind_string_class = {
     NULL,
     NULL,
     NULL,
+    NULL,
     SQLT_LVC
 };
 
@@ -82,6 +83,7 @@ static oci8_bind_class_t bind_raw_class = {
     bind_string_get,
     bind_string_set,
     bind_string_init,
+    NULL,
     NULL,
     NULL,
     NULL,
@@ -123,7 +125,7 @@ static void bind_long_set(oci8_bind_t *obind, void *data, void **null_structp, V
     bl->obj = rb_str_dup(val);
 }
 
-static void bind_long_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
+static void bind_long_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
     sb4 sz = 0;
 
@@ -198,6 +200,7 @@ static oci8_bind_class_t bind_long_class = {
     bind_long_init_elem,
     bind_long_in,
     bind_long_out,
+    NULL,
     SQLT_CHR
 };
 
@@ -216,6 +219,7 @@ static oci8_bind_class_t bind_long_raw_class = {
     bind_long_init_elem,
     bind_long_in,
     bind_long_out,
+    NULL,
     SQLT_BIN
 };
 
@@ -233,7 +237,7 @@ static void bind_fixnum_set(oci8_bind_t *obind, void *data, void **null_structp,
     *(long*)data = FIX2LONG(val);
 }
 
-static void bind_fixnum_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
+static void bind_fixnum_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
     obind->value_sz = sizeof(long);
     obind->alloc_sz = sizeof(long);
@@ -248,6 +252,7 @@ static oci8_bind_class_t bind_fixnum_class = {
     bind_fixnum_get,
     bind_fixnum_set,
     bind_fixnum_init,
+    NULL,
     NULL,
     NULL,
     NULL,
@@ -268,7 +273,7 @@ static void bind_float_set(oci8_bind_t *obind, void *data, void **null_structp, 
     *(double*)data = RFLOAT_VALUE(val);
 }
 
-static void bind_float_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
+static void bind_float_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
     obind->value_sz = sizeof(double);
     obind->alloc_sz = sizeof(double);
@@ -286,6 +291,7 @@ static oci8_bind_class_t bind_float_class = {
     NULL,
     NULL,
     NULL,
+    NULL,
     SQLT_FLT
 };
 
@@ -299,6 +305,7 @@ static oci8_bind_class_t bind_binary_double_class = {
     bind_float_get,
     bind_float_set,
     bind_float_init,
+    NULL,
     NULL,
     NULL,
     NULL,
@@ -396,7 +403,7 @@ static VALUE oci8_bind_initialize(VALUE self, VALUE svc, VALUE val, VALUE length
     obind->curar_sz = 0;
     if (obind->maxar_sz > 0)
         cnt = obind->maxar_sz;
-    bind_class->init(obind, svc, &val, length);
+    bind_class->init(obind, svc, val, length);
     if (obind->alloc_sz > 0) {
         obind->valuep = xmalloc(obind->alloc_sz * cnt);
         memset(obind->valuep, 0, obind->alloc_sz * cnt);

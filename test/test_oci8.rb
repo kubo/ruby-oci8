@@ -153,7 +153,7 @@ EOS
     end
     cursor.close
     plsql = @conn.parse("BEGIN OPEN :cursor FOR SELECT * FROM test_table ORDER BY c; END;")
-    plsql.bind_param(':cursor', OCI8::Cursor)
+    plsql.bind_param(':cursor', nil, OCI8::Cursor)
     plsql.exec
     cursor = plsql[':cursor']
     cursor.define(5, Time) # define 5th column as Time
@@ -220,7 +220,6 @@ EOS
       end
       assert_nil(cursor_in_result_set.fetch) # check end of row data
       cursor_in_result_set.close
-      cursor.define(2, OCI8::Cursor) # bad hack. fix later.
     end
     assert_nil(cursor.fetch) # check end of row data
     drop_table('test_table')

@@ -1,3 +1,18 @@
+2008-01-04  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.h, ext/oci8/stmt.c: 1. add a 'pre_fetch_hook'
+	    callback function to oci8_bind_class_t. This function is
+	    called before OCIStmtFetch in OCI8::Cursor#fetch.
+	    2. allocate OCIStmt handle by pre_fetch_hook when a result set
+	    has cursors.
+	    3. change 'init' callback function's prototype in
+	    oci8_bind_class_t.
+	* ext/oci8/bind.c, ext/oci8/lob.c, ext/oci8/object.c,
+	  ext/oci8/ocidatetime.c, ext/oci8/ocinumber.c,
+	  ext/oci8/oradate.c, ext/oci8/rowid.c: changes causes by above 1
+	    and 3.
+	* test/test_oci8.rb: delete re-defining in a test case for cursors
+	    in a result set.
+
 2008-01-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/error.c: fix a SEGV bug when an error is raised in GC.
 	    make a custom backtrace entry only when 'caller' returns an Array.

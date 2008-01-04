@@ -509,7 +509,7 @@ static void bind_named_type_set(oci8_bind_t *obind, void *data, void **null_stru
     rb_raise(rb_eRuntimeError, "not supported");
 }
 
-static void bind_named_type_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
+static void bind_named_type_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
     VALUE tdo_obj = length;
 
@@ -562,6 +562,7 @@ static oci8_bind_class_t bind_named_type_class = {
     bind_named_type_set,
     bind_named_type_init,
     bind_named_type_init_elem,
+    NULL,
     NULL,
     NULL,
     SQLT_NTY

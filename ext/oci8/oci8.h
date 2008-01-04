@@ -124,10 +124,11 @@ struct oci8_bind_class {
     oci8_base_class_t base;
     VALUE (*get)(oci8_bind_t *obind, void *data, void *null_struct);
     void (*set)(oci8_bind_t *obind, void *data, void **null_structp, VALUE val);
-    void (*init)(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length);
+    void (*init)(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length);
     void (*init_elem)(oci8_bind_t *obind, VALUE svc);
     ub1 (*in)(oci8_bind_t *obind, ub4 idx, ub1 piece, void **valuepp, ub4 **alenpp, void **indpp);
     void (*out)(oci8_bind_t *obind, ub4 idx, ub1 piece, void **valuepp, ub4 **alenpp, void **indpp);
+    void (*pre_fetch_hook)(oci8_bind_t *obind, VALUE svc);
     ub2 dty;
     ub1 csfrm;
 };

@@ -21,6 +21,7 @@ static VALUE oci8_sym_other;
 static ID id_at_column_metadata;
 static ID id_at_names;
 static ID id_at_con;
+static ID id_set;
 
 VALUE cOCIStmt;
 
@@ -333,6 +334,16 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
     oci8_bind_t *obind;
     oci8_bind_class_t *bind_class;
 
+    obind = (oci8_bind_t *)stmt->base.children;
+    do {
+        if (obind->base.type == OCI_HTYPE_DEFINE) {
+            bind_class = (oci8_bind_class_t *)obind->base.klass;
+            if (bind_class->pre_fetch_hook != NULL) {
+                bind_class->pre_fetch_hook(obind, stmt->svc);
+            }
+        }
+        obind = (oci8_bind_t *)obind->base.next;
+    } while (obind != (oci8_bind_t*)stmt->base.children);
     rv = OCIStmtFetch_nb(svcctx, stmt->base.hp.stmt, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT);
     while (rv == OCI_NEED_DATA) {
         /* get piece info. */
@@ -647,13 +658,10 @@ static void bind_stmt_set(oci8_bind_t *obind, void *data, void **null_structp, V
     oho->obj = val;
 }
 
-static void bind_stmt_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
+static void bind_stmt_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
     obind->value_sz = sizeof(void *);
     obind->alloc_sz = sizeof(oci8_hp_obj_t);
-    if (NIL_P(*val)) {
-        *val = rb_funcall(cOCIStmt, oci8_id_new, 1, svc);
-    }
 }
 
 static void bind_stmt_init_elem(oci8_bind_t *obind, VALUE svc)
@@ -681,6 +689,7 @@ static oci8_bind_class_t bind_stmt_class = {
     bind_stmt_init_elem,
     NULL,
     NULL,
+    bind_stmt_init_elem,
     SQLT_RSET
 };
 
@@ -701,6 +710,7 @@ void Init_oci8_stmt(VALUE cOCI8)
     id_at_column_metadata = rb_intern("@column_metadata");
     id_at_names = rb_intern("@names");
     id_at_con = rb_intern("@con");
+    id_set = rb_intern("set");
 
     rb_define_private_method(cOCIStmt, "initialize", oci8_stmt_initialize, -1);
     rb_define_private_method(cOCIStmt, "__define", oci8_define_by_pos, 2);

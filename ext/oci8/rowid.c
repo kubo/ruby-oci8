@@ -97,7 +97,7 @@ static void bind_rowid1_set(oci8_bind_t *obind, void *data, void **null_structp,
     vstr->size = strlen(rowid->id);
 }
 
-static void bind_rowid1_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
+static void bind_rowid1_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
     obind->value_sz = BIND_ROWID1_SIZE;
     obind->alloc_sz = BIND_ROWID1_SIZE;
@@ -112,6 +112,7 @@ static oci8_bind_class_t bind_rowid1_class = {
     bind_rowid1_get,
     bind_rowid1_set,
     bind_rowid1_init,
+    NULL,
     NULL,
     NULL,
     NULL,
@@ -260,7 +261,7 @@ static void bind_rowid2_set(oci8_bind_t *obind, void *data, void **null_structp,
     oho->obj = val;
 }
 
-static void bind_rowid2_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
+static void bind_rowid2_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
     obind->value_sz = sizeof(void *);
     obind->alloc_sz = sizeof(oci8_hp_obj_t);

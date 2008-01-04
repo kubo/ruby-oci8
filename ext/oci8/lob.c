@@ -576,7 +576,7 @@ static void bind_lob_set(oci8_bind_t *obind, void *data, void **null_structp, VA
     oho->obj = val;
 }
 
-static void bind_lob_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
+static void bind_lob_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
     obind->value_sz = sizeof(void *);
     obind->alloc_sz = sizeof(oci8_hp_obj_t);
@@ -609,6 +609,7 @@ static oci8_bind_lob_class_t bind_clob_class = {
         bind_lob_init_elem,
         NULL,
         NULL,
+        NULL,
         SQLT_CLOB
     },
     &cOCI8CLOB
@@ -625,6 +626,7 @@ static oci8_bind_lob_class_t bind_nclob_class = {
         bind_lob_set,
         bind_lob_init,
         bind_lob_init_elem,
+        NULL,
         NULL,
         NULL,
         SQLT_CLOB,
@@ -646,6 +648,7 @@ static oci8_bind_lob_class_t bind_blob_class = {
         bind_lob_init_elem,
         NULL,
         NULL,
+        NULL,
         SQLT_BLOB
     },
     &cOCI8BLOB
@@ -662,6 +665,7 @@ static oci8_bind_lob_class_t bind_bfile_class = {
         bind_lob_set,
         bind_lob_init,
         bind_lob_init_elem,
+        NULL,
         NULL,
         NULL,
         SQLT_BFILE

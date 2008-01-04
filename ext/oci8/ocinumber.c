@@ -1033,7 +1033,7 @@ static void bind_integer_set(oci8_bind_t *obind, void *data, void **null_structp
     oci_lc(OCINumberTrunc(oci8_errhp, &num, 0, (OCINumber*)data));
 }
 
-static void bind_ocinumber_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
+static void bind_ocinumber_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
     obind->value_sz = sizeof(OCINumber);
     obind->alloc_sz = sizeof(OCINumber);
@@ -1060,6 +1060,7 @@ static oci8_bind_class_t bind_ocinumber_class = {
     bind_ocinumber_init_elem,
     NULL,
     NULL,
+    NULL,
     SQLT_VNU,
 };
 
@@ -1073,6 +1074,7 @@ static oci8_bind_class_t bind_integer_class = {
     bind_integer_set,
     bind_ocinumber_init,
     bind_ocinumber_init_elem,
+    NULL,
     NULL,
     NULL,
     SQLT_VNU,

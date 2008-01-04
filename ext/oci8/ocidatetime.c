@@ -392,7 +392,7 @@ static void bind_datetime_set(oci8_bind_t *obind, void *data, void **null_struct
                                 strlen(tz_str)));
 }
 
-static void bind_datetime_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
+static void bind_datetime_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
     oci8_bind_dsc_t *obind_dsc = (oci8_bind_dsc_t *)obind;
 
@@ -481,7 +481,7 @@ static void bind_interval_ym_set(oci8_bind_t *obind, void *data, void **null_str
                                    *intvlpp));
 }
 
-static void bind_interval_ym_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
+static void bind_interval_ym_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
     oci8_bind_dsc_t *obind_dsc = (oci8_bind_dsc_t *)obind;
 
@@ -625,7 +625,7 @@ static void bind_interval_ds_set(oci8_bind_t *obind, void *data, void **null_str
                                    day, hour, minute, sec, fsec, *intvlpp));
 }
 
-static void bind_interval_ds_init(oci8_bind_t *obind, VALUE svc, VALUE *val, VALUE length)
+static void bind_interval_ds_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
     oci8_bind_dsc_t *obind_dsc = (oci8_bind_dsc_t *)obind;
 
@@ -658,6 +658,7 @@ static oci8_bind_class_t bind_datetime_class = {
     bind_datetime_init_elem,
     NULL,
     NULL,
+    NULL,
     SQLT_TIMESTAMP_TZ
 };
 
@@ -673,6 +674,7 @@ static oci8_bind_class_t bind_interval_ym_class = {
     bind_interval_ym_init_elem,
     NULL,
     NULL,
+    NULL,
     SQLT_INTERVAL_YM
 };
 
@@ -686,6 +688,7 @@ static oci8_bind_class_t bind_interval_ds_class = {
     bind_interval_ds_set,
     bind_interval_ds_init,
     bind_interval_ds_init_elem,
+    NULL,
     NULL,
     NULL,
     SQLT_INTERVAL_DS
