@@ -1,3 +1,16 @@
+2008-01-08  KUBO Takehiro  <kubo@jiubao.org>
+	* test/config.rb, test/test_bind_raw.rb, test/test_bind_time.rb,
+	  test/test_break.rb, test/test_clob.rb, test/test_datetime.rb,
+	  test/test_dbi.rb, test/test_dbi_clob.rb, test/test_metadata.rb,
+	  test/test_object.rb, test/test_oci8.rb, test/test_oradate.rb,
+	  test_oranumber.rb: use one OCI8 session for all OCI8 test cases
+	    and use one DBI session for all DBI test cases.
+	    Before this changes, connection/disconnection were called
+	    for each tests. If they are done too frequently and the Oracle
+	    server is on a remote server, the following error is raised.
+	      OCIError: ORA-12516: TNS:listener could not find available
+	      handler with matching protocol stack
+
 2008-01-04  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.h, ext/oci8/stmt.c: 1. add a 'pre_fetch_hook'
 	    callback function to oci8_bind_class_t. This function is

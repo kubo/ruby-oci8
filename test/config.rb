@@ -20,15 +20,22 @@ $lobreadnum = 256 # counts in charactors
 
 # don't modify below.
 
+$dbconn = OCI8.new($dbuser, $dbpass, $dbname)
+begin
+  require 'dbi'
+  $dbh = DBI.connect("dbi:OCI8:#{$dbname}", $dbuser, $dbpass, 'AutoCommit' => false)
+rescue LoadError
+end
+
+
 # $oracle_server_version: database compatible level of the Oracle server.
 # $oracle_client_version: Oracle client library version for which oci8 is compiled.
 # $oracle_version: lower value of $oracle_server_version and $oracle_client_version.
-conn = OCI8.new($dbuser, $dbpass, $dbname)
-conn.exec('select value from database_compatible_level') do |row|
+$dbconn.exec('select value from database_compatible_level') do |row|
   ver = row[0].split('.')
   $oracle_server_version = (ver[0] + ver[1] + ver[2]).to_i
 end
-conn.logoff
+
 $oracle_client_version = OCI8::CLIENT_VERSION.to_i
 if $oracle_server_version < $oracle_client_version
   $oracle_version = $oracle_server_version

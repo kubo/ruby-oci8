@@ -53,7 +53,7 @@ class TestOraNumber < Test::Unit::TestCase
   ]
 
   def setup
-    @conn = OCI8.new($dbuser, $dbpass, $dbname)
+    @conn = $dbconn
   end
 
   def test_to_s
@@ -137,6 +137,6 @@ class TestOraNumber < Test::Unit::TestCase
   end
 
   def teardown
-    @conn.logoff
+    @conn.rollback
   end
 end

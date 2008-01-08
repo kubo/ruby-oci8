@@ -13,7 +13,7 @@ class TestOraDate < Test::Unit::TestCase
   SECOND_CHECK_TARGET = [0, 15, 30, 45, 59]
 
   def setup
-    @conn = OCI8.new($dbuser, $dbpass, $dbname)
+    @conn = $dbconn
   end
 
   def check_oradate(target, year, month, day, hour, minute, second)
@@ -251,6 +251,6 @@ class TestOraDate < Test::Unit::TestCase
   end
 
   def teardown
-    @conn.logoff
+    @conn.rollback
   end
 end

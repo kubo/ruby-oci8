@@ -9,12 +9,12 @@ class TestObj1 < Test::Unit::TestCase
   Delta = 0.00001
 
   def setup
-    @conn = OCI8.new($dbuser, $dbpass, $dbname)
+    @conn = $dbconn
     RbTestObj.default_connection = @conn
   end
 
   def teardown
-    @conn.logoff
+    @conn.rollback
   end
 
   class ExpectedValObjElem

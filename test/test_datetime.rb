@@ -13,12 +13,12 @@ class TestDateTime < Test::Unit::TestCase
   end
 
   def setup
-    @conn = OCI8.new($dbuser, $dbpass, $dbname)
+    @conn = $dbconn
     @local_timezone = timezone_string(*((::Time.now.utc_offset / 60).divmod 60))
   end
 
   def teardown
-    @conn.logoff
+    @conn.rollback
   end
 
   def test_date_select

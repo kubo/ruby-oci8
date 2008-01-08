@@ -6,11 +6,11 @@ require './config'
 class TestDBI < Test::Unit::TestCase
 
   def setup
-    @dbh = DBI.connect("dbi:OCI8:#{$dbname}", $dbuser, $dbpass, 'AutoCommit' => false)
+    @dbh = $dbh
   end
 
   def teardown
-    @dbh.disconnect
+    @dbh.rollback
   end
 
   def test_select

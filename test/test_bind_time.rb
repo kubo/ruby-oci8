@@ -12,7 +12,7 @@ class TestBindTime < Test::Unit::TestCase
   SEC_CHECK_TARGET = [0, 15, 30, 45, 59]
 
   def setup
-    @conn = OCI8.new($dbuser, $dbpass, $dbname)
+    @conn = $dbconn
   end
 
   def test_set_year
@@ -173,6 +173,6 @@ class TestBindTime < Test::Unit::TestCase
   end
 
   def teardown
-    @conn.logoff
+    @conn.rollback
   end
 end
