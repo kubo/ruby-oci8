@@ -315,7 +315,7 @@ class OCI8
   end # non_blocking?
 
   def non_blocking=(nb)
-    if nb && ! non_blocking?
+    if (nb ? true : false) != non_blocking?
       # If the argument and the current status are different,
       # toggle blocking / non-blocking.
       @srv = @svc.attrGet(OCI_ATTR_SERVER) unless @srv

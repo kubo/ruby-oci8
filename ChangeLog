@@ -1,4 +1,11 @@
 2008-01-12  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8.rb.in: fix OCI8#non_blocking = false problem.
+	    Once the connection became non-bocking mode, it could
+	    not be reset to blocking mode.
+	    (This problem is reported by Cagdas Gerede.)
+	* test/test_break.rb: add a testcase to test the above problem.
+
+2008-01-12  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oradate.c, ext/oci8/oranumber.c: fix SEGV bugs.
 	    OraDate.new made a core dump on x86_64 linux.
 	    (This problem is reported by Alun Eyre.)

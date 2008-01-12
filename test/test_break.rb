@@ -36,6 +36,17 @@ class TestBreak < RUNIT::TestCase
     th.join
   end
 
+  def test_set_blocking_mode
+    conn = OCI8.new($dbuser, $dbpass, $dbname)
+    conn.non_blocking = true
+    assert_equal(true, conn.non_blocking?)
+    conn.non_blocking = false
+    assert_equal(false, conn.non_blocking?)
+    conn.non_blocking = true
+    assert_equal(true, conn.non_blocking?)
+    conn.logoff()
+  end
+
   def test_blocking_mode
     conn = OCI8.new($dbuser, $dbpass, $dbname)
     conn.non_blocking = false
