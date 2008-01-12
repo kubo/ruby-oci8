@@ -1,3 +1,8 @@
+2008-01-12  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oradate.c, ext/oci8/oranumber.c: fix SEGV bugs.
+	    OraDate.new made a core dump on x86_64 linux.
+	    (This problem is reported by Alun Eyre.)
+
 2008-01-04  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/define.c, lib/oci8.rb.in: support cursors in a result
 	    set without re-defining the define handle.

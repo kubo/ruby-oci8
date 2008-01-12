@@ -30,7 +30,7 @@ static ora_vnumber_t *get_ora_number(VALUE self)
   return ovn;
 }
 
-static VALUE ora_number_s_allocate(klass)
+static VALUE ora_number_s_allocate(VALUE klass)
 {
   ora_vnumber_t *ovn;
   return Data_Make_Struct(klass, ora_vnumber_t, NULL, xfree, ovn);

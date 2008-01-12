@@ -45,7 +45,7 @@ date and time between 4712 B.C. and 9999 A.D.
     rb_raise(rb_eRangeError, "Out of range for second %d (expect 0 .. 59)", sec)
 
 
-static VALUE ora_date_s_allocate(klass)
+static VALUE ora_date_s_allocate(VALUE klass)
 {
   ora_date_t *od;
   return Data_Make_Struct(klass, ora_date_t, NULL, xfree, od);
