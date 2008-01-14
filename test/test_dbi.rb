@@ -6,11 +6,11 @@ require './config'
 class TestDBI < Test::Unit::TestCase
 
   def setup
-    @dbh = $dbh
+    @dbh = get_dbi_connection()
   end
 
   def teardown
-    @dbh.rollback
+    @dbh.disconnect
   end
 
   def test_select

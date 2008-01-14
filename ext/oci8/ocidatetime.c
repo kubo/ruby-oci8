@@ -730,7 +730,7 @@ void Init_oci_datetime(void)
     minute_base = rb_funcall(hour_base, id_mul, 1, INT2FIX(60));
     sec_base = rb_funcall(minute_base, id_mul, 1, INT2FIX(60));
     fsec_base = rb_funcall(sec_base, id_mul, 1, INT2FIX(1000000000));
-    fsec_mul = rb_eval_string("(100_000_000 / DateTime.parse('00:00:00.1').sec_fraction).to_i");
+    fsec_mul = rb_eval_string("(100_000_000 / DateTime.parse('0001-01-01 00:00:00.1').sec_fraction).to_i");
     rb_global_variable(&hour_base);
     rb_global_variable(&minute_base);
     rb_global_variable(&sec_base);

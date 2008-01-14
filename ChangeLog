@@ -1,3 +1,23 @@
+2008-01-14  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.c.tmpl: fix a bug on runtime-api check.
+	* ext/oci8/ocidatetime.c, test/test_datetime.rb: use
+	    DateTime.parse('0001-01-01 00:00:00.1') instead of 
+	    DateTime.parse('00:00:00.1'). The latter doesn't work
+	    on ruby 1.8.5 or earlier.
+	* test/config.rb: revert the previous commit and add
+	    get_oci8_connection() and get_dbi_connection() to the
+	    base class of test cases. When an attempt to connect fails
+	    by ORA-12516 or ORA-12520, their methods sleep one seconds
+	    and try again more once.
+	    delete unused method setup_lowapi().
+	* test/test_bind_raw.rb, test/test_bind_time.rb,
+	  test/test_break.rb, test/test_clob.rb, test/test_datetime.rb,
+	  test/test_dbi.rb, test/test_dbi_clob.rb, test/test_metadata.rb,
+	  test/test_object.rb, test/test_oci8.rb, test/test_oradate.rb,
+	  test_oranumber.rb: revert the previous commit and use
+	    get_oci8_connection() or get_dbi_connection() to make a
+	    connection.
+
 2008-01-08  KUBO Takehiro  <kubo@jiubao.org>
 	* test/config.rb, test/test_bind_raw.rb, test/test_bind_time.rb,
 	  test/test_break.rb, test/test_clob.rb, test/test_datetime.rb,

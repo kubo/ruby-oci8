@@ -9,12 +9,12 @@ class TestObj1 < Test::Unit::TestCase
   Delta = 0.00001
 
   def setup
-    @conn = $dbconn
+    @conn = get_oci8_connection
     RbTestObj.default_connection = @conn
   end
 
   def teardown
-    @conn.rollback
+    @conn.logoff
   end
 
   class ExpectedValObjElem

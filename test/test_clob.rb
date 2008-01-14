@@ -6,7 +6,7 @@ require './config'
 class TestCLob < Test::Unit::TestCase
 
   def setup
-    @conn = $dbconn
+    @conn = get_oci8_connection
   end
 
   def test_insert
@@ -58,6 +58,6 @@ class TestCLob < Test::Unit::TestCase
   end
 
   def teardown
-    @conn.rollback
+    @conn.logoff
   end
 end

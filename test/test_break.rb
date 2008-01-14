@@ -6,12 +6,11 @@ require './config'
 class TestBreak < Test::Unit::TestCase
 
   def setup
-    @conn = $dbconn
+    @conn = get_oci8_connection
   end
 
   def teardown
-    @conn.non_blocking = false
-    @conn.rollback
+    @conn.logoff
   end
 
   def report(str)

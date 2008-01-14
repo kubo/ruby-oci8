@@ -13,12 +13,12 @@ class TestDateTime < Test::Unit::TestCase
   end
 
   def setup
-    @conn = $dbconn
+    @conn = get_oci8_connection
     @local_timezone = timezone_string(*((::Time.now.utc_offset / 60).divmod 60))
   end
 
   def teardown
-    @conn.rollback
+    @conn.logoff
   end
 
   def test_date_select
@@ -187,7 +187,7 @@ EOS
     cursor.exec
     assert_equal(DateTime.parse('2006-12-31 23:59:59'), cursor[:out])
     # test sec_fraction
-    def obj.sec_fraction; DateTime.parse('00:00:00.000001').sec_fraction * 999999 ; end
+    def obj.sec_fraction; DateTime.parse('0001-01-01 00:00:00.000001').sec_fraction * 999999 ; end
     cursor[:in] = obj
     cursor.exec
     assert_equal(DateTime.parse('2006-12-31 23:59:59.999999'), cursor[:out])

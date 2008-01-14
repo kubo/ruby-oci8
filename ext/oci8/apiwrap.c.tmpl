@@ -174,7 +174,7 @@ funcs.each do |f|
   end
   have_vars << 'have_' + f.name + (f.remote ? '_nb' : '')
 %>    <%=f.name%>_func = (<%=f.name%>_func_t)oci8_find_symbol("<%=f.name%>");
-    if (<%=f.name%>_func != NULL)
+    if (<%=f.name%>_func == NULL)
         return;
 <%
 end

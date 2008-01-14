@@ -53,7 +53,7 @@ class TestOraNumber < Test::Unit::TestCase
   ]
 
   def setup
-    @conn = $dbconn
+    @conn = get_oci8_connection
   end
 
   def test_to_s
@@ -137,6 +137,6 @@ class TestOraNumber < Test::Unit::TestCase
   end
 
   def teardown
-    @conn.rollback
+    @conn.logoff
   end
 end

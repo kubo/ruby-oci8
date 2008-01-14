@@ -5,11 +5,11 @@ require './config'
 class TestOCI8 < Test::Unit::TestCase
 
   def setup
-    @conn = $dbconn
+    @conn = get_oci8_connection
   end
 
   def teardown
-    @conn.rollback
+    @conn.logoff
   end
 
   def test_rename

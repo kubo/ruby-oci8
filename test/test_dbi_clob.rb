@@ -5,7 +5,7 @@ require './config'
 class TestDbiCLob < Test::Unit::TestCase
 
   def setup
-    @dbh = $dbh
+    @dbh = get_dbi_connection()
   end
 
   def test_insert
@@ -45,6 +45,6 @@ class TestDbiCLob < Test::Unit::TestCase
   end
 
   def teardown
-    @dbh.rollback
+    @dbh.disconnect
   end
 end

@@ -13,7 +13,7 @@ class TestBindRaw < Test::Unit::TestCase
   ]
 
   def setup
-    @conn = $dbconn
+    @conn = get_oci8_connection()
   end
 
   def test_set_raw
@@ -41,6 +41,6 @@ class TestBindRaw < Test::Unit::TestCase
   end
 
   def teardown
-    @conn.rollback
+    @conn.logoff
   end
 end
