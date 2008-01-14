@@ -1,4 +1,11 @@
 2008-01-14  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.h ext/oci8/oci8lib.c: rename variable name
+	    cOCIHandle to oci8_cOCIHandle to use outside of oci8lib.c.
+	* ext/oci8/metadata.c: use oci8_cOCIHandle instead of rb_cObject
+	    to hold a descrbe handle. check parent object's handle type
+	    in oci8_metadata_create().
+
+2008-01-14  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.c.tmpl: fix a bug on runtime-api check.
 	* ext/oci8/ocidatetime.c, test/test_datetime.rb: use
 	    DateTime.parse('0001-01-01 00:00:00.1') instead of 

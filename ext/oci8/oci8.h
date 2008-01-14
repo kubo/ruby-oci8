@@ -144,6 +144,7 @@ struct oci8_base {
         OCIParam *prm;
         OCILobLocator *lob;
         OCIType *tdo;
+        OCIDescribe *dschp;
     } hp;
     VALUE self;
     oci8_base_class_t *klass;
@@ -234,6 +235,7 @@ extern ID oci8_id_get;
 extern ID oci8_id_set;
 extern ID oci8_id_keys;
 extern int oci8_in_finalizer;
+extern VALUE oci8_cOCIHandle;
 void oci8_base_free(oci8_base_t *base);
 VALUE oci8_define_class(const char *name, oci8_base_class_t *klass);
 VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_class_t *klass);

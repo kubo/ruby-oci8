@@ -38,6 +38,8 @@ VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE parent)
     VALUE klass;
     VALUE obj;
 
+    Check_Handle(parent, oci8_cOCIHandle, p);
+
     oci_lc(OCIAttrGet(parmhp, OCI_DTYPE_PARAM, &ptype, &size, OCI_ATTR_PTYPE, oci8_errhp));
     klass = rb_hash_aref(ptype_to_class, INT2FIX(ptype));
     if (NIL_P(klass))
@@ -51,7 +53,6 @@ VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE parent)
     md->base.hp.prm = parmhp;
     md->svc = svc;
 
-    p = DATA_PTR(parent);
     if (p->type == OCI_HTYPE_STMT) {
         md->is_implicit = 1;
     } else {
@@ -261,39 +262,30 @@ static VALUE metadata_is_implicit_p(VALUE self)
     return md->is_implicit ? Qtrue : Qfalse;
 }
 
-static void oci8_desc_free(OCIDescribe *dschp)
-{
-    if (dschp != NULL)
-        OCIHandleFree(dschp, OCI_HTYPE_DESCRIBE);
-}
-
 static VALUE oci8_do_describe(VALUE self, void *objptr, ub4 objlen, ub1 objtype, VALUE klass, VALUE check_public)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
-    OCIDescribe *dschp;
     OCIParam *parmhp;
     VALUE type;
-    sword rv;
-    VALUE desc;
+    VALUE obj;
+    oci8_base_t *desc;
+
+    /* make a describe handle object */
+    obj = rb_obj_alloc(oci8_cOCIHandle);
+    desc = DATA_PTR(obj);
+    oci_lc(OCIHandleAlloc(oci8_envhp, (dvoid *)&desc->hp.dschp, OCI_HTYPE_DESCRIBE, 0, 0));
+    desc->type = OCI_HTYPE_DESCRIBE;
 
     type = rb_hash_aref(class_to_ptype, klass);
-    oci_lc(OCIHandleAlloc(oci8_envhp, (dvoid *)&dschp, OCI_HTYPE_DESCRIBE, 0, 0));
-    /* dschp is freed when GC runs. */
-    desc = Data_Wrap_Struct(rb_cObject, NULL, oci8_desc_free, dschp);
     if (RTEST(check_public)) {
         sb4 val = -1;
         /* size of OCI_ATTR_DESC_PUBLIC is undocumented. */
-        oci_lc(OCIAttrSet(dschp, OCI_HTYPE_DESCRIBE, &val, 0, OCI_ATTR_DESC_PUBLIC, oci8_errhp));
+        oci_lc(OCIAttrSet(desc->hp.dschp, OCI_HTYPE_DESCRIBE, &val, 0, OCI_ATTR_DESC_PUBLIC, oci8_errhp));
     }
-    rv = OCIDescribeAny_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, objptr, objlen,
-                           objtype, OCI_DEFAULT, FIX2INT(type), dschp);
-    if (rv != OCI_SUCCESS) {
-        OCIHandleFree(dschp, OCI_HTYPE_DESCRIBE);
-        DATA_PTR(desc) = NULL;
-        oci8_raise(oci8_errhp, rv, NULL);
-    }
-    oci_lc(OCIAttrGet(dschp, OCI_HTYPE_DESCRIBE, &parmhp, 0, OCI_ATTR_PARAM, oci8_errhp));
-    return oci8_metadata_create(parmhp, self, desc);
+    oci_lc(OCIDescribeAny_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, objptr, objlen,
+                             objtype, OCI_DEFAULT, FIX2INT(type), desc->hp.dschp));
+    oci_lc(OCIAttrGet(desc->hp.dschp, OCI_HTYPE_DESCRIBE, &parmhp, 0, OCI_ATTR_PARAM, oci8_errhp));
+    return oci8_metadata_create(parmhp, self, obj);
 }
 
 static VALUE oci8_describe(VALUE self, VALUE name, VALUE klass, VALUE check_public)

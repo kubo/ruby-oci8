@@ -26,9 +26,10 @@ ID oci8_id_get;
 ID oci8_id_set;
 ID oci8_id_keys;
 int oci8_in_finalizer = 0;
+VALUE oci8_cOCIHandle;
+
 static ID id_oci8_class;
 
-static VALUE cOCIHandle;
 static VALUE mOCI8BindType;
 static VALUE cOCI8BindTypeBase;
 
@@ -111,6 +112,7 @@ void
 Init_oci8lib()
 {
     VALUE cOCI8;
+    VALUE obj;
 
 #ifdef RUNTIME_API_CHECK
     Init_oci8_apiwrap();
@@ -127,17 +129,19 @@ Init_oci8lib()
     Init_oci8_env();
 
     /* OCIHandle class */
-    cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
-    rb_define_alloc_func(cOCIHandle, oci8_s_allocate);
-    rb_define_method(cOCIHandle, "initialize", oci8_handle_initialize, 0);
-    rb_define_method(cOCIHandle, "free", oci8_handle_free, 0);
+    oci8_cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
+    rb_define_alloc_func(oci8_cOCIHandle, oci8_s_allocate);
+    rb_define_method(oci8_cOCIHandle, "initialize", oci8_handle_initialize, 0);
+    rb_define_method(oci8_cOCIHandle, "free", oci8_handle_free, 0);
+    obj = Data_Wrap_Struct(rb_cObject, 0, 0, &oci8_base_class);
+    rb_ivar_set(oci8_cOCIHandle, id_oci8_class, obj);
 
     /* OCI8 class */
     cOCI8 = Init_oci8();
     /* OCI8::BindType module */
     mOCI8BindType = rb_define_module_under(cOCI8, "BindType");
     /* OCI8::BindType::Base class */
-    cOCI8BindTypeBase = rb_define_class_under(mOCI8BindType, "Base", cOCIHandle);
+    cOCI8BindTypeBase = rb_define_class_under(mOCI8BindType, "Base", oci8_cOCIHandle);
 
     /* Handle */
     Init_oci8_bind(cOCI8BindTypeBase);
@@ -161,7 +165,7 @@ Init_oci8lib()
 
 VALUE oci8_define_class(const char *name, oci8_base_class_t *base_class)
 {
-    VALUE klass = rb_define_class(name, cOCIHandle);
+    VALUE klass = rb_define_class(name, oci8_cOCIHandle);
     VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, base_class);
     rb_ivar_set(klass, id_oci8_class, obj);
     return klass;
@@ -169,7 +173,7 @@ VALUE oci8_define_class(const char *name, oci8_base_class_t *base_class)
 
 VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_class_t *base_class)
 {
-    VALUE klass = rb_define_class_under(outer, name, cOCIHandle);
+    VALUE klass = rb_define_class_under(outer, name, oci8_cOCIHandle);
     VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, base_class);
     rb_ivar_set(klass, id_oci8_class, obj);
     return klass;
