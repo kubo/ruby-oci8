@@ -8,9 +8,10 @@
 #include "oci8.h"
 
 /* ruby_setenv */
-#ifdef RUBY_VM
+#ifdef HAVE_RUBY_UTIL_H
 #include <ruby/util.h>
-#else
+#endif
+#ifdef HAVE_UTIL_H
 #include <util.h>
 #endif
 

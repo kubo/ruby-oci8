@@ -1,4 +1,15 @@
 2008-01-14  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb: add checking code for intern.h, util.h,
+	    ruby/util.h, ruby_errinfo and rb_errinfo.
+	* ext/oci8/env.c: define a header file to be included by
+	    HAVE_RUBY_UTIL_H and HAVE_UTIL_H, not by RUBY_VM.
+	* ext/oci8/oci8.h: define a header file to be included by
+	    HAVE_INTERN_H, not by RUBY_VM. use HAVE_RB_ERRINFO and
+	    HAVE_RUBY_ERRINFO to define rb_errinfo() as a macro.
+	* ext/oci8/oci8.c: use rb_eval_string() instead of rb_reg_new()
+	    for not to use RUBY_VM.
+
+2008-01-14  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.h ext/oci8/oci8lib.c: rename variable name
 	    cOCIHandle to oci8_cOCIHandle to use outside of oci8lib.c.
 	* ext/oci8/metadata.c: use oci8_cOCIHandle instead of rb_cObject

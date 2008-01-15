@@ -61,16 +61,12 @@ static ID id_at_prefetch_rows;
 static ID id_at_username;
 static ID id_set_prefetch_rows;
 
-#define CONN_STR_REGEX "^([^(\\s|\\@)]*)\\/([^(\\s|\\@)]*)(?:\\@(\\S+))?(?:\\s+as\\s+(\\S*)\\s*)?$"
+#define CONN_STR_REGEX "/^([^(\\s|\\@)]*)\\/([^(\\s|\\@)]*)(?:\\@(\\S+))?(?:\\s+as\\s+(\\S*)\\s*)?$/i"
 static void oci8_do_parse_connect_string(VALUE conn_str, VALUE *user, VALUE *pass, VALUE *dbname, VALUE *mode)
 {
     static VALUE re = Qnil;
     if (NIL_P(re)) {
-#ifdef RUBY_VM
-        re = rb_reg_new(rb_str_new2(CONN_STR_REGEX), FIX2INT(rb_eval_string("Regexp::IGNORECASE")));
-#else
-        re = rb_reg_new(CONN_STR_REGEX, strlen(CONN_STR_REGEX), FIX2INT(rb_eval_string("Regexp::IGNORECASE")));
-#endif
+        re = rb_eval_string(CONN_STR_REGEX);
         rb_global_variable(&re);
     }
     StringValue(conn_str);

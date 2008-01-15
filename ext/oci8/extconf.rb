@@ -69,6 +69,16 @@ end
 
 have_func("localtime_r")
 
+# ruby 1.8 headers
+have_header("intern.h")
+have_header("util.h")
+# ruby 1.9 headers
+have_header("ruby/util.h")
+
+# $! in C API
+have_var("ruby_errinfo", "ruby.h") # ruby 1.8
+have_func("rb_errinfo", "ruby.h")  # ruby 1.9
+
 # replace files
 replace = {
   'OCI8_CLIENT_VERSION' => oraconf.version,

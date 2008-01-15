@@ -9,7 +9,7 @@
 
 #include "ruby.h"
 #include "rubyio.h"
-#ifndef RUBY_VM
+#ifdef HAVE_INTERN_H
 #include "intern.h"
 #endif
 
@@ -58,7 +58,7 @@ typedef struct OCIAdmin OCIAdmin;
 #define RFLOAT_VALUE(obj) RFLOAT(obj)->value
 #endif
 
-#ifndef RUBY_VM
+#if !defined(HAVE_RB_ERRINFO) && defined(HAVE_RUBY_ERRINFO)
 #define rb_errinfo() ruby_errinfo
 #endif
 
