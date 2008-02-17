@@ -7,7 +7,7 @@ require './config'
 class TestDbiCLob < RUNIT::TestCase
 
   def setup
-    @dbh = DBI.connect("dbi:OCI8:#{$dbname}", $dbuser, $dbpass, 'AutoCommit' => false)
+    @dbh = get_dbi_connection()
   end
 
   def test_insert

@@ -47,6 +47,29 @@ else
   $test_clob = true
 end
 
+def do_connect ()
+  begin
+    yield
+  rescue OCIError
+    raise if $!.code != 12516 && $!.code != 12520
+    # sleep a few seconds and try again if
+    # the error code is ORA-12516 or ORA-12520.
+    #
+    # ORA-12516 - TNS:listener could not find available handler with
+    #             matching protocol stack
+    # ORA-12520 - TNS:listener could not find available handler for
+    #             requested type of server
+    #
+    # Thanks to Christopher Jones.
+    #
+    # Ref: The Underground PHP and Oracle Manual (page 175 in vesion 1.4)
+    #      http://www.oracle.com/technology/tech/php/pdf/underground-php-oracle-manual.pdf
+    #
+    sleep(5)
+    yield
+  end
+end
+
 $env_is_initialized = false
 def setup_lowapi()
   if ! $env_is_initialized
@@ -58,9 +81,17 @@ def setup_lowapi()
     $env_is_initialized = true
   end
   env = OCIEnv.init()
-  svc = env.logon($dbuser, $dbpass, $dbname)
+  svc = do_connect { env.logon($dbuser, $dbpass, $dbname) }
   stmt = env.alloc(OCIStmt)
   return env, svc, stmt
+end
+
+def get_oci_connection()
+  do_connect { OCI8.new($dbuser, $dbpass, $dbname) }
+end
+
+def get_dbi_connection()
+  do_connect { DBI.connect("dbi:OCI8:#{$dbname}", $dbuser, $dbpass, 'AutoCommit' => false) }
 end
 
 module RUNIT

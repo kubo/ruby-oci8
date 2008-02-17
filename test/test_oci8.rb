@@ -6,7 +6,7 @@ require './config'
 class TestOCI8 < RUNIT::TestCase
 
   def setup
-    @conn = OCI8.new($dbuser, $dbpass, $dbname)
+    @conn = get_oci_connection()
   end
 
   def teardown

@@ -1,3 +1,10 @@
+2008-02-17  KUBO Takehiro  <kubo@jiubao.org>
+	* test/config.rb, test/test_break.rb, test/test_dbi.rb,
+	  test/test_dbi_clob.rb, test/test_metadata.rb, test/test_oci8.rb
+	    sleep a few seconds and retry if an attempt to connect to
+	    a database server fails and its error code is ORA-12516
+	    or ORA-12520 in test cases.
+
 2008-01-12  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8.rb.in: fix OCI8#non_blocking = false problem.
 	    Once the connection became non-bocking mode, it could

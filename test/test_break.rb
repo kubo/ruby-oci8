@@ -37,7 +37,7 @@ class TestBreak < RUNIT::TestCase
   end
 
   def test_set_blocking_mode
-    conn = OCI8.new($dbuser, $dbpass, $dbname)
+    conn = get_oci_connection()
     conn.non_blocking = true
     assert_equal(true, conn.non_blocking?)
     conn.non_blocking = false
@@ -48,7 +48,7 @@ class TestBreak < RUNIT::TestCase
   end
 
   def test_blocking_mode
-    conn = OCI8.new($dbuser, $dbpass, $dbname)
+    conn = get_oci_connection()
     conn.non_blocking = false
     expect = []
     expect[PLSQL_DONE] = TIME_IN_PLSQL
@@ -59,7 +59,7 @@ class TestBreak < RUNIT::TestCase
   end
 
   def test_non_blocking_mode
-    conn = OCI8.new($dbuser, $dbpass, $dbname)
+    conn = get_oci_connection()
     conn.non_blocking = true
     expect = []
     expect[PLSQL_DONE] = "Invalid status"
