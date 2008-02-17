@@ -1,3 +1,20 @@
+2008-02-17  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/object.c, ext/oci8/stmt.c:
+	    change from:
+	      switch (fixnum_value) {
+	      case INT2FIX(INT_CONSTANT):
+	        ....;
+	    to:
+	      switch (FIX2INT(fixnum_value)) {
+	      case INT_CONSTANT:
+	        ....;
+	    "case INT2FIX(INT_CONSTANT)" confuses astyle.
+	    astyle's URL: http://astyle.sourceforge.net
+	* test/config.rb: sleep 5 seconds and retry again when
+	    ORA-12516 or ORA-12520. One second was too short on
+	    my new linux box.
+	* test/test_oci8.rb: fix a test case for x86_64 linux.
+
 2008-01-14  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb: add checking code for intern.h, util.h,
 	    ruby/util.h, ruby_errinfo and rb_errinfo.

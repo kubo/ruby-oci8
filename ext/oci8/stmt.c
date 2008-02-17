@@ -480,26 +480,26 @@ static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
 static VALUE oci8_stmt_get_stmt_type(VALUE self)
 {
     VALUE stmt_type = oci8_get_ub2_attr(DATA_PTR(self), OCI_ATTR_STMT_TYPE);
-    switch (stmt_type) {
-    case INT2FIX(OCI_STMT_SELECT):
+    switch (FIX2INT(stmt_type)) {
+    case OCI_STMT_SELECT:
         return oci8_sym_select_stmt;
-    case INT2FIX(OCI_STMT_UPDATE):
+    case OCI_STMT_UPDATE:
         return oci8_sym_update_stmt;
-    case INT2FIX(OCI_STMT_DELETE):
+    case OCI_STMT_DELETE:
         return oci8_sym_delete_stmt;
-    case INT2FIX(OCI_STMT_INSERT):
+    case OCI_STMT_INSERT:
         return oci8_sym_insert_stmt;
-    case INT2FIX(OCI_STMT_CREATE):
+    case OCI_STMT_CREATE:
         return oci8_sym_create_stmt;
-    case INT2FIX(OCI_STMT_DROP):
+    case OCI_STMT_DROP:
         return oci8_sym_drop_stmt;
-    case INT2FIX(OCI_STMT_ALTER):
+    case OCI_STMT_ALTER:
         return oci8_sym_alter_stmt;
-    case INT2FIX(OCI_STMT_BEGIN):
+    case OCI_STMT_BEGIN:
         return oci8_sym_begin_stmt;
-    case INT2FIX(OCI_STMT_DECLARE):
+    case OCI_STMT_DECLARE:
         return oci8_sym_declare_stmt;
-    case INT2FIX(0):
+    case 0:
         return oci8_sym_other;
     default:
         rb_bug("unexcepted statement type %d in OCIStmt#stmt_type", FIX2INT(stmt_type));

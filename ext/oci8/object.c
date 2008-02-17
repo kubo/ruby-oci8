@@ -347,20 +347,20 @@ static VALUE set_coll_element_func(set_coll_element_cb_data_t *cb_data)
         oci_lc(OCICollTrim(oci8_envhp, oci8_errhp, size - RARRAY_LEN(val), coll));
     }
     for (idx = 0; idx < RARRAY_LEN(val); idx++) {
-        switch (datatype) {
-        case INT2FIX(ATTR_NAMED_TYPE):
+        switch (FIX2INT(datatype)) {
+        case ATTR_NAMED_TYPE:
             set_attribute(self, datatype, typeinfo, cb_data->data.ptr, elem_ind_ptr, RARRAY_PTR(val)[idx]);
             break;
         default:
             set_attribute(self, datatype, typeinfo, (void*)&cb_data->data, elem_ind_ptr, RARRAY_PTR(val)[idx]);
             break;
         }
-        switch (datatype) {
-        case INT2FIX(ATTR_OCINUMBER):
-        case INT2FIX(ATTR_FLOAT):
-        case INT2FIX(ATTR_INTEGER):
-        case INT2FIX(ATTR_BINARY_DOUBLE):
-        case INT2FIX(ATTR_BINARY_FLOAT):
+        switch (FIX2INT(datatype)) {
+        case ATTR_OCINUMBER:
+        case ATTR_FLOAT:
+        case ATTR_INTEGER:
+        case ATTR_BINARY_DOUBLE:
+        case ATTR_BINARY_FLOAT:
             elem_ptr = &cb_data->data;
             break;
         default:

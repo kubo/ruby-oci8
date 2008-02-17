@@ -299,7 +299,7 @@ EOS
   def test_select_number
     drop_table('test_table')
     @conn.exec(<<EOS)
-CREATE TABLE test_table (n NUMBER, n14 NUMBER(14), n14_2 NUMBER(14,2), n15_2 NUMBER(15,2), flt FLOAT)
+CREATE TABLE test_table (n NUMBER, n20 NUMBER(20), n14_2 NUMBER(14,2), n15_2 NUMBER(15,2), flt FLOAT)
 STORAGE (
    INITIAL 100k
    NEXT 100k
@@ -308,11 +308,11 @@ STORAGE (
    PCTINCREASE 0)
 EOS
     @conn.exec(<<EOS)
-INSERT INTO test_table values(12345678901234, 12345678901234, 123456789012.34, 1234567890123.45, 1234.5)
+INSERT INTO test_table values(12345678901234, 12345678901234567890, 123456789012.34, 1234567890123.45, 1234.5)
 EOS
     @conn.exec("select * from test_table") do |row|
       assert_equal(row[0], 12345678901234)
-      assert_equal(row[1], 12345678901234)
+      assert_equal(row[1], 12345678901234567890)
       assert_equal(row[2], 123456789012.34)
       assert_equal(row[3], 1234567890123.45)
       assert_equal(row[4], 1234.5)

@@ -56,7 +56,7 @@ module Test
         OCI8.new($dbuser, $dbpass, $dbname)
       rescue OCIError
         raise if $!.code != 12516 && $!.code != 12520
-        # sleep one second and try again if
+        # sleep a few second and try again if
         # the error code is ORA-12516 or ORA-12520.
         #
         # ORA-12516 - TNS:listener could not find available handler with
@@ -69,7 +69,7 @@ module Test
         # Ref: The Underground PHP and Oracle Manual (page 175 in vesion 1.4)
         #      http://www.oracle.com/technology/tech/php/pdf/underground-php-oracle-manual.pdf
         #
-        sleep(1)
+        sleep(5)
         OCI8.new($dbuser, $dbpass, $dbname)
       end
 
@@ -78,7 +78,7 @@ module Test
       rescue DBI::DatabaseError
         raise if $!.err != 12516 && $!.err != 12520
         # same as get_oci8_connection()
-        sleep(1)
+        sleep(5)
         DBI.connect("dbi:OCI8:#{$dbname}", $dbuser, $dbpass, 'AutoCommit' => false)
       end
 
