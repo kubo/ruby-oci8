@@ -93,7 +93,7 @@ static VALUE make_datetime(sb2 year, ub1 month, ub1 day, ub1 hour, ub1 minute, u
             tz_minute = - tz_minute;
         }
         snprintf(buf, sizeof(buf), "%04d-%02d-%02dT%02d:%02d:%02d.%09d%c%02d:%02d",
-                 year, month, day, hour, minute, sec, fsec, sign, 
+                 year, month, day, hour, minute, sec, fsec, sign,
                  tz_hour, tz_minute);
         return rb_funcall(cDateTime, id_parse, 1, rb_str_new2(buf));
     }

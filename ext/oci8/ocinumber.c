@@ -240,7 +240,7 @@ static VALUE omath_cos(VALUE obj, VALUE radian)
 /*
  *  call-seq:
  *     OCI8::Math.sin(x)    => ocinumber
- *  
+ *
  *  Computes the sine of <i>x</i> (expressed in radians). Returns
  *  -1..1.
  */
@@ -256,7 +256,7 @@ static VALUE omath_sin(VALUE obj, VALUE radian)
 /*
  *  call-seq:
  *     OCI8::Math.tan(x)    => ocinumber
- *  
+ *
  *  Returns the tangent of <i>x</i> (expressed in radians).
  */
 static VALUE omath_tan(VALUE obj, VALUE radian)
@@ -271,7 +271,7 @@ static VALUE omath_tan(VALUE obj, VALUE radian)
 /*
  *  call-seq:
  *     OCI8::Math.acos(x)    => ocinumber
- *  
+ *
  *  Computes the arc cosine of <i>x</i>. Returns 0..PI.
  */
 static VALUE omath_acos(VALUE obj, VALUE num)
@@ -297,7 +297,7 @@ static VALUE omath_acos(VALUE obj, VALUE num)
 /*
  *  call-seq:
  *     OCI8::Math.asin(x)    => ocinumber
- *  
+ *
  *  Computes the arc sine of <i>x</i>. Returns 0..PI.
  */
 static VALUE omath_asin(VALUE obj, VALUE num)
@@ -323,7 +323,7 @@ static VALUE omath_asin(VALUE obj, VALUE num)
 /*
  *  call-seq:
  *     OCI8::Math.atan(x)    => ocinumber
- *  
+ *
  *  Computes the arc tangent of <i>x</i>. Returns -{PI/2} .. {PI/2}.
  */
 static VALUE omath_atan(VALUE obj, VALUE num)
@@ -338,7 +338,7 @@ static VALUE omath_atan(VALUE obj, VALUE num)
 /*
  *  call-seq:
  *     OCI8::Math.cosh(x)    => ocinumber
- *  
+ *
  *  Computes the hyperbolic cosine of <i>x</i> (expressed in radians).
  */
 static VALUE omath_cosh(VALUE obj, VALUE num)
@@ -353,7 +353,7 @@ static VALUE omath_cosh(VALUE obj, VALUE num)
 /*
  *  call-seq:
  *     OCI8::Math.sinh(x)    => ocinumber
- *  
+ *
  *  Computes the hyperbolic sine of <i>x</i> (expressed in
  *  radians).
  */
@@ -369,7 +369,7 @@ static VALUE omath_sinh(VALUE obj, VALUE num)
 /*
  *  call-seq:
  *     OCI8::Math.tanh()    => ocinumber
- *  
+ *
  *  Computes the hyperbolic tangent of <i>x</i> (expressed in
  *  radians).
  */
@@ -385,7 +385,7 @@ static VALUE omath_tanh(VALUE obj, VALUE num)
 /*
  *  call-seq:
  *     OCI8::Math.exp(x)    => ocinumber
- *  
+ *
  *  Returns e**x.
  */
 static VALUE omath_exp(VALUE obj, VALUE num)
@@ -401,7 +401,7 @@ static VALUE omath_exp(VALUE obj, VALUE num)
  *  call-seq:
  *     OCI8::Math.log(numeric)    => ocinumber
  *     OCI8::Math.log(numeric, base_num)  => ocinumber
- *  
+ *
  *  Returns the natural logarithm of <i>numeric</i> for one argument.
  *  Returns the base <i>base_num</i> logarithm of <i>numeric</i> for two arguments.
  */
@@ -436,7 +436,7 @@ static VALUE omath_log(int argc, VALUE *argv, VALUE obj)
 /*
  *  call-seq:
  *     OCI8::Math.log10(numeric)    => ocinumber
- *  
+ *
  *  Returns the base 10 logarithm of <i>numeric</i>.
  */
 static VALUE omath_log10(VALUE obj, VALUE num)
@@ -456,7 +456,7 @@ static VALUE omath_log10(VALUE obj, VALUE num)
 /*
  *  call-seq:
  *     OCI8::Math.sqrt(numeric)    => ocinumber
- *  
+ *
  *  Returns the non-negative square root of <i>numeric</i>.
  */
 static VALUE omath_sqrt(VALUE obj, VALUE num)
@@ -663,7 +663,7 @@ static VALUE onum_power(VALUE lhs, VALUE rhs)
             rb_raise(rb_eRangeError, "base is negative and exponent part is not an integral value");
         oci_lc(OCINumberPower(oci8_errhp, _NUMBER(lhs), &n, &r));
     }
-    return oci8_make_ocinumber(&r); 
+    return oci8_make_ocinumber(&r);
 }
 
 /*
@@ -690,7 +690,7 @@ static VALUE onum_cmp(VALUE lhs, VALUE rhs)
 /*
  *  call-seq:
  *     onum.floor   => integer
- *  
+ *
  *  Returns the largest <code>Integer</code> less than or equal to <i>onum</i>.
  */
 static VALUE onum_floor(VALUE self)
@@ -704,7 +704,7 @@ static VALUE onum_floor(VALUE self)
 /*
  *  call-seq:
  *     onum.ceil    => integer
- *  
+ *
  *  Returns the smallest <code>Integer</code> greater than or equal to
  *  <i>onum</i>.
  */
@@ -720,7 +720,7 @@ static VALUE onum_ceil(VALUE self)
  *  call-seq:
  *     onum.round      => integer
  *     onum.round(decplace) => onum
- *  
+ *
  *  Rounds <i>onum</i> to the nearest <code>Integer</code> when no argument.
  *  Rounds <i>onum</i> to a specified decimal place <i>decplace</i> when one argument.
  */
@@ -742,7 +742,7 @@ static VALUE onum_round(int argc, VALUE *argv, VALUE self)
  *  call-seq:
  *     onum.truncate     => integer
  *     onum.truncate(decplace) => ocinumber
- *  
+ *
  *  Truncates <i>onum</i> to the <code>Integer</code> when no argument.
  *  Truncates <i>onum</i> to a specified decimal place <i>decplace</i> when one argument.
  */
@@ -759,7 +759,7 @@ static VALUE onum_trunc(int argc, VALUE *argv, VALUE self)
 /*
  *  call-seq:
  *     onum.round_prec(digits) => ocinumber
- *  
+ *
  *  Rounds <i>onum</i> to a specified number of decimal digits.
  *
  *   OCINumber.new(1.234).round_prec(2)  #=> 1.2
@@ -777,7 +777,7 @@ static VALUE onum_round_prec(VALUE self, VALUE ndigs)
 /*
  *  call-seq:
  *     onum.to_char(fmt = nil, nls_params = nil)  => string
- *  
+ *
  *  Returns a string containing a representation of self.
  *  <i>fmt</i> and <i>nls_params</i> are same meanings with
  *  <code>TO_CHAR</code> of Oracle function.
@@ -847,7 +847,7 @@ static VALUE onum_to_char(int argc, VALUE *argv, VALUE self)
 /*
  *  call-seq:
  *     onum.to_s    => string
- *  
+ *
  *  Returns a string containing a representation of self.
  */
 static VALUE onum_to_s(VALUE self)
@@ -858,7 +858,7 @@ static VALUE onum_to_s(VALUE self)
 /*
  *  call-seq:
  *     onum.to_i       => integer
- *  
+ *
  *  Returns <i>onm</i> truncated to an <code>Integer</code>.
  */
 static VALUE onum_to_i(VALUE self)
@@ -872,9 +872,9 @@ static VALUE onum_to_i(VALUE self)
 /*
  *  call-seq:
  *     onum.to_f -> float
- *  
+ *
  *  Converts <i>onum</i> to a <code>Float</code>.
- *     
+ *
  */
 static VALUE onum_to_f(VALUE self)
 {
@@ -887,7 +887,7 @@ static VALUE onum_to_f(VALUE self)
 /*
  *  call-seq:
  *     onum.to_onum -> onum
- *  
+ *
  */
 static VALUE onum_to_onum(VALUE self)
 {
@@ -897,9 +897,9 @@ static VALUE onum_to_onum(VALUE self)
 /*
  *  call-seq:
  *     onum.zero?    => true or false
- *  
+ *
  *  Returns <code>true</code> if <i>onum</i> is zero.
- *     
+ *
  */
 static VALUE onum_zero_p(VALUE self)
 {
@@ -912,9 +912,9 @@ static VALUE onum_zero_p(VALUE self)
 /*
  *  call-seq:
  *     onum.abs -> ocinumber
- *  
+ *
  *  Returns the absolute value of <i>onum</i>.
- *     
+ *
  */
 static VALUE onum_abs(VALUE self)
 {
@@ -927,7 +927,7 @@ static VALUE onum_abs(VALUE self)
 /*
  *  call-seq:
  *     onum.shift(fixnum)    => ocinumber
- *  
+ *
  *  Returns <i>onum</i> * 10**<i>fixnum</i>
  */
 static VALUE onum_shift(VALUE self, VALUE exp)
@@ -1191,7 +1191,7 @@ Init_oci_number(VALUE cOCI8)
 
 OCINumber *oci8_get_ocinumber(VALUE num)
 {
-    if (!rb_obj_is_kind_of(num, cOCINumber)) { 
+    if (!rb_obj_is_kind_of(num, cOCINumber)) {
         rb_raise(rb_eTypeError, "invalid argument %s (expect a subclass of %s)", rb_class2name(CLASS_OF(num)), rb_class2name(cOCINumber));
     }
     return _NUMBER(num);

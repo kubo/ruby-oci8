@@ -1,4 +1,15 @@
 2008-02-17  KUBO Takehiro  <kubo@jiubao.org>
+	* Makefile: add format_c_source target to fix indentation by
+	    astyle. <URL:http://astyle.sourceforge.net>
+	* ext/oci8/error.c, ext/oci8/lob.c, ext/oci8/metadata.c,
+	  ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c,
+	  ext/oci8/ocidatetime.c, ext/oci8/ocinumber.c,
+	  ext/oci8/oradate.c, ext/oci8/stmt.c, ext/oci8/xmldb.c:
+	    fix indentation by astyle.
+	    The command line options are as follows.
+	      astyle --style=linux --indent=spaces=4 --brackets=linux ext/oci8/*.[ch]
+
+2008-02-17  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/object.c, ext/oci8/stmt.c:
 	    change from:
 	      switch (fixnum_value) {

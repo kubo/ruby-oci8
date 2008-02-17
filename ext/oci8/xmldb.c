@@ -47,8 +47,7 @@ typedef struct xmldomcb {
     void *cb[1];
 } xmldomcb;
 
-typedef struct xmlctxhead
-{
+typedef struct xmlctxhead {
     ub4           cw_xmlctxhead;        /* checkword */
     oratext      *name_xmlctxhead;      /* name for context */
     void         *cb_xmlctxhead;        /* top-level function callbacks */
@@ -351,7 +350,7 @@ static VALUE add_attributes(VALUE obj, struct xmlctx *xctx, xmlnode *node)
         attr = XmlDomGetNodeMapItem(xctx, attrs, idx);
         name = XmlDomGetAttrName(xctx, attr);
         value = XmlDomGetAttrValue(xctx, attr);
-        rb_funcall(obj, id_add_attribute, 2, 
+        rb_funcall(obj, id_add_attribute, 2,
                    rb_str_new2_ora(name),
                    value ? rb_str_new2_ora(value) : Qnil);
     }

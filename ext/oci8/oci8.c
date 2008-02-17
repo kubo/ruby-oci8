@@ -187,10 +187,10 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
     switch (logon_type) {
     case T_IMPLICIT:
         rv = OCILogon_nb(svcctx, oci8_envhp, oci8_errhp, &svchp,
-                      RSTRING_ORATEXT(vusername), RSTRING_LEN(vusername),
-                      RSTRING_ORATEXT(vpassword), RSTRING_LEN(vpassword),
-                      NIL_P(vdbname) ? NULL : RSTRING_ORATEXT(vdbname),
-                      NIL_P(vdbname) ? 0 : RSTRING_LEN(vdbname));
+                         RSTRING_ORATEXT(vusername), RSTRING_LEN(vusername),
+                         RSTRING_ORATEXT(vpassword), RSTRING_LEN(vpassword),
+                         NIL_P(vdbname) ? NULL : RSTRING_ORATEXT(vdbname),
+                         NIL_P(vdbname) ? 0 : RSTRING_LEN(vdbname));
         svcctx->base.hp.svc = svchp;
         svcctx->base.type = OCI_HTYPE_SVCCTX;
         svcctx->logon_type = T_IMPLICIT;
@@ -223,8 +223,8 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
 
         /* attach to server and set to OCISvcCtx. */
         rv = OCIServerAttach_nb(svcctx, svcctx->srvhp, oci8_errhp,
-                             NIL_P(vdbname) ? NULL : RSTRING_ORATEXT(vdbname),
-                             NIL_P(vdbname) ? 0 : RSTRING_LEN(vdbname), OCI_DEFAULT);
+                                NIL_P(vdbname) ? NULL : RSTRING_ORATEXT(vdbname),
+                                NIL_P(vdbname) ? 0 : RSTRING_LEN(vdbname), OCI_DEFAULT);
         if (rv != OCI_SUCCESS)
             oci8_raise(oci8_errhp, rv, NULL);
         oci_lc(OCIAttrSet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp));

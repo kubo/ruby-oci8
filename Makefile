@@ -26,6 +26,9 @@ install:
 site-install:
 	$(RUBY) setup.rb install
 
+format_c_source:
+	astyle --options=none --style=linux --indent=spaces=4 --brackets=linux --suffix=none ext/oci8/*.[ch]
+
 # internal use only
 dist:
 	-rm -rf ruby-oci8-$(VERSION)

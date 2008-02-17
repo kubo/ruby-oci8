@@ -273,12 +273,12 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
             tv.tv_usec <<= 1;
     }
     if (rv == OCI_ERROR) {
-       if (oci8_get_error_code(oci8_errhp) == 1013) {
-           if (have_OCIReset)
-               OCIReset(svcctx->base.hp.ptr, oci8_errhp);
-           svcctx->executing_thread = Qnil;
-           rb_raise(eOCIBreak, "Canceled by user request.");
-       }
+        if (oci8_get_error_code(oci8_errhp) == 1013) {
+            if (have_OCIReset)
+                OCIReset(svcctx->base.hp.ptr, oci8_errhp);
+            svcctx->executing_thread = Qnil;
+            rb_raise(eOCIBreak, "Canceled by user request.");
+        }
     }
     svcctx->executing_thread = Qnil;
     return rv;

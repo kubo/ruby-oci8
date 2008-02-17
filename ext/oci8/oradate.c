@@ -144,7 +144,7 @@ static VALUE ora_date_initialize_copy(VALUE lhs, VALUE rhs)
     Data_Get_Struct(rhs, ora_date_t, r);
     memcpy(l, r, sizeof(ora_date_t));
     return lhs;
-}  
+}
 
 /*
 =begin
@@ -201,7 +201,7 @@ static VALUE ora_date_to_a(VALUE self)
 {
     ora_date_t *od;
     VALUE ary[6];
-  
+
     Data_Get_Struct(self, ora_date_t, od);
     ary[0] = INT2FIX(Get_year(od));
     ary[1] = INT2FIX(Get_month(od));
@@ -289,13 +289,13 @@ DEFINE_SETTER_FUNC(second)
 */
 static VALUE ora_date_trunc(VALUE self)
 {
-  ora_date_t *od;
+    ora_date_t *od;
 
-  Data_Get_Struct(self, ora_date_t, od);
-  od->hour = 1;
-  od->minute = 1;
-  od->second = 1;
-  return self;
+    Data_Get_Struct(self, ora_date_t, od);
+    od->hour = 1;
+    od->minute = 1;
+    od->second = 1;
+    return self;
 }
 
 /*
@@ -347,7 +347,7 @@ static VALUE ora_date_dump(int argc, VALUE *argv, VALUE self)
     ora_date_t *od;
     Data_Get_Struct(self, ora_date_t, od);
     return rb_str_new((const char*)od, sizeof(ora_date_t));
-}  
+}
 
 static VALUE ora_date_s_load(VALUE klass, VALUE str)
 {
@@ -361,7 +361,7 @@ static VALUE ora_date_s_load(VALUE klass, VALUE str)
     obj = Data_Make_Struct(cOraDate, ora_date_t, NULL, xfree, od);
     memcpy(od, RSTRING_PTR(str), sizeof(ora_date_t));
     return obj;
-}  
+}
 
 /*
  * bind_oradate

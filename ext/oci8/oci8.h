@@ -17,7 +17,8 @@
 #include <stdlib.h>
 #include <assert.h>
 #ifdef __cplusplus
-extern "C" {
+extern "C"
+{
 #endif
 #include <oci.h>
 #ifdef __cplusplus
@@ -86,11 +87,11 @@ typedef struct OCIAdmin OCIAdmin;
 #define TO_CHARPTR to_charptr
 static ALWAYS_INLINE OraText *to_oratext(char *c)
 {
-  return (OraText*)c;
+    return (OraText*)c;
 }
 static ALWAYS_INLINE char *to_charptr(OraText *c)
 {
-  return (char*)c;
+    return (char*)c;
 }
 #else
 /* if not gcc, use normal cast. */
@@ -323,7 +324,8 @@ void Init_oci_object(VALUE mOCI);
 /* xmldb.c */
 #ifndef XMLCTX_DEFINED
 #define XMLCTX_DEFINED
-struct xmlctx; typedef struct xmlctx xmlctx;
+struct xmlctx;
+typedef struct xmlctx xmlctx;
 #endif
 #ifndef XML_TYPES
 typedef struct xmlnode xmlnode;

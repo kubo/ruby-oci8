@@ -97,17 +97,17 @@ static VALUE oci8_stmt_initialize(int argc, VALUE *argv, VALUE self)
      :position
         the position of the column. It starts from 1.
      :type
-        the type of column. 
+        the type of column.
         ((|String|)), ((|Fixnum|)), ((|Integer|)), ((|Float|)), ((|Time|)),
         ((<OraDate>)), ((<OraNumber>)), or ((|OCI_TYPECODE_RAW|))
      :length
-        When the 2nd argument is 
+        When the 2nd argument is
         * ((|String|)) or ((|OCI_TYPECODE_RAW|)),
           the max length of fetched data.
         * otherwise,
           its value is ignored.
      :mode
-        ((|OCI_DEFAULT|)), or ((|OCI_DYNAMIC_FETCH|)). But now available value is 
+        ((|OCI_DEFAULT|)), or ((|OCI_DYNAMIC_FETCH|)). But now available value is
         ((|OCI_DEFAULT|)) only. Default value is ((|OCI_DEFAULT|))
      :return value
         newly created ((<define handle|OCIDefine>))
@@ -533,7 +533,7 @@ static VALUE oci8_stmt_get_param_count(VALUE self)
  * Gets the value of the bind variable.
  *
  * In case of binding explicitly, use same key with that of
- * OCI8::Cursor#bind_param. A placeholder can be bound by 
+ * OCI8::Cursor#bind_param. A placeholder can be bound by
  * name or position. If you bind by name, use that name. If you bind
  * by position, use the position.
  *

@@ -294,10 +294,10 @@ void oci8_do_env_raise(OCIEnv *envhp, sword status, const char *file, int line)
 
 void oci8_do_raise_init_error(const char *file, int line)
 {
-  VALUE msg = rb_str_new2("OCI Library Initialization Error");
-  VALUE exc = rb_funcall(eOCIError, oci8_id_new, 1, msg);
+    VALUE msg = rb_str_new2("OCI Library Initialization Error");
+    VALUE exc = rb_funcall(eOCIError, oci8_id_new, 1, msg);
 
-  rb_ivar_set(exc, oci8_id_code, rb_ary_new3(1, INT2FIX(-1)));
-  rb_ivar_set(exc, oci8_id_message, rb_ary_new3(1, msg));
-  set_backtrace_and_raise(exc, file, line);
+    rb_ivar_set(exc, oci8_id_code, rb_ary_new3(1, INT2FIX(-1)));
+    rb_ivar_set(exc, oci8_id_message, rb_ary_new3(1, msg));
+    set_backtrace_and_raise(exc, file, line);
 }

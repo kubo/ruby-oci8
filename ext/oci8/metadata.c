@@ -1,7 +1,7 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
  * metadata.c
- * 
+ *
  * Copyright (C) 2006-2007 KUBO Takehiro <kubo@jiubao.org>
  *
  * implement private methods of classes in OCI8::Metadata module.

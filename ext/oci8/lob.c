@@ -412,8 +412,8 @@ static VALUE oci8_lob_clone(VALUE self)
     newobj = rb_funcall(CLASS_OF(self), oci8_id_new, 1, lob->svc);
     newlob = DATA_PTR(newobj);
     if (have_OCILobLocatorAssign_nb && have_OCILobIsTemporary
-        && OCILobIsTemporary(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_temporary) == OCI_SUCCESS
-        && is_temporary) {
+            && OCILobIsTemporary(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_temporary) == OCI_SUCCESS
+            && is_temporary) {
         oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
         rv = OCILobLocatorAssign_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &newlob->base.hp.lob);
     } else {
@@ -467,8 +467,8 @@ static void oci8_bfile_set_name(VALUE self, VALUE dir_alias, VALUE filename)
 
     bfile_close(lob);
     oci_lc(OCILobFileSetName(oci8_envhp, oci8_errhp, &lob->base.hp.lob,
-                               RSTRING_ORATEXT(dir_alias), RSTRING_LEN(dir_alias),
-                               RSTRING_ORATEXT(filename), RSTRING_LEN(filename)));
+                             RSTRING_ORATEXT(dir_alias), RSTRING_LEN(dir_alias),
+                             RSTRING_ORATEXT(filename), RSTRING_LEN(filename)));
 }
 
 static VALUE oci8_bfile_initialize(int argc, VALUE *argv, VALUE self)
