@@ -1,3 +1,28 @@
+2008-2-27 Liming Lian <liming.lian@oracle.com>
+	Add new feature: Array DML
+	* lib/oci8/oci8.rb:  add three new methods for Array DML to OCI8::Cursor: 
+	    max_array_size=, bind_param_array and exec_array
+	    1) OCI8::Cursor#max_array_size=: set the maximum array size for OCI8::Cursor#bind_param_array. 
+	    This method should be called before OCI8::Cursor#bind_param_array
+	    2) OCI8::Cursor#bind_param_array: bind array explicitly. This method is used to bind an array of 
+	    values to a placeholder embedded in the prepared statement which is to be executed with 
+	    OCI8::Cursor#exec_array
+	    3) OCI8::Cursor#exec_array: executes the SQL statement assigned the cursor with array bindings. 
+	    This implementation currently only supports non-data returning statements (INSERT, UPDATE, DELETE 
+	    but not SELECT). All binding arrays should be the same size and this size will be used as iteration 
+	    count for OCIStmtExecute()
+	* ext/oci8/stmt.c: add support for Array DML
+	    1) Change the parameters for invoking OCIBindByPos and OCIBindByName because 
+	    currently we only support Array DML for non-PL/SQL binds.
+	    2) Add a new parameter "Value iteration_count" to function oci8_stmt_execute. 
+	    This parameter indicates iteration count for OCIStmtExecute. For Non-Array DML, 
+	    you should set this parameter "nil"
+	    3) Add three new functions: each_value, clear_binds_iterator_proc, oci8_stmt_clear_binds. 
+	    Those functions are used to clear all binds from OCI8::Cursor. When calling OCI8::Cursor#max_array_size, 
+	    all the binds will be clean from cursor if instance variable max_array_size of cursor is set before.
+	* test/test_array_dml.rb(added): add test cases for Array DML
+	* test/test_all.rb: call test cases for Array DML 
+
 2008-02-17  KUBO Takehiro  <kubo@jiubao.org>
 	* Makefile: add format_c_source target to fix indentation by
 	    astyle. <URL:http://astyle.sourceforge.net>

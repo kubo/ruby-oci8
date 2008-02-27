@@ -17,6 +17,7 @@ require "#{srcdir}/test_oci8"
 require "#{srcdir}/test_datetime"
 require "#{srcdir}/test_connstr"
 require "#{srcdir}/test_metadata"
+require "#{srcdir}/test_array_dml"
 
 # Ruby/DBI
 begin

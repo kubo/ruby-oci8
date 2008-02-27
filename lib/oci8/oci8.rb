@@ -348,9 +348,12 @@ class OCI8
     # true. In contrast with OCI8#exec, it returns true even
     # though PL/SQL. Use OCI8::Cursor#[] explicitly to get bind
     # variables.
+    # 
+    # Pass a "nil" to "__execute" to specify the statement isn't 
+    # an Array DML 
     def exec(*bindvars)
       bind_params(*bindvars)
-      __execute()
+      __execute(nil)
       case type
       when :select_stmt
         define_columns()
@@ -360,6 +363,80 @@ class OCI8
 	true
       end
     end # exec
+
+    # Set the maximum array size for bind_param_array
+    #
+    # All the binds will be clean from cursor if instance variable max_array_size is set before
+    #
+    # Instance variable actual_array_size holds the size of the arrays users actually binds through bind_param_array
+    #  all the binding arrays are required to be the same size
+    def max_array_size=(size)
+      raise "expect positive number for max_array_size." if size.nil? && size <=0
+      __clearBinds if !@max_array_size.nil?
+      @max_array_size = size
+      @actual_array_size = nil
+    end # max_array_size=
+
+    # Bind array explicitly
+    #
+    # When key is number, it binds by position, which starts from 1.
+    # When key is string, it binds by the name of placeholder.
+    # 
+    # The max_array_size should be set before calling bind_param_array
+    #
+    # example:
+    #   cursor = conn.parse("INSERT INTO test_table VALUES (:str)")
+    #   cursor.max_array_size = 3
+    #   cursor.bind_param_array(1, ['happy', 'new', 'year'], String, 30)
+    #   cursor.exec_array
+    def bind_param_array(key, var_array, type = nil, max_item_length = nil)
+      raise "please call max_array_size= first." if @max_array_size.nil?
+      raise "expect array as input param for bind_param_array." if !var_array.nil? && !(var_array.is_a? Array) 
+      raise "the size of var_array should not be greater than max_array_size." if !var_array.nil? && var_array.size > @max_array_size
+
+      if var_array.nil? 
+        raise "all binding arrays should be the same size." unless @actual_array_size.nil? || @actual_array_size == 0
+        @actual_array_size = 0
+      else
+        raise "all binding arrays should be the same size." unless @actual_array_size.nil? || var_array.size == @actual_array_size
+        @actual_array_size = var_array.size if @actual_array_size.nil?
+      end
+      
+      param = {:value => var_array, :type => type, :length => max_item_length, :max_array_size => @max_array_size}
+      first_non_nil_elem = var_array.nil? ? nil : var_array.find{|x| x!= nil}
+      
+      if type.nil?
+        if first_non_nil_elem.nil?
+          raise "bind type is not given."
+        else
+          type = first_non_nil_elem.class
+        end
+      end
+      
+      bindclass = OCI8::BindType::Mapping[type]
+      raise "unsupported dataType: #{type}" if bindclass.nil?
+      bindobj = bindclass.create(@con, var_array, param, @max_array_size)
+      __bind(key, bindobj)
+      self
+    end # bind_param_array
+
+    # Executes the SQL statement assigned the cursor with array binding
+    def exec_array
+      raise "please call max_array_size= first." if @max_array_size.nil?
+
+      if !@actual_array_size.nil? && @actual_array_size > 0
+        __execute(@actual_array_size)
+      else
+        raise "please set non-nil values to array binding parameters"
+      end
+
+      case type
+      when :update_stmt, :delete_stmt, :insert_stmt
+        row_count
+      else
+        true
+      end
+    end # exec_array
 
     # Gets the names of select-list as array. Please use this
     # method after exec.

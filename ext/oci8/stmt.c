@@ -19,8 +19,13 @@ static VALUE oci8_sym_begin_stmt;
 static VALUE oci8_sym_declare_stmt;
 static VALUE oci8_sym_other;
 static ID id_at_column_metadata;
+static ID id_at_actual_array_size;
+static ID id_at_max_array_size;
+static ID id_each_value;
 static ID id_at_names;
+static ID id_empty_p;
 static ID id_at_con;
+static ID id_clear;
 static ID id_set;
 
 VALUE cOCIStmt;
@@ -212,9 +217,9 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
         curelep = &obind->curar_sz;
     }
     if (placeholder_ptr == (char*)-1) {
-        status = OCIBindByPos(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, position, obind->valuep, obind->value_sz, bind_class->dty, indp, NULL, 0, obind->maxar_sz, curelep, mode);
+        status = OCIBindByPos(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, position, obind->valuep, obind->value_sz, bind_class->dty, indp, NULL, 0, 0, 0, mode);
     } else {
-        status = OCIBindByName(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, TO_ORATEXT(placeholder_ptr), placeholder_len, obind->valuep, obind->value_sz, bind_class->dty, indp, NULL, 0, obind->maxar_sz, curelep, mode);
+        status = OCIBindByName(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, TO_ORATEXT(placeholder_ptr), placeholder_len, obind->valuep, obind->value_sz, bind_class->dty, indp, NULL, 0, 0, 0, mode);
     }
     if (status != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, status, stmt->base.hp.stmt);
@@ -258,7 +263,7 @@ static sword oci8_call_stmt_execute(oci8_svcctx_t *svcctx, oci8_stmt_t *stmt, ub
     return rv;
 }
 
-static VALUE oci8_stmt_execute(VALUE self)
+static VALUE oci8_stmt_execute(VALUE self, VALUE iteration_count)
 {
     oci8_stmt_t *stmt = DATA_PTR(self);
     oci8_svcctx_t *svcctx = oci8_get_svcctx(stmt->svc);
@@ -270,7 +275,10 @@ static VALUE oci8_stmt_execute(VALUE self)
         iters = 0;
         mode = OCI_DEFAULT;
     } else {
-        iters = 1;
+        if(!NIL_P(iteration_count)) 
+            iters = NUM2INT(iteration_count);
+        else 
+            iters = 1;
         mode = svcctx->is_autocommit ? OCI_COMMIT_ON_SUCCESS : OCI_DEFAULT;
     }
     rv = oci8_call_stmt_execute(svcctx, stmt, iters, mode);
@@ -323,6 +331,32 @@ static VALUE oci8_stmt_execute(VALUE self)
     if (IS_OCI_ERROR(rv)) {
         oci8_raise(oci8_errhp, rv, stmt->base.hp.stmt);
     }
+    return self;
+}
+
+static VALUE each_value(VALUE obj)
+{
+    return rb_funcall(obj, id_each_value, 0);
+}
+
+static VALUE clear_binds_iterator_proc(VALUE val, VALUE arg)
+{
+    if(!NIL_P(val)) {
+        oci8_base_free((oci8_base_t*)oci8_get_bind(val));
+    }
+    return Qnil;
+}
+
+static VALUE oci8_stmt_clear_binds(VALUE self)
+{
+    oci8_stmt_t *stmt = DATA_PTR(self);
+    
+    if(!RTEST(rb_funcall(stmt->binds, id_empty_p, 0)))
+    {
+        rb_iterate(each_value, stmt->binds, clear_binds_iterator_proc, Qnil);
+        rb_funcall(stmt->binds,id_clear,0);
+    }
+
     return self;
 }
 
@@ -597,11 +631,29 @@ static VALUE oci8_stmt_aref(VALUE self, VALUE key)
  */
 static VALUE oci8_stmt_aset(VALUE self, VALUE key, VALUE val)
 {
+    long max_array_size;
+    long actual_array_size;
+    long bind_array_size;
+
     oci8_stmt_t *stmt = DATA_PTR(self);
     VALUE obj = rb_hash_aref(stmt->binds, key);
     if (NIL_P(obj)) {
         return Qnil; /* ?? MUST BE ERROR? */
     }
+
+    if(TYPE(val) == T_ARRAY) {
+        max_array_size = NUM2INT(rb_ivar_get(self, id_at_max_array_size));
+        actual_array_size = NUM2INT(rb_ivar_get(self, id_at_actual_array_size));
+        bind_array_size = RARRAY_LEN(val);
+
+        if(actual_array_size > 0 && bind_array_size != actual_array_size) {
+            rb_raise(rb_eRuntimeError, "all binding arrays hould be the same size");        
+        }
+        if(bind_array_size <= max_array_size && actual_array_size == 0) {
+            rb_ivar_set(self, id_at_actual_array_size, INT2NUM(bind_array_size));
+        }
+    }     
+
     return rb_funcall(obj, oci8_id_set, 1, val);
 }
 
@@ -708,14 +760,20 @@ void Init_oci8_stmt(VALUE cOCI8)
     oci8_sym_declare_stmt = ID2SYM(rb_intern("declare_stmt"));
     oci8_sym_other = ID2SYM(rb_intern("other"));
     id_at_column_metadata = rb_intern("@column_metadata");
+    id_at_actual_array_size = rb_intern("@actual_array_size");
+    id_at_max_array_size = rb_intern("@max_array_size");
+    id_each_value = rb_intern("each_value");
     id_at_names = rb_intern("@names");
     id_at_con = rb_intern("@con");
+    id_empty_p = rb_intern("empty?");
+    id_clear = rb_intern("clear");
     id_set = rb_intern("set");
 
     rb_define_private_method(cOCIStmt, "initialize", oci8_stmt_initialize, -1);
     rb_define_private_method(cOCIStmt, "__define", oci8_define_by_pos, 2);
     rb_define_private_method(cOCIStmt, "__bind", oci8_bind, 2);
-    rb_define_private_method(cOCIStmt, "__execute", oci8_stmt_execute, 0);
+    rb_define_private_method(cOCIStmt, "__execute", oci8_stmt_execute, 1);
+    rb_define_private_method(cOCIStmt, "__clearBinds", oci8_stmt_clear_binds, 0);
     rb_define_method(cOCIStmt, "fetch", oci8_stmt_fetch, 0);
     rb_define_private_method(cOCIStmt, "__paramGet", oci8_stmt_get_param, 1);
     rb_define_method(cOCIStmt, "type", oci8_stmt_get_stmt_type, 0);
