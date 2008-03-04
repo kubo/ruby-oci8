@@ -1,4 +1,14 @@
-require 'mkmf'
+begin
+  require 'mkmf'
+rescue LoadError
+  if /linux/ =~ RUBY_PLATFORM
+    raise <<EOS
+You need to install a ruby development package ruby-devel, ruby-dev or so.
+EOS
+  end
+  raise
+end
+
 require File.dirname(__FILE__) + '/oraconf'
 
 RUBY_OCI8_VERSION = open("#{File.dirname(__FILE__)}/../../VERSION") {|f| f.read}.chomp
