@@ -11,6 +11,15 @@
 #include "oci8.h"
 #include <orl.h>
 
+#ifndef RUBY_VM
+/* ruby 1.8 */
+#define rb_num_coerce_cmp(x, y, id) rb_num_coerce_cmp((x), (y))
+#define rb_num_coerce_bin(x, y, id) rb_num_coerce_bin((x), (y))
+#endif
+
+static ID id_power; /* rb_intern("**") */
+static ID id_cmp;   /* rb_intern("<=>") */
+
 static VALUE cOCINumber;
 static OCINumber const_p1;   /*  +1 */
 static OCINumber const_p10;  /* +10 */
@@ -541,7 +550,7 @@ static VALUE onum_add(VALUE lhs, VALUE rhs)
 
     /* change to OCINumber */
     if (!set_oci_number_from_num(&n, rhs, 0))
-        return rb_num_coerce_bin(lhs, rhs);
+        return rb_num_coerce_bin(lhs, rhs, '+');
     /* add */
     oci_lc(OCINumberAdd(oci8_errhp, _NUMBER(lhs), &n, &r));
     return oci8_make_ocinumber(&r);
@@ -561,7 +570,7 @@ static VALUE onum_sub(VALUE lhs, VALUE rhs)
 
     /* change to OCINumber */
     if (!set_oci_number_from_num(&n, rhs, 0))
-        return rb_num_coerce_bin(lhs, rhs);
+        return rb_num_coerce_bin(lhs, rhs, '-');
     /* subtracting */
     oci_lc(OCINumberSub(oci8_errhp, _NUMBER(lhs), &n, &r));
     return oci8_make_ocinumber(&r);
@@ -581,7 +590,7 @@ static VALUE onum_mul(VALUE lhs, VALUE rhs)
 
     /* change to OCINumber */
     if (!set_oci_number_from_num(&n, rhs, 0))
-        return rb_num_coerce_bin(lhs, rhs);
+        return rb_num_coerce_bin(lhs, rhs, '*');
     /* multiply */
     oci_lc(OCINumberMul(oci8_errhp, _NUMBER(lhs), &n, &r));
     return oci8_make_ocinumber(&r);
@@ -602,7 +611,7 @@ static VALUE onum_div(VALUE lhs, VALUE rhs)
 
     /* change to OCINumber */
     if (!set_oci_number_from_num(&n, rhs, 0))
-        return rb_num_coerce_bin(lhs, rhs);
+        return rb_num_coerce_bin(lhs, rhs, '/');
     /* check whether argument is not zero. */
     oci_lc(OCINumberIsZero(oci8_errhp, &n, &is_zero));
     if (is_zero)
@@ -626,7 +635,7 @@ static VALUE onum_mod(VALUE lhs, VALUE rhs)
 
     /* change to OCINumber */
     if (!set_oci_number_from_num(&n, rhs, 0))
-        return rb_num_coerce_bin(lhs, rhs);
+        return rb_num_coerce_bin(lhs, rhs, '%');
     /* check whether argument is not zero. */
     oci_lc(OCINumberIsZero(oci8_errhp, &n, &is_zero));
     if (is_zero)
@@ -654,7 +663,7 @@ static VALUE onum_power(VALUE lhs, VALUE rhs)
     } else {
         /* change to OCINumber */
         if (!set_oci_number_from_num(&n, rhs, 0))
-            return rb_num_coerce_bin(lhs, rhs);
+            return rb_num_coerce_bin(lhs, rhs, id_power);
         /* check whether num1 is negative. */
         oci_lc(OCINumberSign(oci8_errhp, _NUMBER(lhs), &sign));
         /* check whether num2 is an integral value. */
@@ -681,7 +690,7 @@ static VALUE onum_cmp(VALUE lhs, VALUE rhs)
 
     /* change to OCINumber */
     if (!set_oci_number_from_num(&n, rhs, 0))
-        return rb_num_coerce_bin(lhs, rhs);
+        return rb_num_coerce_cmp(lhs, rhs, id_cmp);
     /* compare */
     oci_lc(OCINumberCmp(oci8_errhp, _NUMBER(lhs), &n, &r));
     return INT2NUM(r);
@@ -1087,6 +1096,9 @@ Init_oci_number(VALUE cOCI8)
     OCINumber num1, num2;
     VALUE obj_PI;
     signed long sl;
+
+    id_power = rb_intern("**");
+    id_cmp = rb_intern("<=>");
 
 #if 0 /* for rdoc */
     cOCI8 = rb_define_class("OCI8", rb_cObject);

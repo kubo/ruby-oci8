@@ -1,3 +1,8 @@
+2008-03-04 KUBO Takehiro <kubo@jiubao.org>
+	* ext/oci8/ocinumber.c: fix for ruby-1.9.0-1.
+	    The arguments of rb_num_coerce_cmp() and rb_num_coerce_bin()
+	    are changed in ruby-1.9.0-1.
+
 2008-2-27 Liming Lian <liming.lian@oracle.com>
 	Add new feature: Array DML
 	* lib/oci8/oci8.rb:  add three new methods for Array DML to OCI8::Cursor: 
