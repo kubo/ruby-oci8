@@ -1,3 +1,10 @@
+2008-03-04  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb: output a message to say 'install
+	    a ruby development package' when 'mkmf.rb' is not
+	    found and the platform is Linux. Both ruby and its
+	    development package are required to compile extension
+	    libraries on Linux.
+
 2008-03-04 KUBO Takehiro <kubo@jiubao.org>
 	* ext/oci8/ocinumber.c: fix for ruby-1.9.0-1.
 	    The arguments of rb_num_coerce_cmp() and rb_num_coerce_bin()
