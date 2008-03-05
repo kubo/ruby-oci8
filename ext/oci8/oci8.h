@@ -2,7 +2,7 @@
 /*
   oci8.h - part of ruby-oci8
 
-  Copyright (C) 2002-2007 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002-2008 KUBO Takehiro <kubo@jiubao.org>
 */
 #ifndef _RUBY_OCI_H_
 #define _RUBY_OCI_H_ 1
@@ -223,9 +223,38 @@ typedef struct  {
 /* env.c */
 extern OCIEnv *oci8_envhp;
 #ifdef RUBY_VM
-OCIError *oci8_get_errhp(void);
+/* oci8_errhp is a thread local object in ruby 1.9. */
 #define oci8_errhp oci8_get_errhp()
+
+#if defined(_WIN32)
+#include <windows.h>
+#define oci8_tls_key_t           DWORD
+#define oci8_tls_key_init(key_p) \
+    ((*(key_p) = TlsAlloc()), \
+    (*(key_p) == 0xFFFFFFFF) ? GetLastError() : 0)
+#define oci8_tls_get(key)        TlsGetValue(key)
+#define oci8_tls_set(key, val)   TlsSetValue((key), (val))
+#elif defined(HAVE_PTHREAD_H)
+#include <pthread.h>
+#define oci8_tls_key_t           pthread_key_t
+#define oci8_tls_key_init(key_p) pthread_key_create((key_p), NULL)
+#define oci8_tls_get(key)        pthread_getspecific(key)
+#define oci8_tls_set(key, val)   pthread_setspecific((key), (val))
 #else
+#error unsupported thread API
+#endif
+
+extern oci8_tls_key_t oci8_tls_key; /* native thread key */
+OCIError *oci8_make_errhp(void);
+
+static inline OCIError *oci8_get_errhp()
+{
+    OCIError *errhp = (OCIError *)oci8_tls_get(oci8_tls_key);
+    return (errhp != NULL) ? errhp : oci8_make_errhp();
+}
+
+#else
+/* oci8_errhp is global in ruby 1.8. */
 extern OCIError *oci8_errhp;
 #endif
 void Init_oci8_env(void);

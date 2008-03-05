@@ -2,7 +2,7 @@
 /*
   env.c - part of ruby-oci8
 
-  Copyright (C) 2002-2006 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002-2008 KUBO Takehiro <kubo@jiubao.org>
 
 */
 #include "oci8.h"
@@ -17,52 +17,59 @@
 
 OCIEnv *oci8_envhp;
 #ifdef RUBY_VM
-static ID id_thread_key;
+/*
+ * oci8_errhp is a thread local object in ruby 1.9.
+ */
+
+oci8_tls_key_t oci8_tls_key; /* native thread key */
+static ID id_thread_key;     /* ruby's thread key */
+
 static void oci8_free_errhp(OCIError *errhp)
 {
     OCIHandleFree(errhp, OCI_HTYPE_ERROR);
 }
 
-OCIError *oci8_get_errhp(void)
+OCIError *oci8_make_errhp(void)
 {
-    static OCIError *errhp = NULL;
-    static VALUE my_thread = Qnil;
+    OCIError *errhp;
     VALUE obj;
+    sword rv;
 
-    if (rb_thread_current() == my_thread) {
-        /* tricky!
-         * This code works only when ruby thread model is 1 or 2.
-         *   model 1: ruby 1.8 or earlier.
-         *   model 2: ruby 1.9
-         */
-        return errhp;
+    /* create a new errhp. */
+    rv = OCIHandleAlloc(oci8_envhp, (dvoid *)&errhp, OCI_HTYPE_ERROR, 0, NULL);
+    if (rv != OCI_SUCCESS) {
+        oci8_env_raise(oci8_envhp, rv);
     }
-    my_thread = rb_thread_current();
-    obj = rb_thread_local_aref(my_thread, id_thread_key);
-    if (!NIL_P(obj)) {
-        Data_Get_Struct(obj, OCIError, errhp);
-        if (errhp == NULL) {
-            rb_bug("oci8_get_errhp");
-        }
-    } else {
-        sword rv = OCIHandleAlloc(oci8_envhp, (dvoid *)&errhp, OCI_HTYPE_ERROR, 0, NULL);
-        if (rv != OCI_SUCCESS) {
-            oci8_env_raise(oci8_envhp, rv);
-        }
-        obj = Data_Wrap_Struct(rb_cObject, NULL, oci8_free_errhp, errhp);
-        rb_thread_local_aset(my_thread, id_thread_key, obj);
-    }
+    /* create a new ruby object which contains errhp to make
+     * sure that the errhp is freed when it become unnecessary.
+     */
+    obj = Data_Wrap_Struct(rb_cObject, NULL, oci8_free_errhp, errhp);
+    /* set the ruby object to ruby's thread local storage to prevent
+     * it from being freed while the thread is available.
+     */
+    rb_thread_local_aset(rb_thread_current(), id_thread_key, obj);
+
+    oci8_tls_set(oci8_tls_key, (void*)errhp);
     return errhp;
 }
 #else
+/*
+ * oci8_errhp is global in ruby 1.8.
+ */
 OCIError *oci8_errhp;
 #endif
 
 void Init_oci8_env(void)
 {
     sword rv;
+#ifdef RUBY_VM
+    ub4 mode = OCI_OBJECT | OCI_THREADED;
+    int error;
+#else
+    ub4 mode = OCI_OBJECT;
+#endif
 
-#ifndef WIN32
+#if !defined(RUBY_VM) && !defined(_WIN32)
     /* workaround code.
      *
      * Some instant clients set the environment variables
@@ -81,7 +88,7 @@ void Init_oci8_env(void)
         }
     }
 #endif /* WIN32 */
-    rv = OCIInitialize(OCI_OBJECT, NULL, NULL, NULL, NULL);
+    rv = OCIInitialize(mode, NULL, NULL, NULL, NULL);
     if (rv != OCI_SUCCESS) {
         oci8_raise_init_error();
     }
@@ -91,7 +98,11 @@ void Init_oci8_env(void)
     }
 #ifdef RUBY_VM
     id_thread_key = rb_intern("__oci8_errhp__");
-#else
+    error = oci8_tls_key_init(&oci8_tls_key);
+    if (error != 0) {
+        rb_raise(rb_eRuntimeError, "Cannot create thread local key (errno = %d)", error);
+    }
+#else /* RUBY_VM */
     rv = OCIHandleAlloc(oci8_envhp, (dvoid *)&oci8_errhp, OCI_HTYPE_ERROR, 0, NULL);
     if (rv != OCI_SUCCESS)
         oci8_env_raise(oci8_envhp, rv);

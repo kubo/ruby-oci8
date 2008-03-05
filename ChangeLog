@@ -1,3 +1,9 @@
+2008-03-05  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/env.c, ext/oci8/oci8.h: use native API to get a thread
+	    local errhp (ruby 1.9 only)
+	      pthread: pthread_getspecific()
+	      win32:   TlsGetValue()
+
 2008-03-04  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb: output a message to say 'install
 	    a ruby development package' when 'mkmf.rb' is not
