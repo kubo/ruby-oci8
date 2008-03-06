@@ -61,6 +61,11 @@ static ID id_at_prefetch_rows;
 static ID id_at_username;
 static ID id_set_prefetch_rows;
 
+static VALUE oci8_s_oracle_client_version(VALUE klass)
+{
+    return INT2FIX(oracle_client_version);
+}
+
 #define CONN_STR_REGEX "/^([^(\\s|\\@)]*)\\/([^(\\s|\\@)]*)(?:\\@(\\S+))?(?:\\s+as\\s+(\\S*)\\s*)?$/i"
 static void oci8_do_parse_connect_string(VALUE conn_str, VALUE *user, VALUE *pass, VALUE *dbname, VALUE *mode)
 {
@@ -529,6 +534,7 @@ VALUE Init_oci8(void)
     id_at_username = rb_intern("@username");
     id_set_prefetch_rows = rb_intern("prefetch_rows=");
 
+    rb_define_singleton_method(cOCI8, "oracle_client_version", oci8_s_oracle_client_version, 0);
     rb_define_private_method(cOCI8, "parse_connect_string", oci8_parse_connect_string, 1);
     rb_define_method(cOCI8, "initialize", oci8_svcctx_initialize, -1);
     rb_define_method(cOCI8, "logoff", oci8_svcctx_logoff, 0);

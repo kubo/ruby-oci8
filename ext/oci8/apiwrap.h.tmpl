@@ -14,56 +14,48 @@ extern int oracle_client_version;
 #endif
 <%
 funcs.each do |f|
-  if f.version == 800
-    if f.remote
-%>
-/*
- * <%=f.name%>
- *   version: <%=f.version%>
- *   remote:  <%=f.remote%>
- */
-sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
-<%
-    end
-  else # f.version == 800
-    if f.remote
+  if f.remote
 %>
 /*
  * <%=f.name%>
  *   version: <%=f.version%>
  *   remote:  true
  */
-sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
+<%=f.ret%> oci8_<%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>, const char *file, int line);
+#define <%=f.name%>_nb(svcctx, <%=f.args.collect do |a| a.name; end.join(', ')%>) \
+      oci8_<%=f.name%>_nb(svcctx, <%=f.args.collect do |a| a.name; end.join(', ')%>, __FILE__, __LINE__)
 #if defined RUNTIME_API_CHECK
-extern int have_<%=f.name%>_nb;
+extern int oci8_have_<%=f.name%>_nb;
+#define have_<%=f.name%>_nb oci8_have_<%=f.name%>_nb
 #elif ORACLE_CLIENT_VERSION >= <%=f.version%>
 #define have_<%=f.name%>_nb (1)
 #else
 #define have_<%=f.name%>_nb (0)
 #endif
 <%
-    else
+  else
 %>
 /*
  * <%=f.name%>
  *   version: <%=f.version%>
  *   remote:  false
  */
-sword <%=f.name%>_fn(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
+<%=f.ret%> oci8_<%=f.name%>(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>, const char *file, int line);
+#ifndef API_WRAP_C
+#undef <%=f.name%>
+#define <%=f.name%>(<%=f.args.collect do |a| a.name; end.join(', ')%>) \
+      oci8_<%=f.name%>(<%=f.args.collect do |a| a.name; end.join(', ')%>, __FILE__, __LINE__)
+#endif
 #if defined RUNTIME_API_CHECK
-extern int have_<%=f.name%>;
+extern int oci8_have_<%=f.name%>;
+#define have_<%=f.name%> oci8_have_<%=f.name%>
 #elif ORACLE_CLIENT_VERSION >= <%=f.version%>
 #define have_<%=f.name%> (1)
 #else
 #define have_<%=f.name%> (0)
 #endif
-#ifndef API_WRAP_C
-#undef <%=f.name%>
-#define <%=f.name%> <%=f.name%>_fn
-#endif
 <%
-    end
-  end  # f.version == 800
+  end
 end # funcs.each
 %>
 #endif /* APIWRAP_H */

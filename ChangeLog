@@ -1,3 +1,12 @@
+2008-03-06  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.c.tmpl, ext/oci8/apiwrap.h.tmpl:
+	    rewrite apiwrap.[ch].tmpl. All non-static variables
+	    and functions have 'oci8_' prefix name.
+	* ext/oci8/apiwrap.rb, ext/oci8/apiwrap.yml,
+	  ext/oci8/extconf.rb: change format of apiwrap.yml
+	    to use both OCIAttrGet() and OCIAttrGet_nb().
+	* ext/oci8/oci8.c, test/config.rb: add OCI8.oracle_client_version.
+
 2008-03-05  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/env.c, ext/oci8/oci8.h: use native API to get a thread
 	    local errhp (ruby 1.9 only)

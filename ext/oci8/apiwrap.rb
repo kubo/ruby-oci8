@@ -17,11 +17,18 @@ class FuncDef
   attr_reader :version
   attr_reader :remote
   attr_reader :args
+  attr_reader :ret
 
   def initialize(key, val)
-    @name = key
+    if key[-3..-1] == '_nb'
+      @name = key[0..-4]
+      @remote = true
+    else
+      @name = key
+      @remote = false
+    end
     @version = val[:version]
-    @remote = val[:remote]
+    @ret = val[:ret] || 'sword'
     @args = val[:args].collect do |arg|
       ArgDef.new(arg)
     end

@@ -3,9 +3,19 @@
 #
 
 # round trip: 0, 1, or 2
+# use thie for 0 round trip
 OCIAttrGet:
   :version: 800
-  :remote:  true
+  :args:    - const dvoid *trgthndlp
+            - ub4 trghndltyp
+            - dvoid *attributep
+            - ub4 *sizep
+            - ub4 attrtype
+            - OCIError *errhp
+
+# use thie for 1 or 2 round trips
+OCIAttrGet_nb:
+  :version: 800
   :args:    - const dvoid *trgthndlp
             - ub4 trghndltyp
             - dvoid *attributep
@@ -14,9 +24,8 @@ OCIAttrGet:
             - OCIError *errhp
 
 # round trip: 1
-OCIDescribeAny:
+OCIDescribeAny_nb:
   :version: 800
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - dvoid *objptr
@@ -27,51 +36,45 @@ OCIDescribeAny:
             - OCIDescribe *dschp
 
 # round trip: 1
-OCILobFileClose:
+OCILobFileClose_nb:
   :version: 800
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCILobLocator *filep
 
 # round trip: 1
-OCILobFileCloseAll:
+OCILobFileCloseAll_nb:
   :version: 800
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
 
 # round trip: 1
-OCILobFileExists:
+OCILobFileExists_nb:
   :version: 800
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCILobLocator *filep
             - boolean *flag
 
 # round trip: 1
-OCILobFileOpen:
+OCILobFileOpen_nb:
   :version: 800
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCILobLocator *filep
             - ub1 mode
 
 # round trip: 1
-OCILobGetLength:
+OCILobGetLength_nb:
   :version: 800
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCILobLocator *locp
             - ub4 *lenp
 
 # round trip: 0 or 1
-OCILobRead:
+OCILobRead_nb:
   :version: 800
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCILobLocator *locp
@@ -85,18 +88,16 @@ OCILobRead:
             - ub1 csfrm
 
 # round trip: 1
-OCILobTrim:
+OCILobTrim_nb:
   :version: 800
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCILobLocator *locp
             - ub4 newlen
 
 # round trip: 0 or 1
-OCILobWrite:
+OCILobWrite_nb:
   :version: 800
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCILobLocator *locp
@@ -111,16 +112,14 @@ OCILobWrite:
             - ub1 csfrm
 
 # round trip: 1
-OCILogoff:
+OCILogoff_nb:
   :version: 800
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
 
 # round trip: 1
-OCILogon:
+OCILogon_nb:
   :version: 800
-  :remote:  true
   :args:    - OCIEnv *envhp
             - OCIError *errhp
             - OCISvcCtx **svchp
@@ -132,9 +131,8 @@ OCILogon:
             - ub4 dbname_len
 
 # round trip: 0 or 1
-OCIObjectPin:
+OCIObjectPin_nb:
   :version: 800
-  :remote:  true
   :args:    - OCIEnv *env
             - OCIError *err
             - OCIRef *object_ref
@@ -145,9 +143,8 @@ OCIObjectPin:
             - dvoid **object
 
 # round trip: 1
-OCISessionBegin:
+OCISessionBegin_nb:
   :version: 800
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCISession *usrhp
@@ -155,18 +152,16 @@ OCISessionBegin:
             - ub4 mode
 
 # round trip: 1
-OCISessionEnd:
+OCISessionEnd_nb:
   :version: 800
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCISession *usrhp
             - ub4 mode
 
 # round trip: 1
-OCIServerAttach:
+OCIServerAttach_nb:
   :version: 800
-  :remote:  true
   :args:    - OCIServer *srvhp
             - OCIError *errhp
             - const text *dblink
@@ -174,17 +169,15 @@ OCIServerAttach:
             - ub4 mode
 
 # round trip: 1
-OCIServerDetach:
+OCIServerDetach_nb:
   :version: 800
-  :remote:  true
   :args:    - OCIServer *srvhp
             - OCIError *errhp
             - ub4 mode
 
 # round trip: 1
-OCIStmtExecute:
+OCIStmtExecute_nb:
   :version: 800
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIStmt *stmtp
             - OCIError *errhp
@@ -195,9 +188,8 @@ OCIStmtExecute:
             - ub4 mode
 
 # round trip: 0 if a next row is in pre-fetch buffer, otherwise 1
-OCIStmtFetch:
+OCIStmtFetch_nb:
   :version: 800
-  :remote:  true
   :args:    - OCIStmt *stmtp
             - OCIError *errhp
             - ub4 nrows
@@ -205,17 +197,15 @@ OCIStmtFetch:
             - ub4 mode
 
 # round trip: 1
-OCITransCommit:
+OCITransCommit_nb:
   :version: 800
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - ub4 flags
 
 # round trip: 1
-OCITransRollback:
+OCITransRollback_nb:
   :version: 800
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - ub4 flags
@@ -226,17 +216,15 @@ OCITransRollback:
 #
 
 # round trip: 1
-OCILobClose:
+OCILobClose_nb:
   :version: 810
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCILobLocator *locp
 
 # round trip: 1
-OCILobCreateTemporary:
+OCILobCreateTemporary_nb:
   :version: 810
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCILobLocator *locp
@@ -247,9 +235,8 @@ OCILobCreateTemporary:
             - OCIDuration duration
 
 # round trip: 1
-OCILobGetChunkSize:
+OCILobGetChunkSize_nb:
   :version: 810
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCILobLocator *locp
@@ -258,25 +245,22 @@ OCILobGetChunkSize:
 # round trip: 0
 OCILobIsTemporary:
   :version: 810
-  :remote:  false
   :args:    - OCIEnv *envp
             - OCIError *errhp
             - OCILobLocator *locp
             - boolean *is_temporary
 
 # round trip: 1 if either destination or source lob is a temporary, otherwise 0
-OCILobLocatorAssign:
+OCILobLocatorAssign_nb:
   :version: 810
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - const OCILobLocator *src_locp
             - OCILobLocator **dst_locpp
 
 # round trip 1
-OCILobOpen:
+OCILobOpen_nb:
   :version: 810
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCILobLocator *locp
@@ -285,7 +269,6 @@ OCILobOpen:
 # round trip: 0
 OCIReset:
   :version: 810
-  :remote:  false
   :args:    - dvoid *hndlp
             - OCIError *errhp
 
@@ -296,7 +279,6 @@ OCIReset:
 # round trip: 0 (not docmented. I guess.)
 OCIRowidToChar:
   :version: 900
-  :remote:  false
   :args:    - OCIRowid *rowidDesc
             - OraText *outbfp
             - ub2 *outbflp
@@ -309,7 +291,6 @@ OCIRowidToChar:
 # round trip: 0 (not docmented. I guess.)
 OCINlsCharSetIdToName:
   :version: 920
-  :remote:  false
   :args:    - dvoid *envhp
             - oratext *buf
             - size_t buflen
@@ -320,18 +301,16 @@ OCINlsCharSetIdToName:
 #
 
 # round trip: 1
-OCILobGetLength2:
+OCILobGetLength2_nb:
   :version: 1010
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCILobLocator *locp
             - oraub8 *lenp
 
 # round trip: 0 or 1
-OCILobRead2:
+OCILobRead2_nb:
   :version: 1010
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCILobLocator *locp
@@ -347,18 +326,16 @@ OCILobRead2:
             - ub1 csfrm
 
 # round trip: 1
-OCILobTrim2:
+OCILobTrim2_nb:
   :version: 1010
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCILobLocator *locp
             - oraub8 newlen
 
 # round trip: 0 or 1
-OCILobWrite2:
+OCILobWrite2_nb:
   :version: 1010
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCILobLocator *locp
@@ -378,9 +355,8 @@ OCILobWrite2:
 #
 
 # round trip: 1
-OCIDBStartup:
+OCIDBStartup_nb:
   :version: 1020
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCIAdmin *admhp
@@ -388,18 +364,16 @@ OCIDBStartup:
             - ub4 flags
 
 # round trip: 1
-OCIDBShutdown:
+OCIDBShutdown_nb:
   :version: 1020
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - OCIAdmin *admhp
             - ub4 mode
 
 # round trip: 1
-OCIPing:
+OCIPing_nb:
   :version: 1020
-  :remote:  true
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
             - ub4 mode
@@ -410,7 +384,6 @@ OCIPing:
 
 OCIArrayDescriptorAlloc:
   :version: 1110
-  :remote:  false
   :args:    - const void *parenth
             - void **descpp
             - const ub4 type
@@ -420,6 +393,5 @@ OCIArrayDescriptorAlloc:
 
 OCIArrayDescriptorFree:
   :version: 1110
-  :remote:  false
   :args:    - void **descp
             - const ub4 type

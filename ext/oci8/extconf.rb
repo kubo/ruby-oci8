@@ -35,6 +35,7 @@ $libs += oraconf.libs
 oci_actual_client_version = 800
 funcs = {}
 YAML.load(open(File.dirname(__FILE__) + '/apiwrap.yml')).each do |key, val|
+  key = key[0..-4] if key[-3..-1] == '_nb'
   funcs[val[:version]] ||= []
   funcs[val[:version]] << key
 end

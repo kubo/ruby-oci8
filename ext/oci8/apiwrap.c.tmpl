@@ -5,47 +5,24 @@
 #define API_WRAP_C 1
 #include "apiwrap.h"
 <%
+prev_name = ''
 funcs.each do |f|
-  if f.version == 800
-    if f.remote
-######################################################################
-##
-## remote API without runtime-check - start
-##
-######################################################################
+  next if f.name == prev_name
+  prev_name = f.name
 %>
-/*
- * <%=f.name%>
- */
-typedef struct {
-<% f.args.each do |a|
-%>    <%= a.dcl %>;
-<% end
-%>} <%=f.name%>_data_t;
-
-static VALUE <%=f.name%>_cb(void *user_data)
-{
-    <%=f.name%>_data_t *data = (<%=f.name%>_data_t *)user_data;
-    return (VALUE)<%=f.name%>(<%= f.args.collect do |a| 'data->' + a.name; end.join(', ') %>);
-}
-
-sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>)
-{
-    <%=f.name%>_data_t data;
-<% f.args.each do |a|
-%>    data.<%=a.name%> = <%=a.name%>;
-<% end
-%>    return oci8_blocking_region(svcctx, <%=f.name%>_cb, &data);
-}
+/* <%=f.name%> */
+#if defined RUNTIME_API_CHECK
+typedef <%=f.ret%> (*oci8_<%=f.name%>_func_t)(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
+static oci8_<%=f.name%>_func_t oci8_<%=f.name%>_func;
+#define <%=f.name%> oci8_<%=f.name%>_func
+#elif ORACLE_CLIENT_VERSION < <%=f.version%>
+#define <%=f.name%>(<%=f.args.collect {|a| a.name}.join(', ')%>) (0)
+#endif
 <%
-######################################################################
-##
-## remote API without runtime-check - end
-##
-######################################################################
-    end
-  else # f.version == 800
-    if f.remote
+end # funcs.each
+
+funcs.each do |f|
+  if f.remote
 ######################################################################
 ##
 ## remote API with runtime-check - start
@@ -53,41 +30,47 @@ sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.jo
 ######################################################################
 %>
 /*
- * <%=f.name%>
+ * <%=f.name%>_nb
  */
 typedef struct {
 <% f.args.each do |a|
 %>    <%= a.dcl %>;
 <% end
-%>} <%=f.name%>_data_t;
+%>} oci8_<%=f.name%>_data_t;
 
 #if defined RUNTIME_API_CHECK
-int have_<%=f.name%>_nb;
-typedef sword (*<%=f.name%>_func_t)(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
-static <%=f.name%>_func_t <%=f.name%>_func;
-#define <%=f.name%> <%=f.name%>_func
+int oci8_have_<%=f.name%>_nb;
 #endif
 
 #if defined RUNTIME_API_CHECK || ORACLE_CLIENT_VERSION >= <%=f.version%>
-static VALUE <%=f.name%>_cb(void *user_data)
+static VALUE oci8_<%=f.name%>_cb(void *user_data)
 {
-    <%=f.name%>_data_t *data = (<%=f.name%>_data_t *)user_data;
-    return (VALUE)<%=f.name%>(<%= f.args.collect do |a| 'data->' + a.name; end.join(', ') %>);
+    oci8_<%=f.name%>_data_t *data = (oci8_<%=f.name%>_data_t *)user_data;
+<% if f.ret == 'void'
+%>    (VALUE)<%=f.name%>(<%= f.args.collect do |a| 'data->' + a.name; end.join(', ') %>);
+    return Qnil;
+<% else
+%>    return (VALUE)<%=f.name%>(<%= f.args.collect do |a| 'data->' + a.name; end.join(', ') %>);
+<% end %>
 }
 #else
-#define <%=f.name%>_cb NULL /* dummy value to pass compiilation. */
+#define oci8_<%=f.name%>_cb NULL
 #endif
 
-sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>)
+<%=f.ret%> oci8_<%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>, const char *file, int line)
 {
     if (have_<%=f.name%>_nb) {
-        <%=f.name%>_data_t data;
+        oci8_<%=f.name%>_data_t data;
 <% f.args.each do |a|
 %>        data.<%=a.name%> = <%=a.name%>;
 <% end
-%>        return oci8_blocking_region(svcctx, <%=f.name%>_cb, &data);
-    } else {
-        rb_bug("undefined OCI function %s is called", "<%=f.name%>_nb");
+   if f.ret == 'void'
+%>        oci8_blocking_region(svcctx, oci8_<%=f.name%>_cb, &data);
+<% else
+%>        return oci8_blocking_region(svcctx, oci8_<%=f.name%>_cb, &data);
+<% end
+%>    } else {
+        rb_raise(rb_eRuntimeError, "undefined OCI function %s is called", "<%=f.name%>_nb");
     }
 }
 <%
@@ -96,7 +79,7 @@ sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.jo
 ## remote API with runtime-check - end
 ##
 ######################################################################
-    else
+  else
 ######################################################################
 ##
 ## local API with runtime-check - start
@@ -107,27 +90,19 @@ sword <%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.jo
  * <%=f.name%>
  */
 #if defined RUNTIME_API_CHECK
-int have_<%=f.name%>;
-typedef sword (*<%=f.name%>_func_t)(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
-static <%=f.name%>_func_t <%=f.name%>_func;
-#elif ORACLE_CLIENT_VERSION >= <%=f.version%>
-#define <%=f.name%>_func <%=f.name%>
-#else
-#define <%=f.name%>_func(<%=f.args.collect {|arg| arg.name}.join(', ')%>) (0)
+int oci8_have_<%=f.name%>;
 #endif
 
-sword <%=f.name%>_fn(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>)
+<%=f.ret%> oci8_<%=f.name%>(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>, const char *file, int line)
 {
     if (have_<%=f.name%>) {
-#if defined RUNTIME_API_CHECK
-        return <%=f.name%>_func(<%=f.args.collect {|arg| arg.name}.join(', ')%>);
-#elif ORACLE_CLIENT_VERSION >= <%=f.version%>
-        return <%=f.name%>(<%=f.args.collect {|arg| arg.name}.join(', ')%>);
-#else
-        return 0;
-#endif
-    } else {
-        rb_bug("undefined OCI function %s is called", "<%=f.name%>_nb");
+<%  if f.ret == 'void'
+%>        <%=f.name%>(<%=f.args.collect {|arg| arg.name}.join(', ')%>);
+<%  else
+%>        return <%=f.name%>(<%=f.args.collect {|arg| arg.name}.join(', ')%>);
+<% end
+%>    } else {
+        rb_raise(rb_eRuntimeError, "undefined OCI function %s is called", "<%=f.name%>");
     }
 }
 <%
@@ -136,7 +111,6 @@ sword <%=f.name%>_fn(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>)
 ## local API with runtime-check - end
 ##
 ######################################################################
-    end
   end
 end # funcs.each
 ######################################################################
@@ -152,10 +126,9 @@ int oracle_client_version;
 
 void Init_oci8_apiwrap(void)
 {
-    oracle_client_version = 800;
+    oracle_client_version = 0;
 <%
 funcs.each do |f|
-  next if f.version == 800
   if current_version != f.version
     unless have_vars.empty?
 %>    /* pass Oracle <%=current_version.to_s.gsub(/(.)(.)$/, '.\1.\2')%> API */
@@ -173,8 +146,8 @@ funcs.each do |f|
 <%
   end
   have_vars << 'have_' + f.name + (f.remote ? '_nb' : '')
-%>    <%=f.name%>_func = (<%=f.name%>_func_t)oci8_find_symbol("<%=f.name%>");
-    if (<%=f.name%>_func == NULL)
+%>    oci8_<%=f.name%>_func = (oci8_<%=f.name%>_func_t)oci8_find_symbol("<%=f.name%>");
+    if (oci8_<%=f.name%>_func == NULL)
         return;
 <%
 end

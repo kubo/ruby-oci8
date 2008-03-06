@@ -30,7 +30,7 @@ conn.exec('select value from database_compatible_level') do |row|
 end
 conn.logoff
 
-$oracle_client_version = OCI8::CLIENT_VERSION.to_i
+$oracle_client_version = OCI8.oracle_client_version
 if $oracle_server_version < $oracle_client_version
   $oracle_version = $oracle_server_version
 else
