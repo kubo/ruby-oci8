@@ -1,3 +1,10 @@
+2008-03-07  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.c.tmpl, ext/oci8/apiwrap.rb, ext/oci8/apiwrap.yml:
+	    add all OCI functions to 'apiwrap.yml'.
+	* ext/oci8/object.c: use OCIObjectPin_nb() instead of OCIObjectPin().
+	* ext/oci8/oci8lib.c: call OCIBreak in rb_thread_blocking_region()
+	    to prevent the thread from being blocked.
+
 2008-03-06  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.c.tmpl, ext/oci8/apiwrap.h.tmpl:
 	    rewrite apiwrap.[ch].tmpl. All non-static variables

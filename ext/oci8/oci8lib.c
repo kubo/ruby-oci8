@@ -223,11 +223,26 @@ void oci8_unlink_from_parent(oci8_base_t *base)
 }
 
 #ifdef RUBY_VM
+typedef struct {
+    dvoid *hndlp;
+    OCIError *errhp;
+} ocibreak_arg_t;
+
+static VALUE call_OCIBreak(void *user_data)
+{
+    ocibreak_arg_t *arg = (ocibreak_arg_t *)user_data;
+    OCIBreak(arg->hndlp, arg->errhp);
+    return Qnil;
+}
+
 static void oci8_unblock_func(void *user_data)
 {
     oci8_svcctx_t *svcctx = (oci8_svcctx_t *)user_data;
     if (svcctx->base.hp.ptr != NULL) {
-        OCIBreak(svcctx->base.hp.ptr, oci8_errhp);
+        ocibreak_arg_t arg;
+        arg.hndlp = svcctx->base.hp.ptr;
+        arg.errhp = oci8_errhp;
+        rb_thread_blocking_region(call_OCIBreak, &arg, NULL, NULL);
     }
 }
 

@@ -33,7 +33,11 @@ funcs.each do |f|
  * <%=f.name%>_nb
  */
 typedef struct {
-<% f.args.each do |a|
+<%
+   f.ret != 'void'
+%>    <%= f.ret %> rv;
+<%
+   f.args.each do |a|
 %>    <%= a.dcl %>;
 <% end
 %>} oci8_<%=f.name%>_data_t;
@@ -47,10 +51,14 @@ static VALUE oci8_<%=f.name%>_cb(void *user_data)
 {
     oci8_<%=f.name%>_data_t *data = (oci8_<%=f.name%>_data_t *)user_data;
 <% if f.ret == 'void'
-%>    (VALUE)<%=f.name%>(<%= f.args.collect do |a| 'data->' + a.name; end.join(', ') %>);
-    return Qnil;
+%>    <%=f.name%>(<%= f.args.collect do |a| 'data->' + a.name; end.join(', ') %>);
 <% else
-%>    return (VALUE)<%=f.name%>(<%= f.args.collect do |a| 'data->' + a.name; end.join(', ') %>);
+%>    data->rv = <%=f.name%>(<%= f.args.collect do |a| 'data->' + a.name; end.join(', ') %>);
+<% end %>
+<% if f.ret == 'sword'
+%>    return (VALUE)data->rv;
+<% else
+%>    return (VALUE)0;
 <% end %>
 }
 #else
@@ -64,10 +72,9 @@ static VALUE oci8_<%=f.name%>_cb(void *user_data)
 <% f.args.each do |a|
 %>        data.<%=a.name%> = <%=a.name%>;
 <% end
-   if f.ret == 'void'
 %>        oci8_blocking_region(svcctx, oci8_<%=f.name%>_cb, &data);
-<% else
-%>        return oci8_blocking_region(svcctx, oci8_<%=f.name%>_cb, &data);
+<%   if f.ret != 'void'
+%>        return data.rv;
 <% end
 %>    } else {
         rb_raise(rb_eRuntimeError, "undefined OCI function %s is called", "<%=f.name%>_nb");

@@ -73,7 +73,7 @@ static VALUE oci8_tdo_setup(VALUE self, VALUE svc, VALUE md_obj)
     oci_lc(OCIAttrGet(md->hp.ptr, OCI_DTYPE_PARAM, &tdo_ref, NULL, OCI_ATTR_REF_TDO, oci8_errhp));
     if (tdo_ref == NULL)
         return Qnil;
-    oci_lc(OCIObjectPin(oci8_envhp, oci8_errhp, tdo_ref, 0, OCI_PIN_ANY, OCI_DURATION_SESSION, OCI_LOCK_NONE, &tdo->hp.ptr));
+    oci_lc(OCIObjectPin_nb(svcctx, oci8_envhp, oci8_errhp, tdo_ref, 0, OCI_PIN_ANY, OCI_DURATION_SESSION, OCI_LOCK_NONE, &tdo->hp.ptr));
     oci8_link_to_parent(tdo, &svcctx->base);
     return self;
 }

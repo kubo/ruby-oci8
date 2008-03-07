@@ -7,6 +7,7 @@ class ArgDef
 
   def initialize(arg)
     /(\w+)\s*$/ =~ arg
+    /\(\*(\w+)\)/ =~ arg if $1.nil?
     @dcl = arg
     @name = $1
   end
