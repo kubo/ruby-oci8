@@ -312,10 +312,6 @@ void oci8_bind_hp_obj_mark(oci8_base_t *base);
 void Init_oci8_bind(VALUE cOCIBind);
 oci8_bind_t *oci8_get_bind(VALUE obj);
 
-/* rowid.c */
-void Init_oci8_rowid(void);
-VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype);
-
 /* metadata.c */
 extern VALUE cOCI8MetadataBase;
 void Init_oci8_metadata(VALUE cOCI8);
@@ -368,6 +364,7 @@ VALUE oci8_get_ub2_attr(oci8_base_t *base, ub4 attrtype);
 VALUE oci8_get_sb2_attr(oci8_base_t *base, ub4 attrtype);
 VALUE oci8_get_ub4_attr(oci8_base_t *base, ub4 attrtype);
 VALUE oci8_get_string_attr(oci8_base_t *base, ub4 attrtype);
+VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype);
 
 #include "apiwrap.h"
 

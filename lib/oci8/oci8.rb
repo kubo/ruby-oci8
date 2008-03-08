@@ -600,7 +600,6 @@ OCI8::BindType::Mapping[OraDate]      = OCI8::BindType::OraDate
 OCI8::BindType::Mapping[Time]         = OCI8::BindType::Time
 OCI8::BindType::Mapping[Date]         = OCI8::BindType::Date
 OCI8::BindType::Mapping[DateTime]     = OCI8::BindType::DateTime
-OCI8::BindType::Mapping[OCIRowid]     = OCI8::BindType::OCIRowid
 OCI8::BindType::Mapping[OCI8::CLOB]   = OCI8::BindType::CLOB
 OCI8::BindType::Mapping[OCI8::NCLOB]  = OCI8::BindType::NCLOB
 OCI8::BindType::Mapping[OCI8::BLOB]   = OCI8::BindType::BLOB
@@ -669,7 +668,7 @@ OCI8::BindType::Mapping[:interval_ds] = OCI8::BindType::IntervalDS
 # datatype        type     size prec scale
 # -------------------------------------------------
 # ROWID         SQLT_RDD      4    0    0
-OCI8::BindType::Mapping[:rowid] = OCI8::BindType::OCIRowid
+OCI8::BindType::Mapping[:rowid] = OCI8::BindType::String
 
 # datatype           type     size prec scale
 # -----------------------------------------------------

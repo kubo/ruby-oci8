@@ -549,9 +549,17 @@ static VALUE oci8_stmt_get_row_count(VALUE self)
 }
 
 /*
- * get the rowid of the last processed row.
- * This value is available as bind data.
- * On the other hand it isn't available for other purpose.
+ * Get the rowid of the last inserted/updated/deleted row.
+ * This cannot be used for select statements.
+ *
+ * example:
+ *   cursor = conn.parse('INSERT INTO foo_table values(:1, :2)', 1, 2)
+ *   cursor.exec
+ *   cursor.rowid # => the inserted row's rowid
+ *
+ * The return value is a String in ruby-oci8 2.0 or later.
+ *
+ * It is an OCIRowid object in ruby-oci8 1.0.
  */
 static VALUE oci8_stmt_get_rowid(VALUE self)
 {

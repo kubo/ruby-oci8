@@ -1,3 +1,13 @@
+2008-03-08  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, ext/oci8/oci8lib.c, ext/oci8/rowid.c:
+	    rowid.c is deleted. OCIRowid is no longer in use.
+	* ext/oci8/oci8.h, ext/oci8/attr.c: oci8_get_rowid_attr()
+	    is moved from rowid.c and returns a String instead of
+	    an OCIRowid object.
+	* ext/oci8/stmt.c: fix a rdoc comment of OCI8::Cursor#rowid.
+	* lib/oci8/oci8.rb: fetch a rowid value as a String.
+	* test/test_all.rb, test/test_rowid.rb: add a rowid testcase.
+
 2008-03-07  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.c.tmpl, ext/oci8/apiwrap.rb, ext/oci8/apiwrap.yml:
 	    add all OCI functions to 'apiwrap.yml'.
