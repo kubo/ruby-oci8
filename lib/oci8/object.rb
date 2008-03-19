@@ -415,7 +415,7 @@ EOS
     @@result_type_to_bindtype = {
       'FLOAT'                   => Float,
       'INTEGER'                 => Integer,
-      'NUMBER'                  => OCINumber,
+      'NUMBER'                  => OraNumber,
       'BINARY_FLOAT'            => :binary_float,
       'BINARY_DOUBLE'           => :binary_double,
       'TIMESTAMP'               => :timestamp,

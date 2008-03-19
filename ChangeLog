@@ -1,3 +1,10 @@
+2008-03-19  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/ocinumber.c, lib/oci8/compat.rb, lib/oci8/object.rb
+	  lib/oci8/oci8.rb, test/test_oci8.rb:
+	    1. OCINumber, which is a new object in 2.0, become OraNumber.
+	       This means OraNumber become a true numeric class.
+	    2. Rdoc comments in ocinumber.c are fixed.
+
 2008-03-08  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, ext/oci8/oci8lib.c, ext/oci8/rowid.c:
 	    rowid.c is deleted. OCIRowid is no longer in use.

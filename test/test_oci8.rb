@@ -316,10 +316,10 @@ EOS
       assert_equal(row[2], 123456789012.34)
       assert_equal(row[3], 1234567890123.45)
       assert_equal(row[4], 1234.5)
-      assert_instance_of(OCINumber, row[0])
+      assert_instance_of(OraNumber, row[0])
       assert_instance_of(Bignum, row[1])
       assert_instance_of(Float, row[2])
-      assert_instance_of(OCINumber, row[3])
+      assert_instance_of(OraNumber, row[3])
       assert_instance_of(Float, row[4])
     end
     drop_table('test_table')

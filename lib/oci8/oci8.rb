@@ -170,7 +170,7 @@ class OCI8
             klass = OCI8::BindType::Float
           else
             # use BigDecimal instead?
-            klass = OCI8::BindType::OCINumber
+            klass = OCI8::BindType::OraNumber
           end
         end
         klass.new(con, val, nil, max_array_size)
@@ -245,11 +245,11 @@ class OCI8
   class Cursor
 
     # number column declared without its scale and precision. (Oracle 9.2.0.3 or above)
-    @@bind_default_number = OCI8::BindType::OCINumber
+    @@bind_default_number = OCI8::BindType::OraNumber
     # number value whose scale and precision is unknown
     # or
     # number column declared without its scale and precision. (Oracle 9.2.0.2 or below)
-    @@bind_unknown_number = OCI8::BindType::OCINumber
+    @@bind_unknown_number = OCI8::BindType::OraNumber
 
     def self.bind_default_number
       @@bind_default_number
@@ -577,21 +577,33 @@ class OraDate
   end
 end
 
+class OraNumber
+  def yaml_initialize(type, val) # :nodoc:
+    initialize(val)
+  end
+
+  def to_yaml(opts = {}) # :nodoc:
+    YAML.quick_emit(object_id, opts) do |out|
+      out.scalar(taguri, self.to_s, :plain)
+    end
+  end
+end
+
 class Numeric
   def to_onum
-    OCINumber.new(self)
+    OraNumber.new(self)
   end
 end
 
 class String
   def to_onum(format = nil, nls_params = nil)
-    OCINumber.new(self, format, nls_params)
+    OraNumber.new(self, format, nls_params)
   end
 end
 
 # bind or explicitly define
 OCI8::BindType::Mapping[String]       = OCI8::BindType::String
-OCI8::BindType::Mapping[OCINumber]    = OCI8::BindType::OCINumber
+OCI8::BindType::Mapping[OraNumber]    = OCI8::BindType::OraNumber
 OCI8::BindType::Mapping[Fixnum]       = OCI8::BindType::Integer
 OCI8::BindType::Mapping[Float]        = OCI8::BindType::Float
 OCI8::BindType::Mapping[Integer]      = OCI8::BindType::Integer
