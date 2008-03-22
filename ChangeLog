@@ -1,3 +1,17 @@
+2008-03-22  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/.: add apiwrap.[ch] to svn:ignore property.
+	* ext/oci8/apiwrap.c.tmpl, ext/oci8/apiwrap.rb, ext/oci8/apiwrap.yml:
+	    add alternative code if OCINumberSetPi(), OCINumberIsInt() is
+	    not found.
+	* ext/oci8/oci8.h: delete unused macros. add LIKELY and UNLIKELY
+	    macros and use the former in oci8_get_errhp().
+	* ext/oci8/oci8.h, ext/oci8/oci8lib.c: change the scope of
+	    oci8_base_class to static.
+	* ext/oci8/ocinumber.c: fix OraNumber#** and OraNumber#<=>. raise
+	    exceptions when OraNumber#round_prec or OraNumber#shift is called
+	    and the Oracle client version is 8.0.
+	* test/test_oranumber.rb: add testcass for all OraNumber methods.
+
 2008-03-19  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocinumber.c, lib/oci8/compat.rb, lib/oci8/object.rb
 	  lib/oci8/oci8.rb, test/test_oci8.rb:

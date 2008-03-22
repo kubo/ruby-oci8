@@ -5,7 +5,7 @@
  * $Author$
  * $Date$
  *
- * Copyright (C) 2005-2007 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2005-2008 KUBO Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
@@ -655,8 +655,6 @@ static VALUE onum_power(VALUE lhs, VALUE rhs)
 {
     OCINumber n;
     OCINumber r;
-    sword sign;
-    boolean is_int;
 
     if (FIXNUM_P(rhs)) {
         oci_lc(OCINumberIntPower(oci8_errhp, _NUMBER(lhs), FIX2INT(rhs), &r));
@@ -664,12 +662,6 @@ static VALUE onum_power(VALUE lhs, VALUE rhs)
         /* change to OCINumber */
         if (!set_oci_number_from_num(&n, rhs, 0))
             return rb_num_coerce_bin(lhs, rhs, id_power);
-        /* check whether num1 is negative. */
-        oci_lc(OCINumberSign(oci8_errhp, _NUMBER(lhs), &sign));
-        /* check whether num2 is an integral value. */
-        oci_lc(OCINumberIsInt(oci8_errhp, &n, &is_int));
-        if (sign < 0 && !is_int)
-            rb_raise(rb_eRangeError, "base is negative and exponent part is not an integral value");
         oci_lc(OCINumberPower(oci8_errhp, _NUMBER(lhs), &n, &r));
     }
     return oci8_make_ocinumber(&r);
@@ -693,7 +685,13 @@ static VALUE onum_cmp(VALUE lhs, VALUE rhs)
         return rb_num_coerce_cmp(lhs, rhs, id_cmp);
     /* compare */
     oci_lc(OCINumberCmp(oci8_errhp, _NUMBER(lhs), &n, &r));
-    return INT2NUM(r);
+    if (r > 0) {
+        return INT2FIX(1);
+    } else if (r == 0) {
+        return INT2FIX(0);
+    } else {
+        return INT2FIX(-1);
+    }
 }
 
 /*
@@ -732,6 +730,10 @@ static VALUE onum_ceil(VALUE self)
  *
  *  Rounds <i>onum</i> to the nearest <code>Integer</code> when no argument.
  *  Rounds <i>onum</i> to a specified decimal place <i>decplace</i> when one argument.
+ *
+ *   OraNumber.new(1.234).round(1)  #=> 1.2
+ *   OraNumber.new(1.234).round(2)  #=> 1.23
+ *   OraNumber.new(1.234).round(3)  #=> 1.234
  */
 static VALUE onum_round(int argc, VALUE *argv, VALUE self)
 {
@@ -770,6 +772,7 @@ static VALUE onum_trunc(int argc, VALUE *argv, VALUE self)
  *     onum.round_prec(digits) -> oranumber
  *
  *  Rounds <i>onum</i> to a specified number of decimal digits.
+ *  This method is available on Oracle 8.1 client or upper.
  *
  *   OraNumber.new(1.234).round_prec(2)  #=> 1.2
  *   OraNumber.new(12.34).round_prec(2)  #=> 12
@@ -779,6 +782,10 @@ static VALUE onum_round_prec(VALUE self, VALUE ndigs)
 {
     OCINumber r;
 
+    if (!have_OCINumberPrec) {
+        rb_raise(rb_eNotImpError, "The Oracle client version is too lower to use %s#round_prec",
+                 rb_obj_classname(self));
+    }
     oci_lc(OCINumberPrec(oci8_errhp, _NUMBER(self), NUM2INT(ndigs), &r));
     return oci8_make_ocinumber(&r);
 }
@@ -938,11 +945,16 @@ static VALUE onum_abs(VALUE self)
  *     onum.shift(fixnum)    -> oranumber
  *
  *  Returns <i>onum</i> * 10**<i>fixnum</i>
+ *  This method is available on Oracle 8.1 client or upper.
  */
 static VALUE onum_shift(VALUE self, VALUE exp)
 {
     OCINumber result;
 
+    if (!have_OCINumberShift) {
+        rb_raise(rb_eNotImpError, "The Oracle client version is too lower to use %s#shift",
+                 rb_obj_classname(self));
+    }
     oci_lc(OCINumberShift(oci8_errhp, _NUMBER(self), NUM2INT(exp), &result));
     return oci8_make_ocinumber(&result);
 }

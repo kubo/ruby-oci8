@@ -939,6 +939,26 @@ OCINumberIsInt:
   :args:    - OCIError *err
             - const OCINumber *number
             - boolean *result
+  :code_if_not_found: |
+    /* pseude code
+     *   work = trunc(number);
+     *   if (number == work) {
+     *      result = TRUE;
+     *   } else {
+     *      result = FALSE;
+     *   }
+     */
+    OCINumber work;
+    sword rv;
+    sword cmp;
+    rv = oci8_OCINumberTrunc(err, number, 0, &work, file, line);
+    if (rv != OCI_SUCCESS)
+        return rv;
+    rv = oci8_OCINumberCmp(err, number, &work, &cmp, file, line);
+    if (rv != OCI_SUCCESS)
+        return rv;
+    *result = (cmp == 0) ? TRUE : FALSE;
+    return OCI_SUCCESS;
 
 # round trip: 0
 OCINumberPrec:
@@ -954,6 +974,13 @@ OCINumberSetPi:
   :ret:     void
   :args:    - OCIError *err
             - OCINumber *num
+  :code_if_not_found: |
+    static const OCINumber pi = {
+        {0x15, 0xc1, 0x04, 0x0f, 0x10, 0x5d, 0x42, 0x24, 0x5a, 0x50,
+         0x21, 0x27, 0x2f, 0x1b, 0x2c, 0x27, 0x21, 0x50, 0x33, 0x1d,
+         0x55, 0x15}
+    };
+    *num = pi;
 
 # round trip: 0
 OCINumberShift:

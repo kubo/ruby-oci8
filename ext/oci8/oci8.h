@@ -69,6 +69,17 @@ typedef struct OCIAdmin OCIAdmin;
 
 #define IS_OCI_ERROR(v) (((v) != OCI_SUCCESS) && ((v) != OCI_SUCCESS_WITH_INFO))
 
+#if defined(__GNUC__) && ((__GNUC__ > 2) || (__GNUC__ == 2 && __GNUC_MINOR__ >= 96))
+/* LIKELY tells the compiler that x is 1(TRUE) in many cases.
+ * This may optimize branch prediction in the assembler code.
+ */
+#define LIKELY(x)   (__builtin_expect((x), 1))
+#define UNLIKELY(x) (__builtin_expect((x), 0))
+#else
+#define LIKELY(x)   (x)
+#define UNLIKELY(x) (x)
+#endif
+
 #if defined(__GNUC__) && ((__GNUC__ > 3) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
 /* gcc version >= 3.1 */
 #define ALWAYS_INLINE inline __attribute__((always_inline))
@@ -215,11 +226,6 @@ typedef struct  {
 #define UB4_TO_NUM UINT2NUM
 #endif
 
-/* dangerous macros */
-#define CHECK_STRING(obj) if (!NIL_P(obj)) { StringValue(obj); }
-#define TO_STRING_PTR(obj) (NIL_P(obj) ? NULL : RSTRING(obj)->ptr)
-#define TO_STRING_LEN(obj) (NIL_P(obj) ? 0 : RSTRING(obj)->len)
-
 /* env.c */
 extern OCIEnv *oci8_envhp;
 #ifdef RUBY_VM
@@ -250,7 +256,7 @@ OCIError *oci8_make_errhp(void);
 static inline OCIError *oci8_get_errhp()
 {
     OCIError *errhp = (OCIError *)oci8_tls_get(oci8_tls_key);
-    return (errhp != NULL) ? errhp : oci8_make_errhp();
+    return LIKELY(errhp != NULL) ? errhp : oci8_make_errhp();
 }
 
 #else
@@ -279,7 +285,6 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
 #if defined RUNTIME_API_CHECK
 void *oci8_find_symbol(const char *symbol_name);
 #endif
-extern oci8_base_class_t oci8_base_class;
 
 /* error.c */
 extern VALUE eOCIException;

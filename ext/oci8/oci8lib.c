@@ -1,6 +1,6 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
- * Copyright (C) 2002-2007 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2008 KUBO Takehiro <kubo@jiubao.org>
  */
 
 #ifdef __linux__ /* for RTLD_DEFAULT */
@@ -15,7 +15,7 @@
 #include <signal.h>
 #endif
 
-oci8_base_class_t oci8_base_class = {
+static oci8_base_class_t oci8_base_class = {
     NULL,
     NULL,
     sizeof(oci8_base_t),

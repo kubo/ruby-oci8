@@ -19,6 +19,7 @@ class FuncDef
   attr_reader :remote
   attr_reader :args
   attr_reader :ret
+  attr_reader :code_if_not_found
 
   def initialize(key, val)
     if key[-3..-1] == '_nb'
@@ -33,6 +34,7 @@ class FuncDef
     @args = val[:args].collect do |arg|
       ArgDef.new(arg)
     end
+    @code_if_not_found = val[:code_if_not_found]
   end
 end
 

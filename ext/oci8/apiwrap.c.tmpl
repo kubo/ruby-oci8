@@ -109,8 +109,11 @@ int oci8_have_<%=f.name%>;
 %>        return <%=f.name%>(<%=f.args.collect {|arg| arg.name}.join(', ')%>);
 <% end
 %>    } else {
-        rb_raise(rb_eRuntimeError, "undefined OCI function %s is called", "<%=f.name%>");
-    }
+<%  if f.code_if_not_found %><%=f.code_if_not_found.split("\n").collect {|line| "        " + line}.join("\n")%>
+<% else
+%>        rb_raise(rb_eRuntimeError, "undefined OCI function %s is called", "<%=f.name%>");
+<% end
+%>    }
 }
 <%
 ######################################################################
