@@ -1,4 +1,10 @@
 2008-03-22  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/bind.c, ext/oci8/lob.c, ext/oci8/object.c, ext/oci8/oci8.h,
+	  ext/oci8/oci8lib.c, ext/oci8/ocidatetime.c, ext/oci8/ocinumber.c,
+	  ext/oci8/oradate.c, ext/oci8/stmt.c: add qualifier 'const' to
+	    oci8_bind_*class_t values. These are read only.
+
+2008-03-22  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/.: add apiwrap.[ch] to svn:ignore property.
 	* ext/oci8/apiwrap.c.tmpl, ext/oci8/apiwrap.rb, ext/oci8/apiwrap.yml:
 	    add alternative code if OCINumberSetPi(), OCINumberIsInt() is

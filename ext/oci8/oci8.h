@@ -159,7 +159,7 @@ struct oci8_base {
         OCIDescribe *dschp;
     } hp;
     VALUE self;
-    oci8_base_class_t *klass;
+    const oci8_base_class_t *klass;
     oci8_base_t *parent;
     oci8_base_t *next;
     oci8_base_t *prev;
@@ -275,7 +275,7 @@ extern VALUE oci8_cOCIHandle;
 void oci8_base_free(oci8_base_t *base);
 VALUE oci8_define_class(const char *name, oci8_base_class_t *klass);
 VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_class_t *klass);
-VALUE oci8_define_bind_class(const char *name, oci8_bind_class_t *oci8_bind_class);
+VALUE oci8_define_bind_class(const char *name, const oci8_bind_class_t *oci8_bind_class);
 void oci8_link_to_parent(oci8_base_t *base, oci8_base_t *parent);
 void oci8_unlink_from_parent(oci8_base_t *base);
 #ifndef RUBY_VM

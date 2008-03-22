@@ -55,7 +55,7 @@ static void bind_string_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE len
     obind->alloc_sz = (sz + (sizeof(sb4) - 1)) & ~(sizeof(sb4) - 1);
 }
 
-static oci8_bind_class_t bind_string_class = {
+static const oci8_bind_class_t bind_string_class = {
     {
         NULL,
         oci8_bind_free,
@@ -74,7 +74,7 @@ static oci8_bind_class_t bind_string_class = {
 /*
  * bind_raw
  */
-static oci8_bind_class_t bind_raw_class = {
+static const oci8_bind_class_t bind_raw_class = {
     {
         NULL,
         oci8_bind_free,
@@ -188,7 +188,7 @@ static void bind_long_out(oci8_bind_t *obind, ub4 idx, ub1 piece, void **valuepp
     obind->u.inds[idx] = 0;
 }
 
-static oci8_bind_class_t bind_long_class = {
+static const oci8_bind_class_t bind_long_class = {
     {
         bind_long_mark,
         oci8_bind_free,
@@ -207,7 +207,7 @@ static oci8_bind_class_t bind_long_class = {
 /*
  * bind_long_raw
  */
-static oci8_bind_class_t bind_long_raw_class = {
+static const oci8_bind_class_t bind_long_raw_class = {
     {
         bind_long_mark,
         oci8_bind_free,
@@ -243,7 +243,7 @@ static void bind_fixnum_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE len
     obind->alloc_sz = sizeof(long);
 }
 
-static oci8_bind_class_t bind_fixnum_class = {
+static const oci8_bind_class_t bind_fixnum_class = {
     {
         NULL,
         oci8_bind_free,
@@ -279,7 +279,7 @@ static void bind_float_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE leng
     obind->alloc_sz = sizeof(double);
 }
 
-static oci8_bind_class_t bind_float_class = {
+static const oci8_bind_class_t bind_float_class = {
     {
         NULL,
         oci8_bind_free,
@@ -296,7 +296,7 @@ static oci8_bind_class_t bind_float_class = {
 };
 
 #ifdef SQLT_BDOUBLE
-static oci8_bind_class_t bind_binary_double_class = {
+static const oci8_bind_class_t bind_binary_double_class = {
     {
         NULL,
         oci8_bind_free,
@@ -313,7 +313,7 @@ static oci8_bind_class_t bind_binary_double_class = {
 };
 #endif
 
-static inline VALUE oci8_get_data_at(oci8_bind_class_t *obc, oci8_bind_t *obind, ub4 idx)
+static inline VALUE oci8_get_data_at(const oci8_bind_class_t *obc, oci8_bind_t *obind, ub4 idx)
 {
     void **null_structp = NULL;
 
@@ -331,7 +331,7 @@ static inline VALUE oci8_get_data_at(oci8_bind_class_t *obc, oci8_bind_t *obind,
 static VALUE oci8_get_data(VALUE self)
 {
     oci8_bind_t *obind = DATA_PTR(self);
-    oci8_bind_class_t *obc = (oci8_bind_class_t *)obind->base.klass;
+    const oci8_bind_class_t *obc = (const oci8_bind_class_t *)obind->base.klass;
 
     if (obind->maxar_sz == 0) {
         return oci8_get_data_at(obc, obind, 0);
@@ -346,7 +346,7 @@ static VALUE oci8_get_data(VALUE self)
     }
 }
 
-static inline void oci8_set_data_at(oci8_bind_class_t *obc, oci8_bind_t *obind, ub4 idx, VALUE val)
+static inline void oci8_set_data_at(const oci8_bind_class_t *obc, oci8_bind_t *obind, ub4 idx, VALUE val)
 {
 
     if (NIL_P(val)) {
@@ -371,7 +371,7 @@ static inline void oci8_set_data_at(oci8_bind_class_t *obc, oci8_bind_t *obind, 
 static VALUE oci8_set_data(VALUE self, VALUE val)
 {
     oci8_bind_t *obind = DATA_PTR(self);
-    oci8_bind_class_t *obc = (oci8_bind_class_t *)obind->base.klass;
+    const oci8_bind_class_t *obc = (const oci8_bind_class_t *)obind->base.klass;
 
     if (obind->maxar_sz == 0) {
         oci8_set_data_at(obc, obind, 0, val);
@@ -395,7 +395,7 @@ static VALUE oci8_set_data(VALUE self, VALUE val)
 static VALUE oci8_bind_initialize(VALUE self, VALUE svc, VALUE val, VALUE length, VALUE max_array_size)
 {
     oci8_bind_t *obind = DATA_PTR(self);
-    oci8_bind_class_t *bind_class = (oci8_bind_class_t *)obind->base.klass;
+    const oci8_bind_class_t *bind_class = (const oci8_bind_class_t *)obind->base.klass;
     ub4 cnt = 1;
 
     obind->tdo = Qnil;

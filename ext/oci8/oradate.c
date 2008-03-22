@@ -399,7 +399,7 @@ static void bind_oradate_init_elem(oci8_bind_t *obind, VALUE svc)
     } while (++idx < obind->maxar_sz);
 }
 
-static oci8_bind_class_t bind_oradate_class = {
+static const oci8_bind_class_t bind_oradate_class = {
     {
         NULL,
         oci8_bind_free,

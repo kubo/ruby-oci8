@@ -1069,7 +1069,7 @@ static void bind_ocinumber_init_elem(oci8_bind_t *obind, VALUE svc)
     } while (++idx < obind->maxar_sz);
 }
 
-static oci8_bind_class_t bind_ocinumber_class = {
+static const oci8_bind_class_t bind_ocinumber_class = {
     {
         NULL,
         oci8_bind_free,
@@ -1085,7 +1085,7 @@ static oci8_bind_class_t bind_ocinumber_class = {
     SQLT_VNU,
 };
 
-static oci8_bind_class_t bind_integer_class = {
+static const oci8_bind_class_t bind_integer_class = {
     {
         NULL,
         oci8_bind_free,

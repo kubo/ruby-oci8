@@ -552,7 +552,7 @@ static void bind_named_type_init_elem(oci8_bind_t *obind, VALUE svc)
     } while (++idx < obind->maxar_sz);
 }
 
-static oci8_bind_class_t bind_named_type_class = {
+static const oci8_bind_class_t bind_named_type_class = {
     {
         bind_named_type_mark,
         bind_named_type_free,

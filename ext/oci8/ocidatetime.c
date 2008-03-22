@@ -646,7 +646,7 @@ static void bind_interval_ds_init_elem(oci8_bind_t *obind, VALUE svc)
     } while (++idx < obind->maxar_sz);
 }
 
-static oci8_bind_class_t bind_datetime_class = {
+static const oci8_bind_class_t bind_datetime_class = {
     {
         NULL,
         oci8_bind_dsc_free,
@@ -662,7 +662,7 @@ static oci8_bind_class_t bind_datetime_class = {
     SQLT_TIMESTAMP_TZ
 };
 
-static oci8_bind_class_t bind_interval_ym_class = {
+static const oci8_bind_class_t bind_interval_ym_class = {
     {
         NULL,
         oci8_bind_dsc_free,
@@ -678,7 +678,7 @@ static oci8_bind_class_t bind_interval_ym_class = {
     SQLT_INTERVAL_YM
 };
 
-static oci8_bind_class_t bind_interval_ds_class = {
+static const oci8_bind_class_t bind_interval_ds_class = {
     {
         NULL,
         oci8_bind_dsc_free,

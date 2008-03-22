@@ -77,7 +77,7 @@ static void oci8_handle_cleanup(oci8_base_t *base)
 static VALUE oci8_s_allocate(VALUE klass)
 {
     oci8_base_t *base;
-    oci8_base_class_t *base_class;
+    const oci8_base_class_t *base_class;
     VALUE superklass;
     VALUE obj;
 
@@ -178,10 +178,10 @@ VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_class_t *
     return klass;
 }
 
-VALUE oci8_define_bind_class(const char *name, oci8_bind_class_t *bind_class)
+VALUE oci8_define_bind_class(const char *name, const oci8_bind_class_t *bind_class)
 {
     VALUE klass = rb_define_class_under(mOCI8BindType, name, cOCI8BindTypeBase);
-    VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, bind_class);
+    VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, (void*)bind_class);
     rb_ivar_set(klass, id_oci8_class, obj);
     return klass;
 }

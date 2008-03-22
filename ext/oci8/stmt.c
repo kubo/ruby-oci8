@@ -125,7 +125,7 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
     oci8_stmt_t *stmt = DATA_PTR(self);
     ub4 position;
     oci8_bind_t *obind;
-    oci8_bind_class_t *bind_class;
+    const oci8_bind_class_t *bind_class;
     sword status;
     ub4 mode;
 
@@ -134,7 +134,7 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
     if (obind->base.hp.dfn != NULL) {
         oci8_base_free(&obind->base); /* TODO: OK? */
     }
-    bind_class = (oci8_bind_class_t *)obind->base.klass;
+    bind_class = (const oci8_bind_class_t *)obind->base.klass;
     if (bind_class->out == NULL) {
         mode = OCI_DEFAULT;
     } else {
@@ -175,7 +175,7 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     ub4 placeholder_len = 0;
     ub4 position = 0;
     oci8_bind_t *obind;
-    oci8_bind_class_t *bind_class;
+    const oci8_bind_class_t *bind_class;
     sword status;
     VALUE old_value;
     void *indp;
@@ -203,7 +203,7 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     if (obind->base.hp.bnd != NULL) {
         oci8_base_free(&obind->base); /* TODO: OK? */
     }
-    bind_class = (oci8_bind_class_t *)obind->base.klass;
+    bind_class = (const oci8_bind_class_t *)obind->base.klass;
     if (bind_class->in != NULL || bind_class->out != NULL) {
         mode = OCI_DATA_AT_EXEC;
     } else {
@@ -284,7 +284,7 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE iteration_count)
     rv = oci8_call_stmt_execute(svcctx, stmt, iters, mode);
     while (rv == OCI_NEED_DATA) {
         oci8_bind_t *obind;
-        oci8_bind_class_t *bind_class;
+        const oci8_bind_class_t *bind_class;
         /* get piece info. */
         dvoid *hp;
         ub4 type;
@@ -303,7 +303,7 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE iteration_count)
             if (obind->base.hp.ptr == hp) {
                 if (type != OCI_HTYPE_BIND)
                     rb_bug("ruby-oci8: expect OCI_HTYPE_BIND but %d", type);
-                bind_class = (oci8_bind_class_t *)obind->base.klass;
+                bind_class = (const oci8_bind_class_t *)obind->base.klass;
                 switch (in_out) {
                 case OCI_PARAM_IN:
                     if (bind_class->in == NULL)
@@ -366,12 +366,12 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
     sword rv;
     long idx;
     oci8_bind_t *obind;
-    oci8_bind_class_t *bind_class;
+    const oci8_bind_class_t *bind_class;
 
     obind = (oci8_bind_t *)stmt->base.children;
     do {
         if (obind->base.type == OCI_HTYPE_DEFINE) {
-            bind_class = (oci8_bind_class_t *)obind->base.klass;
+            bind_class = (const oci8_bind_class_t *)obind->base.klass;
             if (bind_class->pre_fetch_hook != NULL) {
                 bind_class->pre_fetch_hook(obind, stmt->svc);
             }
@@ -398,7 +398,7 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
             if (obind->base.hp.ptr == hp) {
                 if (type != OCI_HTYPE_DEFINE)
                     rb_bug("ruby-oci8: expect OCI_HTYPE_DEFINE but %d", type);
-                bind_class = (oci8_bind_class_t *)obind->base.klass;
+                bind_class = (const oci8_bind_class_t *)obind->base.klass;
                 switch (in_out) {
                 case OCI_PARAM_OUT:
                     if (bind_class->out == NULL)
@@ -432,7 +432,7 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
         void *indp;
 
         if (obind->base.type == OCI_HTYPE_DEFINE) {
-            bind_class = (oci8_bind_class_t *)obind->base.klass;
+            bind_class = (const oci8_bind_class_t *)obind->base.klass;
             if (bind_class->out != NULL) {
                 if (obind->maxar_sz == 0) {
                     bind_class->out(obind, 0, 0, &valuep, &alenp, &indp);
@@ -737,7 +737,7 @@ static void bind_stmt_init_elem(oci8_bind_t *obind, VALUE svc)
     } while (++idx < obind->maxar_sz);
 }
 
-static oci8_bind_class_t bind_stmt_class = {
+static const oci8_bind_class_t bind_stmt_class = {
     {
         oci8_bind_hp_obj_mark,
         oci8_bind_free,
