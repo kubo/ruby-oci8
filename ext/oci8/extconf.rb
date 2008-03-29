@@ -73,7 +73,7 @@ $objs = ["oci8lib.o", "env.o", "error.o", "oci8.o",
          "stmt.o", "bind.o", "metadata.o", "attr.o",
          "lob.o", "oradate.o",
          "ocinumber.o", "ocidatetime.o", "object.o", "apiwrap.o",
-         "xmldb.o"]
+         "encoding.o", "xmldb.o"]
 
 # Checking gcc or not
 if oraconf.cc_is_gcc

@@ -142,6 +142,9 @@ Init_oci8lib()
     Init_oci8_bind(cOCI8BindTypeBase);
     Init_oci8_stmt(cOCI8);
 
+    /* Encoding */
+    Init_oci8_encoding(cOCI8);
+
     /* register allocators */
     Init_oci8_metadata(cOCI8);
     Init_oci8_lob(cOCI8);

@@ -239,15 +239,9 @@ static VALUE metadata_get_param_at(VALUE self, VALUE idx)
 
 static VALUE metadata_get_charset_name(VALUE self, VALUE charset_id)
 {
-    char buf[OCI_NLS_MAXBUFSZ];
-    sword rv;
+    oci8_metadata_t *md = DATA_PTR(self);
 
-    Check_Type(charset_id, T_FIXNUM);
-    rv = OCINlsCharSetIdToName(oci8_envhp, TO_ORATEXT(buf), sizeof(buf), FIX2INT(charset_id));
-    if (rv != OCI_SUCCESS) {
-        return Qnil;
-    }
-    return rb_str_new2(buf);
+    return oci8_charset_id2name(md->svc, charset_id);
 }
 
 static VALUE metadata_get_con(VALUE self)

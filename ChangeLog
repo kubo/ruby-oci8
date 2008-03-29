@@ -1,4 +1,15 @@
 2008-03-29  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/encoding.c, ext/oci8/extconf.rb, ext/oci8/oci8.h
+	  ext/oci8/oci8lib.c: add a new file encoding.c.
+	    oci8_charset_id2name() is added to convert Oracle charset
+	    id to charset name. If the Oracle client version is 9iR2
+	    or upper, it uses OCINlsCharSetIdToName(). If 9iR1 or lower,
+	    it uses PL/SQL function nls_charset_name() and converts
+	    at the server side.
+	* ext/oci8/metadata.c: use oci8_charset_id2name() instead of
+	    OCINlsCharSetIdToName().
+
+2008-03-29  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, ext/oci8/oci8lib.c, ext/oci8/oci8.h:
 	    When '--with-runtime-check' is passed to extconf.rb, oci8lib.so
 	    is no longer linked to an Oracle client library at compilation

@@ -367,6 +367,10 @@ VALUE oci8_get_ub4_attr(oci8_base_t *base, ub4 attrtype);
 VALUE oci8_get_string_attr(oci8_base_t *base, ub4 attrtype);
 VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype);
 
+/* encoding.c */
+void Init_oci8_encoding(VALUE cOCI8);
+VALUE oci8_charset_id2name(VALUE svc, VALUE charset_id);
+
 #include "apiwrap.h"
 
 #endif
