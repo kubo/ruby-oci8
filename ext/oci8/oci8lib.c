@@ -3,11 +3,6 @@
  * Copyright (C) 2002-2008 KUBO Takehiro <kubo@jiubao.org>
  */
 
-#ifdef __linux__ /* for RTLD_DEFAULT */
-#define _GNU_SOURCE
-#include <dlfcn.h>
-#endif
-
 #include "oci8.h"
 
 #define DEBUG_CORE_FILE 1
@@ -300,18 +295,103 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
 #endif /* RUBY_VM */
 
 #if defined RUNTIME_API_CHECK
+
+#ifndef _WIN32
+#include <dlfcn.h>
+#endif
+
 void *oci8_find_symbol(const char *symbol_name)
 {
 #if defined _WIN32
+    /* Windows */
     static HMODULE hModule = NULL;
+
     if (hModule == NULL) {
-        hModule = GetModuleHandle("OCI.DLL");
+        hModule = LoadLibrary("OCI.DLL");
+        if (hModule == NULL) {
+            char message[512];
+            int error = GetLastError();
+            char *p;
+
+            memset(message, 0, sizeof(message));
+            FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS, NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), message, sizeof(message), NULL);
+            for (p = message; *p; p++) {
+                if (*p == '\n' || *p == '\r')
+                    *p = ' ';
+            }
+            rb_raise(rb_eLoadError, "OCI.DLL: %d(%s)", error, message);
+        }
     }
     return GetProcAddress(hModule, symbol_name);
-#elif defined RTLD_DEFAULT
-    return dlsym(RTLD_DEFAULT, symbol_name);
 #else
-#error RUNTIME_API_CHECK is not supported on this platform.
+    /* UNIX */
+    static void *handle = NULL;
+
+    if (handle == NULL) {
+        static const char * const sonames[] = {
+#if defined(__CYGWIN__)
+            /* Windows(Cygwin) */
+            "OCI.DLL",
+#elif defined(_AIX)
+            /* AIX */
+            "libclntsh.a(shr.o)",
+#elif defined(__hppa)
+            /* HP-UX(PA-RISC) */
+            "libclntsh.sl.11.1",
+            "libclntsh.sl.10.1",
+            "libclntsh.sl.9.0",
+            "libclntsh.sl.8.0",
+#elif defined(__APPLE__)
+            /* Mac OS X */
+            "libclntsh.dylib.11.1",
+            "libclntsh.dylib.10.1",
+#else
+            /* Linux, Solaris and HP-UX(IA64) */
+            "libclntsh.so.11.1",
+            "libclntsh.so.10.1",
+            "libclntsh.so.9.0",
+            "libclntsh.so.8.0",
 #endif
+        };
+#define NUM_SONAMES (sizeof(sonames)/sizeof(sonames[0]))
+        size_t idx;
+        VALUE err = rb_ary_new();
+
+#ifdef _AIX
+#define DLOPEN_FLAG (RTLD_LAZY|RTLD_GLOBAL|RTLD_MEMBER)
+#else
+#define DLOPEN_FLAG (RTLD_LAZY|RTLD_GLOBAL)
+#endif
+        for (idx = 0; idx < NUM_SONAMES; idx++) {
+            handle = dlopen(sonames[idx], DLOPEN_FLAG);
+            if (handle != NULL) {
+                break;
+            }
+            rb_ary_push(err, rb_str_new2(dlerror()));
+        }
+        if (handle == NULL) {
+            VALUE msg;
+
+            msg = rb_str_buf_new(NUM_SONAMES * 50);
+            for (idx = 0; idx < NUM_SONAMES; idx++) {
+                const char *errmsg = RSTRING_PTR(RARRAY_PTR(err)[idx]);
+                if (idx != 0) {
+                    rb_str_buf_cat2(msg, " ");
+                }
+                if (strstr(errmsg, sonames[idx]) == NULL) {
+                    /* prepend "soname: " if soname is not found in
+                     * the error message.
+                     */
+                    rb_str_buf_cat2(msg, sonames[idx]);
+                    rb_str_buf_cat2(msg, ": ");
+                }
+                rb_str_buf_append(msg, RARRAY_PTR(err)[idx]);
+                rb_str_buf_cat2(msg, ";");
+            }
+            rb_exc_raise(rb_exc_new3(rb_eLoadError, msg));
+        }
+    }
+    return dlsym(handle, symbol_name);
+#endif /* defined _WIN32 */
 }
 #endif /* RUNTIME_API_CHECK */

@@ -30,6 +30,7 @@ def replace_keyword(source, target, replace)
 end
 
 $CFLAGS += oraconf.cflags
+saved_libs = $libs
 $libs += oraconf.libs
 
 oci_actual_client_version = 800
@@ -65,6 +66,7 @@ $defs << "-DORACLE_CLIENT_VERSION=#{oci_client_version}"
 
 if with_config('runtime-check')
   $defs << "-DRUNTIME_API_CHECK=1"
+  $libs = saved_libs
 end
 
 $objs = ["oci8lib.o", "env.o", "error.o", "oci8.o",

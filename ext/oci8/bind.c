@@ -295,7 +295,9 @@ static const oci8_bind_class_t bind_float_class = {
     SQLT_FLT
 };
 
-#ifdef SQLT_BDOUBLE
+#ifndef SQLT_BDOUBLE
+#define SQLT_BDOUBLE 22
+#endif
 static const oci8_bind_class_t bind_binary_double_class = {
     {
         NULL,
@@ -311,7 +313,6 @@ static const oci8_bind_class_t bind_binary_double_class = {
     NULL,
     SQLT_BDOUBLE
 };
-#endif
 
 static inline VALUE oci8_get_data_at(const oci8_bind_class_t *obc, oci8_bind_t *obind, ub4 idx)
 {
@@ -470,9 +471,9 @@ void Init_oci8_bind(VALUE klass)
     oci8_define_bind_class("LongRaw", &bind_long_raw_class);
     oci8_define_bind_class("Fixnum", &bind_fixnum_class);
     oci8_define_bind_class("Float", &bind_float_class);
-#ifdef SQLT_BDOUBLE
-    oci8_define_bind_class("BinaryDouble", &bind_binary_double_class);
-#endif
+    if (oracle_client_version >= 1000) {
+        oci8_define_bind_class("BinaryDouble", &bind_binary_double_class);
+    }
 }
 
 oci8_bind_t *oci8_get_bind(VALUE obj)

@@ -1,3 +1,12 @@
+2008-03-29  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, ext/oci8/oci8lib.c, ext/oci8/oci8.h:
+	    When '--with-runtime-check' is passed to extconf.rb, oci8lib.so
+	    is no longer linked to an Oracle client library at compilation
+	    time. It tries to search the Oracle client library at runtime.
+	* ext/oci8/bind.c: define OCI8::BindType::BinaryDouble when
+	    oracle_client_version's value is 10g or later, not when SQLT_BDOUBLE
+	    is declared. This is for runtime check.
+
 2008-03-22  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c, ext/oci8/lob.c, ext/oci8/object.c, ext/oci8/oci8.h,
 	  ext/oci8/oci8lib.c, ext/oci8/ocidatetime.c, ext/oci8/ocinumber.c,

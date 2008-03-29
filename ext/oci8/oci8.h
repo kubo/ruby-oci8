@@ -63,10 +63,6 @@ typedef struct OCIAdmin OCIAdmin;
 #define rb_errinfo() ruby_errinfo
 #endif
 
-#ifdef _WIN32
-#define RUNTIME_API_CHECK
-#endif
-
 #define IS_OCI_ERROR(v) (((v) != OCI_SUCCESS) && ((v) != OCI_SUCCESS_WITH_INFO))
 
 #if defined(__GNUC__) && ((__GNUC__ > 2) || (__GNUC__ == 2 && __GNUC_MINOR__ >= 96))
