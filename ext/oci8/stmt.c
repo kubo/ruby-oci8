@@ -82,6 +82,7 @@ static VALUE oci8_stmt_initialize(int argc, VALUE *argv, VALUE self)
     rb_ivar_set(stmt->base.self, id_at_column_metadata, rb_ary_new());
     rb_ivar_set(stmt->base.self, id_at_names, Qnil);
     rb_ivar_set(stmt->base.self, id_at_con, svc);
+    rb_ivar_set(stmt->base.self, id_at_max_array_size, Qnil);
 
     if (argc > 1) {
         rv = OCIStmtPrepare(stmt->base.hp.stmt, oci8_errhp, RSTRING_ORATEXT(sql), RSTRING_LEN(sql), OCI_NTV_SYNTAX, OCI_DEFAULT);

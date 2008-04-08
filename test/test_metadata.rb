@@ -145,7 +145,7 @@ class TestMetadata < Test::Unit::TestCase
 
     drop_table('test_table')
     sql = <<-EOS
-CREATE TABLE test_table (#{i = 0; coldef.collect do |c| i += 1; "C#{i} " + c[1]; end.join(',')})
+CREATE TABLE test_table (#{idx = 0; coldef.collect do |c| idx += 1; "C#{idx} " + c[1]; end.join(',')})
 STORAGE (
    INITIAL 100k
    NEXT 100k
