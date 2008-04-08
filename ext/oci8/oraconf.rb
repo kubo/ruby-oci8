@@ -931,20 +931,71 @@ EOS
       return
     end
 
-    if RUBY_PLATFORM =~ /i.*-darwin/
+    if RUBY_PLATFORM =~ /darwin/
+      is_intelmac = ([1].pack('s') == "\001\000")
+      arch_ppc_error = false
+      arch_i386_error = false
       open('mkmf.log', 'r') do |f|
         while line = f.gets
+          # universal-darwin8.0 (Mac OS X 10.4?)
           if line.include? 'cputype (18, architecture ppc) does not match cputype (7)'
-            raise <<EOS
-Oracle doesn't support intel mac.
-  http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-talk/223854
+            arch_i386_error = true
+          end
+          if line.include? 'cputype (7, architecture i386) does not match cputype (18)'
+            arch_ppc_error = true
+          end
+          # universal-darwin9.0 (Mac OS X 10.5?)
+          if line.include? 'Undefined symbols for architecture i386:'
+            arch_i386_error = true
+          end
+          if line.include? 'Undefined symbols for architecture ppc:'
+            arch_ppc_error = true
+          end
 
-There are three solutions:
-1. Compile ruby as ppc binary.
-2. Wait until Oracle releases mac intel binary.
-3. Use a third-party ODBC driver and ruby-odbc instead.
-     http://www.actualtechnologies.com/
+          if arch_i386_error
+            if is_intelmac
+              # intel mac and '-arch i386' error
+              raise <<EOS
+Could not compile with Oracle instant client.
+Use intel mac client, which will be released in a couple of weeks.
+   http://forums.oracle.com/forums/thread.jspa?threadID=634246
+
+If it has not been released yet, you have three workarounds.
+  1. Compile ruby as ppc binary.
+  2. Use JRuby and JDBC
+  3. Use a third-party ODBC driver and ruby-odbc.
 EOS
+            else
+              # ppc mac and '-arch i386' error
+              raise <<EOS
+Could not compile with Oracle instant client.
+You may need to set a environment variable:
+    RC_ARCHS=ppc
+    export RC_ARCHS
+If it does not fix the problem, delete all '-arch i386'
+in '#{Config::CONFIG['archdir']}/rbconfig.rb'.
+EOS
+            end
+          end
+
+          if arch_ppc_error
+            if is_intelmac
+              # intel mac and '-arch ppc' error
+              raise <<EOS
+Could not compile with Oracle instant client.
+You may need to set a environment variable:
+    RC_ARCHS=i386
+    export RC_ARCHS
+If it does not fix the problem, delete all '-arch ppc'
+in '#{Config::CONFIG['archdir']}/rbconfig.rb'.
+EOS
+            else
+              # ppc mac and '-arch ppc' error
+              raise <<EOS
+Could not compile with Oracle instant client.
+Use ppc instant client.
+EOS
+            end
           end
         end
       end

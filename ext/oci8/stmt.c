@@ -505,7 +505,7 @@ static VALUE oci8_stmt_execute(int argc, VALUE *argv, VALUE self)
   Get_Handle(self, h); /* 0 */
   Check_Handle(vsvc, OCISvcCtx, svch); /* 1 */
   if (argc >= 2) {
-    iters = NUM2INT(viters); /* 2 */
+    iters = NUM2UINT(viters); /* 2 */
   } else {
     rv = OCIAttrGet(h->hp, OCI_HTYPE_STMT, &stmt_type, 0, OCI_ATTR_STMT_TYPE, h->errhp);
     if (rv != OCI_SUCCESS) {
@@ -521,9 +521,7 @@ static VALUE oci8_stmt_execute(int argc, VALUE *argv, VALUE self)
   }
   Get_Int_With_Default(argc, 3, vmode, mode, OCI_DEFAULT); /* 3 */
 
-  if (iters < 0) {
-    rb_raise(rb_eArgError, "use Positive value for the 2nd argument");
-  } else if (iters > 1) {
+  if (iters > 1) {
     rb_raise(rb_eArgError, "current implementation doesn't support array fatch or batch mode");
   }
 

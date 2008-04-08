@@ -189,7 +189,7 @@ void Init_ora_number(void)
 {
 #ifdef HAVE_RB_DEFINE_ALLOC_FUNC
   /* ruby 1.8 */
-  rb_define_alloc_func(cOraNumber, ora_number_s_allocate);
+  rb_define_alloc_func(cOraNumber, RUBY_METHOD_FUNC(ora_number_s_allocate));
   rb_define_method(cOraNumber, "initialize", ora_number_initialize, -1);
   rb_define_method(cOraNumber, "initialize_copy", ora_number_initialize_copy, 1);
 #else

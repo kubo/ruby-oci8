@@ -752,12 +752,9 @@ class OCI8
       when OCI_STMT_SELECT
         do_ocicall(@ctx) { @stmt.execute(@svc, 0, OCI_DEFAULT) }
         define_columns()
-      when OCI_STMT_UPDATE, OCI_STMT_DELETE, OCI_STMT_INSERT
-        do_ocicall(@ctx) { @stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG]) }
-        @stmt.attrGet(OCI_ATTR_ROW_COUNT)
       else
         do_ocicall(@ctx) { @stmt.execute(@svc, 1, @ctx[CTX_EXECFLAG]) }
-        true
+        @stmt.attrGet(OCI_ATTR_ROW_COUNT)
       end
     end # exec
 

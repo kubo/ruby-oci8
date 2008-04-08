@@ -361,7 +361,7 @@ void Init_ora_date(void)
 {
 #ifdef HAVE_RB_DEFINE_ALLOC_FUNC
   /* ruby 1.8 */
-  rb_define_alloc_func(cOraDate, ora_date_s_allocate);
+  rb_define_alloc_func(cOraDate, RUBY_METHOD_FUNC(ora_date_s_allocate));
   rb_define_method(cOraDate, "initialize", ora_date_initialize, -1);
   rb_define_method(cOraDate, "initialize_copy", ora_date_initialize_copy, 1);
 #else

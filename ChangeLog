@@ -1,3 +1,19 @@
+2008-04-08  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: add error messages for the beta
+	    version of intel mac oracle instant client. But the production
+	    version may not need this.
+	* lib/oci8.rb.in: change the spec of OCI8#exec and OCI8::Cursor#exec.
+	    Before this change, the number of rows had been returned
+	    only when the SQL statement is update, delete or insert
+	    statement. After this, it is returned when the SQL statement
+	    is not select statement. For example OCI8#exec had returned
+	    true for MERGE statement (pointed by Jim Cain). But now it is
+	    the number of rows processed.
+	* ext/oci8/oradate.c, ext/oci8/oranumber.c: fix some (not all) warnings
+	    in compilation by HP-UX C compiler.
+	* ext/oci8/stmt.c: fix a compilation warning. iter's type is ub4. It
+	    cannot be minus value.
+
 2008-03-04  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb: output a message to say 'install
 	    a ruby development package' when 'mkmf.rb' is not
