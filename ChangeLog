@@ -1,3 +1,8 @@
+2008-04-27  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/stmt.c, lib/oci8/oci8.rb: fix typo.
+	    (pointed by Liming)
+	* dist-files: fix added and deleted files.
+
 2008-04-08  KUBO Takehiro  <kubo@jiubao.org>
 	* metaconfig: add '-w' when running test cases.
 	* test/test_metadata.rb: suppress warning: "shadowing outer local variable - i."

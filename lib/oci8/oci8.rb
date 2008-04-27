@@ -507,7 +507,7 @@ class OCI8
       num_cols = __param_count
       1.upto(num_cols) do |i|
         parm = __paramGet(i)
-        define_a_column(i, parm) unless __defiend?(i)
+        define_a_column(i, parm) unless __defined?(i)
         @column_metadata[i - 1] = parm
       end
       num_cols

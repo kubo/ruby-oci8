@@ -792,7 +792,7 @@ void Init_oci8_stmt(VALUE cOCI8)
     rb_define_method(cOCIStmt, "[]", oci8_stmt_aref, 1);
     rb_define_method(cOCIStmt, "[]=", oci8_stmt_aset, 2);
     rb_define_method(cOCIStmt, "keys", oci8_stmt_keys, 0);
-    rb_define_private_method(cOCIStmt, "__defiend?", oci8_stmt_defined_p, 1);
+    rb_define_private_method(cOCIStmt, "__defined?", oci8_stmt_defined_p, 1);
     rb_define_method(cOCIStmt, "prefetch_rows=", oci8_stmt_set_prefetch_rows, 1);
 
     oci8_define_bind_class("Cursor", &bind_stmt_class);
