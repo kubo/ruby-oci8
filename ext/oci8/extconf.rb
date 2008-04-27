@@ -1,3 +1,11 @@
+raise <<EOS if RUBY_VERSION.index("1.9") == 0
+---------------------------------------------------
+error message:
+ruby-oci8 1.0 is not supported by ruby #{RUBY_VERSION}.
+Use ruby-oci8 2.0 in SVN trunk.
+---------------------------------------------------
+EOS
+
 begin
   require 'mkmf'
 rescue LoadError

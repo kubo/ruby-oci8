@@ -1,3 +1,9 @@
+2008-04-27  KUBO Takehiro  <kubo@jiubao.org>
+	* NEWS: add changes between 1.0.0 and 1.0.1.
+	* VERSION: update to 1.0.1.
+	* ext/oci8/extconf.rb: raise error if the ruby is 1.9.
+	* ext/oci8/oraconf.rb: fix for intel mac instant client.
+
 2008-04-08  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: add error messages for the beta
 	    version of intel mac oracle instant client. But the production

@@ -1,3 +1,45 @@
+1.0.1:
+
+1. [SPEC CHANGE] OCI8#exec and OCI8::Cursor#exec's return value is changed
+   for statement except select, insert, update and delete statement.
+
+   It had been true. But now it is the number of rows processed for all
+   non-select statements.
+
+   For example:
+
+     # 1.0.0 or before
+     conn = OCI8.new('user/pass')
+     conn.exec('rename FOO_TABLE to BAR_TABLE') # => true
+
+     # 1.0.1
+     conn = OCI8.new('user/pass')
+     conn.exec('rename FOO_TABLE to BAR_TABLE') # => 0
+
+2. fix a bug that OraDate.new made a core dump on x86_64 linux.
+  (reported by Alun Eyre)
+
+3. fix OCI8#non_blocking = false problem.
+  Once the connection became non-bocking mode, it could
+  not be reset to blocking mode. Now it can be reset.
+  (reported by Cagdas Gerede)
+
+4. support cursors in a result set.
+   (contributed by Randy Gordon)
+
+   For example:
+      conn = OCI8.new('ruby/oci8')
+      sql = 'SELECT CURSOR(SELECT * FROM foo where foo.c1 = bar.c1 ) FROM bar'
+      conn.exec(sql) do |row|
+        cursor_in_result_set = row[0]
+        cursor_in_result_set.fetch do |row|
+          puts row.join(',')
+        end
+      end
+
+5. fix oraconf.rb for official x86_64 linux rpms.
+   (contributed by Pat)
+
 1.0.0:
 
 1. fix a BUG when binding a Bignum. This bug was added in

@@ -939,16 +939,32 @@ EOS
         while line = f.gets
           # universal-darwin8.0 (Mac OS X 10.4?)
           if line.include? 'cputype (18, architecture ppc) does not match cputype (7)'
+            # try to link an i386 library but the instant client is ppc.
             arch_i386_error = true
           end
           if line.include? 'cputype (7, architecture i386) does not match cputype (18)'
+            # try to link a ppc library but the instant client is i386.
             arch_ppc_error = true
+          end
+          if line.include? '/libclntsh.dylib load command 8 unknown cmd field'
+            raise <<EOS
+Intel mac instant client is for Mac OS X 10.5.
+It doesn't work on Mac OS X 10.4 or before.
+
+You have three workarounds.
+  1. Compile ruby as ppc binary and use it with ppc instant client.
+  2. Use JRuby and JDBC
+  3. Use a third-party ODBC driver and ruby-odbc.
+EOS
+            # '
           end
           # universal-darwin9.0 (Mac OS X 10.5?)
           if line.include? 'Undefined symbols for architecture i386:'
+            # try to link an i386 library but the instant client is ppc.
             arch_i386_error = true
           end
           if line.include? 'Undefined symbols for architecture ppc:'
+            # try to link a ppc library but the instant client is i386.
             arch_ppc_error = true
           end
 
@@ -957,13 +973,7 @@ EOS
               # intel mac and '-arch i386' error
               raise <<EOS
 Could not compile with Oracle instant client.
-Use intel mac client, which will be released in a couple of weeks.
-   http://forums.oracle.com/forums/thread.jspa?threadID=634246
-
-If it has not been released yet, you have three workarounds.
-  1. Compile ruby as ppc binary.
-  2. Use JRuby and JDBC
-  3. Use a third-party ODBC driver and ruby-odbc.
+Use intel mac instant client.
 EOS
             else
               # ppc mac and '-arch i386' error
