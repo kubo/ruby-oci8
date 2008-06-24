@@ -1,3 +1,13 @@
+2008-06-24  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/handle.c: fix a segv bug in gc mark. (Thanks to authorNari)
+	* ext/oci8/oraconf.rb: fix for windows Oracle 11g instant client.
+	* test/config.rb, test/test_bind_raw.rb, test/test_bind_time.rb,
+	  test/test_break.rb, test/test_clob.rb, test/test_connstr.rb,
+	  test/test_dbi.rb, test/test_dbi_clob.rb, test/test_describe.rb,
+	  test/test_metadata.rb, test/test_oci8.rb, test/test_oradate.rb,
+	  test/test_oranumber.rb:
+	    fix to run tests in directories outside of 'test' directory.
+
 2008-04-27  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 1.0.0 and 1.0.1.
 	* VERSION: update to 1.0.1.

@@ -185,6 +185,7 @@ oci8_handle_t *oci8_make_handle(ub4 type, dvoid *hp, OCIError *errhp, oci8_handl
     break;
   case OCI_HTYPE_BIND:
     bh = xmalloc(sizeof(oci8_bind_handle_t) - sizeof(bh->value) + value_sz);
+    memset(bh, 0, sizeof(oci8_bind_handle_t) - sizeof(bh->value) + value_sz);
     obj = Data_Wrap_Struct(cOCIBind, oci8_handle_mark, oci8_handle_cleanup, bh);
     bh->bind_type = 0;
     bh->ind = -1;
@@ -194,6 +195,7 @@ oci8_handle_t *oci8_make_handle(ub4 type, dvoid *hp, OCIError *errhp, oci8_handl
     break;
   case OCI_HTYPE_DEFINE:
     bh = xmalloc(sizeof(oci8_bind_handle_t) - sizeof(bh->value) + value_sz);
+    memset(bh, 0, sizeof(oci8_bind_handle_t) - sizeof(bh->value) + value_sz);
     obj = Data_Wrap_Struct(cOCIDefine, oci8_handle_mark, oci8_handle_cleanup, bh);
     bh->bind_type = 0;
     bh->ind = -1;

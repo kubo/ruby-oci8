@@ -284,7 +284,7 @@ EOS
     when /mswin32|cygwin|mingw32|bccwin32/
       oci_basename = 'oci'
       oci_glob_postfix = ''
-      ocidata_basename = ['oraociei10', 'oraociicus10']
+      ocidata_basename = ['oraociei11', 'oraociicus11', 'oraociei10', 'oraociicus10']
       @@ld_envs = %w[PATH]
       so_ext = 'dll'
     when /i.86-linux/
@@ -836,17 +836,19 @@ class OraConfIC < OraConf
     if ic_dir =~ /^\/usr\/lib(?:64)?\/oracle\/(\d+\.\d+\.\d+\.\d+)\/client(64)?\/lib(?:64)?/
       # rpm package
       #   official x86 rpms:
-      #    library: /usr/lib/oracle/X.X.X.X.X/client/lib/
-      #    include: /usr/include/oracle/X.X.X.X.X/client/
+      #    library: /usr/lib/oracle/X.X.X.X/client/lib/
+      #    include: /usr/include/oracle/X.X.X.X/client/
       #
       #   official x86_64 rpms:
-      #    library: /usr/lib/oracle/X.X.X.X.X/client64/lib/
-      #    include: /usr/include/oracle/X.X.X.X.X/client64/
+      #    library: /usr/lib/oracle/X.X.X.X/client64/lib/
+      #    include: /usr/include/oracle/X.X.X.X/client64/
       #
-      #   third-party x86_64 rpms:
-      #    library: /usr/lib64/oracle/X.X.X.X.X/client/lib/
-      #          or /usr/lib64/oracle/X.X.X.X.X/client/lib64/
-      #    include: /usr/include/oracle/X.X.X.X.X/client/
+      #   third-party x86_64 rpms(*1):
+      #    library: /usr/lib64/oracle/X.X.X.X/client/lib/
+      #          or /usr/lib64/oracle/X.X.X.X/client/lib64/
+      #    include: /usr/include/oracle/X.X.X.X/client/
+      #
+      #   *1 These had been used before Oracle released official x86_64 rpms.
       #
       lib_dir = ic_dir
       inc_dir = "/usr/include/oracle/#{$1}/client#{$2}"

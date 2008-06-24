@@ -1,7 +1,7 @@
 require 'oci8'
 require 'runit/testcase'
 require 'runit/cui/testrunner'
-require './config'
+require File.dirname(__FILE__) + '/config'
 
 class TestConnStr < RUNIT::TestCase
   TEST_CASES =
