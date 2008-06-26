@@ -1,3 +1,15 @@
+2008-06-26  KUBO Takehiro  <kubo@jiubao.org>
+	* NEWS: add changes between 1.0.1 and 1.0.2.
+	* VERSION: change version to 1.0.2.
+	* Makefile: add targets 'gem' and 'binary_gem' to make pure ruby
+	   and binary gems.
+	* ruby-oci8.spec: rename to ruby-oci8.spec.in.
+	* ruby-oci8.spec.in: rename from ruby-oci8.spec and set version
+	   string from 'VERSION' file.
+	* ruby-oci8.gemspec: added.
+	* dist-files: add files to ruby-oci8 source packages for gemspec.
+	* test/test_clob.rb: fix to pass tests in a deep directory.
+
 2008-06-24  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/handle.c: fix a segv bug in gc mark. (Thanks to authorNari)
 	* ext/oci8/oraconf.rb: fix for windows Oracle 11g instant client.

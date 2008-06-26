@@ -11,17 +11,18 @@ class TestCLob < RUNIT::TestCase
   end
 
   def test_insert
+    filename = File.basename($lobfile)
     @stmt.prepare("DELETE FROM test_clob WHERE filename = :1")
-    @stmt.bindByPos(1, String, $lobfile.size).set($lobfile)
+    @stmt.bindByPos(1, String, filename.size).set(filename)
     @stmt.execute(@svc)
 
     @stmt.prepare("INSERT INTO test_clob(filename, content) VALUES (:1, EMPTY_CLOB())")
-    @stmt.bindByPos(1, String, $lobfile.size).set($lobfile)
+    @stmt.bindByPos(1, String, filename.size).set(filename)
     @stmt.execute(@svc)
 
     lob = @env.alloc(OCILobLocator)
     @stmt.prepare("SELECT content FROM test_clob WHERE filename = :1 FOR UPDATE")
-    @stmt.bindByPos(1, String, $lobfile.size).set($lobfile)
+    @stmt.bindByPos(1, String, filename.size).set(filename)
     @stmt.defineByPos(1, OCI_TYPECODE_CLOB, lob)
     @stmt.execute(@svc, 1)
     offset = 1 # count by charactor, not byte.
@@ -35,17 +36,18 @@ class TestCLob < RUNIT::TestCase
   end
 
   def test_insert_with_open_close
+    filename = File.basename($lobfile)
     @stmt.prepare("DELETE FROM test_clob WHERE filename = :1")
-    @stmt.bindByPos(1, String, $lobfile.size).set($lobfile)
+    @stmt.bindByPos(1, String, filename.size).set(filename)
     @stmt.execute(@svc)
 
     @stmt.prepare("INSERT INTO test_clob(filename, content) VALUES (:1, EMPTY_CLOB())")
-    @stmt.bindByPos(1, String, $lobfile.size).set($lobfile)
+    @stmt.bindByPos(1, String, filename.size).set(filename)
     @stmt.execute(@svc)
 
     lob = @env.alloc(OCILobLocator)
     @stmt.prepare("SELECT content FROM test_clob WHERE filename = :1 FOR UPDATE")
-    @stmt.bindByPos(1, String, $lobfile.size).set($lobfile)
+    @stmt.bindByPos(1, String, filename.size).set(filename)
     @stmt.defineByPos(1, OCI_TYPECODE_CLOB, lob)
     @stmt.execute(@svc, 1)
     lob.open(@svc)
@@ -63,10 +65,11 @@ class TestCLob < RUNIT::TestCase
   end
 
   def test_read
+    filename = File.basename($lobfile)
     test_insert() # first insert data.
     lob = @env.alloc(OCILobLocator)
     @stmt.prepare("SELECT content FROM test_clob WHERE filename = :1 FOR UPDATE")
-    @stmt.bindByPos(1, String, $lobfile.size).set($lobfile)
+    @stmt.bindByPos(1, String, filename.size).set(filename)
     @stmt.defineByPos(1, OCI_TYPECODE_CLOB, lob)
     @stmt.execute(@svc, 1)
 

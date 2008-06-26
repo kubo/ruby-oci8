@@ -1,3 +1,18 @@
+1.0.2:
+
+1. add a gemspec file.
+   (Thanks to Jesse Hu)
+
+   To make a pure ruby gems package:
+     gem build ruby-oci8.gemspec
+
+   To make a binary gems package:
+     gem build ruby-oci8.gemspec -- current
+
+
+2. [BUG FIX] fix a segv bug in gc mark.
+   (Thanks to authorNari)
+
 1.0.1:
 
 1. [SPEC CHANGE] OCI8#exec and OCI8::Cursor#exec's return value is changed

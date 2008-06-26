@@ -3,13 +3,12 @@
 
 Summary: ruby interface for Oracle using OCI8 API
 Name: ruby-oci8
-Version: 1.0.0_rc2
-%define RealVersion 1.0.0-rc2
+Version: <%=File.read('VERSION').strip%>
 Release: 1%{?dist}
 Group: Development/Libraries
 License: Ruby License
 URL: http://rubyforge.org/projects/ruby-oci8/
-Source0: http://rubyforge.org/frs/download.php/16630/%{name}-%{RealVersion}.tar.gz
+Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-root-%(%{__id_u} -n)
 Requires: ruby
 Requires: oracle-instantclient-basic
@@ -31,7 +30,7 @@ a DBD driver for use with ruby-dbi, and is used by the ActiveRecord Oracle
 connection adapter.
 
 %prep
-%setup -q -n %{name}-%{RealVersion}
+%setup -q -n %{name}-%{Version}
 
 %build
 CFLAGS="$RPM_OPT_FLAGS" \
@@ -56,5 +55,8 @@ rm -rf $RPM_BUILD_ROOT
 %{ruby_sitearch}/oci8lib.so
 
 %changelog
+* Thu Jun 26 2008 KUBO Takehiro <kubo@jiubao.org>
+- Thie file is made from ruby-oci8.spec.in by erb.
+
 * Fri Mar 23 2007 Brian Candler <brian.candler@inspiredbroadcast.net> - 1.0.0_rc1-1
 - First cut

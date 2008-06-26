@@ -3,9 +3,11 @@ ChangeLog
 Makefile
 README
 VERSION
+dist-files
 metaconfig
 pre-distclean.rb
 ruby-oci8.spec
+ruby-oci8.gemspec
 setup.rb
 doc/api.en.html
 doc/api.en.rd
