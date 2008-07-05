@@ -483,6 +483,9 @@ class OCI8
           else
             key = val.class
           end
+        elsif key.class == Class && key < OCI8::Object::Base
+          param = @con.get_tdo_by_class(key)
+          key = :named_type
         end
       when OCI8::Metadata::Base
         key = param.data_type

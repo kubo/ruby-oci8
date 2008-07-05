@@ -270,7 +270,7 @@ EOS
   private
 
   def self.check_ic_dir
-    print "checking for load library path... "
+    puts "checking for load library path... "
     STDOUT.flush
 
     # get library load path names
@@ -284,7 +284,7 @@ EOS
     when /mswin32|cygwin|mingw32|bccwin32/
       oci_basename = 'oci'
       oci_glob_postfix = ''
-      ocidata_basename = ['oraociei10', 'oraociicus10']
+      ocidata_basename = ['oraociei11', 'oraociicus11', 'oraociei10', 'oraociicus10']
       @@ld_envs = %w[PATH]
       so_ext = 'dll'
     when /i.86-linux/
@@ -340,24 +340,34 @@ EOS
     glob_name = "#{oci_basename}.#{so_ext}#{oci_glob_postfix}"
     ld_path = nil
     file = nil
-    @@ld_envs.collect do |env|
-      puts "(#{env})... "
-      ENV[env] && ENV[env].split(File::PATH_SEPARATOR)
-    end.flatten.each do |path|
-      next if path.nil? or path == ''
-      path.gsub!(/\\/, '/') if /mswin32|cygwin|mingw32|bccwin32/ =~ RUBY_PLATFORM
-      files = Dir.glob(File.join(path, glob_name))
-      next if files.empty?
-      STDOUT.flush
-      next if (check_proc && !check_proc.call(files[0]))
-      file = files[0]
-      ld_path = path
+    @@ld_envs.each do |env|
+      if ENV[env].nil?
+        puts "  #{env} is not set."
+        next
+      end
+      puts "  #{env}... "
+      ENV[env].split(File::PATH_SEPARATOR).each do |path|
+        next if path.nil? or path == ''
+        print "    checking #{path}... "
+        path.gsub!(/\\/, '/') if /mswin32|cygwin|mingw32|bccwin32/ =~ RUBY_PLATFORM
+        files = Dir.glob(File.join(path, glob_name))
+        if files.empty?
+          puts "no"
+          next
+        end
+        STDOUT.flush
+        next if (check_proc && !check_proc.call(files[0]))
+        file = files[0]
+        ld_path = path
+        puts "yes"
+        break
+      end
       break
     end
 
     if ld_path.nil? and RUBY_PLATFORM =~ /linux/
       open("|/sbin/ldconfig -p") do |f|
-        print "(ld.so.conf)... "
+        print "  checking ld.so.conf... "
         STDOUT.flush
         while line = f.gets
           if line =~ /libclntsh\.so\..* => (\/.*)\/libclntsh\.so\.(.*)/
@@ -365,22 +375,22 @@ EOS
             path = $1
             next if (check_proc && !check_proc.call(file))
             ld_path = path
+            puts "yes"
             break
           end
         end
+        puts "no"
       end
     end
 
     if ld_path
       ocidata_basename.each do |basename|
         if File.exist?(File.join(ld_path, "#{basename}.#{so_ext}"))
-          puts "  found: #{file} looks like an instant client."
+          puts "  #{file} looks like an instant client."
           return ld_path
         end
       end
-      puts "  found: #{file} looks like a full client."
-    else
-      puts "  not found"
+      puts "  #{file} looks like a full client."
     end
     nil
   end
@@ -837,17 +847,19 @@ class OraConfIC < OraConf
     if ic_dir =~ /^\/usr\/lib(?:64)?\/oracle\/(\d+\.\d+\.\d+\.\d+)\/client(64)?\/lib(?:64)?/
       # rpm package
       #   official x86 rpms:
-      #    library: /usr/lib/oracle/X.X.X.X.X/client/lib/
-      #    include: /usr/include/oracle/X.X.X.X.X/client/
+      #    library: /usr/lib/oracle/X.X.X.X/client/lib/
+      #    include: /usr/include/oracle/X.X.X.X/client/
       #
       #   official x86_64 rpms:
-      #    library: /usr/lib/oracle/X.X.X.X.X/client64/lib/
-      #    include: /usr/include/oracle/X.X.X.X.X/client64/
+      #    library: /usr/lib/oracle/X.X.X.X/client64/lib/
+      #    include: /usr/include/oracle/X.X.X.X/client64/
       #
-      #   third-party x86_64 rpms:
-      #    library: /usr/lib64/oracle/X.X.X.X.X/client/lib/
-      #          or /usr/lib64/oracle/X.X.X.X.X/client/lib64/
-      #    include: /usr/include/oracle/X.X.X.X.X/client/
+      #   third-party x86_64 rpms(*1):
+      #    library: /usr/lib64/oracle/X.X.X.X/client/lib/
+      #          or /usr/lib64/oracle/X.X.X.X/client/lib64/
+      #    include: /usr/include/oracle/X.X.X.X/client/
+      #
+      #   *1 These had been used before Oracle released official x86_64 rpms.
       #
       lib_dir = ic_dir
       inc_dir = "/usr/include/oracle/#{$1}/client#{$2}"
@@ -932,20 +944,81 @@ EOS
       return
     end
 
-    if RUBY_PLATFORM =~ /i.*-darwin/
+    if RUBY_PLATFORM =~ /darwin/
+      is_intelmac = ([1].pack('s') == "\001\000")
+      arch_ppc_error = false
+      arch_i386_error = false
       open('mkmf.log', 'r') do |f|
         while line = f.gets
+          # universal-darwin8.0 (Mac OS X 10.4?)
           if line.include? 'cputype (18, architecture ppc) does not match cputype (7)'
+            # try to link an i386 library but the instant client is ppc.
+            arch_i386_error = true
+          end
+          if line.include? 'cputype (7, architecture i386) does not match cputype (18)'
+            # try to link a ppc library but the instant client is i386.
+            arch_ppc_error = true
+          end
+          if line.include? '/libclntsh.dylib load command 8 unknown cmd field'
             raise <<EOS
-Oracle doesn't support intel mac.
-  http://blade.nagaokaut.ac.jp/cgi-bin/scat.rb/ruby/ruby-talk/223854
+Intel mac instant client is for Mac OS X 10.5.
+It doesn't work on Mac OS X 10.4 or before.
 
-There are three solutions:
-1. Compile ruby as ppc binary.
-2. Wait until Oracle releases mac intel binary.
-3. Use a third-party ODBC driver and ruby-odbc instead.
-     http://www.actualtechnologies.com/
+You have three workarounds.
+  1. Compile ruby as ppc binary and use it with ppc instant client.
+  2. Use JRuby and JDBC
+  3. Use a third-party ODBC driver and ruby-odbc.
 EOS
+            # '
+          end
+          # universal-darwin9.0 (Mac OS X 10.5?)
+          if line.include? 'Undefined symbols for architecture i386:'
+            # try to link an i386 library but the instant client is ppc.
+            arch_i386_error = true
+          end
+          if line.include? 'Undefined symbols for architecture ppc:'
+            # try to link a ppc library but the instant client is i386.
+            arch_ppc_error = true
+          end
+
+          if arch_i386_error
+            if is_intelmac
+              # intel mac and '-arch i386' error
+              raise <<EOS
+Could not compile with Oracle instant client.
+Use intel mac instant client.
+EOS
+            else
+              # ppc mac and '-arch i386' error
+              raise <<EOS
+Could not compile with Oracle instant client.
+You may need to set a environment variable:
+    RC_ARCHS=ppc
+    export RC_ARCHS
+If it does not fix the problem, delete all '-arch i386'
+in '#{Config::CONFIG['archdir']}/rbconfig.rb'.
+EOS
+            end
+          end
+
+          if arch_ppc_error
+            if is_intelmac
+              # intel mac and '-arch ppc' error
+              raise <<EOS
+Could not compile with Oracle instant client.
+You may need to set a environment variable:
+    RC_ARCHS=i386
+    export RC_ARCHS
+If it does not fix the problem, delete all '-arch ppc'
+in '#{Config::CONFIG['archdir']}/rbconfig.rb'.
+EOS
+            else
+              # ppc mac and '-arch ppc' error
+              raise <<EOS
+Could not compile with Oracle instant client.
+Use ppc instant client.
+EOS
+            end
           end
         end
       end

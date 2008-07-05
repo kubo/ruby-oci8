@@ -519,6 +519,18 @@ end
 
 class OCI8
   module BindType
+
+    class NamedType
+      def self.create(con, val, param, max_array_size)
+        case param
+        when Hash
+          self.new(con, val, param[:length], max_array_size)
+        else
+          self.new(con, val, param, max_array_size)
+        end
+      end
+    end
+
     class Object < OCI8::BindType::NamedType
       alias :get_orig get
       def set(val)

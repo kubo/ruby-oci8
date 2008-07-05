@@ -1,3 +1,11 @@
+2008-07-05  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb:
+	   1. prints more information on checking LD_LIBRARY_PATH.
+	   2. fix for windows Oracle 11g instant client.
+	   3. fix for intel mac instant client.
+	* ext/oci8/object.c, lib/oci8/object.rb, lib/oci8/oci8.rb:
+	   fix to pass an array of Oracle objects to a procedure.
+
 2008-04-27  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/stmt.c, lib/oci8/oci8.rb: fix typo.
 	    (pointed by Liming)

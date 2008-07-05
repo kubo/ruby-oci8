@@ -251,6 +251,8 @@ typedef struct {
         double dbl;
         float flt;
     } data;
+    OCIInd ind; /* for data.num, data.dbl, data.flt */
+    OCIInd *indp;
 } set_coll_element_cb_data_t;
 
 static VALUE set_coll_element_func(set_coll_element_cb_data_t *cb_data);
@@ -289,30 +291,37 @@ static VALUE oci8_named_coll_set_coll_element(VALUE self, VALUE datatype, VALUE 
     switch (FIX2INT(datatype)) {
     case ATTR_STRING:
         oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_VARCHAR2, NULL, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr));
+        oci_lc(OCIObjectGetInd(oci8_envhp, oci8_errhp, cb_data.data.ptr, (dvoid**)&cb_data.indp));
         break;
     case ATTR_RAW:
         oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_RAW, NULL, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr));
+        oci_lc(OCIObjectGetInd(oci8_envhp, oci8_errhp, cb_data.data.ptr, (dvoid**)&cb_data.indp));
         break;
     case ATTR_OCINUMBER:
     case ATTR_FLOAT:
     case ATTR_INTEGER:
         OCINumberSetZero(oci8_errhp, &cb_data.data.num);
+        cb_data.indp = &cb_data.ind;
         break;
     case ATTR_BINARY_DOUBLE:
         cb_data.data.dbl = 0.0;
+        cb_data.indp = &cb_data.ind;
         break;
     case ATTR_BINARY_FLOAT:
         cb_data.data.flt = 0.0;
+        cb_data.indp = &cb_data.ind;
         break;
     case ATTR_NAMED_TYPE:
         Check_Object(typeinfo, cOCI8TDO);
         tdo = DATA_PTR(typeinfo);
         oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_OBJECT, tdo->hp.tdo, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr));
+        oci_lc(OCIObjectGetInd(oci8_envhp, oci8_errhp, cb_data.data.ptr, (dvoid**)&cb_data.indp));
         break;
     case ATTR_NAMED_COLLECTION:
         Check_Object(typeinfo, cOCI8TDO);
         tdo = DATA_PTR(typeinfo);
         oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_NAMEDCOLLECTION, tdo->hp.tdo, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr));
+        oci_lc(OCIObjectGetInd(oci8_envhp, oci8_errhp, cb_data.data.ptr, (dvoid**)&cb_data.indp));
         break;
     default:
         rb_raise(rb_eRuntimeError, "not supported datatype");
@@ -337,10 +346,6 @@ static VALUE set_coll_element_func(set_coll_element_cb_data_t *cb_data)
     sb4 size;
     sb4 idx;
     void *elem_ptr;
-    OCIInd *elem_ind_ptr;
-    OCIInd elem_ind;
-
-    elem_ind_ptr = &elem_ind;
 
     oci_lc(OCICollSize(oci8_envhp, oci8_errhp, coll, &size));
     if (RARRAY_LEN(val) < size) {
@@ -349,10 +354,10 @@ static VALUE set_coll_element_func(set_coll_element_cb_data_t *cb_data)
     for (idx = 0; idx < RARRAY_LEN(val); idx++) {
         switch (FIX2INT(datatype)) {
         case ATTR_NAMED_TYPE:
-            set_attribute(self, datatype, typeinfo, cb_data->data.ptr, elem_ind_ptr, RARRAY_PTR(val)[idx]);
+            set_attribute(self, datatype, typeinfo, cb_data->data.ptr, cb_data->indp, RARRAY_PTR(val)[idx]);
             break;
         default:
-            set_attribute(self, datatype, typeinfo, (void*)&cb_data->data, elem_ind_ptr, RARRAY_PTR(val)[idx]);
+            set_attribute(self, datatype, typeinfo, (void*)&cb_data->data, cb_data->indp, RARRAY_PTR(val)[idx]);
             break;
         }
         switch (FIX2INT(datatype)) {
@@ -368,9 +373,9 @@ static VALUE set_coll_element_func(set_coll_element_cb_data_t *cb_data)
             break;
         }
         if (idx < size) {
-            oci_lc(OCICollAssignElem(oci8_envhp, oci8_errhp, idx, elem_ptr, elem_ind_ptr, cb_data->coll));
+            oci_lc(OCICollAssignElem(oci8_envhp, oci8_errhp, idx, elem_ptr, cb_data->indp, cb_data->coll));
         } else {
-            oci_lc(OCICollAppend(oci8_envhp, oci8_errhp, elem_ptr, elem_ind_ptr, coll));
+            oci_lc(OCICollAppend(oci8_envhp, oci8_errhp, elem_ptr, cb_data->indp, coll));
         }
     }
     return Qnil;
