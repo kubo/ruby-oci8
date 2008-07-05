@@ -270,7 +270,7 @@ EOS
   private
 
   def self.check_ic_dir
-    print "checking for load library path... "
+    puts "checking for load library path... "
     STDOUT.flush
 
     # get library load path names
@@ -340,24 +340,34 @@ EOS
     glob_name = "#{oci_basename}.#{so_ext}#{oci_glob_postfix}"
     ld_path = nil
     file = nil
-    @@ld_envs.collect do |env|
-      puts "(#{env})... "
-      ENV[env] && ENV[env].split(File::PATH_SEPARATOR)
-    end.flatten.each do |path|
-      next if path.nil? or path == ''
-      path.gsub!(/\\/, '/') if /mswin32|cygwin|mingw32|bccwin32/ =~ RUBY_PLATFORM
-      files = Dir.glob(File.join(path, glob_name))
-      next if files.empty?
-      STDOUT.flush
-      next if (check_proc && !check_proc.call(files[0]))
-      file = files[0]
-      ld_path = path
+    @@ld_envs.each do |env|
+      if ENV[env].nil?
+        puts "  #{env} is not set."
+        next
+      end
+      puts "  #{env}... "
+      ENV[env].split(File::PATH_SEPARATOR).each do |path|
+        next if path.nil? or path == ''
+        print "    checking #{path}... "
+        path.gsub!(/\\/, '/') if /mswin32|cygwin|mingw32|bccwin32/ =~ RUBY_PLATFORM
+        files = Dir.glob(File.join(path, glob_name))
+        if files.empty?
+          puts "no"
+          next
+        end
+        STDOUT.flush
+        next if (check_proc && !check_proc.call(files[0]))
+        file = files[0]
+        ld_path = path
+        puts "yes"
+        break
+      end
       break
     end
 
     if ld_path.nil? and RUBY_PLATFORM =~ /linux/
       open("|/sbin/ldconfig -p") do |f|
-        print "(ld.so.conf)... "
+        print "  checking ld.so.conf... "
         STDOUT.flush
         while line = f.gets
           if line =~ /libclntsh\.so\..* => (\/.*)\/libclntsh\.so\.(.*)/
@@ -365,22 +375,22 @@ EOS
             path = $1
             next if (check_proc && !check_proc.call(file))
             ld_path = path
+            puts "yes"
             break
           end
         end
+        puts "no"
       end
     end
 
     if ld_path
       ocidata_basename.each do |basename|
         if File.exist?(File.join(ld_path, "#{basename}.#{so_ext}"))
-          puts "  found: #{file} looks like an instant client."
+          puts "  #{file} looks like an instant client."
           return ld_path
         end
       end
-      puts "  found: #{file} looks like a full client."
-    else
-      puts "  not found"
+      puts "  #{file} looks like a full client."
     end
     nil
   end
