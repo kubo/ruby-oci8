@@ -59,23 +59,30 @@ typedef struct OCIAdmin OCIAdmin;
 #define RFLOAT_VALUE(obj) RFLOAT(obj)->value
 #endif
 
+/* new functions in ruby 1.9.
+ * define compatible macros for ruby 1.8 or lower.
+ */
 #if !defined(HAVE_RB_ERRINFO) && defined(HAVE_RUBY_ERRINFO)
 #define rb_errinfo() ruby_errinfo
 #endif
+#ifndef RUBY_VM
+typedef VALUE rb_blocking_function_t(void *);
+#endif
 
-#define IS_OCI_ERROR(v) (((v) != OCI_SUCCESS) && ((v) != OCI_SUCCESS_WITH_INFO))
-
-#if defined(__GNUC__) && ((__GNUC__ > 2) || (__GNUC__ == 2 && __GNUC_MINOR__ >= 96))
-/* LIKELY tells the compiler that x is 1(TRUE) in many cases.
- * This may optimize branch prediction in the assembler code.
+/* macros depends on the compiler.
+ *  LIKELY(x)      hint for the compiler that 'x' is 1(TRUE) in many cases.
+ *  UNLIKELY(x)    hint for the compiler that 'x' is 0(FALSE) in many cases.
+ *  ALWAYS_INLINE  forcely inline the function.
  */
+#if defined(__GNUC__) && ((__GNUC__ > 2) || (__GNUC__ == 2 && __GNUC_MINOR__ >= 96))
+/* gcc version >= 2.96 */
 #define LIKELY(x)   (__builtin_expect((x), 1))
 #define UNLIKELY(x) (__builtin_expect((x), 0))
 #else
+/* other compilers */
 #define LIKELY(x)   (x)
 #define UNLIKELY(x) (x)
 #endif
-
 #if defined(__GNUC__) && ((__GNUC__ > 3) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
 /* gcc version >= 3.1 */
 #define ALWAYS_INLINE inline __attribute__((always_inline))
@@ -85,11 +92,44 @@ typedef struct OCIAdmin OCIAdmin;
 #define ALWAYS_INLINE __forceinline
 #endif
 
-#ifdef ALWAYS_INLINE
-/*
- * I don't like cast because it can suppress warnings but may hide bugs.
- * These macros make warnings when the source type is invalid.
+/* macros to access thread-local storage.
+ *
+ *  int oci8_tls_key_init(oci8_tls_key_t *key);
+ *    initialie a key to access thread-local storege
+ *    This returns 0 on success or error number.
+ *
+ *  void *oci8_tls_get(oci8_tls_key_t key);
+ *    get a value associated with the key.
+ *
+ *  void oci8_tls_set(oci8_tls_key_t key, void *value);
+ *    set a value to the key.
+ *
  */
+#ifdef RUBY_VM
+/* ruby 1.9 */
+#if defined(_WIN32)
+#include <windows.h>
+#define oci8_tls_key_t           DWORD
+#define oci8_tls_key_init(key_p) \
+    ((*(key_p) = TlsAlloc()), \
+    (*(key_p) == 0xFFFFFFFF) ? GetLastError() : 0)
+#define oci8_tls_get(key)        TlsGetValue(key)
+#define oci8_tls_set(key, val)   TlsSetValue((key), (val))
+#elif defined(HAVE_PTHREAD_H)
+#include <pthread.h>
+#define oci8_tls_key_t           pthread_key_t
+#define oci8_tls_key_init(key_p) pthread_key_create((key_p), NULL)
+#define oci8_tls_get(key)        pthread_getspecific(key)
+#define oci8_tls_set(key, val)   pthread_setspecific((key), (val))
+#else
+#error unsupported thread API
+#endif
+#endif /* RUBY_VM */
+
+/* utility macros
+ */
+#define IS_OCI_ERROR(v) (((v) != OCI_SUCCESS) && ((v) != OCI_SUCCESS_WITH_INFO))
+#ifdef ALWAYS_INLINE
 #define TO_ORATEXT to_oratext
 #define TO_CHARPTR to_charptr
 static ALWAYS_INLINE OraText *to_oratext(char *c)
@@ -101,7 +141,6 @@ static ALWAYS_INLINE char *to_charptr(OraText *c)
     return (char*)c;
 }
 #else
-/* if not gcc, use normal cast. */
 #define TO_ORATEXT(c) ((OraText*)(c))
 #define TO_CHARPTR(c) ((char*)(c))
 #endif
@@ -228,24 +267,6 @@ extern OCIEnv *oci8_envhp;
 /* oci8_errhp is a thread local object in ruby 1.9. */
 #define oci8_errhp oci8_get_errhp()
 
-#if defined(_WIN32)
-#include <windows.h>
-#define oci8_tls_key_t           DWORD
-#define oci8_tls_key_init(key_p) \
-    ((*(key_p) = TlsAlloc()), \
-    (*(key_p) == 0xFFFFFFFF) ? GetLastError() : 0)
-#define oci8_tls_get(key)        TlsGetValue(key)
-#define oci8_tls_set(key, val)   TlsSetValue((key), (val))
-#elif defined(HAVE_PTHREAD_H)
-#include <pthread.h>
-#define oci8_tls_key_t           pthread_key_t
-#define oci8_tls_key_init(key_p) pthread_key_create((key_p), NULL)
-#define oci8_tls_get(key)        pthread_getspecific(key)
-#define oci8_tls_set(key, val)   pthread_setspecific((key), (val))
-#else
-#error unsupported thread API
-#endif
-
 extern oci8_tls_key_t oci8_tls_key; /* native thread key */
 OCIError *oci8_make_errhp(void);
 
@@ -274,9 +295,6 @@ VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_class_t *
 VALUE oci8_define_bind_class(const char *name, const oci8_bind_class_t *oci8_bind_class);
 void oci8_link_to_parent(oci8_base_t *base, oci8_base_t *parent);
 void oci8_unlink_from_parent(oci8_base_t *base);
-#ifndef RUBY_VM
-typedef VALUE rb_blocking_function_t(void *);
-#endif
 sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data);
 #if defined RUNTIME_API_CHECK
 void *oci8_find_symbol(const char *symbol_name);

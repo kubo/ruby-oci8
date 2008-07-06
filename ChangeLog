@@ -1,3 +1,6 @@
+2008-07-06  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.h: add comments.
+
 2008-07-05  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb:
 	   1. prints more information on checking LD_LIBRARY_PATH.
