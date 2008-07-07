@@ -1,3 +1,10 @@
+2008-07-07  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8.rb.in: fix the problem that OraNumber#to_json returns
+	    "{}" when using Rails. (This issue is reported by Alex Moore)
+	    Object#to_json is added by active_support. But active_support
+	    doesn't know what OraNumber is.
+	* ext/oci8/oraconf.rb: merge chages in ruby-oci8 trunk.
+
 2008-07-05  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: prints more information on checking
 	   LD_LIBRARY_PATH.

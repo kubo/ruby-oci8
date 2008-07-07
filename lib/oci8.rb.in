@@ -1305,6 +1305,10 @@ class OraNumber
       out.scalar(taguri, self.to_s, :plain)
     end
   end
+
+  def to_json(options=nil) # :nodoc:
+    to_s
+  end
 end
 
 
