@@ -1,3 +1,10 @@
+2008-07-12  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb: add OraNumber#to_json and OraDate#to_json.
+	* lib/oci8/metadata.rb: define char_used?, char_size, fsprecision
+	    and lfprecision methods to subclasses of OCI8::Metadata::Base
+	    onln when Oracie 9i or upper. They ara unavailable on Oracle
+	    8.1 or lower.
+
 2008-07-06  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.h: add comments.
 

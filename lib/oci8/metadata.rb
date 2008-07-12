@@ -998,14 +998,20 @@ class OCI8
         __charset_form
       end
 
-      # The fractional seconds precision of a datetime or interval.
-      def fsprecision
-        __ub1(OCI_ATTR_FSPRECISION)
-      end
+      if OCI8.oracle_client_version >= 900
+        # The fractional seconds precision of a datetime or interval.
+        #
+        # (unavailable on Oracle 8.1 or lower)
+        def fsprecision
+          __ub1(OCI_ATTR_FSPRECISION)
+        end
 
-      # The leading field precision of an interval
-      def lfprecision
-        __ub1(OCI_ATTR_LFPRECISION)
+        # The leading field precision of an interval
+        #
+        # (unavailable on Oracle 8.1 or lower)
+        def lfprecision
+          __ub1(OCI_ATTR_LFPRECISION)
+        end
       end
 
       # character set name if the type attribute is of a string/character type.
@@ -1326,18 +1332,24 @@ class OCI8
 
       ## Table 6-13 Attributes Belonging to Columns of Tables or Views
 
-      # returns the type of length semantics of the column.
-      # [<tt>:byte</tt>]  byte-length semantics
-      # [<tt>:char</tt>]  character-length semantics.
-      def char_used?
-        __ub4(OCI_ATTR_CHAR_USED) != 0
-      end
+      if OCI8.oracle_client_version >= 900
+        # returns the type of length semantics of the column.
+        # [<tt>:byte</tt>]  byte-length semantics
+        # [<tt>:char</tt>]  character-length semantics.
+        #
+        # (unavailable on Oracle 8.1 or lower)
+        def char_used?
+          __ub4(OCI_ATTR_CHAR_USED) != 0
+        end
 
-      # returns the column character length which is the number of
-      # characters allowed in the column. It is the counterpart of
-      # OCI8::Metadata::Column#data_size which gets the byte length.
-      def char_size
-        __ub2(OCI_ATTR_CHAR_SIZE)
+        # returns the column character length which is the number of
+        # characters allowed in the column. It is the counterpart of
+        # OCI8::Metadata::Column#data_size which gets the byte length.
+        #
+        # (unavailable on Oracle 8.1 or lower)
+        def char_size
+          __ub2(OCI_ATTR_CHAR_SIZE)
+        end
       end
 
       # The maximum size of the column. This length is
@@ -1418,14 +1430,20 @@ class OCI8
       ## Table 6-8 Attributes Belonging to Type Attributes
       ## But Column also have these.
 
-      # The fractional seconds precision of a datetime or interval.
-      def fsprecision
-        __ub1(OCI_ATTR_FSPRECISION)
-      end
+      if OCI8.oracle_client_version >= 900
+        # The fractional seconds precision of a datetime or interval.
+        #
+        # (unavailable on Oracle 8.1 or lower)
+        def fsprecision
+          __ub1(OCI_ATTR_FSPRECISION)
+        end
 
-      # The leading field precision of an interval
-      def lfprecision
-        __ub1(OCI_ATTR_LFPRECISION)
+        # The leading field precision of an interval
+        #
+        # (unavailable on Oracle 8.1 or lower)
+        def lfprecision
+          __ub1(OCI_ATTR_LFPRECISION)
+        end
       end
 
       # The character set name, if the column is of a string/character type

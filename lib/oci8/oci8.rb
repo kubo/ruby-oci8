@@ -578,6 +578,10 @@ class OraDate
       out.scalar(taguri, self.to_s, :plain)
     end
   end
+
+  def to_json(options=nil) # :nodoc:
+    to_datetime.to_json(options)
+  end
 end
 
 class OraNumber
@@ -589,6 +593,10 @@ class OraNumber
     YAML.quick_emit(object_id, opts) do |out|
       out.scalar(taguri, self.to_s, :plain)
     end
+  end
+
+  def to_json(options=nil) # :nodoc:
+    to_s
   end
 end
 
