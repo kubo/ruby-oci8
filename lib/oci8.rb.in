@@ -1293,6 +1293,10 @@ class OraDate
       out.scalar(taguri, self.to_s, :plain)
     end
   end
+
+  def to_json(options=nil) # :nodoc:
+    to_datetime.to_json(options)
+  end
 end
 
 class OraNumber
@@ -1568,6 +1572,12 @@ class OCI8
       attr_reader :scale
 
       # interval
+      if defined? OCI_ATTR_FSPRECISION and defined? OCI_ATTR_LFPRECISION
+        # Oracle 8i or upper has OCI_ATTR_FSPRECISION and OCI_ATTR_LFPRECISION
+        @@is_fsprecision_available = true
+      else
+        @@is_fsprecision_available = false
+      end
       attr_reader :fsprecision
       attr_reader :lfprecision
 
@@ -1592,8 +1602,22 @@ class OCI8
                         when 5; :lit_null
                         else raise "unknown charset_form #{param.attrGet(OCI_ATTR_CHARSET_FORM)}"
                         end
-        @fsprecision = param.attrGet(OCI_ATTR_FSPRECISION)
-        @lfprecision = param.attrGet(OCI_ATTR_LFPRECISION)
+
+        @fsprecision = nil
+        @lfprecision = nil
+        if @@is_fsprecision_available
+          begin
+            @fsprecision = param.attrGet(OCI_ATTR_FSPRECISION)
+            @lfprecision = param.attrGet(OCI_ATTR_LFPRECISION)
+          rescue OCIError
+            raise if $!.code != 24316 # ORA-24316: illegal handle type
+            # Oracle 8i could not use OCI_ATTR_FSPRECISION and
+            # OCI_ATTR_LFPRECISION even though it defines these
+            # constants in oci.h.
+            @@is_fsprecision_available = false
+          end
+        end
+
         @type_string = __type_string(param)
       end
 

@@ -1,3 +1,8 @@
+2008-07-12  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8.rb.in: (1) add #to_json to OraDate too.
+	    (2) fix a bug when using Oracle 8i and dbd. OCI_ATTR_FSPRECISION
+	    is for TIMESTAMP data type which is new in Oracle 9i.
+
 2008-07-07  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8.rb.in: fix the problem that OraNumber#to_json returns
 	    "{}" when using Rails. (This issue is reported by Alex Moore)
