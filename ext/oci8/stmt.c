@@ -17,7 +17,6 @@ static VALUE oci8_sym_drop_stmt;
 static VALUE oci8_sym_alter_stmt;
 static VALUE oci8_sym_begin_stmt;
 static VALUE oci8_sym_declare_stmt;
-static VALUE oci8_sym_other;
 static ID id_at_column_metadata;
 static ID id_at_actual_array_size;
 static ID id_at_max_array_size;
@@ -94,33 +93,6 @@ static VALUE oci8_stmt_initialize(int argc, VALUE *argv, VALUE self)
     return Qnil;
 }
 
-/*
-=begin
---- OCIStmt#defineByPos(position, type [, length [, mode]])
-     define the datatype of fetched column.
-     You must define all column's datatype, before you fetch data.
-
-     :position
-        the position of the column. It starts from 1.
-     :type
-        the type of column.
-        ((|String|)), ((|Fixnum|)), ((|Integer|)), ((|Float|)), ((|Time|)),
-        ((<OraDate>)), ((<OraNumber>)), or ((|OCI_TYPECODE_RAW|))
-     :length
-        When the 2nd argument is
-        * ((|String|)) or ((|OCI_TYPECODE_RAW|)),
-          the max length of fetched data.
-        * otherwise,
-          its value is ignored.
-     :mode
-        ((|OCI_DEFAULT|)), or ((|OCI_DYNAMIC_FETCH|)). But now available value is
-        ((|OCI_DEFAULT|)) only. Default value is ((|OCI_DEFAULT|))
-     :return value
-        newly created ((<define handle|OCIDefine>))
-
-     correspond native OCI function: ((|OCIDefineByPos|))
-=end
- */
 static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
 {
     oci8_stmt_t *stmt = DATA_PTR(self);
@@ -499,7 +471,7 @@ static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
 }
 
 /*
- * gets the type of SQL statement. Its value is one of the follows.
+ * gets the type of SQL statement as follows.
  * * OCI8::STMT_SELECT
  * * OCI8::STMT_UPDATE
  * * OCI8::STMT_DELETE
@@ -507,10 +479,14 @@ static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
  * * OCI8::STMT_CREATE
  * * OCI8::STMT_DROP
  * * OCI8::STMT_ALTER
- * * OCI8::STMT_BEGIN
- * * OCI8::STMT_DECLARE
- * For PL/SQL statement, it returns OCI8::STMT_BEGIN or
- * OCI8::STMT_DECLARE.
+ * * OCI8::STMT_BEGIN (PL/SQL block which starts with a BEGIN keyword)
+ * * OCI8::STMT_DECLARE (PL/SQL block which starts with a DECLARE keyword)
+ * * Other Fixnum value undocumented in Oracle manuals.
+ *
+ * <em>Changes between ruby-oci8 1.0 and 2.0.</em>
+ *
+ * [ruby-oci8 2.0] OCI8::STMT_* are Symbols. (:select_stmt, :update_stmt, etc.)
+ * [ruby-oci8 1.0] OCI8::STMT_* are Fixnums. (1, 2, 3, etc.)
  */
 static VALUE oci8_stmt_get_stmt_type(VALUE self)
 {
@@ -534,10 +510,8 @@ static VALUE oci8_stmt_get_stmt_type(VALUE self)
         return oci8_sym_begin_stmt;
     case OCI_STMT_DECLARE:
         return oci8_sym_declare_stmt;
-    case 0:
-        return oci8_sym_other;
     default:
-        rb_bug("unexcepted statement type %d in OCIStmt#stmt_type", FIX2INT(stmt_type));
+        return stmt_type;
     }
 }
 
@@ -558,9 +532,10 @@ static VALUE oci8_stmt_get_row_count(VALUE self)
  *   cursor.exec
  *   cursor.rowid # => the inserted row's rowid
  *
- * The return value is a String in ruby-oci8 2.0 or later.
+ * <em>Changes between ruby-oci8 1.0 and 2.0.</em>
  *
- * It is an OCIRowid object in ruby-oci8 1.0.
+ * [ruby-oci8 2.0] The return value is a String.
+ * [ruby-oci8 1.0] It returns an OCIRowid object which is available only as a bind value.
  */
 static VALUE oci8_stmt_get_rowid(VALUE self)
 {
@@ -573,6 +548,9 @@ static VALUE oci8_stmt_get_param_count(VALUE self)
 }
 
 /*
+ * call-seq:
+ *   [key]
+ *
  * Gets the value of the bind variable.
  *
  * In case of binding explicitly, use same key with that of
@@ -618,6 +596,9 @@ static VALUE oci8_stmt_aref(VALUE self, VALUE key)
 }
 
 /*
+ * call-seq:
+ *   [key] = val
+ *
  * Sets the value to the bind variable. The way to specify the
  * +key+ is same with OCI8::Cursor#[]. This is available
  * to replace the value and execute many times.
@@ -667,6 +648,9 @@ static VALUE oci8_stmt_aset(VALUE self, VALUE key, VALUE val)
 }
 
 /*
+ * call-seq:
+ *   keys -> an Array
+ *
  * Returns the keys of bind variables as array.
  */
 static VALUE oci8_stmt_keys(VALUE self)
@@ -689,6 +673,16 @@ static VALUE oci8_stmt_defined_p(VALUE self, VALUE pos)
     return Qfalse;
 }
 
+/*
+ * call-seq:
+ *   prefetch_rows = aFixnum
+ *
+ * Set number of rows to be prefetched.
+ * This can reduce the number of network round trips when fetching
+ * many rows. The default value is one.
+ *
+ * FYI: Rails oracle adaptor uses 100 by default.
+ */
 static VALUE oci8_stmt_set_prefetch_rows(VALUE self, VALUE rows)
 {
     oci8_stmt_t *stmt = DATA_PTR(self);
@@ -756,6 +750,11 @@ static const oci8_bind_class_t bind_stmt_class = {
 
 void Init_oci8_stmt(VALUE cOCI8)
 {
+#if 0
+    cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
+    cOCI8 = rb_define_class("OCI8", cOCIHandle);
+    cOCIStmt = rb_define_class_under(cOCI8, "Cursor", cOCIHandle);
+#endif
     cOCIStmt = oci8_define_class_under(cOCI8, "Cursor", &oci8_stmt_class);
 
     oci8_sym_select_stmt = ID2SYM(rb_intern("select_stmt"));
@@ -767,7 +766,6 @@ void Init_oci8_stmt(VALUE cOCI8)
     oci8_sym_alter_stmt = ID2SYM(rb_intern("alter_stmt"));
     oci8_sym_begin_stmt = ID2SYM(rb_intern("begin_stmt"));
     oci8_sym_declare_stmt = ID2SYM(rb_intern("declare_stmt"));
-    oci8_sym_other = ID2SYM(rb_intern("other"));
     id_at_column_metadata = rb_intern("@column_metadata");
     id_at_actual_array_size = rb_intern("@actual_array_size");
     id_at_max_array_size = rb_intern("@max_array_size");

@@ -1739,7 +1739,7 @@ class OCI8
       end
 
       def inspect # :nodoc:
-        "#<#{self.class.name}:(#{obj_id}) #{obj_name}>"
+        "#<#{self.class.name}:(#{obj_id}) #{obj_schema}>"
       end
     end
 

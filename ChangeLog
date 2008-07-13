@@ -1,3 +1,18 @@
+2008-07-13  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/stmt.c: (1) add rdoc comments. (2) OCI8::Cursor#type
+	    returns a Fixnum when the type is not undocumented value instead
+	    of raising an exception.
+	* lib/.document, lib/oci8/.document: add new files for rdoc.
+	* lib/oci8/metadata.rb: fix OCI8::Metadata::Scheme#inspect.
+	* lib/oci8/object.rb: don't put OCI8::BindArgumentHelper, which is
+	    not used by users, to rdoc.
+	* lib/oci8/oci8.rb: (1) fix rdoc comments. (2) change the return
+	    value of OCI8#exec when the SQL statement is a PL/SQL block.
+	    (3) change the method of customize the bind type for NUMBER
+	    without precision and scale to same with ruby-oci8 1.0 as follows
+	      OCI8::BindType::Mapping[:number_unknown_prec] = ...
+	      OCI8::BindType::Mapping[:number_no_prec_setting] = ...
+
 2008-07-12  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/oci8.rb: add OraNumber#to_json and OraDate#to_json.
 	* lib/oci8/metadata.rb: define char_used?, char_size, fsprecision

@@ -8,13 +8,13 @@ class OCI8
   # Executes the sql statement. The type of return value depends on
   # the type of sql statement: select; insert, update and delete;
   # create, alter and drop; and PL/SQL.
-  # 
+  #
   # When bindvars are specified, they are bound as bind variables
   # before execution.
-  # 
-  # In case of select statement with no block, it returns the
-  # instance of OCI8::Cursor.
-  # 
+  #
+  # == select statements without block
+  # It returns the instance of OCI8::Cursor.
+  #
   # example:
   #   conn = OCI8.new('scott', 'tiger')
   #   cursor = conn.exec('SELECT * FROM emp')
@@ -24,9 +24,9 @@ class OCI8
   #   cursor.close
   #   conn.logoff
   #
-  # In case of select statement with a block, it acts as iterator and
-  # returns the processed row counts. Fetched data is passed to the
-  # block as array. NULL value becomes nil in ruby.
+  # == select statements with a block
+  # It acts as iterator and returns the processed row counts. Fetched
+  # data is passed to the block as array. NULL value becomes nil in ruby.
   #
   # example:
   #   conn = OCI8.new('scott', 'tiger')
@@ -36,24 +36,8 @@ class OCI8
   #   puts num_rows.to_s + ' rows were processed.'
   #   conn.logoff
   #
-  # In case of insert, update or delete statement, it returns the
-  # number of processed rows.
-  # 
-  # example:
-  #   conn = OCI8.new('scott', 'tiger')
-  #   num_rows = conn.exec('UPDATE emp SET sal = sal * 1.1')
-  #   puts num_rows.to_s + ' rows were updated.'
-  #   conn.logoff
-  #
-  # In case of create, alter or drop statement, it returns true.
-  #
-  # example:
-  #   conn = OCI8.new('scott', 'tiger')
-  #   conn.exec('CREATE TABLE test (col1 CHAR(6))')
-  #   conn.logoff
-  #
-  # In case of PL/SQL statement, it returns the array of bind
-  # variables.
+  # == PL/SQL block (ruby-oci8 1.0)
+  # It returns the array of bind variables' values.
   #
   # example:
   #   conn = OCI8.new('scott', 'tiger')
@@ -67,6 +51,45 @@ class OCI8
   # 123". This method returns the array of these bind variables,
   # which may modified by PL/SQL statement. The order of array is
   # same with that of bind variables.
+  #
+  # If a block is given, it is ignored.
+  #
+  # == PL/SQL block (ruby-oci8 2.0)
+  # It returns the number of processed rows.
+  #
+  # example:
+  #   conn = OCI8.new('scott', 'tiger')
+  #   conn.exec("BEGIN :str := TO_CHAR(:num, 'FM0999'); END;", 'ABCD', 123)
+  #   # => 1
+  #   conn.logoff
+  #
+  # If a block is given, the bind variables' values are passed to the block after
+  # executed.
+  #
+  #   conn = OCI8.new('scott', 'tiger')
+  #   conn.exec("BEGIN :str := TO_CHAR(:num, 'FM0999'); END;", 'ABCD', 123) do |str, num|
+  #     puts str # => '0123'
+  #     puts num # => 123
+  #   end
+  #   conn.logoff
+  #
+  # FYI, the following code do same on ruby-oci8 1.0 and ruby-oci8 2.0.
+  #   conn.exec(sql, *bindvars) { |*outvars| outvars }
+  #
+  # == Other SQL statements
+  # It returns the number of processed rows.
+  #
+  # example:
+  #   conn = OCI8.new('scott', 'tiger')
+  #   num_rows = conn.exec('UPDATE emp SET sal = sal * 1.1')
+  #   puts num_rows.to_s + ' rows were updated.'
+  #   conn.logoff
+  #
+  # example:
+  #   conn = OCI8.new('scott', 'tiger')
+  #   conn.exec('CREATE TABLE test (col1 CHAR(6))') # => 0
+  #   conn.logoff
+  #
   def exec(sql, *bindvars)
     begin
       cursor = parse(sql)
@@ -75,22 +98,24 @@ class OCI8
       when :select_stmt
         if block_given?
           cursor.fetch { |row| yield(row) }   # for each row
-          rv = cursor.row_count()
-          cursor.close
-          rv
+          ret = cursor.row_count()
         else
           ret = cursor
           cursor = nil # unset cursor to skip cursor.close in ensure block
           ret
         end
       when :begin_stmt, :declare_stmt # PL/SQL block
-        ary = []
-        cursor.keys.sort.each do |key|
-          ary << cursor[key]
+        if block_given?
+          ary = []
+          cursor.keys.sort.each do |key|
+            ary << cursor[key]
+          end
+          yield(*ary)
+        else
+          ret
         end
-        ary
       else
-        ret
+        ret # number of rows processed
       end
     ensure
       cursor.nil? || cursor.close
@@ -149,7 +174,7 @@ class OCI8
         if scale == -127
           if precision == 0
             # NUMBER declared without its scale and precision. (Oracle 9.2.0.3 or above)
-            klass = OCI8::Cursor.instance_eval do ::OCI8::Cursor.bind_default_number end
+            klass = OCI8::BindType::Mapping[:number_no_prec_setting]
           else
             # FLOAT or FLOAT(p)
             klass = OCI8::BindType::Float
@@ -159,7 +184,7 @@ class OCI8
             # NUMBER whose scale and precision is unknown
             # or
             # NUMBER declared without its scale and precision. (Oracle 9.2.0.2 or below)
-            klass = OCI8::Cursor.instance_eval do ::OCI8::Cursor.bind_unknown_number end
+            klass = OCI8::BindType::Mapping[:number_unknown_prec]
           else
             # NUMBER(p, 0)
             klass = OCI8::BindType::Integer
@@ -244,38 +269,15 @@ class OCI8
   # calling OCI8#exec or OCI8#parse.
   class Cursor
 
-    # number column declared without its scale and precision. (Oracle 9.2.0.3 or above)
-    @@bind_default_number = OCI8::BindType::OraNumber
-    # number value whose scale and precision is unknown
-    # or
-    # number column declared without its scale and precision. (Oracle 9.2.0.2 or below)
-    @@bind_unknown_number = OCI8::BindType::OraNumber
-
-    def self.bind_default_number
-      @@bind_default_number
-    end
-
-    def self.bind_default_number=(val)
-      @@bind_default_number = val
-    end
-
-    def self.bind_unknown_number
-      @@bind_unknown_number
-    end
-
-    def self.bind_unknown_number=(val)
-      @@bind_unknown_number = val
-    end
-
     # explicitly indicate the date type of fetched value. run this
     # method within parse and exec. pos starts from 1. lentgh is used
     # when type is String.
     # 
     # example:
     #   cursor = conn.parse("SELECT ename, hiredate FROM emp")
-    #  cursor.define(1, String, 20) # fetch the first column as String.
-    #  cursor.define(2, Time)       # fetch the second column as Time.
-    #  cursor.exec()
+    #   cursor.define(1, String, 20) # fetch the first column as String.
+    #   cursor.define(2, Time)       # fetch the second column as Time.
+    #   cursor.exec()
     def define(pos, type, length = nil)
       __define(pos, make_bind_object(:type => type, :length => length))
       self
@@ -348,19 +350,14 @@ class OCI8
     # true. In contrast with OCI8#exec, it returns true even
     # though PL/SQL. Use OCI8::Cursor#[] explicitly to get bind
     # variables.
-    # 
-    # Pass a "nil" to "__execute" to specify the statement isn't 
-    # an Array DML 
     def exec(*bindvars)
       bind_params(*bindvars)
-      __execute(nil)
+      __execute(nil) # Pass a nil to specify the statement isn't an Array DML
       case type
       when :select_stmt
         define_columns()
-      when :update_stmt, :delete_stmt, :insert_stmt
-	row_count
       else
-	true
+        row_count
       end
     end # exec
 
@@ -444,10 +441,31 @@ class OCI8
       @names ||= @column_metadata.collect { |md| md.name }
     end # get_col_names
 
+    # call-seq:
+    #   column_metadata -> column information
+    #
+    # (new in 1.0.0 and 2.0)
+    #
+    # Gets an array of OCI8::Metadata::Column of a select statement.
+    #
+    # example:
+    #   cursor = conn.exec('select * from tab')
+    #   puts ' Name                                      Type'
+    #   puts ' ----------------------------------------- ----------------------------'
+    #   cursor.column_metadata.each do |colinfo|
+    #     puts format(' %-41s %s',
+    #                 colinfo.name,
+    #                 colinfo.type_string)
+    #   end
     def column_metadata
       @column_metadata
     end
 
+    # call-seq:
+    #   fetch_hash
+    #
+    # get fetched data as a Hash. The hash keys are column names.
+    # If a block is given, acts as an iterator.
     def fetch_hash
       if iterator?
         while ret = fetch_a_hash_row()
@@ -710,6 +728,32 @@ OCI8::BindType::Mapping[:rowid] = OCI8::BindType::String
 # INTEGER          SQLT_NUM     22   38    0
 # SMALLINT         SQLT_NUM     22   38    0
 OCI8::BindType::Mapping[:number] = OCI8::BindType::Number
+
+# mapping for calculated number values.
+#
+# for example:
+#   select col1 * 1.1 from tab1;
+#
+# For Oracle 9.2.0.2 or below, this is also used for NUMBER
+# datatypes that have no explicit setting of their precision
+# and scale.
+#
+# The default mapping is Float for ruby-oci8 1.0. It is OraNumber
+# for ruby-oci8 2.0.
+OCI8::BindType::Mapping[:number_unknown_prec] = OCI8::BindType::OraNumber
+
+# mapping for number without precision and scale.
+#
+# for example:
+#   create table tab1 (col1 number);
+#   select col1 from tab1;
+#
+# note: This is available only on Oracle 9.2.0.3 or above.
+# see:  Oracle 9.2.0.x Patch Set Notes.
+#
+# The default mapping is Float for ruby-oci8 1.0. It is OraNumber
+# for ruby-oci8 2.0.
+OCI8::BindType::Mapping[:number_no_prec_setting] = OCI8::BindType::OraNumber
 
 if defined? OCI8::BindType::BinaryDouble
   OCI8::BindType::Mapping[:binary_float] = OCI8::BindType::BinaryDouble

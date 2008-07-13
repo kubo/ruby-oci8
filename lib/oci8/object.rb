@@ -59,7 +59,7 @@ EOS
     OCI8::TDO.new(self, metadata, klass)
   end
 
-  class BindArgumentHelper
+  class BindArgumentHelper # :nodoc:
     attr_reader :arg_str
     def initialize(*args)
       if args.length == 1 and args[0].is_a? Hash
