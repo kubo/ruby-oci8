@@ -1112,9 +1112,6 @@ Init_oci_number(VALUE cOCI8)
     id_power = rb_intern("**");
     id_cmp = rb_intern("<=>");
 
-#if 0 /* for rdoc */
-    cOCI8 = rb_define_class("OCI8", rb_cObject);
-#endif
     cOCINumber = rb_define_class("OraNumber", rb_cNumeric);
     mMath = rb_define_module_under(cOCI8, "Math");
 

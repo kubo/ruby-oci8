@@ -5,14 +5,14 @@
  * $Author$
  * $Date$
  *
- * Copyright (C) 2002-2007 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2008 KUBO Takehiro <kubo@jiubao.org>
  */
 #include "oci8.h"
 
 static ID id_bind_type;
 static ID id_set;
 
-static VALUE cOCIBind;
+static VALUE cOCI8BindTypeBase;
 
 /*
  * bind_string
@@ -456,13 +456,13 @@ void oci8_bind_hp_obj_mark(oci8_base_t *base)
 
 void Init_oci8_bind(VALUE klass)
 {
-    cOCIBind = klass;
+    cOCI8BindTypeBase = klass;
     id_bind_type = rb_intern("bind_type");
     id_set = rb_intern("set");
 
-    rb_define_method(cOCIBind, "initialize", oci8_bind_initialize, 4);
-    rb_define_method(cOCIBind, "get", oci8_get_data, 0);
-    rb_define_method(cOCIBind, "set", oci8_set_data, 1);
+    rb_define_method(cOCI8BindTypeBase, "initialize", oci8_bind_initialize, 4);
+    rb_define_method(cOCI8BindTypeBase, "get", oci8_get_data, 0);
+    rb_define_method(cOCI8BindTypeBase, "set", oci8_set_data, 1);
 
     /* register primitive data types. */
     oci8_define_bind_class("String", &bind_string_class);
@@ -479,6 +479,6 @@ void Init_oci8_bind(VALUE klass)
 oci8_bind_t *oci8_get_bind(VALUE obj)
 {
     oci8_base_t *base;
-    Check_Handle(obj, cOCIBind, base);
+    Check_Handle(obj, cOCI8BindTypeBase, base);
     return (oci8_bind_t *)base;
 }

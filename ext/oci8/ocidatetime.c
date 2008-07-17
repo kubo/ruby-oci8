@@ -5,7 +5,7 @@
  * $Author$
  * $Date$
  *
- * Copyright (C) 2005-2007 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2005-2008 KUBO Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
@@ -696,12 +696,6 @@ static const oci8_bind_class_t bind_interval_ds_class = {
 
 void Init_oci_datetime(void)
 {
-#if 0 /* for rdoc */
-    cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
-    cOCI8 = rb_define_class("OCI8", cOCIHandle);
-    mOCI8BindType = rb_define_module_under(cOCI8, "BindType");
-    cOCI8BindTypeBase = rb_define_class_under(mOCI8BindType, "Base", cOCIHandle);
-#endif
     rb_require("date");
 
     cDateTime = rb_eval_string("DateTime");
@@ -740,9 +734,4 @@ void Init_oci_datetime(void)
     oci8_define_bind_class("DateTime", &bind_datetime_class);
     oci8_define_bind_class("IntervalYM", &bind_interval_ym_class);
     oci8_define_bind_class("IntervalDS", &bind_interval_ds_class);
-#if 0 /* for rdoc */
-    cOCI8BindTypeDateTime = rb_define_class_under(mOCI8BindType, "DateTime", cOCI8BindTypeBase);
-    cOCI8BindTypeIntervalYS = rb_define_class_under(mOCI8BindType, "IntervalYM", cOCI8BindTypeBase);
-    cOCI8BindTypeIntervalDS = rb_define_class_under(mOCI8BindType, "IntervalDS", cOCI8BindTypeBase);
-#endif
 }

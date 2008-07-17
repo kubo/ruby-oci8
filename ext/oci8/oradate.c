@@ -5,7 +5,7 @@
  * $Author$
  * $Date$
  *
- * Copyright (C) 2002-2005 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2008 KUBO Takehiro <kubo@jiubao.org>
  *
  * date and time between 4712 B.C. and 9999 A.D.
  */
@@ -14,7 +14,13 @@
 
 static VALUE cOraDate;
 
-/* OraDate - Internal format of DATE */
+/*
+ * Document-class: OraDate
+ *
+ * ruby class compatible with Oracle <tt>DATE</tt> data type.
+ * Date and time between 4712 B.C. and 9999 A.D.
+ *
+ */
 struct ora_date {
     unsigned char century;
     unsigned char year;
@@ -76,10 +82,11 @@ static VALUE ora_date_s_allocate(VALUE klass)
 }
 
 /*
-=begin
---- OraDate.new([year [, month [, day [, hour [, min [,sec]]]]]])
-=end
-*/
+ * call-seq:
+ *   OraDate.new(year = 1, month = 1, day = 1, hour = 0, min = 0, sec = 0) -> oradate
+ *
+ * Returns an <code>OraDate</code> object initialized to the specified date and time.
+ */
 static VALUE ora_date_initialize(int argc, VALUE *argv, VALUE self)
 {
     VALUE vyear, vmonth, vday, vhour, vmin, vsec;
@@ -134,7 +141,7 @@ static VALUE ora_date_initialize(int argc, VALUE *argv, VALUE self)
     return Qnil;
 }
 
-
+/* :nodoc: */
 static VALUE ora_date_initialize_copy(VALUE lhs, VALUE rhs)
 {
     ora_date_t *l, *r;
@@ -147,10 +154,12 @@ static VALUE ora_date_initialize_copy(VALUE lhs, VALUE rhs)
 }
 
 /*
-=begin
---- OraDate.now()
-=end
-*/
+ * call-seq:
+ *   OraDate.now() -> oradate
+ *
+ * Returns an <code>OraDate</code> object initialized to the
+ * current local time.
+ */
 static VALUE ora_date_s_now(int argc, VALUE *argv, VALUE klass)
 {
     VALUE obj = ora_date_s_allocate(klass);
@@ -177,10 +186,12 @@ static VALUE ora_date_s_now(int argc, VALUE *argv, VALUE klass)
 }
 
 /*
-=begin
---- OraDate#to_s()
-=end
-*/
+ * call-seq:
+ *   oradate.to_s -> string
+ *
+ * Returns a string representing <i>oradate</i>.
+ * The string format is 'yyyy/mm/dd hh:mi:ss'.
+ */
 static VALUE ora_date_to_s(VALUE self)
 {
     ora_date_t *od;
@@ -193,10 +204,12 @@ static VALUE ora_date_to_s(VALUE self)
 }
 
 /*
-=begin
---- OraDate#to_a()
-=end
-*/
+ * call-seq:
+ *   oradate.to_a -> array
+ *
+ * Returns a 6-element <i>array</i> of values for <i>oradate</i>:
+ * {<code>[year, month, day, hour, minute, second]</code>}.
+ */
 static VALUE ora_date_to_a(VALUE self)
 {
     ora_date_t *od;
@@ -212,81 +225,207 @@ static VALUE ora_date_to_a(VALUE self)
     return rb_ary_new4(6, ary);
 }
 
-#define DEFINE_GETTER_FUNC(where) \
-static VALUE ora_date_##where(VALUE self) \
-{ \
-    ora_date_t *od; \
- \
-    Data_Get_Struct(self, ora_date_t, od); \
-    return INT2FIX(Get_##where(od)); \
-}
+/*
+ * call-seq:
+ *   oradate.year -> fixnum
+ *
+ * Returns the year (-4712..9999) for <i>oradate</i>.
+ */
+static VALUE ora_date_year(VALUE self)
+{
+    ora_date_t *od;
 
-#define DEFINE_SETTER_FUNC(where) \
-static VALUE ora_date_set_##where(VALUE self, VALUE val) \
-{ \
-    ora_date_t *od; \
-    int v; \
- \
-    v = NUM2INT(val); \
-    Check_##where(v); \
-    Data_Get_Struct(self, ora_date_t, od); \
-    Set_##where(od, v); \
-    return self; \
+    Data_Get_Struct(self, ora_date_t, od);
+    return INT2FIX(Get_year(od));
 }
 
 /*
-=begin
---- OraDate#year
-=end
-*/
-DEFINE_GETTER_FUNC(year)
-DEFINE_SETTER_FUNC(year)
+ * call-seq:
+ *   oradate.year = fixnum
+ *
+ * Sets the year (-4712..9999) for <i>oradate</i>.
+ */
+static VALUE ora_date_set_year(VALUE self, VALUE val)
+{
+    ora_date_t *od;
+    int v;
+
+    v = NUM2INT(val);
+    Check_year(v);
+    Data_Get_Struct(self, ora_date_t, od);
+    Set_year(od, v);
+    return self;
+}
 
 /*
-=begin
---- OraDate#month
-=end
-*/
-DEFINE_GETTER_FUNC(month)
-DEFINE_SETTER_FUNC(month)
+ * call-seq:
+ *   oradate.month -> fixnum
+ *
+ * Returns the month of the year (1..12) for <i>oradate</i>.
+ */
+static VALUE ora_date_month(VALUE self)
+{
+    ora_date_t *od;
+
+    Data_Get_Struct(self, ora_date_t, od);
+    return INT2FIX(Get_month(od));
+}
 
 /*
-=begin
---- OraDate#day
-=end
-*/
-DEFINE_GETTER_FUNC(day)
-DEFINE_SETTER_FUNC(day)
+ * call-seq:
+ *   oradate.month = fixnum
+ *
+ * Sets the month of the year (1..12) for <i>oradate</i>.
+ */
+static VALUE ora_date_set_month(VALUE self, VALUE val)
+{
+    ora_date_t *od;
+    int v;
+
+    v = NUM2INT(val);
+    Check_month(v);
+    Data_Get_Struct(self, ora_date_t, od);
+    Set_month(od, v);
+    return self;
+}
 
 /*
-=begin
---- OraDate#hour
-=end
-*/
-DEFINE_GETTER_FUNC(hour)
-DEFINE_SETTER_FUNC(hour)
+ * call-seq:
+ *   oradate.day -> fixnum
+ *
+ * Returns the day of the month (1..31) for <i>oradate</i>.
+ */
+static VALUE ora_date_day(VALUE self)
+{
+    ora_date_t *od;
+
+    Data_Get_Struct(self, ora_date_t, od);
+    return INT2FIX(Get_day(od));
+}
 
 /*
-=begin
---- OraDate#minute
-=end
-*/
-DEFINE_GETTER_FUNC(minute)
-DEFINE_SETTER_FUNC(minute)
+ * call-seq:
+ *   oradate.day = fixnum
+ *
+ * Sets the day of the month (1..31) for <i>oradate</i>.
+ */
+static VALUE ora_date_set_day(VALUE self, VALUE val)
+{
+    ora_date_t *od;
+    int v;
+
+    v = NUM2INT(val);
+    Check_day(v);
+    Data_Get_Struct(self, ora_date_t, od);
+    Set_day(od, v);
+    return self;
+}
 
 /*
-=begin
---- OraDate#second
-=end
-*/
-DEFINE_GETTER_FUNC(second)
-DEFINE_SETTER_FUNC(second)
+ * call-seq:
+ *   oradate.hour -> fixnum
+ *
+ * Returns the hour of the day (0..23) for <i>oradate</i>.
+ */
+static VALUE ora_date_hour(VALUE self)
+{
+    ora_date_t *od;
+
+    Data_Get_Struct(self, ora_date_t, od);
+    return INT2FIX(Get_hour(od));
+}
 
 /*
-=begin
---- OraDate#trunc()
-=end
-*/
+ * call-seq:
+ *   oradate.hour = fixnum
+ *
+ * Sets the hour of the day (0..23) for <i>oradate</i>.
+ */
+static VALUE ora_date_set_hour(VALUE self, VALUE val)
+{
+    ora_date_t *od;
+    int v;
+
+    v = NUM2INT(val);
+    Check_hour(v);
+    Data_Get_Struct(self, ora_date_t, od);
+    Set_hour(od, v);
+    return self;
+}
+
+/*
+ * call-seq:
+ *   oradate.minute -> fixnum
+ *
+ * Returns the minute of the hour (0..59) for <i>oradate</i>.
+ */
+static VALUE ora_date_minute(VALUE self)
+{
+    ora_date_t *od;
+
+    Data_Get_Struct(self, ora_date_t, od);
+    return INT2FIX(Get_minute(od));
+}
+
+/*
+ * call-seq:
+ *   oradate.minute = fixnum
+ *
+ * Sets the minute of the hour (0..59) for <i>oradate</i>.
+ */
+static VALUE ora_date_set_minute(VALUE self, VALUE val)
+{
+    ora_date_t *od;
+    int v;
+
+    v = NUM2INT(val);
+    Check_minute(v);
+    Data_Get_Struct(self, ora_date_t, od);
+    Set_minute(od, v);
+    return self;
+}
+
+/*
+ * call-seq:
+ *   oradate.second -> fixnum
+ *
+ * Returns the second of the minute (0..59) for <i>oradate</i>.
+ */
+static VALUE ora_date_second(VALUE self)
+{
+    ora_date_t *od;
+
+    Data_Get_Struct(self, ora_date_t, od);
+    return INT2FIX(Get_second(od));
+}
+
+/*
+ * call-seq:
+ *   oradate.second = fixnum
+ *
+ * Sets the second of the minute (0..59) for <i>oradate</i>.
+ */
+static VALUE ora_date_set_second(VALUE self, VALUE val)
+{
+    ora_date_t *od;
+    int v;
+
+    v = NUM2INT(val);
+    Check_second(v);
+    Data_Get_Struct(self, ora_date_t, od);
+    Set_second(od, v);
+    return self;
+}
+
+/*
+ * call-seq:
+ *   oradate.trunc
+ *
+ * Truncates hour, minute and second to zero for <i>oradate</i>.
+ *
+ *   oradate = OraDate.now   # 2008/07/17 11:07:30
+ *   oradate.trunc           # 2008/07/17 00:00:00
+ */
 static VALUE ora_date_trunc(VALUE self)
 {
     ora_date_t *od;
@@ -299,10 +438,13 @@ static VALUE ora_date_trunc(VALUE self)
 }
 
 /*
-=begin
---- OraDate#<=>(other)
-=end
-*/
+ * call-seq:
+ *   oradate1 <=> oradate2 -> -1, 0, +1
+ *
+ * Comparison---Compares <i>oradate1</i> with <i>oradate2</i>.
+ * Other comparison operators are available because
+ * <code>Comparable</code> module is included.
+ */
 static VALUE ora_date_cmp(VALUE self, VALUE val)
 {
     ora_date_t *od1, *od2;
@@ -326,6 +468,7 @@ static VALUE ora_date_cmp(VALUE self, VALUE val)
     return INT2FIX(0);
 }
 
+/* :nodoc: */
 static VALUE ora_date_hash(VALUE self)
 {
     ora_date_t *od;
@@ -342,6 +485,12 @@ static VALUE ora_date_hash(VALUE self)
     return INT2FIX(v);
 }
 
+/*
+ * call-seq:
+ *   oradate._dump -> string
+ *
+ * Dumps <i>oradate</i> for marshaling.
+ */
 static VALUE ora_date_dump(int argc, VALUE *argv, VALUE self)
 {
     ora_date_t *od;
@@ -349,6 +498,12 @@ static VALUE ora_date_dump(int argc, VALUE *argv, VALUE self)
     return rb_str_new((const char*)od, sizeof(ora_date_t));
 }
 
+/*
+ * call-seq:
+ *   OraDate._load(string) -> oradate
+ *
+ * Unmarshals a dumped <code>OraDate</code> object.
+ */
 static VALUE ora_date_s_load(VALUE klass, VALUE str)
 {
     ora_date_t *od;
@@ -364,7 +519,10 @@ static VALUE ora_date_s_load(VALUE klass, VALUE str)
 }
 
 /*
- * bind_oradate
+ * Document-class: OCI8::BindType::OraDate
+ *
+ * This is a helper class to bind OraDate as Oracle's <tt>DATE</tt> datatype.
+ *
  */
 static VALUE bind_oradate_get(oci8_bind_t *obind, void *data, void *null_struct)
 {

@@ -30,6 +30,11 @@ format_c_source:
 	astyle --options=none --style=linux --indent=spaces=4 --brackets=linux --suffix=none ext/oci8/*.[ch]
 
 # internal use only
+.PHONY: rdoc
+
+rdoc:
+	$(RUBY) custom-rdoc.rb -o rdoc -U README ext/oci8 lib
+
 dist:
 	-rm -rf ruby-oci8-$(VERSION)
 	mkdir ruby-oci8-$(VERSION)

@@ -328,7 +328,7 @@ typedef struct {
 } oci8_hp_obj_t;
 void oci8_bind_free(oci8_base_t *base);
 void oci8_bind_hp_obj_mark(oci8_base_t *base);
-void Init_oci8_bind(VALUE cOCIBind);
+void Init_oci8_bind(VALUE cOCI8BindTypeBase);
 oci8_bind_t *oci8_get_bind(VALUE obj);
 
 /* metadata.c */

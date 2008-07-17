@@ -1,3 +1,15 @@
+2008-07-17  KUBO Takehiro  <kubo@jiubao.org>
+	* Makefile: add a rdoc target to make rdoc document.
+	* custom-rdoc.rb: add a file which customizes rdoc to handle 
+	    oci8_define_class_under() and oci8_define_bind_class().
+	* ext/oci8/.document: add a new file for rdoc.
+	* ext/oci8/bind.c, ext/oci8/oci8.h: rename cOCIBind to cOCI8BindTypeBase,
+	    which is same name used in custom-rdoc.rb.
+	* ext/oci8/oci8.c, ext/oci8/ocidatetime.c, ext/oci8/ocinumber.c:
+	    delete code in comment for vanilla rdoc which doesn't know what
+	    oci8_define_class_under() and oci8_define_bind_class() do.
+	* ext/oci8/oradate.c: fix rdoc comments.
+
 2008-07-13  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/stmt.c: (1) add rdoc comments. (2) OCI8::Cursor#type
 	    returns a Fixnum when the type is not undocumented value instead

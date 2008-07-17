@@ -2,7 +2,7 @@
 /*
  * oci8.c - part of ruby-oci8
  *
- * Copyright (C) 2002-2007 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2008 KUBO Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
@@ -522,10 +522,6 @@ static VALUE oci8_set_prefetch_rows(VALUE self, VALUE val)
 
 VALUE Init_oci8(void)
 {
-#if 0 /* for rdoc */
-    cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
-    cOCI8 = rb_define_class("OCI8", cOCIHandle);
-#endif
     cOCI8 = oci8_define_class("OCI8", &oci8_svcctx_class);
 
     sym_SYSDBA = ID2SYM(rb_intern("SYSDBA"));
