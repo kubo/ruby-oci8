@@ -1,6 +1,7 @@
 require 'oci8'
 require 'test/unit'
 require './config'
+require 'scanf'
 
 class TestDateTime < Test::Unit::TestCase
 
@@ -27,7 +28,7 @@ class TestDateTime < Test::Unit::TestCase
       @conn.exec(<<-EOS) do |row|
 SELECT TO_DATE('#{date}', 'YYYY-MM-DD HH24:MI:SS') FROM dual
 EOS
-        assert_equal(DateTime.parse(date + @local_timezone), row[0])
+        assert_equal(Time.local(*date.scanf("%d-%d-%d %d:%d:%d.%06d")), row[0])
       end
     end
   end
@@ -75,7 +76,7 @@ EOS
       @conn.exec(<<-EOS) do |row|
 SELECT TO_TIMESTAMP('#{date}', 'YYYY-MM-DD HH24:MI:SS.FF') FROM dual
 EOS
-        assert_equal(DateTime.parse(date + @local_timezone), row[0])
+        assert_equal(Time.local(*date.scanf("%d-%d-%d %d:%d:%d.%06d")), row[0])
       end
     end
   end

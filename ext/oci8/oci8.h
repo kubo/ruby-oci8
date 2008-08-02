@@ -357,8 +357,10 @@ OCINumber *oci8_set_integer(OCINumber *result, VALUE self);
 
 /* ocidatetim.c */
 void Init_oci_datetime(void);
-VALUE oci8_make_datetime_from_ocidate(OCIDate *s);
-VALUE oci8_make_datetime_from_ocidatetime(OCIDateTime *s);
+VALUE oci8_make_ocidate(OCIDate *od);
+OCIDate *oci8_set_ocidate(OCIDate *od, VALUE val);
+VALUE oci8_make_ocidatetime(OCIDateTime *dttm);
+OCIDateTime *oci8_set_ocidatetime(OCIDateTime *dttm, VALUE val);
 VALUE oci8_make_interval_ym(OCIInterval *s);
 VALUE oci8_make_interval_ds(OCIInterval *s);
 

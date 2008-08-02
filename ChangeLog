@@ -1,3 +1,17 @@
+2008-08-02  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.h, ext/oci8/ocidatetime.c, lib/oci8.rb.in,
+	  lib/oci8/datetime.rb: change binding code for timestamps
+	    and intervals. C side is a thin wrapper which converts Oracle's
+	    date, timestamp and interval values to ruby arrays and vise
+	    versa. Ruby side converts the arrays to ruby's Time, DateTime,
+	    Integer (for interval year to month) and Rational (for interval
+	    day to second).
+	* lib/oci8/oci8.rb: change mapping for binding date, timestamp and
+	    timestamp with local time zone from OCI8::BindType::DateTime
+	    to OCI8::BindType::Time.
+	* test/test_array_dml.rb, test/test_datetime.rb, test/test_dbi.rb,
+	  test/test_oci8.rb: fix test cases for a change above.
+
 2008-07-17  KUBO Takehiro  <kubo@jiubao.org>
 	* Makefile: add a rdoc target to make rdoc document.
 	* custom-rdoc.rb: add a file which customizes rdoc to handle 

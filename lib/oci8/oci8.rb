@@ -144,16 +144,6 @@ class OCI8
       end
     end
 
-    # get/set Time
-    class Time < OCI8::BindType::OraDate
-      def set(val)
-        super(val && ::OraDate.new(val.year, val.mon, val.mday, val.hour, val.min, val.sec))
-      end
-      def get()
-        (val = super()) && val.to_time
-      end
-    end
-
     # get/set Date
     class Date < OCI8::BindType::OraDate
       def set(val)
@@ -698,13 +688,15 @@ OCI8::BindType::Mapping[:bfile] = OCI8::BindType::BFILE
 # datatype        type     size prec scale
 # -------------------------------------------------
 # DATE          SQLT_DAT      7    0    0
-OCI8::BindType::Mapping[:date] = OCI8::BindType::DateTime
+OCI8::BindType::Mapping[:date] = OCI8::BindType::Time
 
-OCI8::BindType::Mapping[:timestamp] = OCI8::BindType::DateTime
-OCI8::BindType::Mapping[:timestamp_tz] = OCI8::BindType::DateTime
-OCI8::BindType::Mapping[:timestamp_ltz] = OCI8::BindType::DateTime
-OCI8::BindType::Mapping[:interval_ym] = OCI8::BindType::IntervalYM
-OCI8::BindType::Mapping[:interval_ds] = OCI8::BindType::IntervalDS
+if OCI8.oracle_client_version >= 900
+  OCI8::BindType::Mapping[:timestamp] = OCI8::BindType::Time
+  OCI8::BindType::Mapping[:timestamp_tz] = OCI8::BindType::DateTime
+  OCI8::BindType::Mapping[:timestamp_ltz] = OCI8::BindType::Time
+  OCI8::BindType::Mapping[:interval_ym] = OCI8::BindType::IntervalYM
+  OCI8::BindType::Mapping[:interval_ds] = OCI8::BindType::IntervalDS
+end
 
 # datatype        type     size prec scale
 # -------------------------------------------------

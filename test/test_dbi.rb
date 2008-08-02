@@ -134,7 +134,7 @@ EOS
         tm = Time.local(2000 + i, 8, 3, 23, 59, 59)
 	dt = Date.civil(2000 + i, 8, 3)
 	dttm = DateTime.civil(2000 + i, 8, 3, 23, 59, 59, Time.now.utc_offset.to_r/86400)
-	assert_equal(dttm, rv[3])
+	assert_equal(tm, rv[3])
 	assert_equal(tm, rv[4])
 	assert_equal(dt, rv[5])
 	assert_equal(dttm, rv[6])

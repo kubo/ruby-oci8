@@ -87,8 +87,8 @@ EOS
       assert_equal(format("%10d", i * 10), rv[0])
       assert_equal(i.to_s, rv[1])
       assert_equal(i, rv[2])
-      dttm = DateTime.civil(2000 + i, 12, 24, 23, 59, 59, Time.now.utc_offset.to_r/86400)
-      assert_equal(dttm, rv[3])
+      tm = Time.local(2000 + i, 12, 24, 23, 59, 59)
+      assert_equal(tm, rv[3])
       assert_equal(i * 11111111111, rv[4])
       assert_equal(i * 10000000000, rv[5])
     end
