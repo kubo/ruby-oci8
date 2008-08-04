@@ -223,7 +223,7 @@ static VALUE metadata_get_param(VALUE self, VALUE idx)
     /* remote call? */
     oci_lc(OCIAttrGet_nb(svcctx, md->base.hp.ptr, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
     if (size != sizeof(OCIParam *)) {
-        rb_raise(rb_eRuntimeError, "Invalid attribute size. expect %d, but %d", sizeof(OCIParam *), size);
+        rb_raise(rb_eRuntimeError, "Invalid attribute size. expect %d, but %d", (sb4)sizeof(OCIParam *), size);
     }
     return oci8_metadata_create(value, md->svc, self);
 }

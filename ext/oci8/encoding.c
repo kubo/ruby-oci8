@@ -24,15 +24,12 @@ typedef struct {
 /* Oracle charset id -> Oracle charset name */
 static VALUE csid2name;
 VALUE oci8_charset_id2name(VALUE svc, VALUE csid);
-static VALUE charset_id2name_func(cb_arg_t *arg);
-static VALUE ensure_func(cb_arg_t *arg);
 
 #ifdef HAVE_TYPE_RB_ENCODING
 /* Oracle charset name -> Oracle charset id */
 static ID id_upcase;
 static VALUE csname2id;
 static VALUE oci8_charset_name2id(VALUE svc, VALUE name);
-static VALUE charset_name2id_func(cb_arg_t *arg);
 #endif /* HAVE_TYPE_RB_ENCODING */
 
 VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
@@ -55,14 +52,30 @@ VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
         name = rb_str_new2(buf);
     } else {
         /* Oracle 9iR1 or lower */
-        cb_arg_t arg;
-        arg.svcctx = oci8_get_svcctx(svc);
-        arg.stmtp = NULL;
-        arg.u.csid = FIX2INT(csid);
-        name = rb_ensure(charset_id2name_func, (VALUE)&arg, ensure_func, (VALUE)&arg);
-        if (NIL_P(name)) {
+        oci8_exec_sql_var_t bind_vars[2];
+        char buf[OCI_NLS_MAXBUFSZ];
+        ub2 buflen = 0;
+        int ival = FIX2INT(csid);
+
+        /* :name */
+        bind_vars[0].valuep = buf;
+        bind_vars[0].value_sz = OCI_NLS_MAXBUFSZ;
+        bind_vars[0].dty = SQLT_CHR;
+        bind_vars[0].indp = NULL;
+        bind_vars[0].alenp = &buflen;
+        /* :csid */
+        bind_vars[1].valuep = &ival;
+        bind_vars[1].value_sz = sizeof(int);
+        bind_vars[1].dty = SQLT_INT;
+        bind_vars[1].indp = NULL;
+        bind_vars[1].alenp = NULL;
+
+        /* convert chaset id to charset name by querying Oracle server. */
+        oci8_exec_sql(oci8_get_svcctx(svc), "BEGIN :name := nls_charset_name(:csid); END;", 0, NULL, 2, bind_vars, 1);
+        if (buflen == 0) {
             return Qnil;
         }
+        name = rb_str_new(buf, buflen);
     }
     OBJ_FREEZE(name);
     rb_hash_aset(csid2name, csid, name);
@@ -70,38 +83,6 @@ VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
     rb_hash_aset(csname2id, name, csid);
 #endif /* HAVE_TYPE_RB_ENCODING */
     return name;
-}
-
-/* convert chaset id to charset name by querying Oracle server.
- * This routine is used only when the Oracle client version is 9iR1 or lower.
- */
-static VALUE charset_id2name_func(cb_arg_t *arg)
-{
-    char buf[OCI_NLS_MAXBUFSZ];
-    ub2 buflen;
-    OCIBind *bind1 = NULL;
-    OCIBind *bind2 = NULL;
-    sword rv;
-    const char *sql = "BEGIN :name := nls_charset_name(:csid); END;";
-
-    buflen = 0;
-    rv = OCIHandleAlloc(oci8_envhp, (dvoid*)&arg->stmtp, OCI_HTYPE_STMT, 0, NULL);
-    if (rv != OCI_SUCCESS) {
-        oci8_env_raise(oci8_envhp, rv);
-    }
-    oci_lc(OCIStmtPrepare(arg->stmtp, oci8_errhp, (text*)sql, strlen(sql), OCI_NTV_SYNTAX, OCI_DEFAULT));
-    oci_lc(OCIBindByPos(arg->stmtp, &bind1, oci8_errhp, 1, buf, OCI_NLS_MAXBUFSZ, SQLT_CHR, NULL, &buflen, 0, 0, 0, OCI_DEFAULT));
-    oci_lc(OCIBindByPos(arg->stmtp, &bind2, oci8_errhp, 2, (dvoid*)&arg->u.csid, sizeof(int), SQLT_INT, NULL, NULL, 0, 0, 0, OCI_DEFAULT));
-    oci_lc(OCIStmtExecute_nb(arg->svcctx, arg->svcctx->base.hp.svc, arg->stmtp, oci8_errhp, 1, 0, NULL, NULL, OCI_DEFAULT));
-    return rb_str_new(buf, buflen);
-}
-
-static VALUE ensure_func(cb_arg_t *arg)
-{
-    if (arg->stmtp != NULL) {
-        OCIHandleFree(arg->stmtp, OCI_HTYPE_STMT);
-    }
-    return Qnil;
 }
 
 #ifdef HAVE_TYPE_RB_ENCODING
@@ -125,41 +106,33 @@ static VALUE oci8_charset_name2id(VALUE svc, VALUE name)
         csid = INT2FIX(rv);
     } else {
         /* Oracle 9iR1 or lower */
-        cb_arg_t arg;
-        arg.svcctx = oci8_get_svcctx(svc);
-        arg.stmtp = NULL;
-        arg.u.name = name;
-        csid = rb_ensure(charset_name2id_func, (VALUE)&arg, ensure_func, (VALUE)&arg);
-        if (NIL_P(csid)) {
+        oci8_exec_sql_var_t bind_vars[2];
+        int ival;
+        sb2 ind = 0; /* null indicator */
+
+        /* :csid */
+        bind_vars[0].valuep = &ival;
+        bind_vars[0].value_sz = sizeof(int);
+        bind_vars[0].dty = SQLT_INT;
+        bind_vars[0].indp = &ind;
+        bind_vars[0].alenp = NULL;
+        /* :name */
+        bind_vars[1].valuep = RSTRING_PTR(name);
+        bind_vars[1].value_sz = RSTRING_LEN(name);
+        bind_vars[1].dty = SQLT_CHR;
+        bind_vars[1].indp = NULL;
+        bind_vars[1].alenp = NULL;
+
+        /* convert chaset name to charset id by querying Oracle server. */
+        oci8_exec_sql(oci8_get_svcctx(svc), "BEGIN :csid := nls_charset_id(:name); END;", 0, NULL, 2, bind_vars);
+        if (ind) {
             return Qnil;
         }
+        csid = INT2FIX(id);
     }
     rb_hash_aset(csid2name, csid, name);
     rb_hash_aset(csname2id, name, csid);
     return csid;
-}
-
-/* convert chaset name to charset id by querying Oracle server.
- * This routine is used only when the Oracle client version is 9iR1 or lower.
- */
-static VALUE charset_name2id_func(cb_arg_t *arg)
-{
-    int csid;
-    sb2 ind = 0; /* null indicator */
-    OCIBind *bind1 = NULL;
-    OCIBind *bind2 = NULL;
-    sword rv;
-    const char *sql = "BEGIN :csid := nls_charset_id(:name); END;";
-
-    rv = OCIHandleAlloc(oci8_envhp, (dvoid*)&arg->stmtp, OCI_HTYPE_STMT, 0, NULL);
-    if (rv != OCI_SUCCESS) {
-        oci8_env_raise(oci8_envhp, rv);
-    }
-    oci_lc(OCIStmtPrepare(arg->stmtp, oci8_errhp, (text*)sql, strlen(sql), OCI_NTV_SYNTAX, OCI_DEFAULT));
-    oci_lc(OCIBindByPos(arg->stmtp, &bind1, oci8_errhp, 1, (dvoid*)&csid, sizeof(int), SQLT_INT, &ind, NULL, 0, 0, 0, OCI_DEFAULT));
-    oci_lc(OCIBindByPos(arg->stmtp, &bind2, oci8_errhp, 2, RSTRING_PTR(arg->u.name), RSTRING_LEN(arg->u.name), SQLT_CHR, NULL, 0, 0, 0, 0, OCI_DEFAULT));
-    oci_lc(OCIStmtExecute_nb(arg->svcctx, arg->svcctx->base.hp.svc, arg->stmtp, oci8_errhp, 1, 0, NULL, NULL, OCI_DEFAULT));
-    return ind ? Qnil : INT2FIX(csid);
 }
 
 #endif /* HAVE_TYPE_RB_ENCODING */

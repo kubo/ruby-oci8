@@ -27,7 +27,7 @@ OCIDate *oci8_set_ocidate(OCIDate *od, VALUE val)
 
     Check_Type(val, T_ARRAY);
     if (RARRAY_LEN(val) != 6) {
-        rb_raise(rb_eRuntimeError, "invalid array size %d", RARRAY_LEN(val));
+        rb_raise(rb_eRuntimeError, "invalid array size %ld", RARRAY_LEN(val));
     }
     /* year */
     year = NUM2LONG(RARRAY_PTR(val)[0]);
@@ -145,7 +145,7 @@ OCIDateTime *oci8_set_ocitimestamp(OCIDateTime *dttm, VALUE val)
 
     Check_Type(val, T_ARRAY);
     if (RARRAY_LEN(val) != 9) {
-        rb_raise(rb_eRuntimeError, "invalid array size %d", RARRAY_LEN(val));
+        rb_raise(rb_eRuntimeError, "invalid array size %ld", RARRAY_LEN(val));
     }
     /* year */
     year = NUM2LONG(RARRAY_PTR(val)[0]);
@@ -291,7 +291,7 @@ OCIInterval *oci8_set_ociinterval_ym(OCIInterval *intvl, VALUE val)
 
     Check_Type(val, T_ARRAY);
     if (RARRAY_LEN(val) != 2) {
-        rb_raise(rb_eRuntimeError, "invalid array size %d", RARRAY_LEN(val));
+        rb_raise(rb_eRuntimeError, "invalid array size %ld", RARRAY_LEN(val));
     }
     year = NUM2INT(RARRAY_PTR(val)[0]);
     month = NUM2INT(RARRAY_PTR(val)[1]);
@@ -325,7 +325,7 @@ OCIInterval *oci8_set_ociinterval_ds(OCIInterval *intvl, VALUE val)
 
     Check_Type(val, T_ARRAY);
     if (RARRAY_LEN(val) != 5) {
-        rb_raise(rb_eRuntimeError, "invalid array size %d", RARRAY_LEN(val));
+        rb_raise(rb_eRuntimeError, "invalid array size %ld", RARRAY_LEN(val));
     }
     day = NUM2INT(RARRAY_PTR(val)[0]);
     hour = NUM2INT(RARRAY_PTR(val)[1]);

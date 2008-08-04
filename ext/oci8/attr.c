@@ -136,7 +136,17 @@ static VALUE get_rowid_attr(rowid_arg_t *arg)
         oci_lc(OCIStmtPrepare(arg->stmtp, oci8_errhp, (text*)ROWIDTOCHAR_SQL, strlen(ROWIDTOCHAR_SQL), OCI_NTV_SYNTAX, OCI_DEFAULT));
         oci_lc(OCIBindByPos(arg->stmtp, &bind1, oci8_errhp, 1, buf, MAX_ROWID_LEN, SQLT_STR, NULL, &buflen, 0, 0, 0, OCI_DEFAULT));
         oci_lc(OCIBindByPos(arg->stmtp, &bind2, oci8_errhp, 2, (dvoid*)&arg->ridp, sizeof(void*), SQLT_RDD, NULL, NULL, 0, 0, 0, OCI_DEFAULT));
-        oci_lc(OCIStmtExecute_nb((oci8_svcctx_t*)svc, svc->hp.svc, arg->stmtp, oci8_errhp, 1, 0, NULL, NULL, OCI_DEFAULT));
+        rv = OCIStmtExecute_nb((oci8_svcctx_t*)svc, svc->hp.svc, arg->stmtp, oci8_errhp, 1, 0, NULL, NULL, OCI_DEFAULT);
+        if (rv == OCI_ERROR) {
+            if (oci8_get_error_code(oci8_errhp) == 1000) {
+                /* run GC to close unreferred cursors
+                 * when ORA-01000 (maximum open cursors exceeded).
+                 */
+                rb_gc();
+                rv = OCIStmtExecute_nb((oci8_svcctx_t*)svc, svc->hp.svc, arg->stmtp, oci8_errhp, 1, 0, NULL, NULL, OCI_DEFAULT);
+            }
+        }
+        oci_lc(rv);
     }
     return rb_str_new(buf, buflen);
 }

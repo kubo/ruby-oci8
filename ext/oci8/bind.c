@@ -29,7 +29,7 @@ static void bind_string_set(oci8_bind_t *obind, void *data, void **null_structp,
 
     StringValue(val);
     if (RSTRING_LEN(val) > obind->value_sz - sizeof(vstr->size)) {
-        rb_raise(rb_eArgError, "too long String to set. (%ld for %d)", RSTRING_LEN(val), obind->value_sz - sizeof(vstr->size));
+        rb_raise(rb_eArgError, "too long String to set. (%ld for %d)", RSTRING_LEN(val), obind->value_sz - (sb4)sizeof(vstr->size));
     }
     memcpy(vstr->buf, RSTRING_PTR(val), RSTRING_LEN(val));
     vstr->size = RSTRING_LEN(val);

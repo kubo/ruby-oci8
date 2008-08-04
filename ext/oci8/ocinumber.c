@@ -978,7 +978,7 @@ static VALUE onum_hash(VALUE self)
 
 static VALUE onum_inspect(VALUE self)
 {
-    char *name = rb_class2name(CLASS_OF(self));
+    const char *name = rb_class2name(CLASS_OF(self));
     volatile VALUE s = onum_to_s(self);
     size_t len = strlen(name) + RSTRING_LEN(s) + 5;
     char *str = ALLOCA_N(char, len);

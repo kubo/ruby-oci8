@@ -1,3 +1,17 @@
+2008-08-04  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/attr.c: If ORA-01000 (maximum open cursors exceeded) when
+	    converting a rowid descriptor to string representation, run
+	    GC to cleanup unreferenced statement handles and try again.
+	* ext/oci8/oci8.h, ext/oci8/oci8lib.c: add a utility function
+	    oci8_exec_sql() to execute a SQL statement in C.
+	* ext/oci8/encoding.c: use oci8_exec_sql() to run anonymous PL/SQL
+	    blocks in oci8_charset_id2name() and oci8_charset_name2id().
+	* ext/oci8/bind.c, ext/oci8/metadata.c, ext/oci8/ocidatetime.c,
+	  ext/oci8/ocinumber.c: suppress compiler warnings.
+	* ext/oci8/oci8.c: avoid "[BUG] object allocation during garbage
+	    collection phase" when using ruby 1.9. In GC, just free a
+	    session handle without rollback.
+
 2008-08-02  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.h, ext/oci8/ocidatetime.c, lib/oci8.rb.in,
 	  lib/oci8/datetime.rb: change binding code for timestamps

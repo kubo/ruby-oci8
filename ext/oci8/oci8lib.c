@@ -297,6 +297,88 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
 }
 #endif /* RUBY_VM */
 
+typedef struct {
+    oci8_svcctx_t *svcctx;
+    const char *sql_text;
+    ub4 num_define_vars;
+    oci8_exec_sql_var_t *define_vars;
+    ub4 num_bind_vars;
+    oci8_exec_sql_var_t *bind_vars;
+    int raise_on_error;
+    OCIStmt *stmtp;
+} cb_arg_t;
+
+static VALUE exec_sql(cb_arg_t *arg);
+static VALUE ensure_func(cb_arg_t *arg);
+
+/*
+ * utility function to execute a single SQL statement
+ */
+sword oci8_exec_sql(oci8_svcctx_t *svcctx, const char *sql_text, ub4 num_define_vars, oci8_exec_sql_var_t *define_vars, ub4 num_bind_vars, oci8_exec_sql_var_t *bind_vars, int raise_on_error)
+{
+    cb_arg_t arg;
+    arg.svcctx = svcctx;
+    arg.sql_text = sql_text;
+    arg.num_define_vars = num_define_vars;
+    arg.define_vars = define_vars;
+    arg.num_bind_vars = num_bind_vars;
+    arg.bind_vars = bind_vars;
+    arg.raise_on_error = raise_on_error;
+    arg.stmtp = NULL;
+    return (sword)rb_ensure(exec_sql, (VALUE)&arg, ensure_func, (VALUE)&arg);
+}
+
+static VALUE exec_sql(cb_arg_t *arg)
+{
+    ub4 pos;
+    sword rv;
+
+    rv = OCIHandleAlloc(oci8_envhp, (dvoid*)&arg->stmtp, OCI_HTYPE_STMT, 0, NULL);
+    if (rv != OCI_SUCCESS) {
+        oci8_env_raise(oci8_envhp, rv);
+    }
+    oci_lc(OCIStmtPrepare(arg->stmtp, oci8_errhp, (text*)arg->sql_text,
+                          strlen(arg->sql_text), OCI_NTV_SYNTAX, OCI_DEFAULT));
+    for (pos = 0; pos < arg->num_define_vars; pos++) {
+        arg->define_vars[pos].hp = NULL;
+        oci_lc(OCIDefineByPos(arg->stmtp, (OCIDefine**)&arg->define_vars[pos].hp,
+                              oci8_errhp, pos + 1, arg->define_vars[pos].valuep,
+                              arg->define_vars[pos].value_sz,
+                              arg->define_vars[pos].dty, arg->define_vars[pos].indp,
+                              arg->define_vars[pos].alenp, NULL, OCI_DEFAULT));
+    }
+    for (pos = 0; pos < arg->num_bind_vars; pos++) {
+        arg->bind_vars[pos].hp = NULL;
+        oci_lc(OCIBindByPos(arg->stmtp, (OCIBind**)&arg->bind_vars[pos].hp,
+                            oci8_errhp, pos + 1, arg->bind_vars[pos].valuep,
+                            arg->bind_vars[pos].value_sz, arg->bind_vars[pos].dty,
+                            arg->bind_vars[pos].indp, arg->bind_vars[pos].alenp,
+                            NULL, 0, NULL, OCI_DEFAULT));
+    }
+    rv = OCIStmtExecute_nb(arg->svcctx, arg->svcctx->base.hp.svc, arg->stmtp, oci8_errhp, 1, 0, NULL, NULL, OCI_DEFAULT);
+    if (rv == OCI_ERROR) {
+        if (oci8_get_error_code(oci8_errhp) == 1000) {
+            /* run GC to close unreferred cursors
+             * when ORA-01000 (maximum open cursors exceeded).
+             */
+            rb_gc();
+            rv = OCIStmtExecute_nb(arg->svcctx, arg->svcctx->base.hp.svc, arg->stmtp, oci8_errhp, 1, 0, NULL, NULL, OCI_DEFAULT);
+        }
+    }
+    if (arg->raise_on_error) {
+        oci_lc(rv);
+    }
+    return (VALUE)rv;
+}
+
+static VALUE ensure_func(cb_arg_t *arg)
+{
+    if (arg->stmtp != NULL) {
+        OCIHandleFree(arg->stmtp, OCI_HTYPE_STMT);
+    }
+    return Qnil;
+}
+
 #if defined RUNTIME_API_CHECK
 
 #ifndef _WIN32

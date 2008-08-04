@@ -230,6 +230,15 @@ typedef struct  {
     VALUE long_read_len;
 } oci8_svcctx_t;
 
+typedef struct {
+    dvoid *hp; /* OCIBind* or OCIDefine* */
+    dvoid *valuep;
+    sb4 value_sz;
+    ub2 dty;
+    sb2 *indp;
+    ub2 *alenp;
+} oci8_exec_sql_var_t;
+
 #define Check_Handle(obj, klass, hp) do { \
     if (!rb_obj_is_kind_of(obj, klass)) { \
         rb_raise(rb_eTypeError, "invalid argument %s (expect %s)", rb_class2name(CLASS_OF(obj)), rb_class2name(klass)); \
@@ -296,6 +305,7 @@ VALUE oci8_define_bind_class(const char *name, const oci8_bind_class_t *oci8_bin
 void oci8_link_to_parent(oci8_base_t *base, oci8_base_t *parent);
 void oci8_unlink_from_parent(oci8_base_t *base);
 sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data);
+sword oci8_exec_sql(oci8_svcctx_t *svcctx, const char *sql_text, ub4 num_define_vars, oci8_exec_sql_var_t *define_vars, ub4 num_bind_vars, oci8_exec_sql_var_t *bind_vars, int raise_on_error);
 #if defined RUNTIME_API_CHECK
 void *oci8_find_symbol(const char *symbol_name);
 #endif

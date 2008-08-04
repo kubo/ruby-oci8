@@ -27,18 +27,10 @@
  */
 static VALUE cOCI8;
 
-static VALUE oci8_svcctx_logoff(VALUE self);
-static VALUE dummy(VALUE self)
-{
-    return Qnil;
-}
-
 static void oci8_svcctx_free(oci8_base_t *base)
 {
     oci8_svcctx_t *svcctx = (oci8_svcctx_t *)base;
 
-    /* ignore exceptions when logoff. */
-    rb_rescue(oci8_svcctx_logoff, base->self, dummy, Qnil);
     if (svcctx->authhp) {
         OCIHandleFree(svcctx->authhp, OCI_HTYPE_SESSION);
         svcctx->authhp = NULL;
