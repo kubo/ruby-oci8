@@ -12,9 +12,9 @@ nls_lang = nls_lang.split('.')[1] unless nls_lang.nil?
 nls_lang = nls_lang.upcase unless nls_lang.nil?
 case nls_lang
 when 'JA16EUC'
-  $lobfile = '../doc/api.ja.rd' # EUC-JP file
+  $lobfile = File.dirname(__FILE__) + '/../doc/api.ja.rd' # EUC-JP file
 else
-  $lobfile = '../doc/api.en.rd' # ASCII file
+  $lobfile = File.dirname(__FILE__) + '/../doc/api.en.rd' # ASCII file
 end
 $lobreadnum = 256 # counts in charactors
 
