@@ -1,7 +1,7 @@
 # Low-level API
 require 'oci8'
 require 'test/unit'
-require './config'
+require File.dirname(__FILE__) + '/config'
 require 'yaml'
 
 class TestOraNumber < Test::Unit::TestCase

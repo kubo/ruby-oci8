@@ -2,7 +2,7 @@ srcdir = File.dirname(__FILE__)
 
 require 'oci8'
 require 'test/unit'
-require './config'
+require "#{srcdir}/config"
 
 require "#{srcdir}/test_oradate"
 require "#{srcdir}/test_oranumber"

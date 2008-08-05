@@ -1,7 +1,7 @@
 require 'dbi'
 require 'oci8'
 require 'test/unit'
-require './config'
+require File.dirname(__FILE__) + '/config'
 
 class TestDBI < Test::Unit::TestCase
 

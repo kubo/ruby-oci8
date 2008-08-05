@@ -1,6 +1,6 @@
 require 'oci8'
 require 'test/unit'
-require './config'
+require File.dirname(__FILE__) + '/config'
 
 class RbTestObj < OCI8::Object::Base
 end

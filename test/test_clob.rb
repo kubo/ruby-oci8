@@ -1,7 +1,7 @@
 # Low-level API
 require 'oci8'
 require 'test/unit'
-require './config'
+require File.dirname(__FILE__) + '/config'
 
 class TestCLob < Test::Unit::TestCase
 
@@ -10,9 +10,10 @@ class TestCLob < Test::Unit::TestCase
   end
 
   def test_insert
-    @conn.exec("DELETE FROM test_clob WHERE filename = :1", $lobfile)
-    @conn.exec("INSERT INTO test_clob(filename, content) VALUES (:1, EMPTY_CLOB())", $lobfile)
-    cursor = @conn.exec("SELECT content FROM test_clob WHERE filename = :1 FOR UPDATE", $lobfile)
+    filename = File.basename($lobfile)
+    @conn.exec("DELETE FROM test_clob WHERE filename = :1", filename)
+    @conn.exec("INSERT INTO test_clob(filename, content) VALUES (:1, EMPTY_CLOB())", filename)
+    cursor = @conn.exec("SELECT content FROM test_clob WHERE filename = :1 FOR UPDATE", filename)
     lob = cursor.fetch[0]
     open($lobfile) do |f|
       while f.gets()
@@ -23,9 +24,10 @@ class TestCLob < Test::Unit::TestCase
   end
 
   def test_insert_with_flush
-    @conn.exec("DELETE FROM test_clob WHERE filename = :1", $lobfile)
-    @conn.exec("INSERT INTO test_clob(filename, content) VALUES (:1, EMPTY_CLOB())", $lobfile)
-    cursor = @conn.exec("SELECT content FROM test_clob WHERE filename = :1 FOR UPDATE", $lobfile)
+    filename = File.basename($lobfile)
+    @conn.exec("DELETE FROM test_clob WHERE filename = :1", filename)
+    @conn.exec("INSERT INTO test_clob(filename, content) VALUES (:1, EMPTY_CLOB())", filename)
+    cursor = @conn.exec("SELECT content FROM test_clob WHERE filename = :1 FOR UPDATE", filename)
     lob = cursor.fetch[0]
     lob.sync = false
     open($lobfile) do |f|
@@ -39,7 +41,8 @@ class TestCLob < Test::Unit::TestCase
 
   def test_read
     test_insert() # first insert data.
-    cursor = @conn.exec("SELECT content FROM test_clob WHERE filename = :1 FOR UPDATE", $lobfile)
+    filename = File.basename($lobfile)
+    cursor = @conn.exec("SELECT content FROM test_clob WHERE filename = :1 FOR UPDATE", filename)
     lob = cursor.fetch[0]
 
     open($lobfile) do |f|

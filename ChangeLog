@@ -1,3 +1,12 @@
+2008-08-05  KUBO Takehiro  <kubo@jiubao.org>
+	* test/config.rb, test/test_all.rb, test/test_array_dml.rb,
+	  test/test_bind_raw.rb, test/test_bind_time.rb, test/test_break.rb,
+	  test/test_clob.rb, test/test_connstr.rb, test/test_datetime.rb,
+	  test/test_dbi.rb, test/test_dbi_clob.rb, test/test_metadata.rb,
+	  test/test_object.rb, test/test_oci8.rb, test/test_oradate.rb,
+	  test/test_oranumber.rb, test/test_rowid.rb:
+	    fix to run tests in directories outside of 'test' directory.
+
 2008-08-04  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/attr.c: If ORA-01000 (maximum open cursors exceeded) when
 	    converting a rowid descriptor to string representation, run

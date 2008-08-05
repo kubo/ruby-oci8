@@ -1,6 +1,6 @@
 require 'dbi'
 require 'test/unit'
-require './config'
+require File.dirname(__FILE__) + '/config'
 
 class TestDbiCLob < Test::Unit::TestCase
 

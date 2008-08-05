@@ -1,6 +1,6 @@
 require 'oci8'
 require 'test/unit'
-require './config'
+require File.dirname(__FILE__) + '/config'
 require 'scanf'
 
 class TestDateTime < Test::Unit::TestCase
