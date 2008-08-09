@@ -55,7 +55,7 @@ static VALUE oci8_lob_get_length(VALUE self, VALUE vsvc)
   rv = OCILobGetLength(svch->hp, h->errhp, h->hp, &len);
   if (rv != OCI_SUCCESS)
     oci8_raise(h->errhp, rv, NULL);
-  return INT2FIX(len);
+  return UINT2NUM(len);
 }
 
 #ifdef HAVE_OCILOBGETCHUNKSIZE
@@ -72,7 +72,7 @@ static VALUE oci8_lob_get_chunk_size(VALUE self, VALUE vsvc)
   rv = OCILobGetChunkSize(svch->hp, h->errhp, h->hp, &len);
   if (rv != OCI_SUCCESS)
     oci8_raise(h->errhp, rv, NULL);
-  return INT2FIX(len);
+  return UINT2NUM(len);
 }
 #endif
 
@@ -110,8 +110,8 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
   rb_scan_args(argc, argv, "32", &vsvc, &voffset, &vamt, &vcsid, &vcsfrm);
   Get_Handle(self, h); /* 0 */
   Check_Handle(vsvc, OCISvcCtx, svch); /* 1 */
-  offset = NUM2INT(voffset); /* 2 */
-  amt = NUM2INT(vamt); /* 3 */
+  offset = NUM2UINT(voffset); /* 2 */
+  amt = NUM2UINT(vamt); /* 3 */
   csid = NIL_P(vcsid) ? 0 : NUM2INT(vcsid); /* 4 */
   csfrm = NIL_P(vcsfrm) ? SQLCS_IMPLICIT : NUM2INT(vcsfrm); /* 5 */
 
@@ -170,7 +170,7 @@ static VALUE oci8_lob_write(int argc, VALUE *argv, VALUE self)
   rb_scan_args(argc, argv, "32", &vsvc, &voffset, &vbuf, &vcsid, &vcsfrm);
   Get_Handle(self, h); /* 0 */
   Check_Handle(vsvc, OCISvcCtx, svch); /* 1 */
-  offset = NUM2INT(voffset); /* 2 */
+  offset = NUM2UINT(voffset); /* 2 */
   Get_String(vbuf, buf); /* 3 */
   csid = NIL_P(vcsid) ? 0 : NUM2INT(vcsid); /* 4 */
   csfrm = NIL_P(vcsfrm) ? SQLCS_IMPLICIT : NUM2INT(vcsfrm); /* 5 */

@@ -1,3 +1,9 @@
+2008-08-09  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c: fix OCILobLocator#getLength for a lob over 1GB,
+	    which affect OCI8::LOB#size and OCI8::LOB#read. fix
+	    OCILobLocator#read and OCILobLocator#write to set offset over 2BG,
+	    which affect OCI8::LOB#read and OCI8::LOB#write.
+
 2008-07-12  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8.rb.in: (1) add #to_json to OraDate too.
 	    (2) fix a bug when using Oracle 8i and dbd. OCI_ATTR_FSPRECISION
