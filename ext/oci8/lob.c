@@ -261,7 +261,7 @@ static VALUE oci8_lob_truncate(VALUE self, VALUE len)
     oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
 
     lob_open(lob);
-    oci_lc(OCILobTrim_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, NUM2INT(len)));
+    oci_lc(OCILobTrim_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, NUM2UINT(len)));
     return self;
 }
 
@@ -358,7 +358,7 @@ static VALUE oci8_lob_write(VALUE self, VALUE data)
     amt = RSTRING_LEN(data);
     oci_lc(OCILobWrite_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, RSTRING_PTR(data), amt, OCI_ONE_PIECE, NULL, NULL, 0, lob->csfrm));
     lob->pos += amt;
-    return INT2FIX(amt);
+    return UINT2NUM(amt);
 }
 
 static VALUE oci8_lob_get_sync(VALUE self)
@@ -395,7 +395,7 @@ static VALUE oci8_lob_get_chunk_size(VALUE self)
         ub4 len;
 
         oci_lc(OCILobGetChunkSize_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &len));
-        return INT2FIX(len);
+        return UINT2NUM(len);
     } else {
         rb_notimplement();
     }
