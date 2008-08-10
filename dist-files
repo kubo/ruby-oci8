@@ -10,6 +10,7 @@ doc/api.en.rd
 doc/api.ja.html
 doc/api.ja.rd
 doc/manual.css
+ext/oci8/.document
 ext/oci8/MANIFEST
 ext/oci8/apiwrap.c.tmpl
 ext/oci8/apiwrap.h.tmpl
@@ -34,9 +35,12 @@ ext/oci8/post-config.rb
 ext/oci8/stmt.c
 ext/oci8/object.c
 ext/oci8/xmldb.c
+lib/.document
 lib/oci8.rb.in
 lib/DBD/OCI8/OCI8.rb
+lib/oci8/.document
 lib/oci8/compat.rb
+lib/oci8/datetime.rb
 lib/oci8/metadata.rb
 lib/oci8/object.rb
 lib/oci8/oci8.rb

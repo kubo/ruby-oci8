@@ -1,3 +1,11 @@
+2008-08-10  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c: add workaround code for a losing character problem
+	    when reading CLOB. The problem is happened at the following condition.
+	    1. Oracle client version is 10.2.0.4 or 11.1.0.6.
+	       (It doesn't depend on Oracle server version.)
+	    2. The character set is a variable-length one (e.g. AL32UTF8).
+	* dist-files: add lib/oci8/datetime.rb and .document files.
+
 2008-08-09  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c: fix OCI8::LOB#size= when using a lob over 2GB.
 	    fix the return value of OCI8::LOB#write when writing a string

@@ -279,7 +279,7 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
     ub4 nchar;
     ub4 amt;
     sword rv;
-    char buf[4096];
+    char buf[8192];
     size_t buf_size_in_char;
     VALUE size;
     VALUE v = Qnil;
@@ -320,6 +320,8 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
                 oci8_raise(oci8_errhp, rv, NULL);
             lob->state = S_BFILE_OPEN;
         }
+        /* initialize buf in zeros everytime to check a nul characters. */
+        memset(buf, 0, sizeof(buf));
         rv = OCILobRead_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, buf, sizeof(buf), NULL, NULL, 0, lob->csfrm);
         if (rv == OCI_ERROR && oci8_get_error_code(oci8_errhp) == 22289) {
             /* ORA-22289: cannot perform FILEREAD operation on an unopened file or LOB */
@@ -328,6 +330,18 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
         }
         if (rv != OCI_SUCCESS && rv != OCI_NEED_DATA)
             oci8_raise(oci8_errhp, rv, NULL);
+
+        /* Workaround when using Oracle 10.2.0.4 or 11.1.0.6 client and
+         * variable-length character set (e.g. AL32UTF8).
+         *
+         * When the above mentioned condition, amt may be shorter. So
+         * amt is increaded until a nul character to know the actually
+         * read size.
+         */
+        while (amt < sizeof(buf) && buf[amt] != '\0') {
+            amt++;
+        }
+
         if (amt == 0)
             break;
         /* for fixed size charset, amt is the number of characters stored in buf. */
