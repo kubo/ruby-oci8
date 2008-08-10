@@ -22,7 +22,7 @@
    OraNumber#to_json is added for Rails.
 
 4. [dbi] fix a problem when using Oracle 8i and ruby-dbi.
-   (reported by Glauco MagnelliRemi Gagnon.)
+   (reported by Glauco Magnelli.)
 
 1.0.2:
 
