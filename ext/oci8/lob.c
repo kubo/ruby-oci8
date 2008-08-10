@@ -101,7 +101,7 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
   ub1 csfrm;
   ub4 amt;
   sword rv;
-  char buf[4096];
+  char buf[8192]; /* 8192 is chunk size in a platform. */
 #ifndef OCI8_USE_CALLBACK_LOB_READ
   size_t buf_size_in_char;
 #endif
@@ -137,9 +137,22 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
    */
   buf_size_in_char = sizeof(buf) / h->u.lob_locator.char_width;
   do {
+    /* initialize buf in zeros everytime to check a nul characters. */
+    memset(buf, 0, sizeof(buf));
     rv = OCILobRead(svch->hp, h->errhp, h->hp, &amt, offset, buf, sizeof(buf), NULL, NULL, csid, csfrm);
     if (rv != OCI_SUCCESS && rv != OCI_NEED_DATA)
       oci8_raise(h->errhp, rv, NULL);
+
+    /* Workaround when using Oracle 10.2.0.4 or 11.1.0.6 client and
+     * variable-length character set (e.g. AL32UTF8).
+     *
+     * When the above mentioned condition, amt may be shorter. So
+     * amt is increaded until a nul character to know the actually
+     * read size.
+     */
+    while (amt < sizeof(buf) && buf[amt] != '\0') {
+      amt++;
+    }
     if (amt == 0)
       break;
     /* for fixed size charset, amt is the number of characters stored in buf. */

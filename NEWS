@@ -1,3 +1,29 @@
+1.0.3:
+
+1. add workaround code for a losing character problem when reading CLOB.
+   (reported by Efren Yevale and Thomas Witt and fixed with Thomas Witt's help.)
+
+   The problem is happened at the following condition.
+
+   (a) Oracle client version is 10.2.0.4 or 11.1.0.6.
+       It doesn't happend when using 10.2.0.3 client or lower.
+       It doesn't depend on Oracle server version.
+
+   (b) The character set is a variable-length one.
+       e.g. AL32UTF8
+
+2. fix a problem when reading BLOB/CLOB over 1GB.
+   (reported by Jonathan Hadders.)
+
+3. [rails] fix a problem that OraNumber#to_json returns "{}" when using Rails.
+   (reported by Alex Moore)
+
+   Rails add to_json method. But it doesn't know what OraNumber is.
+   OraNumber#to_json is added for Rails.
+
+4. [dbi] fix a problem when using Oracle 8i and ruby-dbi.
+   (reported by Glauco MagnelliRemi Gagnon.)
+
 1.0.2:
 
 1. add a gemspec file.
