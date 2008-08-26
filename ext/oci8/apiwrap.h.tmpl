@@ -18,7 +18,7 @@ funcs.each do |f|
 %>
 /*
  * <%=f.name%>
- *   version: <%=f.version%>
+ *   version: <%=f.version_str%>
  *   remote:  true
  */
 <%=f.ret%> oci8_<%=f.name%>_nb(oci8_svcctx_t *svcctx, <%=f.args.collect {|arg| arg.dcl}.join(', ')%>, const char *file, int line);
@@ -27,7 +27,7 @@ funcs.each do |f|
 #if defined RUNTIME_API_CHECK
 extern int oci8_have_<%=f.name%>_nb;
 #define have_<%=f.name%>_nb oci8_have_<%=f.name%>_nb
-#elif ORACLE_CLIENT_VERSION >= <%=f.version%>
+#elif ORACLE_CLIENT_VERSION >= <%=f.version_num%>
 #define have_<%=f.name%>_nb (1)
 #else
 #define have_<%=f.name%>_nb (0)
@@ -37,7 +37,7 @@ extern int oci8_have_<%=f.name%>_nb;
 %>
 /*
  * <%=f.name%>
- *   version: <%=f.version%>
+ *   version: <%=f.version_str%>
  *   remote:  false
  */
 <%=f.ret%> oci8_<%=f.name%>(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>, const char *file, int line);
@@ -49,7 +49,7 @@ extern int oci8_have_<%=f.name%>_nb;
 #if defined RUNTIME_API_CHECK
 extern int oci8_have_<%=f.name%>;
 #define have_<%=f.name%> oci8_have_<%=f.name%>
-#elif ORACLE_CLIENT_VERSION >= <%=f.version%>
+#elif ORACLE_CLIENT_VERSION >= <%=f.version_num%>
 #define have_<%=f.name%> (1)
 #else
 #define have_<%=f.name%> (0)

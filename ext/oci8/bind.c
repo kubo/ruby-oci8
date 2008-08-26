@@ -471,7 +471,7 @@ void Init_oci8_bind(VALUE klass)
     oci8_define_bind_class("LongRaw", &bind_long_raw_class);
     oci8_define_bind_class("Fixnum", &bind_fixnum_class);
     oci8_define_bind_class("Float", &bind_float_class);
-    if (oracle_client_version >= 1000) {
+    if (oracle_client_version >= ORAVER_10_1) {
         oci8_define_bind_class("BinaryDouble", &bind_binary_double_class);
     }
 }

@@ -27,9 +27,21 @@ extern "C"
 #ifdef HAVE_XMLOTN_H
 #include "xmlotn.h"
 #endif
+
+#define ORAVERNUM(major, minor, update, patch, port_update) \
+    (((major) << 24) | ((minor) << 20) | ((update) << 12) | ((patch) << 8) | (port_update))
+
+#define ORAVER_8_0 ORAVERNUM(8, 0, 0, 0, 0)
+#define ORAVER_8_1 ORAVERNUM(8, 1, 0, 0, 0)
+#define ORAVER_9_1 ORAVERNUM(9, 1, 0, 0, 0)
+#define ORAVER_9_2 ORAVERNUM(9, 1, 0, 0, 0)
+#define ORAVER_10_1 ORAVERNUM(10, 1, 0, 0, 0)
+#define ORAVER_10_2 ORAVERNUM(10, 2, 0, 0, 0)
+#define ORAVER_11_1 ORAVERNUM(11, 1, 0, 0, 0)
+
 #include "extconf.h"
 
-#if ACTUAL_ORACLE_CLIENT_VERSION < 1020
+#if ACTUAL_ORACLE_CLIENT_VERSION < ORAVER_10_2
 typedef struct OCIAdmin OCIAdmin;
 #endif
 

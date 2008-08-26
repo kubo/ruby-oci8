@@ -16,6 +16,8 @@ end
 class FuncDef
   attr_reader :name
   attr_reader :version
+  attr_reader :version_num
+  attr_reader :version_str
   attr_reader :remote
   attr_reader :args
   attr_reader :ret
@@ -29,7 +31,21 @@ class FuncDef
       @name = key
       @remote = false
     end
-    @version = val[:version]
+    ver = val[:version]
+    ver_major = (ver / 100)
+    ver_minor = (ver / 10) % 10
+    ver_update = ver % 10
+    @version = ((ver_major << 24) | (ver_minor << 20) | (ver_update << 12))
+    case @version
+    when 0x08000000; @version_num = 'ORAVER_8_0'
+    when 0x08100000; @version_num = 'ORAVER_8_1'
+    when 0x09100000; @version_num = 'ORAVER_9_1'
+    when 0x09200000; @version_num = 'ORAVER_9_2'
+    when 0x0a100000; @version_num = 'ORAVER_10_1'
+    when 0x0a200000; @version_num = 'ORAVER_10_2'
+    when 0x0b100000; @version_num = 'ORAVER_11_1'
+    end
+    @version_str = "#{ver_major}.#{ver_minor}.#{ver_update}"
     @ret = val[:ret] || 'sword'
     @args = val[:args].collect do |arg|
       ArgDef.new(arg)

@@ -15,7 +15,7 @@ funcs.each do |f|
 typedef <%=f.ret%> (*oci8_<%=f.name%>_func_t)(<%=f.args.collect {|arg| arg.dcl}.join(', ')%>);
 static oci8_<%=f.name%>_func_t oci8_<%=f.name%>_func;
 #define <%=f.name%> oci8_<%=f.name%>_func
-#elif ORACLE_CLIENT_VERSION < <%=f.version%>
+#elif ORACLE_CLIENT_VERSION < <%=f.version_num%>
 #define <%=f.name%>(<%=f.args.collect {|a| a.name}.join(', ')%>) (0)
 #endif
 <%
@@ -46,7 +46,7 @@ typedef struct {
 int oci8_have_<%=f.name%>_nb;
 #endif
 
-#if defined RUNTIME_API_CHECK || ORACLE_CLIENT_VERSION >= <%=f.version%>
+#if defined RUNTIME_API_CHECK || ORACLE_CLIENT_VERSION >= <%=f.version_num%>
 static VALUE oci8_<%=f.name%>_cb(void *user_data)
 {
     oci8_<%=f.name%>_data_t *data = (oci8_<%=f.name%>_data_t *)user_data;
@@ -128,7 +128,8 @@ end # funcs.each
 ## RUNTIME_API_CHECK
 ##
 ######################################################################
-current_version = funcs[0].version
+current_version_num = funcs[0].version_num
+current_version_str = funcs[0].version_str
 have_vars = []
 %>
 #if defined RUNTIME_API_CHECK
@@ -139,19 +140,20 @@ void Init_oci8_apiwrap(void)
     oracle_client_version = 0;
 <%
 funcs.each do |f|
-  if current_version != f.version
+  if current_version_num != f.version_num
     unless have_vars.empty?
-%>    /* pass Oracle <%=current_version.to_s.gsub(/(.)(.)$/, '.\1.\2')%> API */
-    oracle_client_version = <%=current_version%>;
+%>    /* pass Oracle <%=current_version_str%> API */
+    oracle_client_version = <%=current_version_num%>;
 <%    have_vars.each do |v|
 %>    <%=v%> = 1;
 <%    end
     end
     have_vars = []
-    current_version = f.version
+    current_version_num = f.version_num
+    current_version_str = f.version_str
 %>
     /*
-     * checking Oracle <%=f.version.to_s.gsub(/(.)(.)$/, '.\1.\2')%> API
+     * checking Oracle <%=f.version_str%> API
      */
 <%
   end
@@ -161,8 +163,8 @@ funcs.each do |f|
         return;
 <%
 end
-%>    /* pass Oracle <%=current_version.to_s.gsub(/(.)(.)$/, '.\1.\2')%> API */
-    oracle_client_version = <%=current_version%>;
+%>    /* pass Oracle <%=current_version_str%> API */
+    oracle_client_version = <%=current_version_num%>;
 <%    have_vars.each do |v|
 %>    <%=v%> = 1;
 <%    end

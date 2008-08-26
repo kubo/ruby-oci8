@@ -95,7 +95,7 @@ class OCI8
         ocidate_to_datetime(ary)
       end
 
-      if OCI8.oracle_client_version >= 900
+      if OCI8.oracle_client_version >= ORAVER_9_1
 
         def ocitimestamp_to_datetime(ary)
           year, month, day, hour, minute, sec, fsec, tz_hour, tz_min = ary
@@ -165,7 +165,7 @@ class OCI8
       end
     end
 
-    if OCI8.oracle_client_version >= 900
+    if OCI8.oracle_client_version >= ORAVER_9_1
       class DateTimeViaOCITimestamp < OCI8::BindType::OCITimestamp
         include OCI8::BindType::Util
 
@@ -275,7 +275,7 @@ class OCI8
     #   cursor.close
     #
     class DateTime
-      if OCI8.oracle_client_version >= 900
+      if OCI8.oracle_client_version >= ORAVER_9_1
         def self.create(con, val, param, max_array_size)
           DateTimeViaOCITimestamp.new(con, val, param, max_array_size)
         end
@@ -287,7 +287,7 @@ class OCI8
     end
 
     class Time
-      if OCI8.oracle_client_version >= 900
+      if OCI8.oracle_client_version >= ORAVER_9_1
         def self.create(con, val, param, max_array_size)
           TimeViaOCITimestamp.new(con, val, param, max_array_size)
         end
@@ -298,7 +298,7 @@ class OCI8
       end
     end
 
-    if OCI8.oracle_client_version >= 900
+    if OCI8.oracle_client_version >= ORAVER_9_1
       #--
       # OCI8::BindType::IntervalYM
       #++

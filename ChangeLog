@@ -1,3 +1,13 @@
+2008-08-26  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.c.tmpl, ext/oci8/apiwrap.h.tmpl, ext/oci8/apiwrap.rb
+	  ext/oci8/apiwrap.yml, ext/oci8/bind.c, ext/oci8/extconf.rb,
+	  ext/oci8/oci8.h, ext/oci8/ocidatetime.c, ext/oci8/xmldb.c,
+	  lib/oci8.rb.in, lib/oci8/datetime.rb, lib/oci8/metadata.rb,
+	  lib/oci8/oci8.rb: change oracle version number format.
+	    For example Oracle 9.1.0's version number was represented as 910
+	    in ruby-oci8. Now it is 0x09000000. This format is same with
+	    that of the last argument of OCIServerRelease().
+
 2008-08-10  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c: add workaround code for a losing character problem
 	    when reading CLOB. The problem is happened at the following condition.

@@ -33,16 +33,22 @@ $CFLAGS += oraconf.cflags
 saved_libs = $libs
 $libs += oraconf.libs
 
-oci_actual_client_version = 800
+oci_actual_client_version = 0x08000000
 funcs = {}
 YAML.load(open(File.dirname(__FILE__) + '/apiwrap.yml')).each do |key, val|
   key = key[0..-4] if key[-3..-1] == '_nb'
-  funcs[val[:version]] ||= []
-  funcs[val[:version]] << key
+  ver = val[:version]
+  ver_major = (ver / 100)
+  ver_minor = (ver / 10) % 10
+  ver_update = ver % 10
+  ver = ((ver_major << 24) | (ver_minor << 20) | (ver_update << 12))
+  funcs[ver] ||= []
+  funcs[ver] << key
 end
 funcs.keys.sort.each do |version|
-  next if version == 800
-  puts "checking for Oracle #{version.to_s.gsub(/(.)(.)$/, '.\1.\2')} API - start"
+  next if version == 0x08000000
+  verstr = format('%d.%d.%d', ((version >> 24) & 0xFF), ((version >> 20) & 0xF), ((version >> 12) & 0xFF))
+  puts "checking for Oracle #{verstr} API - start"
   result = catch :result do
     funcs[version].sort.each do |func|
       unless have_func(func)
@@ -52,17 +58,17 @@ funcs.keys.sort.each do |version|
     oci_actual_client_version = version
     "pass"
   end
-  puts "checking for Oracle #{version.to_s.gsub(/(.)(.)$/, '.\1.\2')} API - #{result}"
+  puts "checking for Oracle #{verstr} API - #{result}"
   break if result == 'fail'
 end
-$defs << "-DACTUAL_ORACLE_CLIENT_VERSION=#{oci_actual_client_version}"
+$defs << "-DACTUAL_ORACLE_CLIENT_VERSION=#{format('0x%08x', oci_actual_client_version)}"
 
 if with_config('oracle-version')
   oci_client_version = with_config('oracle-version').to_i
 else
   oci_client_version = oci_actual_client_version
 end
-$defs << "-DORACLE_CLIENT_VERSION=#{oci_client_version}"
+$defs << "-DORACLE_CLIENT_VERSION=#{format('0x%08x', oci_client_version)}"
 
 if with_config('runtime-check')
   $defs << "-DRUNTIME_API_CHECK=1"

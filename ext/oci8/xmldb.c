@@ -1,7 +1,7 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 #include "oci8.h"
 
-#if 0 /* disabled for a while. */ && (ORACLE_CLIENT_VERSION >= 1000 || defined RUNTIME_API_CHECK)
+#if 0 /* disabled for a while. */ && (ORACLE_CLIENT_VERSION >= ORAVER_10_1 || defined RUNTIME_API_CHECK)
 
 #ifndef HAVE_XMLOTN_H
 /* declarations in xmlproc.h of Oracle XML Development Kit */
