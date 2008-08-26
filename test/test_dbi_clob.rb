@@ -9,13 +9,14 @@ class TestDbiCLob < Test::Unit::TestCase
   end
 
   def test_insert
-    @dbh.do("DELETE FROM test_clob WHERE filename = :1", $lobfile)
+    filename = File.basename($lobfile)
+    @dbh.do("DELETE FROM test_clob WHERE filename = :1", filename)
 
     # insert an empty clob and get the rowid.
-    rowid = @dbh.execute("INSERT INTO test_clob(filename, content) VALUES (:1, EMPTY_CLOB())", $lobfile) do |sth|
+    rowid = @dbh.execute("INSERT INTO test_clob(filename, content) VALUES (:1, EMPTY_CLOB())", filename) do |sth|
       sth.func(:rowid)
     end
-    lob = @dbh.select_one("SELECT content FROM test_clob WHERE filename = :1 FOR UPDATE", $lobfile)[0]
+    lob = @dbh.select_one("SELECT content FROM test_clob WHERE filename = :1 FOR UPDATE", filename)[0]
     begin
       open($lobfile) do |f|
         while f.gets()
@@ -28,8 +29,9 @@ class TestDbiCLob < Test::Unit::TestCase
   end
 
   def test_read
+    filename = File.basename($lobfile)
     test_insert() # first insert data.
-    lob = @dbh.select_one("SELECT content FROM test_clob WHERE filename = :1 FOR UPDATE", $lobfile)[0]
+    lob = @dbh.select_one("SELECT content FROM test_clob WHERE filename = :1 FOR UPDATE", filename)[0]
     begin
       open($lobfile) do |f|
         while buf = lob.read($lobreadnum)

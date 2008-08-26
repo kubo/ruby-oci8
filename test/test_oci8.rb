@@ -225,42 +225,44 @@ EOS
     drop_table('test_table')
   end
 
-  if $oracle_version >= 1000
+  def test_binary_float
+    return if $oracle_version < OCI8::ORAVER_10_1
+
     # Oracle 10g or upper
-    def test_binary_float
-      cursor = @conn.parse("select CAST(:1 AS BINARY_FLOAT), CAST(:2 AS BINARY_DOUBLE) from dual")
-      bind_val = -1.0
-      cursor.bind_param(1, 10.0, :binary_double)
-      cursor.bind_param(2, nil, :binary_double)
-      while bind_val < 10.0
-        cursor[2] = bind_val
-        cursor.exec
-        rv = cursor.fetch
-        assert_equal(10.0, rv[0])
-        assert_equal(bind_val, rv[1])
-        bind_val += 1.234
-      end
-      [-1.0/0.0, # -Infinite
-       +1.0/0.0, # +Infinite
-       0.0/0.0   # NaN
-      ].each do |num|
-        cursor[1] = num
-        cursor[2] = num
-        cursor.exec
-        rv = cursor.fetch
-        if num.nan?
-          assert(rv[0].nan?)
-          assert(rv[1].nan?)
-        else
-          assert_equal(num, rv[0])
-          assert_equal(num, rv[1])
-        end
-      end
-      cursor.close
+    cursor = @conn.parse("select CAST(:1 AS BINARY_FLOAT), CAST(:2 AS BINARY_DOUBLE) from dual")
+    bind_val = -1.0
+    cursor.bind_param(1, 10.0, :binary_double)
+    cursor.bind_param(2, nil, :binary_double)
+    while bind_val < 10.0
+      cursor[2] = bind_val
+      cursor.exec
+      rv = cursor.fetch
+      assert_equal(10.0, rv[0])
+      assert_equal(bind_val, rv[1])
+      bind_val += 1.234
     end
+    [-1.0/0.0, # -Infinite
+     +1.0/0.0, # +Infinite
+     0.0/0.0   # NaN
+    ].each do |num|
+      cursor[1] = num
+      cursor[2] = num
+      cursor.exec
+      rv = cursor.fetch
+      if num.nan?
+        assert(rv[0].nan?)
+        assert(rv[1].nan?)
+      else
+        assert_equal(num, rv[0])
+        assert_equal(num, rv[1])
+      end
+    end
+    cursor.close
   end
 
   def test_clob_nclob_and_blob
+    return if OCI8::oracle_client_version < OCI8::ORAVER_8_1
+
     drop_table('test_table')
     sql = <<-EOS
 CREATE TABLE test_table (id number(5), C CLOB, NC NCLOB, B BLOB)

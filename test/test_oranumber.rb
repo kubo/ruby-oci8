@@ -382,7 +382,7 @@ class TestOraNumber < Test::Unit::TestCase
 
   # onum.round_prec(digits) -> ocinumber
   def test_round_prec
-    if OCI8::oracle_client_version >= 810
+    if OCI8::oracle_client_version >= OCI8::ORAVER_8_1
       # Oracle 8.1 client or upper
       compare_with_float2(LARGE_RANGE_VALUES, [1, 2, 3, 5, 10, 20],
                           Proc.new {|x, y|
@@ -393,7 +393,7 @@ class TestOraNumber < Test::Unit::TestCase
                           Proc.new {|x, y| x.round_prec(y)})
     else
       # Oracle 8.0 client
-      assert_raise RuntimeError do
+      assert_raise NoMethodError do
         OraNumber.new(1).round_prec(1)
       end
     end
@@ -401,14 +401,14 @@ class TestOraNumber < Test::Unit::TestCase
 
   # onum.shift(fixnum) -> ocinumber
   def test_shift
-    if OCI8::oracle_client_version >= 810
+    if OCI8::oracle_client_version >= OCI8::ORAVER_8_1
       # Oracle 8.1 client or upper
       compare_with_float2(LARGE_RANGE_VALUES, [-5, -4, -3, -1, 0, 1, 2, 3, 4, 5],
                           Proc.new {|x, y| x * (10 ** y)},
                           Proc.new {|x, y| x.shift(y)})
     else
       # Oracle 8.0 client
-      assert_raise RuntimeError do
+      assert_raise NoMethodError do
         OraNumber.new(1).shift(1)
       end
     end

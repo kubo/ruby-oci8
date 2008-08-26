@@ -58,7 +58,7 @@ OCIDate *oci8_set_ocidate(OCIDate *od, VALUE val)
     if (minute < 0 || 59 < minute) {
         rb_raise(rb_eRuntimeError, "out of minute range: %ld", minute);
     }
-    od->OCIDateTime.OCITimeHH = (ub1)minute;
+    od->OCIDateTime.OCITimeMI = (ub1)minute;
     /* second */
     second = NUM2LONG(RARRAY_PTR(val)[5]);
     if (second < 0 || 59 < second) {

@@ -279,7 +279,7 @@ class OCI8
                           Proc.new do |p|
                             if p.charset_form == :nchar
                               "NVARCHAR2(#{p.char_size})"
-                            elsif (p.respond_to? :char_used?) && (p.char_used?)
+                            elsif p.char_used?
                               "VARCHAR2(#{p.char_size} CHAR)"
                             else
                               "VARCHAR2(#{p.data_size})"
@@ -329,7 +329,7 @@ class OCI8
                            Proc.new do |p|
                              if p.charset_form == :nchar
                                "NCHAR(#{p.char_size})"
-                             elsif (p.respond_to? :char_used?) && (p.char_used?)
+                             elsif p.char_used?
                                "CHAR(#{p.char_size} CHAR)"
                              else
                                "CHAR(#{p.data_size})"
@@ -1349,6 +1349,10 @@ class OCI8
         # (unavailable on Oracle 8.1 or lower)
         def char_size
           __ub2(OCI_ATTR_CHAR_SIZE)
+        end
+      else
+        def char_used?
+          false
         end
       end
 

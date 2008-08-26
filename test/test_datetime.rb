@@ -71,6 +71,8 @@ EOS
   end
 
   def test_timestamp_select
+    return if $oracle_version < OCI8::ORAVER_9_1
+
     ['2005-12-31 23:59:59.999999000',
      '2006-01-01 00:00:00.000000000'].each do |date|
       @conn.exec(<<-EOS) do |row|
@@ -82,6 +84,8 @@ EOS
   end
 
   def test_timestamp_out_bind
+    return if $oracle_version < OCI8::ORAVER_9_1
+
     cursor = @conn.parse(<<-EOS)
 BEGIN
   :out := TO_TIMESTAMP(:in, 'YYYY-MM-DD HH24:MI:SS.FF');
@@ -99,6 +103,8 @@ EOS
   end
 
   def test_timestamp_in_bind
+    return if $oracle_version < OCI8::ORAVER_9_1
+
     cursor = @conn.parse(<<-EOS)
 BEGIN
   :out := TO_CHAR(:in, 'YYYY-MM-DD HH24:MI:SS.FF');
@@ -116,6 +122,8 @@ EOS
   end
 
   def test_timestamp_tz_select
+    return if $oracle_version < OCI8::ORAVER_9_1
+
     ['2005-12-31 23:59:59.999999000 +08:30',
      '2006-01-01 00:00:00.000000000 -08:30'].each do |date|
       @conn.exec(<<-EOS) do |row|
@@ -127,6 +135,8 @@ EOS
   end
 
   def test_timestamp_tz_out_bind
+    return if $oracle_version < OCI8::ORAVER_9_1
+
     cursor = @conn.parse(<<-EOS)
 BEGIN
   :out := TO_TIMESTAMP_TZ(:in, 'YYYY-MM-DD HH24:MI:SS.FF TZH:TZM');
@@ -144,6 +154,8 @@ EOS
   end
 
   def test_timestamp_tz_in_bind
+    return if $oracle_version < OCI8::ORAVER_9_1
+
     cursor = @conn.parse(<<-EOS)
 BEGIN
   :out := TO_CHAR(:in, 'YYYY-MM-DD HH24:MI:SS.FF TZH:TZM');
@@ -215,6 +227,8 @@ EOS
   end
 
   def test_interval_ym_select
+    return if $oracle_version < OCI8::ORAVER_9_1
+
     [['2006-01-01', '2004-03-01'],
      ['2006-01-01', '2005-03-01'],
      ['2006-01-01', '2006-03-01'],
@@ -231,6 +245,8 @@ EOS
   end
 
   def test_interval_ym_out_bind
+    return if $oracle_version < OCI8::ORAVER_9_1
+
     cursor = @conn.parse(<<-EOS)
 DECLARE
   ts1 TIMESTAMP;
@@ -258,6 +274,8 @@ EOS
   end
 
   def test_interval_ym_in_bind
+    return if $oracle_version < OCI8::ORAVER_9_1
+
     cursor = @conn.parse(<<-EOS)
 DECLARE
   ts1 TIMESTAMP;
@@ -283,6 +301,8 @@ EOS
   end
 
   def test_interval_ds_select
+    return if $oracle_version < OCI8::ORAVER_9_1
+
     [['2006-01-01', '2004-03-01'],
      ['2006-01-01', '2005-03-01'],
      ['2006-01-01', '2006-03-01'],
@@ -309,6 +329,8 @@ EOS
   end
 
   def test_interval_ds_out_bind
+    return if $oracle_version < OCI8::ORAVER_9_1
+
     cursor = @conn.parse(<<-EOS)
 DECLARE
   ts1 TIMESTAMP;
@@ -346,6 +368,8 @@ EOS
   end
 
   def test_interval_ds_in_bind
+    return if $oracle_version < OCI8::ORAVER_9_1
+
     cursor = @conn.parse(<<-EOS)
 DECLARE
   ts1 TIMESTAMP;

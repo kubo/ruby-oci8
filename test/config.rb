@@ -25,26 +25,20 @@ $lobreadnum = 256 # counts in charactors
 # $oracle_version: lower value of $oracle_server_version and $oracle_client_version.
 conn = OCI8.new($dbuser, $dbpass, $dbname)
 conn.exec('select value from database_compatible_level') do |row|
-  ver = row[0].split('.')
-  $oracle_server_version = (ver[0] + ver[1] + ver[2]).to_i
+  ver = row[0].split('.').collect do |v| v.to_i; end
+  $oracle_server_version = (ver[0] << 24) + (ver[1] << 20) + (ver[2] << 12)
 end
 conn.logoff
 
-$oracle_client_version = OCI8.oracle_client_version
-if $oracle_server_version < $oracle_client_version
+if $oracle_server_version < OCI8.oracle_client_version
   $oracle_version = $oracle_server_version
 else
-  $oracle_version = $oracle_client_version
+  $oracle_version = OCI8.oracle_client_version
 end
 
-if $oracle_version <= 805
-  $describe_need_object_mode = true
-  $test_clob = false
-elsif $oracle_version < 810
-  $describe_need_object_mode = false
+if $oracle_version < OCI8::ORAVER_8_1
   $test_clob = false
 else
-  $describe_need_object_mode = false
   $test_clob = true
 end
 
@@ -83,7 +77,7 @@ module Test
       end
 
       def drop_table(table_name)
-        if $oracle_server_version < 1000
+        if $oracle_server_version < OCI8::ORAVER_10_1
           # Oracle 8 - 9i
           sql = "DROP TABLE #{table_name}"
         else

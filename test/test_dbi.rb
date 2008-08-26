@@ -168,7 +168,7 @@ EOS
     # data_size factor for nchar charset_form.
     sth = @dbh.execute("select CAST('1' AS NCHAR(1)) from dual")
     cfrm = sth.column_info[0]['precision']
-    if $oracle_version >=  900
+    if $oracle_version >=  OCI8::ORAVER_9_1
       # data_size factor for char semantics.
       sth = @dbh.execute("select CAST('1' AS CHAR(1 char)) from dual")
       csem = sth.column_info[0]['precision']

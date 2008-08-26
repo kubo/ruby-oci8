@@ -75,7 +75,7 @@ static VALUE metadata_get_ub1(VALUE self, VALUE idx)
     ub1 value = 0;
     ub4 size = sizeof(value);
 
-    oci_lc(OCIAttrGet(base->hp.ptr, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
+    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &value, &size, FIX2INT(idx), oci8_errhp));
     if (size != 1) {
         rb_raise(rb_eRuntimeError, "Invalid attribute size. expect 1, but %d", size);
     }
@@ -88,7 +88,7 @@ static VALUE metadata_get_ub2(VALUE self, VALUE idx)
     ub2 value = 0;
     ub4 size = sizeof(value);
 
-    oci_lc(OCIAttrGet(base->hp.ptr, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
+    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &value, &size, FIX2INT(idx), oci8_errhp));
     if (size != 2) {
         rb_raise(rb_eRuntimeError, "Invalid attribute size. expect 2, but %d", size);
     }
@@ -101,7 +101,7 @@ static VALUE metadata_get_ub2_nc(VALUE self, VALUE idx)
     oci8_base_t *base = DATA_PTR(self);
     ub2 value = 0;
 
-    oci_lc(OCIAttrGet(base->hp.ptr, OCI_DTYPE_PARAM, &value, 0, FIX2INT(idx), oci8_errhp));
+    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &value, 0, FIX2INT(idx), oci8_errhp));
     return INT2FIX(value);
 }
 
@@ -111,7 +111,7 @@ static VALUE metadata_get_ub4(VALUE self, VALUE idx)
     ub4 value = 0;
     ub4 size = sizeof(value);
 
-    oci_lc(OCIAttrGet(base->hp.ptr, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
+    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &value, &size, FIX2INT(idx), oci8_errhp));
     if (size != 4) {
         rb_raise(rb_eRuntimeError, "Invalid attribute size. expect 4, but %d", size);
     }
@@ -128,7 +128,7 @@ static VALUE metadata_get_sb1(VALUE self, VALUE idx)
     sb1 value = 0;
     ub4 size = sizeof(value);
 
-    oci_lc(OCIAttrGet(base->hp.ptr, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
+    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &value, &size, FIX2INT(idx), oci8_errhp));
     if (size != 1) {
         rb_raise(rb_eRuntimeError, "Invalid attribute size. expect 1, but %d", size);
     }
@@ -141,7 +141,7 @@ static VALUE metadata_get_sb2(VALUE self, VALUE idx)
     sb2 value = 0;
     ub4 size = sizeof(value);
 
-    oci_lc(OCIAttrGet(base->hp.ptr, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
+    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &value, &size, FIX2INT(idx), oci8_errhp));
     if (size != 2) {
         rb_raise(rb_eRuntimeError, "Invalid attribute size. expect 2, but %d", size);
     }
@@ -154,7 +154,7 @@ static VALUE metadata_get_sb4(VALUE self, VALUE idx)
     sb4 value = 0;
     ub4 size = sizeof(value);
 
-    oci_lc(OCIAttrGet(base->hp.ptr, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
+    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &value, &size, FIX2INT(idx), oci8_errhp));
     if (size != 4) {
         rb_raise(rb_eRuntimeError, "Invalid attribute size. expect 4, but %d", size);
     }
@@ -173,7 +173,7 @@ static VALUE metadata_get_text(VALUE self, VALUE idx)
     ub4 size;
 
     /* remote call sometimes? */
-    oci_lc(OCIAttrGet_nb(svcctx, md->base.hp.ptr, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
+    oci_lc(OCIAttrGet_nb(svcctx, md->base.hp.ptr, md->base.type, &value, &size, FIX2INT(idx), oci8_errhp));
     return rb_str_new(TO_CHARPTR(value), size);
 }
 
@@ -185,7 +185,7 @@ static VALUE metadata_get_oradate(VALUE self, VALUE idx)
     static VALUE cOraDate = Qnil;
     VALUE obj;
 
-    oci_lc(OCIAttrGet(base->hp.ptr, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
+    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &value, &size, FIX2INT(idx), oci8_errhp));
     if (size != 7) {
         rb_raise(rb_eRuntimeError, "Invalid attribute size. expect 7, but %d", size);
     }
@@ -203,7 +203,7 @@ static VALUE metadata_get_oraint(VALUE self, VALUE idx)
     ub4 size = 21;
     OCINumber on;
 
-    oci_lc(OCIAttrGet(base->hp.ptr, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
+    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &value, &size, FIX2INT(idx), oci8_errhp));
     if (size >= 22) {
         rb_raise(rb_eRuntimeError, "Invalid attribute size. expect less than 22, but %d", size);
     }
@@ -221,7 +221,7 @@ static VALUE metadata_get_param(VALUE self, VALUE idx)
     ub4 size = sizeof(value);
 
     /* remote call? */
-    oci_lc(OCIAttrGet_nb(svcctx, md->base.hp.ptr, OCI_DTYPE_PARAM, &value, &size, FIX2INT(idx), oci8_errhp));
+    oci_lc(OCIAttrGet_nb(svcctx, md->base.hp.ptr, md->base.type, &value, &size, FIX2INT(idx), oci8_errhp));
     if (size != sizeof(OCIParam *)) {
         rb_raise(rb_eRuntimeError, "Invalid attribute size. expect %d, but %d", (sb4)sizeof(OCIParam *), size);
     }
@@ -233,7 +233,7 @@ static VALUE metadata_get_param_at(VALUE self, VALUE idx)
     oci8_metadata_t *md = DATA_PTR(self);
     OCIParam *value;
 
-    oci_lc(OCIParamGet(md->base.hp.ptr, OCI_DTYPE_PARAM, oci8_errhp, (dvoid *)&value, FIX2INT(idx)));
+    oci_lc(OCIParamGet(md->base.hp.ptr, md->base.type, oci8_errhp, (dvoid *)&value, FIX2INT(idx)));
     return oci8_metadata_create(value, md->svc, self);
 }
 
@@ -298,7 +298,7 @@ static VALUE metadata_get_type_metadata(VALUE self, VALUE klass)
     OCIRef *ref = NULL;
 
     /* remote call */
-    oci_lc(OCIAttrGet_nb(svcctx, md->base.hp.ptr, OCI_DTYPE_PARAM, &ref, NULL, OCI_ATTR_REF_TDO, oci8_errhp));
+    oci_lc(OCIAttrGet_nb(svcctx, md->base.hp.ptr, md->base.type, &ref, NULL, OCI_ATTR_REF_TDO, oci8_errhp));
     return oci8_do_describe(md->svc, ref, 0, OCI_OTYPE_REF, klass, Qfalse);
 }
 
@@ -309,7 +309,7 @@ static VALUE metadata_get_tdo_id(VALUE self)
     OCIRef *tdo_ref = NULL;
     void *tdo;
 
-    oci_lc(OCIAttrGet_nb(svcctx, md->base.hp.ptr, OCI_DTYPE_PARAM, &tdo_ref, NULL, OCI_ATTR_REF_TDO, oci8_errhp));
+    oci_lc(OCIAttrGet_nb(svcctx, md->base.hp.ptr, md->base.type, &tdo_ref, NULL, OCI_ATTR_REF_TDO, oci8_errhp));
     if (tdo_ref == NULL)
         return Qnil;
     oci_lc(OCIObjectPin_nb(svcctx, oci8_envhp, oci8_errhp, tdo_ref, 0, OCI_PIN_ANY, OCI_DURATION_SESSION, OCI_LOCK_NONE, &tdo));

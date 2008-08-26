@@ -16,7 +16,7 @@ class TestMetadata < Test::Unit::TestCase
     # data_size factor for nchar charset_form.
     cursor = @conn.exec("select CAST('1' AS NCHAR(1)) from dual")
     cfrm = cursor.column_metadata[0].data_size
-    if $oracle_version >=  900
+    if $oracle_version >=  OCI8::ORAVER_9_1
       # data_size factor for char semantics.
       cursor = @conn.exec("select CAST('1' AS CHAR(1 char)) from dual")
       csem = cursor.column_metadata[0].data_size
@@ -163,7 +163,7 @@ EOS
       assert_equal(coldef[i][3], md.charset_form, "'#{coldef[i][1]}': charset_form")
       assert_equal(coldef[i][4], md.nullable?, "'#{coldef[i][1]}': nullable? ")
       # string type
-      if $oracle_version >=  900
+      if $oracle_version >= OCI8::ORA_VER_9_1
         assert_equal(coldef[i][5], md.char_used?, "'#{coldef[i][1]}': char_used? ")
         assert_equal(coldef[i][6], md.char_size, "'#{coldef[i][1]}': char_size")
       end
@@ -199,7 +199,7 @@ EOS
       assert_equal(coldef[i][3], md.charset_form, "'#{coldef[i][1]}': charset_form")
       assert_equal(coldef[i][4], md.nullable?, "'#{coldef[i][1]}': nullable? ")
       # string type
-      if $oracle_version >=  900
+      if $oracle_version >=  OCI8::ORA_VER_9_1
         assert_equal(coldef[i][5], md.char_used?, "'#{coldef[i][1]}': char_used? ")
         assert_equal(coldef[i][6], md.char_size, "'#{coldef[i][1]}': char_size")
       end

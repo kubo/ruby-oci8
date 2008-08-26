@@ -782,10 +782,6 @@ static VALUE onum_round_prec(VALUE self, VALUE ndigs)
 {
     OCINumber r;
 
-    if (!have_OCINumberPrec) {
-        rb_raise(rb_eNotImpError, "The Oracle client version is too lower to use %s#round_prec",
-                 rb_obj_classname(self));
-    }
     oci_lc(OCINumberPrec(oci8_errhp, _NUMBER(self), NUM2INT(ndigs), &r));
     return oci8_make_ocinumber(&r);
 }
@@ -951,10 +947,6 @@ static VALUE onum_shift(VALUE self, VALUE exp)
 {
     OCINumber result;
 
-    if (!have_OCINumberShift) {
-        rb_raise(rb_eNotImpError, "The Oracle client version is too lower to use %s#shift",
-                 rb_obj_classname(self));
-    }
     oci_lc(OCINumberShift(oci8_errhp, _NUMBER(self), NUM2INT(exp), &result));
     return oci8_make_ocinumber(&result);
 }
@@ -1187,7 +1179,9 @@ Init_oci_number(VALUE cOCI8)
     rb_define_method(cOCINumber, "ceil", onum_ceil, 0);
     rb_define_method(cOCINumber, "round", onum_round, -1);
     rb_define_method(cOCINumber, "truncate", onum_trunc, -1);
-    rb_define_method(cOCINumber, "round_prec", onum_round_prec, 1);
+    if (have_OCINumberPrec) {
+        rb_define_method(cOCINumber, "round_prec", onum_round_prec, 1);
+    }
 
     rb_define_method(cOCINumber, "to_s", onum_to_s, 0);
     rb_define_method(cOCINumber, "to_char", onum_to_char, -1);
@@ -1197,7 +1191,9 @@ Init_oci_number(VALUE cOCI8)
 
     rb_define_method(cOCINumber, "zero?", onum_zero_p, 0);
     rb_define_method(cOCINumber, "abs", onum_abs, 0);
-    rb_define_method(cOCINumber, "shift", onum_shift, 1);
+    if (have_OCINumberShift) {
+        rb_define_method(cOCINumber, "shift", onum_shift, 1);
+    }
 
     rb_define_method_nodoc(cOCINumber, "hash", onum_hash, 0);
     rb_define_method_nodoc(cOCINumber, "inspect", onum_inspect, 0);

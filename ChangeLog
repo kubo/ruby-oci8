@@ -1,4 +1,19 @@
 2008-08-26  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/metadata.c: fix bugs when trying to use already freed
+	    OCI8::Metadata::*.
+	* ext/oci8/ocidatetime.c: fix OCI8::BindType::OCIDate#set().
+	* ext/oci8/ocinumber.c: undef OraNumber#round_prec and OraNumber
+	    #shift when using Oracle 8.0.
+	* lib/oci8/datetime.rb, lib/oci8/metadata.rb: fix bugs when using
+	    Oracle 8.0.
+	* test/config.rb, test/test_dbi.rb, test/test_metadata.rb,
+	  test/test_oci8.rb, test/test_oranumber.rb: do same with the
+	    previous commit.
+	* test/test_datetime.rb: disable some test cases when Oracle 8.1
+	    or lower.
+	* test/test_dbi_clob.rb: fix when testing in a deep directory.
+
+2008-08-26  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.c.tmpl, ext/oci8/apiwrap.h.tmpl, ext/oci8/apiwrap.rb
 	  ext/oci8/apiwrap.yml, ext/oci8/bind.c, ext/oci8/extconf.rb,
 	  ext/oci8/oci8.h, ext/oci8/ocidatetime.c, ext/oci8/xmldb.c,

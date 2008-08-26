@@ -91,8 +91,8 @@ class OCI8
         begin
           ::Time.local(year, month, day, hour, minute, sec)
         rescue StandardError
+          ocidate_to_datetime(ary)
         end
-        ocidate_to_datetime(ary)
       end
 
       if OCI8.oracle_client_version >= ORAVER_9_1
