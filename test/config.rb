@@ -24,9 +24,14 @@ $lobreadnum = 256 # counts in charactors
 # $oracle_client_version: Oracle client library version for which oci8 is compiled.
 # $oracle_version: lower value of $oracle_server_version and $oracle_client_version.
 conn = OCI8.new($dbuser, $dbpass, $dbname)
-conn.exec('select value from database_compatible_level') do |row|
-  ver = row[0].split('.').collect do |v| v.to_i; end
-  $oracle_server_version = (ver[0] << 24) + (ver[1] << 20) + (ver[2] << 12)
+begin
+  conn.exec('select value from database_compatible_level') do |row|
+    ver = row[0].split('.').collect do |v| v.to_i; end
+    $oracle_server_version = (ver[0] << 24) + (ver[1] << 20) + (ver[2] << 12)
+  end
+rescue OCIError
+  raise if $!.code != 942 # ORA-00942: table or view does not exist
+  $oracle_server_version = OCI8::ORAVER_8_0
 end
 conn.logoff
 

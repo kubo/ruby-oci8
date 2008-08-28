@@ -595,13 +595,6 @@ OCINumberSetZero:
             - OCINumber *num
 
 # round trip: 0
-OCINumberSign:
-  :version: 800
-  :args:    - OCIError *err
-            - const OCINumber *number
-            - sword *result
-
-# round trip: 0
 OCINumberSin:
   :version: 800
   :args:    - OCIError *err
@@ -989,6 +982,31 @@ OCINumberShift:
             - const OCINumber *number
             - const sword nDig
             - OCINumber *result
+
+# round trip: 0
+OCINumberSign:
+  :version: 810
+  :args:    - OCIError *err
+            - const OCINumber *number
+            - sword *result
+  :code_if_not_found: |
+    /* pseude code
+     *   number <=> 0
+     */
+    OCINumber zero;
+    sword rv;
+    sword cmp;
+    OCINumberSetZero(err, &zero);
+    rv = oci8_OCINumberCmp(err, number, &zero, &cmp, file, line);
+    if (rv != OCI_SUCCESS)
+        return rv;
+    if (cmp > 0)
+        *result = 1;
+    else if (cmp < 0)
+        *result = -1;
+    else
+        *result = 0;
+    return OCI_SUCCESS;
 
 # round trip: 0
 OCIReset:

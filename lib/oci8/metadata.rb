@@ -1654,8 +1654,14 @@ class OCI8
 
       ## Table 6-15 List Attributes
 
-      def ltype
-        __ub2(OCI_ATTR_LTYPE)
+      if OCI8::oracle_client_version < OCI8::ORAVER_8_1
+        def ltype
+          raise "This feature is unavailable on Oracle 8.0"
+        end
+      else
+        def ltype
+          __ub2(OCI_ATTR_LTYPE)
+        end
       end
 
       # convert to array

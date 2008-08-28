@@ -1,3 +1,13 @@
+2008-08-28  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml: OCINumberSign is unavailable on Oracle 8.
+	* lib/DBD/OCI8/OCI8.rb: A data dictionary all_constraints doesn't have
+	    index_name column on Oracle 8i or lower. Rewrite
+	    DBI::DBD::OCI8::Database#column by using all_cons_columns.
+	* lib/oci8/metadata.rb: raise an error when using 
+	* test/config.rb: Oracle 8 desn't have database_compatible_level data
+	    dictionary.
+	* test/test_metadata.rb: fix test codes for Oracle 8i or lower.
+
 2008-08-26  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/metadata.c: fix bugs when trying to use already freed
 	    OCI8::Metadata::*.
