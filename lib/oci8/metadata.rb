@@ -1345,8 +1345,6 @@ class OCI8
         # returns the column character length which is the number of
         # characters allowed in the column. It is the counterpart of
         # OCI8::Metadata::Column#data_size which gets the byte length.
-        #
-        # (unavailable on Oracle 8.1 or lower)
         def char_size
           __ub2(OCI_ATTR_CHAR_SIZE)
         end
@@ -1354,11 +1352,17 @@ class OCI8
         def char_used?
           false
         end
+
+        def char_size
+          data_size
+        end
       end
 
       # The maximum size of the column. This length is
-      # returned in bytes and not characters for strings and raws. It
-      # returns 22 for NUMBERs.
+      # returned in bytes and not characters for strings and raws.
+      # This returns character length multiplied by NLS ratio for
+      # character-length semantics columns when using Oracle 9i
+      # or upper.
       def data_size
         __ub2_nc(OCI_ATTR_DATA_SIZE)
       end

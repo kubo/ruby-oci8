@@ -102,13 +102,28 @@ EOS
     sth = @dbh.prepare("INSERT INTO test_table VALUES (:C, :V, :N, :D1, :D2, :D3, :D4, :INT, :BIGNUM)")
     1.upto(10) do |i|
       if i == 1
-	dt = nil
-        v = ''
+        if OCI8::oracle_client_version >= OCI8::ORAVER_9_1
+          dt = nil
+          v = ''
+          sth.execute(format("%10d", i * 10), v, i, dt, dt, dt, dt, i, i)
+        else
+          # explicitly bind nil with datatype to avoid ORA-01475 when using Oracle 8i.
+          sth.bind_param(1, format("%10d", i * 10))
+          sth.bind_param(2, '')
+          sth.bind_param(3, i)
+          sth.bind_param(4, nil, {'type' => OraDate})
+          sth.bind_param(5, nil, {'type' => OraDate})
+          sth.bind_param(6, nil, {'type' => OraDate})
+          sth.bind_param(7, nil, {'type' => OraDate})
+          sth.bind_param(8, i)
+          sth.bind_param(9, i)
+          sth.execute
+        end
       else
-	dt = OraDate.new(2000 + i, 8, 3, 23, 59, 59)
+        dt = OraDate.new(2000 + i, 8, 3, 23, 59, 59)
         v = i.to_s
+        sth.execute(format("%10d", i * 10), v, i, dt, dt, dt, dt, i, i)
       end
-      sth.execute(format("%10d", i * 10), v, i, dt, dt, dt, dt, i, i)
     end
     sth.finish
     sth = @dbh.prepare("SELECT * FROM test_table ORDER BY c")
@@ -165,47 +180,62 @@ EOS
   end
 
   def test_column_info
+    if $oracle_version < OCI8::ORAVER_8_1
+      begin
+        @dbh.columns('tab')
+      rescue RuntimeError
+        assert_equal("This feature is unavailable on Oracle 8.0", $!.to_s)
+      end
+      return
+    end
+
     # data_size factor for nchar charset_form.
-    sth = @dbh.execute("select CAST('1' AS NCHAR(1)) from dual")
+    sth = @dbh.execute("select N'1' from dual")
     cfrm = sth.column_info[0]['precision']
     if $oracle_version >=  OCI8::ORAVER_9_1
       # data_size factor for char semantics.
       sth = @dbh.execute("select CAST('1' AS CHAR(1 char)) from dual")
       csem = sth.column_info[0]['precision']
+    else
+      csem = 1
     end
 
+    ora80 = OCI8::ORAVER_8_0
+    ora81 = OCI8::ORAVER_8_1
+    ora91 = OCI8::ORAVER_9_1
+    ora101 = OCI8::ORAVER_10_1
     coldef =
       [
        # oracle_version, definition,    sql_type,        type_name, nullable, precision,scale,indexed,primary,unique,default
-       [800, "CHAR(10) NOT NULL",        DBI::SQL_CHAR,    'CHAR',     false,        10, nil, true, true, true, nil],
-       [900, "CHAR(10 CHAR)",            DBI::SQL_CHAR,    'CHAR',     true,  10 * csem, nil, false,false,false,nil],
-       [800, "NCHAR(10)",                DBI::SQL_CHAR,    'NCHAR',    true,  10 * cfrm, nil, true, false,true, nil],
-       [800, "VARCHAR2(10) DEFAULT 'a''b'", DBI::SQL_VARCHAR, 'VARCHAR2', true,         10, nil, true, false,false, "a'b"],
-       [900, "VARCHAR2(10 CHAR)",        DBI::SQL_VARCHAR, 'VARCHAR2', true,  10 * csem, nil, false,false,false,nil],
-       [800, "NVARCHAR2(10)",            DBI::SQL_VARCHAR, 'NVARCHAR2',true,  10 * cfrm, nil, false,false,false,nil],
-       [800, "RAW(10)",                  DBI::SQL_VARBINARY, 'RAW',    true,         10, nil, false,false,false,nil],
-       [800, "CLOB",                     DBI::SQL_CLOB,    'CLOB',     true,       4000, nil, false,false,false,nil],
-       [800, "NCLOB",                    DBI::SQL_CLOB,    'NCLOB',    true,       4000, nil, false,false,false,nil],
-       [800, "BLOB",                     DBI::SQL_BLOB,    'BLOB',     true,       4000, nil, false,false,false,nil],
-       [800, "BFILE",                    DBI::SQL_BLOB,    'BFILE',    true,       4000, nil, false,false,false,nil],
-       [800, "NUMBER",                   DBI::SQL_NUMERIC, 'NUMBER',   true,         38, nil, false,false,false,nil],
-       [800, "NUMBER(10)",               DBI::SQL_NUMERIC, 'NUMBER',   true,         10,   0, false,false,false,nil],
-       [800, "NUMBER(10,2)",             DBI::SQL_NUMERIC, 'NUMBER',   true,         10,   2, false,false,false,nil],
-       [800, "FLOAT",                    DBI::SQL_FLOAT,   'FLOAT',    true, (126 * 0.30103).ceil, nil, false,false,false,nil],
-       [800, "FLOAT(10)",                DBI::SQL_FLOAT,   'FLOAT',    true, (10 * 0.30103).ceil, nil, false,false,false,nil],
-       [1000,"BINARY_FLOAT",             DBI::SQL_FLOAT,   'BINARY_FLOAT', true,      7, nil, false,false,false,nil],
-       [1000,"BINARY_DOUBLE",            DBI::SQL_DOUBLE,  'BINARY_DOUBLE', true,    16, nil, false,false,false,nil],
-       [800, "DATE",                     DBI::SQL_DATE,    'DATE',     true,         19, nil, false,false,false,nil],
-       [900, "TIMESTAMP",                DBI::SQL_TIMESTAMP, 'TIMESTAMP', true,  20 + 6, nil, false,false,false,nil],
-       [900, "TIMESTAMP(9)",             DBI::SQL_TIMESTAMP, 'TIMESTAMP', true,  20 + 9, nil, false,false,false,nil],
-       [900, "TIMESTAMP WITH TIME ZONE",          DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH TIME ZONE', true,  27 + 6, nil, false,false,false,nil],
-       [900, "TIMESTAMP(9) WITH TIME ZONE",       DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH TIME ZONE', true,  27 + 9, nil, false,false,false,nil],
-       [900, "TIMESTAMP WITH LOCAL TIME ZONE",    DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH LOCAL TIME ZONE', true,  20 + 6, nil, false,false,false,nil],
-       [900, "TIMESTAMP(9) WITH LOCAL TIME ZONE", DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH LOCAL TIME ZONE', true,  20 + 9, nil, false,false,false,nil],
-       [900, "INTERVAL YEAR TO MONTH",      DBI::SQL_OTHER, 'INTERVAL YEAR TO MONTH', true, 2 + 3, nil, false,false,false,nil],
-       [900, "INTERVAL YEAR(4) TO MONTH",   DBI::SQL_OTHER, 'INTERVAL YEAR TO MONTH', true, 4 + 3, nil, false,false,false,nil],
-       [900, "INTERVAL DAY TO SECOND",      DBI::SQL_OTHER, 'INTERVAL DAY TO SECOND', true, 2 + 10 + 6, nil, false,false,false,nil],
-       [900, "INTERVAL DAY(4) TO SECOND(9)",DBI::SQL_OTHER, 'INTERVAL DAY TO SECOND', true, 4 + 10 + 9, nil, false,false,false,nil],
+       [ora80, "CHAR(10) NOT NULL",        DBI::SQL_CHAR,    'CHAR',     false,        10, nil, true, true, true, nil],
+       [ora91, "CHAR(10 CHAR)",            DBI::SQL_CHAR,    'CHAR',     true,  10 * csem, nil, false,false,false,nil],
+       [ora80, "NCHAR(10)",                DBI::SQL_CHAR,    'NCHAR',    true,  10 * cfrm, nil, true, false,true, nil],
+       [ora80, "VARCHAR2(10) DEFAULT 'a''b'", DBI::SQL_VARCHAR, 'VARCHAR2', true,         10, nil, true, false,false, "a'b"],
+       [ora91, "VARCHAR2(10 CHAR)",        DBI::SQL_VARCHAR, 'VARCHAR2', true,  10 * csem, nil, false,false,false,nil],
+       [ora80, "NVARCHAR2(10)",            DBI::SQL_VARCHAR, 'NVARCHAR2',true,  10 * cfrm, nil, false,false,false,nil],
+       [ora80, "RAW(10)",                  DBI::SQL_VARBINARY, 'RAW',    true,         10, nil, false,false,false,nil],
+       [ora81, "CLOB",                     DBI::SQL_CLOB,    'CLOB',     true,       4000, nil, false,false,false,nil],
+       [ora81, "NCLOB",                    DBI::SQL_CLOB,    'NCLOB',    true,       4000, nil, false,false,false,nil],
+       [ora80, "BLOB",                     DBI::SQL_BLOB,    'BLOB',     true,       4000, nil, false,false,false,nil],
+       [ora80, "BFILE",                    DBI::SQL_BLOB,    'BFILE',    true,       4000, nil, false,false,false,nil],
+       [ora80, "NUMBER",                   DBI::SQL_NUMERIC, 'NUMBER',   true,         38, nil, false,false,false,nil],
+       [ora80, "NUMBER(10)",               DBI::SQL_NUMERIC, 'NUMBER',   true,         10,   0, false,false,false,nil],
+       [ora80, "NUMBER(10,2)",             DBI::SQL_NUMERIC, 'NUMBER',   true,         10,   2, false,false,false,nil],
+       [ora80, "FLOAT",                    DBI::SQL_FLOAT,   'FLOAT',    true, (126 * 0.30103).ceil, nil, false,false,false,nil],
+       [ora80, "FLOAT(10)",                DBI::SQL_FLOAT,   'FLOAT',    true, (10 * 0.30103).ceil, nil, false,false,false,nil],
+       [ora101,"BINARY_FLOAT",             DBI::SQL_FLOAT,   'BINARY_FLOAT', true,      7, nil, false,false,false,nil],
+       [ora101,"BINARY_DOUBLE",            DBI::SQL_DOUBLE,  'BINARY_DOUBLE', true,    16, nil, false,false,false,nil],
+       [ora80, "DATE",                     DBI::SQL_DATE,    'DATE',     true,         19, nil, false,false,false,nil],
+       [ora91, "TIMESTAMP",                DBI::SQL_TIMESTAMP, 'TIMESTAMP', true,  20 + 6, nil, false,false,false,nil],
+       [ora91, "TIMESTAMP(9)",             DBI::SQL_TIMESTAMP, 'TIMESTAMP', true,  20 + 9, nil, false,false,false,nil],
+       [ora91, "TIMESTAMP WITH TIME ZONE",          DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH TIME ZONE', true,  27 + 6, nil, false,false,false,nil],
+       [ora91, "TIMESTAMP(9) WITH TIME ZONE",       DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH TIME ZONE', true,  27 + 9, nil, false,false,false,nil],
+       [ora91, "TIMESTAMP WITH LOCAL TIME ZONE",    DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH LOCAL TIME ZONE', true,  20 + 6, nil, false,false,false,nil],
+       [ora91, "TIMESTAMP(9) WITH LOCAL TIME ZONE", DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH LOCAL TIME ZONE', true,  20 + 9, nil, false,false,false,nil],
+       [ora91, "INTERVAL YEAR TO MONTH",      DBI::SQL_OTHER, 'INTERVAL YEAR TO MONTH', true, 2 + 3, nil, false,false,false,nil],
+       [ora91, "INTERVAL YEAR(4) TO MONTH",   DBI::SQL_OTHER, 'INTERVAL YEAR TO MONTH', true, 4 + 3, nil, false,false,false,nil],
+       [ora91, "INTERVAL DAY TO SECOND",      DBI::SQL_OTHER, 'INTERVAL DAY TO SECOND', true, 2 + 10 + 6, nil, false,false,false,nil],
+       [ora91, "INTERVAL DAY(4) TO SECOND(9)",DBI::SQL_OTHER, 'INTERVAL DAY TO SECOND', true, 4 + 10 + 9, nil, false,false,false,nil],
       ]
 
     coldef.reject! do |c| c[0] > $oracle_version end
@@ -288,17 +318,25 @@ EOS
        ["TABTYPE",  DBI::SQL_VARCHAR,'VARCHAR2',true,     7,       nil,  false,  false,  false, nil],
        ["CLUSTERID",DBI::SQL_NUMERIC,'NUMBER',  true,    38,       nil,  false,  false,  false, nil],
       ]
-    @dbh.columns('tab').each_with_index do |ci, i|
-      assert_equal(coldef[i][0], ci['name'],      "'#{coldef[i][0]}': name")
-      assert_equal(coldef[i][1], ci['sql_type'],  "'#{coldef[i][0]}': sql_type")
-      assert_equal(coldef[i][2], ci['type_name'], "'#{coldef[i][0]}': type_name")
-      assert_equal(coldef[i][3], ci['nullable'],  "'#{coldef[i][0]}': nullable")
-      assert_equal(coldef[i][4], ci['precision'], "'#{coldef[i][0]}': precision")
-      assert_equal(coldef[i][5], ci['scale'],     "'#{coldef[i][0]}': scale")
-      assert_equal(coldef[i][6], ci['indexed'],   "'#{coldef[i][0]}': indexed")
-      assert_equal(coldef[i][7], ci['primary'],   "'#{coldef[i][0]}': primary")
-      assert_equal(coldef[i][8], ci['unique'],    "'#{coldef[i][0]}': unique")
-      assert_equal(coldef[i][9], ci['default'],    "'#{coldef[i][0]}': default")
+    begin
+      @dbh.columns('tab').each_with_index do |ci, i|
+        assert_equal(coldef[i][0], ci['name'],      "'#{coldef[i][0]}': name")
+        assert_equal(coldef[i][1], ci['sql_type'],  "'#{coldef[i][0]}': sql_type")
+        assert_equal(coldef[i][2], ci['type_name'], "'#{coldef[i][0]}': type_name")
+        assert_equal(coldef[i][3], ci['nullable'],  "'#{coldef[i][0]}': nullable")
+        assert_equal(coldef[i][4], ci['precision'], "'#{coldef[i][0]}': precision")
+        assert_equal(coldef[i][5], ci['scale'],     "'#{coldef[i][0]}': scale")
+        assert_equal(coldef[i][6], ci['indexed'],   "'#{coldef[i][0]}': indexed")
+        assert_equal(coldef[i][7], ci['primary'],   "'#{coldef[i][0]}': primary")
+        assert_equal(coldef[i][8], ci['unique'],    "'#{coldef[i][0]}': unique")
+        assert_equal(coldef[i][9], ci['default'],    "'#{coldef[i][0]}': default")
+      end
+    rescue RuntimeError
+      if $oracle_version < OCI8::ORAVER_8_1
+        assert_equal("This feature is unavailable on Oracle 8.0", $!.to_s)
+      else
+        raise
+      end
     end
 
     @dbh.execute("SELECT * FROM tab").column_info.each_with_index do |ci, i|

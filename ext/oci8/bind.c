@@ -90,6 +90,7 @@ static const oci8_bind_class_t bind_raw_class = {
     SQLT_LVB
 };
 
+#ifdef USE_DYNAMIC_FETCH /* don't use DYNAMIC_FETCH. It doesn't work well... */
 /*
  * bind_long
  */
@@ -173,13 +174,21 @@ static void bind_long_out(oci8_bind_t *obind, ub4 idx, ub1 piece, void **valuepp
 {
     bind_long_t *bl = (bind_long_t *)((char*)obind->valuep + obind->alloc_sz * idx);
 
-    if (piece == OCI_FIRST_PIECE) {
-        bl->obj = Qnil;
-    } else if (bl->alen > 0) {
-        if (!RTEST(bl->obj)) {
-            bl->obj = rb_str_buf_new(bl->alen);
+    switch (piece) {
+    case OCI_NEXT_PIECE:
+    case OCI_LAST_PIECE:
+        if (bl->alen > 0) {
+            if (!RTEST(bl->obj)) {
+                bl->obj = rb_str_buf_new(bl->alen);
+            }
+            rb_str_buf_cat(bl->obj, bl->buf, bl->alen);
         }
-        rb_str_buf_cat(bl->obj, bl->buf, bl->alen);
+        break;
+    default:
+        /* OCI_FIRST_PIECE is passed at the first call according to manuals.
+         * But OCI_ONE_PIECE is passed on Oracle 8 and 8i on Windows...
+         */
+        bl->obj = Qnil;
     }
     *valuepp = bl->buf;
     *alenpp = &bl->alen;
@@ -222,6 +231,7 @@ static const oci8_bind_class_t bind_long_raw_class = {
     NULL,
     SQLT_BIN
 };
+#endif /* USE_DYNAMIC_FETCH */
 
 /*
  * bind_fixnum
@@ -467,8 +477,10 @@ void Init_oci8_bind(VALUE klass)
     /* register primitive data types. */
     oci8_define_bind_class("String", &bind_string_class);
     oci8_define_bind_class("RAW", &bind_raw_class);
+#ifdef USE_DYNAMIC_FETCH
     oci8_define_bind_class("Long", &bind_long_class);
     oci8_define_bind_class("LongRaw", &bind_long_raw_class);
+#endif /* USE_DYNAMIC_FETCH */
     oci8_define_bind_class("Fixnum", &bind_fixnum_class);
     oci8_define_bind_class("Float", &bind_float_class);
     if (oracle_client_version >= ORAVER_10_1) {

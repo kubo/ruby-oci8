@@ -255,6 +255,7 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE iteration_count)
         mode = svcctx->is_autocommit ? OCI_COMMIT_ON_SUCCESS : OCI_DEFAULT;
     }
     rv = oci8_call_stmt_execute(svcctx, stmt, iters, mode);
+#ifdef USE_DYNAMIC_FETCH
     while (rv == OCI_NEED_DATA) {
         oci8_bind_t *obind;
         const oci8_bind_class_t *bind_class;
@@ -301,6 +302,7 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE iteration_count)
         }
         rv = oci8_call_stmt_execute(svcctx, stmt, iters, mode);
     }
+#endif /* USE_DYNAMIC_FETCH */
     if (IS_OCI_ERROR(rv)) {
         oci8_raise(oci8_errhp, rv, stmt->base.hp.stmt);
     }
@@ -352,6 +354,7 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
         obind = (oci8_bind_t *)obind->base.next;
     } while (obind != (oci8_bind_t*)stmt->base.children);
     rv = OCIStmtFetch_nb(svcctx, stmt->base.hp.stmt, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT);
+#ifdef USE_DYNAMIC_FETCH
     while (rv == OCI_NEED_DATA) {
         /* get piece info. */
         dvoid *hp;
@@ -376,7 +379,7 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
                 case OCI_PARAM_OUT:
                     if (bind_class->out == NULL)
                         rb_bug("....");
-                    bind_class->out(obind, idx, piece == OCI_FIRST_PIECE, &valuep, &alenp, &indp);
+                    bind_class->out(obind, idx, piece, &valuep, &alenp, &indp);
                     break;
                 default:
                     rb_bug("ruby-oci8: expect OCI_PARAM_OUT but %d", in_out);
@@ -391,34 +394,38 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
         }
         rv = OCIStmtFetch_nb(svcctx, stmt->base.hp.stmt, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT);
     }
+#endif /* USE_DYNAMIC_FETCH */
     if (rv == OCI_NO_DATA) {
         return Qnil;
     }
     if (IS_OCI_ERROR(rv)) {
         oci8_raise(oci8_errhp, rv, stmt->base.hp.stmt);
     }
+#ifdef USE_DYNAMIC_FETCH
     obind = (oci8_bind_t *)stmt->base.children;
     do {
         /* set piece info. */
         void *valuep;
         ub4 *alenp;
         void *indp;
+        ub1 piece = OCI_LAST_PIECE;
 
         if (obind->base.type == OCI_HTYPE_DEFINE) {
             bind_class = (const oci8_bind_class_t *)obind->base.klass;
             if (bind_class->out != NULL) {
                 if (obind->maxar_sz == 0) {
-                    bind_class->out(obind, 0, 0, &valuep, &alenp, &indp);
+                    bind_class->out(obind, 0, piece, &valuep, &alenp, &indp);
                 } else {
                     ub4 idx;
                     for (idx = 0; idx < obind->curar_sz; idx++) {
-                        bind_class->out(obind, idx, 0, &valuep, &alenp, &indp);
+                        bind_class->out(obind, idx, piece, &valuep, &alenp, &indp);
                     }
                 }
             }
         }
         obind = (oci8_bind_t *)obind->base.next;
     } while (obind != (oci8_bind_t*)stmt->base.children);
+#endif /* USE_DYNAMIC_FETCH */
     ary = rb_ary_new2(RARRAY_LEN(stmt->defns));
     for (idx = 0; idx < RARRAY_LEN(stmt->defns); idx++) {
         rb_ary_store(ary, idx, rb_funcall(RARRAY_PTR(stmt->defns)[idx], oci8_id_get, 0));

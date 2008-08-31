@@ -196,7 +196,13 @@ class OCI8
       def self.create(con, val, param, max_array_size)
         case param
         when Hash
-          length = param[:length] || 4000
+          # 1333 = ceil(4000 (max size of char) / 3 (NLS ratio of UTF8))
+          length = 1333 # default length
+          if param[:length]
+            length = param[:length]
+          elsif val.respond_to? :to_str and val.to_str.size > length
+            length = val.to_str.size
+          end
         when OCI8::Metadata::Base
           case param.data_type
           when :char, :varchar2
@@ -220,7 +226,12 @@ class OCI8
       def self.create(con, val, param, max_array_size)
         case param
         when Hash
-          length = param[:length] || 4000
+          length = 400 # default length
+          if param[:length]
+            length = param[:length]
+          elsif val.respond_to? :to_str and val.to_str.size > length
+            length = val.to_str.size
+          end
         when OCI8::Metadata::Base
           length = param.data_size
         end
@@ -228,13 +239,13 @@ class OCI8
       end
     end
 
-    class Long
+    class Long < OCI8::BindType::String
       def self.create(con, val, param, max_array_size)
         self.new(con, val, con.long_read_len, max_array_size)
       end
     end
 
-    class LongRaw
+    class LongRaw < OCI8::BindType::RAW
       def self.create(con, val, param, max_array_size)
         self.new(con, val, con.long_read_len, max_array_size)
       end

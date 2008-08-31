@@ -35,7 +35,7 @@ class TestMetadata < Test::Unit::TestCase
 
     ora80 = OCI8::ORAVER_8_0
     ora81 = OCI8::ORAVER_8_1
-    ora91 = OCI8::ORAVER_8_1
+    ora91 = OCI8::ORAVER_9_1
     ora101 = OCI8::ORAVER_10_1
     coldef =
       [

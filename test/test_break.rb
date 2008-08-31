@@ -55,15 +55,26 @@ class TestBreak < Test::Unit::TestCase
   end
 
   def test_non_blocking_mode
+    is_windows_server = false
+    @conn.exec('select banner from v$version') do |row|
+      is_windows_server = true if row[0].include? 'Windows'
+    end
+
     @conn.non_blocking = true
     assert_equal(true, @conn.non_blocking?)
     expect = []
-    expect[PLSQL_DONE] = "Invalid status"
-    if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/
-      # raise after sleeping #{TIME_IN_PLSQL} seconds.
-      expect[OCIBREAK] = TIME_IN_PLSQL
+    if is_windows_server
+      if $oracle_server_version >= OCI8::ORAVER_9_1
+        # raise after sleeping #{TIME_IN_PLSQL} seconds.
+        expect[PLSQL_DONE] = "Invalid status"
+        expect[OCIBREAK] = TIME_IN_PLSQL
+      else
+        expect[PLSQL_DONE] = TIME_IN_PLSQL
+        expect[OCIBREAK] = "Invalid status"
+      end
     else
       # raise immediately by OCI8#break.
+      expect[PLSQL_DONE] = "Invalid status"
       expect[OCIBREAK] = TIME_TO_BREAK
     end
     expect[SEND_BREAK]   = TIME_TO_BREAK

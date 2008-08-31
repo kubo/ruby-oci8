@@ -227,7 +227,7 @@ EOS
     cursor.exec_array
     cursor.close
 
-    cursor = @conn.parse("DELETE FROM test_table WHERE N=:N")
+    cursor = @conn.parse("DELETE FROM test_table WHERE N=:1")
     cursor.max_array_size = max_array_size
     delete_arr = Array.new
     1.upto(max_array_size) do |i|
@@ -280,7 +280,7 @@ EOS
     cursor.exec_array
     cursor.close
 
-    cursor = @conn.parse("UPDATE test_table SET V=:V WHERE N=:N")
+    cursor = @conn.parse("UPDATE test_table SET V=:1 WHERE N=:2")
     cursor.max_array_size = max_array_size
     update_arr = Array.new
     update_v_arr = Array.new

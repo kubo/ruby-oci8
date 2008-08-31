@@ -1,3 +1,19 @@
+2008-08-31  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/bind.c, ext/oci8/stmt.c: disable DYNAMIC_FETCH to fetch
+	    LONG or LONG RAW columns. It doesn't work well.
+	* lib/oci8/metadata.rb: define char_size for Oracle 8i.
+	* lib/oci8/oci8.rb: define OCI8::BindType::Long and
+	    OCI8::BindType::LongRaw as subclasses of OCI8::BindType::String
+	    and OCI8::BindType::RAW respectively. fix
+	    OCI8::BindType::String.create and OCI8::BindType::RAW.create
+	    for strings longer than 4000.
+	* test/test_array_dml.rb: add workaround of "ORA-01036: illegal
+	    variable name/number" by renaming a bind variable name ":N"
+	    to ":1". I guess this is a problem in the Oracle library.
+	* test/test_break.rb, test/test_dbi.rb, test/test_metadata.rb:
+	    fix test codes for Oracle 8i or lower.
+	* test/test_oci8.rb: revise a test for LONG columns.
+
 2008-08-28  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.yml: OCINumberSign is unavailable on Oracle 8.
 	* lib/DBD/OCI8/OCI8.rb: A data dictionary all_constraints doesn't have
