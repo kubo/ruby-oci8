@@ -23,7 +23,7 @@ require 'oci8lib'
 class OCI8
   ORAVER_8_0  = 0x08000000 #  8.0
   ORAVER_8_1  = 0x08100000 #  8.1
-  ORAVER_9_1  = 0x09100000 #  9.1
+  ORAVER_9_0  = 0x09000000 #  9.0
   ORAVER_9_2  = 0x09200000 #  9.2
   ORAVER_10_1 = 0x0a100000 # 10.1
   ORAVER_10_2 = 0x0a200000 # 10.2

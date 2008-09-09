@@ -998,7 +998,7 @@ class OCI8
         __charset_form
       end
 
-      if OCI8.oracle_client_version >= ORAVER_9_1
+      if OCI8.oracle_client_version >= ORAVER_9_0
         # The fractional seconds precision of a datetime or interval.
         #
         # (unavailable on Oracle 8.1 or lower)
@@ -1332,7 +1332,7 @@ class OCI8
 
       ## Table 6-13 Attributes Belonging to Columns of Tables or Views
 
-      if OCI8.oracle_client_version >= ORAVER_9_1
+      if OCI8.oracle_client_version >= ORAVER_9_0
         # returns the type of length semantics of the column.
         # [<tt>:byte</tt>]  byte-length semantics
         # [<tt>:char</tt>]  character-length semantics.
@@ -1438,7 +1438,7 @@ class OCI8
       ## Table 6-8 Attributes Belonging to Type Attributes
       ## But Column also have these.
 
-      if OCI8.oracle_client_version >= ORAVER_9_1
+      if OCI8.oracle_client_version >= ORAVER_9_0
         # The fractional seconds precision of a datetime or interval.
         #
         # (unavailable on Oracle 8.1 or lower)

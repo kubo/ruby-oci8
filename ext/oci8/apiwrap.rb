@@ -39,7 +39,7 @@ class FuncDef
     case @version
     when 0x08000000; @version_num = 'ORAVER_8_0'
     when 0x08100000; @version_num = 'ORAVER_8_1'
-    when 0x09100000; @version_num = 'ORAVER_9_1'
+    when 0x09000000; @version_num = 'ORAVER_9_0'
     when 0x09200000; @version_num = 'ORAVER_9_2'
     when 0x0a100000; @version_num = 'ORAVER_10_1'
     when 0x0a200000; @version_num = 'ORAVER_10_2'

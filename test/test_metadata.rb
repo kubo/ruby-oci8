@@ -25,7 +25,7 @@ class TestMetadata < Test::Unit::TestCase
     # data_size factor for nchar charset_form.
     cursor = @conn.exec("select N'1' from dual")
     cfrm = cursor.column_metadata[0].data_size
-    if $oracle_version >=  OCI8::ORAVER_9_1
+    if $oracle_version >=  OCI8::ORAVER_9_0
       # data_size factor for char semantics.
       cursor = @conn.exec("select CAST('1' AS CHAR(1 char)) from dual")
       csem = cursor.column_metadata[0].data_size
@@ -35,16 +35,16 @@ class TestMetadata < Test::Unit::TestCase
 
     ora80 = OCI8::ORAVER_8_0
     ora81 = OCI8::ORAVER_8_1
-    ora91 = OCI8::ORAVER_9_1
+    ora90 = OCI8::ORAVER_9_0
     ora101 = OCI8::ORAVER_10_1
     coldef =
       [
        # oracle_version, definition,    data_type,  csfrm,    null?,csem?,csize, data_size,prec,scale,fsprec,lfprec
        [ora80, "CHAR(10) NOT NULL",       :char,      :implicit, false, false, 10,        10,   0,    0,    0,    0],
-       [ora91, "CHAR(10 CHAR)",           :char,      :implicit, true,  true,  10, 10 * csem,   0,    0,    0,    0],
+       [ora90, "CHAR(10 CHAR)",           :char,      :implicit, true,  true,  10, 10 * csem,   0,    0,    0,    0],
        [ora80, "NCHAR(10)",               :char,      :nchar,    true,  true,  10, 10 * cfrm,   0,    0,    0,    0],
        [ora80, "VARCHAR2(10)",            :varchar2,  :implicit, true,  false, 10,        10,   0,    0,    0,    0],
-       [ora91, "VARCHAR2(10 CHAR)",       :varchar2,  :implicit, true,  true,  10, 10 * csem,   0,    0,    0,    0],
+       [ora90, "VARCHAR2(10 CHAR)",       :varchar2,  :implicit, true,  true,  10, 10 * csem,   0,    0,    0,    0],
        [ora80, "NVARCHAR2(10)",           :varchar2,  :nchar,    true,  true,  10, 10 * cfrm,   0,    0,    0,    0],
        [ora80, "RAW(10)",                 :raw,       nil,       true,  false,  0,        10,   0,    0,    0,    0],
 
@@ -84,7 +84,7 @@ class TestMetadata < Test::Unit::TestCase
        #   | FLOAT(10)      | implicit |     129     |     10      |
        #   |                | explicit |      10     |    129      |
        #   +----------------+----------+-------------+-------------+
-       [ora80, "NUMBER",                  :number,    nil,       true,  false,  0,        22,   0, $oracle_version >= ora91 ? -127 : 0,  :nc,  :nc],
+       [ora80, "NUMBER",                  :number,    nil,       true,  false,  0,        22,   0, $oracle_version >= ora90 ? -127 : 0,  :nc,  :nc],
        [ora80, "NUMBER(10)",              :number,    nil,       true,  false,  0,        22,  10,    0,  :nc,  :nc],
        [ora80, "NUMBER(10,2)",            :number,    nil,       true,  false,  0,        22,  10,    2,  :nc,  :nc],
        [ora80, "FLOAT",                   :number,    nil,       true,  false,  0,        22, 126, -127,  :nc,  :nc],
@@ -118,12 +118,12 @@ class TestMetadata < Test::Unit::TestCase
        #   | TIMESTAMP(9) WITH LOCAL TIME ZONE | implicit |     0     |      0      |
        #   |                                   | explicit |     9     |      9      |
        #   +-----------------------------------+----------+-----------+-------------+
-       [ora91, "TIMESTAMP",                         :timestamp,     nil, true, false, 0,  11, :nc,    6,    6,  :nc],
-       [ora91, "TIMESTAMP(9)",                      :timestamp,     nil, true, false, 0,  11, :nc,    9,    9,  :nc],
-       [ora91, "TIMESTAMP WITH TIME ZONE",          :timestamp_tz,  nil, true, false, 0,  13, :nc,    6,    6,  :nc],
-       [ora91, "TIMESTAMP(9) WITH TIME ZONE",       :timestamp_tz,  nil, true, false, 0,  13, :nc,    9,    9,  :nc],
-       [ora91, "TIMESTAMP WITH LOCAL TIME ZONE",    :timestamp_ltz, nil, true, false, 0,  11, :nc,    6,    6,  :nc],
-       [ora91, "TIMESTAMP(9) WITH LOCAL TIME ZONE", :timestamp_ltz, nil, true, false, 0,  11, :nc,    9,    9,  :nc],
+       [ora90, "TIMESTAMP",                         :timestamp,     nil, true, false, 0,  11, :nc,    6,    6,  :nc],
+       [ora90, "TIMESTAMP(9)",                      :timestamp,     nil, true, false, 0,  11, :nc,    9,    9,  :nc],
+       [ora90, "TIMESTAMP WITH TIME ZONE",          :timestamp_tz,  nil, true, false, 0,  13, :nc,    6,    6,  :nc],
+       [ora90, "TIMESTAMP(9) WITH TIME ZONE",       :timestamp_tz,  nil, true, false, 0,  13, :nc,    9,    9,  :nc],
+       [ora90, "TIMESTAMP WITH LOCAL TIME ZONE",    :timestamp_ltz, nil, true, false, 0,  11, :nc,    6,    6,  :nc],
+       [ora90, "TIMESTAMP(9) WITH LOCAL TIME ZONE", :timestamp_ltz, nil, true, false, 0,  11, :nc,    9,    9,  :nc],
 
        # Don't check scale and fsprecision for INTERVAL YEAR TO MONTH
        #
@@ -137,8 +137,8 @@ class TestMetadata < Test::Unit::TestCase
        #   | INTERVAL YEAR(4) TO MONTH    | implicit |     0     |      0      |
        #   |                              | explicit |     4     |      4      |
        #   +------------------------------+----------+-----------+-------------+
-       [ora91, "INTERVAL YEAR TO MONTH",      :interval_ym, nil, true,  false,  0,         5,   2,  :nc,  :nc,    2],
-       [ora91, "INTERVAL YEAR(4) TO MONTH",   :interval_ym, nil, true,  false,  0,         5,   4,  :nc,  :nc,    4],
+       [ora90, "INTERVAL YEAR TO MONTH",      :interval_ym, nil, true,  false,  0,         5,   2,  :nc,  :nc,    2],
+       [ora90, "INTERVAL YEAR(4) TO MONTH",   :interval_ym, nil, true,  false,  0,         5,   4,  :nc,  :nc,    4],
 
        # Don't check precision and scale for INTERVAL DAY TO SECOND
        #
@@ -152,8 +152,8 @@ class TestMetadata < Test::Unit::TestCase
        #   | INTERVAL DAY(4) TO SECOND(9) | implicit |     4     |     9     |
        #   |                              | explicit |     9     |     4     |
        #   +------------------------------+----------+-----------+-----------+
-       [ora91, "INTERVAL DAY TO SECOND",      :interval_ds, nil, true,  false,  0,        11, :nc,  :nc,    6,    2],
-       [ora91, "INTERVAL DAY(4) TO SECOND(9)",:interval_ds, nil, true,  false,  0,        11, :nc,  :nc,    9,    4],
+       [ora90, "INTERVAL DAY TO SECOND",      :interval_ds, nil, true,  false,  0,        11, :nc,  :nc,    6,    2],
+       [ora90, "INTERVAL DAY(4) TO SECOND(9)",:interval_ds, nil, true,  false,  0,        11, :nc,  :nc,    9,    4],
       ]
 
     coldef.reject! do |c| c[0] > $oracle_version end
@@ -178,7 +178,7 @@ EOS
       assert_equal(coldef[i][3], md.charset_form, "'#{coldef[i][1]}': charset_form")
       assert_equal(coldef[i][4], md.nullable?, "'#{coldef[i][1]}': nullable? ")
       # string type
-      if $oracle_version >= OCI8::ORAVER_9_1
+      if $oracle_version >= OCI8::ORAVER_9_0
         assert_equal(coldef[i][5], md.char_used?, "'#{coldef[i][1]}': char_used? ")
         assert_equal(coldef[i][6], md.char_size, "'#{coldef[i][1]}': char_size")
       end
@@ -186,7 +186,7 @@ EOS
       # number, timestamp and interval type
       assert_equal(coldef[i][8], md.precision, "'#{coldef[i][1]}': precision") if coldef[i][8] != :nc
       assert_equal(coldef[i][9], md.scale, "'#{coldef[i][1]}': scale") if coldef[i][9] != :nc
-      if $oracle_version >= OCI8::ORAVER_9_1
+      if $oracle_version >= OCI8::ORAVER_9_0
         assert_equal(coldef[i][10], md.fsprecision, "'#{coldef[i][1]}': fsprecision") if coldef[i][10] != :nc
         assert_equal(coldef[i][11], md.lfprecision, "'#{coldef[i][1]}': lfprecision") if coldef[i][11] != :nc
       end
@@ -216,7 +216,7 @@ EOS
       assert_equal(coldef[i][3], md.charset_form, "'#{coldef[i][1]}': charset_form")
       assert_equal(coldef[i][4], md.nullable?, "'#{coldef[i][1]}': nullable? ")
       # string type
-      if $oracle_version >=  OCI8::ORAVER_9_1
+      if $oracle_version >=  OCI8::ORAVER_9_0
         assert_equal(coldef[i][5], md.char_used?, "'#{coldef[i][1]}': char_used? ")
         assert_equal(coldef[i][6], md.char_size, "'#{coldef[i][1]}': char_size")
       end
@@ -224,7 +224,7 @@ EOS
       # number, timestamp and interval type
       assert_equal(coldef[i][8], md.precision, "'#{coldef[i][1]}': precision") if coldef[i][8] != :nc
       assert_equal(coldef[i][9], md.scale, "'#{coldef[i][1]}': scale") if coldef[i][9] != :nc
-      if $oracle_version >= OCI8::ORAVER_9_1
+      if $oracle_version >= OCI8::ORAVER_9_0
         assert_equal(coldef[i][10], md.fsprecision, "'#{coldef[i][1]}': fsprecision") if coldef[i][10] != :nc
         assert_equal(coldef[i][11], md.lfprecision, "'#{coldef[i][1]}': lfprecision") if coldef[i][11] != :nc
       end

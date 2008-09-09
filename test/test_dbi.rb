@@ -102,7 +102,7 @@ EOS
     sth = @dbh.prepare("INSERT INTO test_table VALUES (:C, :V, :N, :D1, :D2, :D3, :D4, :INT, :BIGNUM)")
     1.upto(10) do |i|
       if i == 1
-        if OCI8::oracle_client_version >= OCI8::ORAVER_9_1
+        if OCI8::oracle_client_version >= OCI8::ORAVER_9_0
           dt = nil
           v = ''
           sth.execute(format("%10d", i * 10), v, i, dt, dt, dt, dt, i, i)
@@ -192,7 +192,7 @@ EOS
     # data_size factor for nchar charset_form.
     sth = @dbh.execute("select N'1' from dual")
     cfrm = sth.column_info[0]['precision']
-    if $oracle_version >=  OCI8::ORAVER_9_1
+    if $oracle_version >=  OCI8::ORAVER_9_0
       # data_size factor for char semantics.
       sth = @dbh.execute("select CAST('1' AS CHAR(1 char)) from dual")
       csem = sth.column_info[0]['precision']
@@ -202,16 +202,16 @@ EOS
 
     ora80 = OCI8::ORAVER_8_0
     ora81 = OCI8::ORAVER_8_1
-    ora91 = OCI8::ORAVER_9_1
+    ora90 = OCI8::ORAVER_9_0
     ora101 = OCI8::ORAVER_10_1
     coldef =
       [
        # oracle_version, definition,    sql_type,        type_name, nullable, precision,scale,indexed,primary,unique,default
        [ora80, "CHAR(10) NOT NULL",        DBI::SQL_CHAR,    'CHAR',     false,        10, nil, true, true, true, nil],
-       [ora91, "CHAR(10 CHAR)",            DBI::SQL_CHAR,    'CHAR',     true,  10 * csem, nil, false,false,false,nil],
+       [ora90, "CHAR(10 CHAR)",            DBI::SQL_CHAR,    'CHAR',     true,  10 * csem, nil, false,false,false,nil],
        [ora80, "NCHAR(10)",                DBI::SQL_CHAR,    'NCHAR',    true,  10 * cfrm, nil, true, false,true, nil],
        [ora80, "VARCHAR2(10) DEFAULT 'a''b'", DBI::SQL_VARCHAR, 'VARCHAR2', true,         10, nil, true, false,false, "a'b"],
-       [ora91, "VARCHAR2(10 CHAR)",        DBI::SQL_VARCHAR, 'VARCHAR2', true,  10 * csem, nil, false,false,false,nil],
+       [ora90, "VARCHAR2(10 CHAR)",        DBI::SQL_VARCHAR, 'VARCHAR2', true,  10 * csem, nil, false,false,false,nil],
        [ora80, "NVARCHAR2(10)",            DBI::SQL_VARCHAR, 'NVARCHAR2',true,  10 * cfrm, nil, false,false,false,nil],
        [ora80, "RAW(10)",                  DBI::SQL_VARBINARY, 'RAW',    true,         10, nil, false,false,false,nil],
        [ora81, "CLOB",                     DBI::SQL_CLOB,    'CLOB',     true,       4000, nil, false,false,false,nil],
@@ -226,16 +226,16 @@ EOS
        [ora101,"BINARY_FLOAT",             DBI::SQL_FLOAT,   'BINARY_FLOAT', true,      7, nil, false,false,false,nil],
        [ora101,"BINARY_DOUBLE",            DBI::SQL_DOUBLE,  'BINARY_DOUBLE', true,    16, nil, false,false,false,nil],
        [ora80, "DATE",                     DBI::SQL_DATE,    'DATE',     true,         19, nil, false,false,false,nil],
-       [ora91, "TIMESTAMP",                DBI::SQL_TIMESTAMP, 'TIMESTAMP', true,  20 + 6, nil, false,false,false,nil],
-       [ora91, "TIMESTAMP(9)",             DBI::SQL_TIMESTAMP, 'TIMESTAMP', true,  20 + 9, nil, false,false,false,nil],
-       [ora91, "TIMESTAMP WITH TIME ZONE",          DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH TIME ZONE', true,  27 + 6, nil, false,false,false,nil],
-       [ora91, "TIMESTAMP(9) WITH TIME ZONE",       DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH TIME ZONE', true,  27 + 9, nil, false,false,false,nil],
-       [ora91, "TIMESTAMP WITH LOCAL TIME ZONE",    DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH LOCAL TIME ZONE', true,  20 + 6, nil, false,false,false,nil],
-       [ora91, "TIMESTAMP(9) WITH LOCAL TIME ZONE", DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH LOCAL TIME ZONE', true,  20 + 9, nil, false,false,false,nil],
-       [ora91, "INTERVAL YEAR TO MONTH",      DBI::SQL_OTHER, 'INTERVAL YEAR TO MONTH', true, 2 + 3, nil, false,false,false,nil],
-       [ora91, "INTERVAL YEAR(4) TO MONTH",   DBI::SQL_OTHER, 'INTERVAL YEAR TO MONTH', true, 4 + 3, nil, false,false,false,nil],
-       [ora91, "INTERVAL DAY TO SECOND",      DBI::SQL_OTHER, 'INTERVAL DAY TO SECOND', true, 2 + 10 + 6, nil, false,false,false,nil],
-       [ora91, "INTERVAL DAY(4) TO SECOND(9)",DBI::SQL_OTHER, 'INTERVAL DAY TO SECOND', true, 4 + 10 + 9, nil, false,false,false,nil],
+       [ora90, "TIMESTAMP",                DBI::SQL_TIMESTAMP, 'TIMESTAMP', true,  20 + 6, nil, false,false,false,nil],
+       [ora90, "TIMESTAMP(9)",             DBI::SQL_TIMESTAMP, 'TIMESTAMP', true,  20 + 9, nil, false,false,false,nil],
+       [ora90, "TIMESTAMP WITH TIME ZONE",          DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH TIME ZONE', true,  27 + 6, nil, false,false,false,nil],
+       [ora90, "TIMESTAMP(9) WITH TIME ZONE",       DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH TIME ZONE', true,  27 + 9, nil, false,false,false,nil],
+       [ora90, "TIMESTAMP WITH LOCAL TIME ZONE",    DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH LOCAL TIME ZONE', true,  20 + 6, nil, false,false,false,nil],
+       [ora90, "TIMESTAMP(9) WITH LOCAL TIME ZONE", DBI::SQL_TIMESTAMP, 'TIMESTAMP WITH LOCAL TIME ZONE', true,  20 + 9, nil, false,false,false,nil],
+       [ora90, "INTERVAL YEAR TO MONTH",      DBI::SQL_OTHER, 'INTERVAL YEAR TO MONTH', true, 2 + 3, nil, false,false,false,nil],
+       [ora90, "INTERVAL YEAR(4) TO MONTH",   DBI::SQL_OTHER, 'INTERVAL YEAR TO MONTH', true, 4 + 3, nil, false,false,false,nil],
+       [ora90, "INTERVAL DAY TO SECOND",      DBI::SQL_OTHER, 'INTERVAL DAY TO SECOND', true, 2 + 10 + 6, nil, false,false,false,nil],
+       [ora90, "INTERVAL DAY(4) TO SECOND(9)",DBI::SQL_OTHER, 'INTERVAL DAY TO SECOND', true, 4 + 10 + 9, nil, false,false,false,nil],
       ]
 
     coldef.reject! do |c| c[0] > $oracle_version end

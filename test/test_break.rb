@@ -64,7 +64,7 @@ class TestBreak < Test::Unit::TestCase
     assert_equal(true, @conn.non_blocking?)
     expect = []
     if is_windows_server
-      if $oracle_server_version >= OCI8::ORAVER_9_1
+      if $oracle_server_version >= OCI8::ORAVER_9_0
         # raise after sleeping #{TIME_IN_PLSQL} seconds.
         expect[PLSQL_DONE] = "Invalid status"
         expect[OCIBREAK] = TIME_IN_PLSQL

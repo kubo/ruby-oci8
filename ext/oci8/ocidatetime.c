@@ -100,7 +100,7 @@ static const oci8_bind_class_t bind_ocidate_class = {
     SQLT_ODT,
 };
 
-#if defined RUNTIME_API_CHECK || ORACLE_CLIENT_VERSION >= ORAVER_9_1
+#if defined RUNTIME_API_CHECK || ORACLE_CLIENT_VERSION >= ORAVER_9_0
 
 VALUE oci8_make_ocitimestamp(OCIDateTime *dttm)
 {
@@ -432,14 +432,14 @@ static const oci8_bind_class_t bind_ociinterval_ds_class = {
     SQLT_INTERVAL_DS
 };
 
-#endif /* defined RUNTIME_API_CHECK || ORACLE_CLIENT_VERSION >= ORAVER_9_1 */
+#endif /* defined RUNTIME_API_CHECK || ORACLE_CLIENT_VERSION >= ORAVER_9_0 */
 
 void Init_oci_datetime(void)
 {
     oci8_define_bind_class("OCIDate", &bind_ocidate_class);
 
-#if defined RUNTIME_API_CHECK || ORACLE_CLIENT_VERSION >= ORAVER_9_1
-    if (oracle_client_version >= ORAVER_9_1) {
+#if defined RUNTIME_API_CHECK || ORACLE_CLIENT_VERSION >= ORAVER_9_0
+    if (oracle_client_version >= ORAVER_9_0) {
         oci8_define_bind_class("OCITimestamp", &bind_ocitimestamp_class);
         oci8_define_bind_class("OCIIntervalYM", &bind_ociinterval_ym_class);
         oci8_define_bind_class("OCIIntervalDS", &bind_ociinterval_ds_class);

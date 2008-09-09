@@ -1015,12 +1015,12 @@ OCIReset:
             - OCIError *errhp
 
 #
-# Oracle 9.1
+# Oracle 9.0
 #
 
 # round trip: 0 (not docmented. I guess.)
 OCIDateTimeConstruct:
-  :version: 910
+  :version: 900
   :args:    - dvoid  *hndl
             - OCIError *err
             - OCIDateTime *datetime
@@ -1036,7 +1036,7 @@ OCIDateTimeConstruct:
 
 # round trip: 0 (not docmented. I guess.)
 OCIDateTimeGetDate:
-  :version: 910
+  :version: 900
   :args:    - dvoid *hndl
             - OCIError *err
             - const OCIDateTime *date
@@ -1046,7 +1046,7 @@ OCIDateTimeGetDate:
 
 # round trip: 0 (not docmented. I guess.)
 OCIDateTimeGetTime:
-  :version: 910
+  :version: 900
   :args:    - dvoid *hndl
             - OCIError *err
             - OCIDateTime *datetime
@@ -1057,7 +1057,7 @@ OCIDateTimeGetTime:
 
 # round trip: 0 (not docmented. I guess.)
 OCIDateTimeGetTimeZoneOffset:
-  :version: 910
+  :version: 900
   :args:    - dvoid *hndl
             - OCIError *err
             - const OCIDateTime *datetime
@@ -1066,7 +1066,7 @@ OCIDateTimeGetTimeZoneOffset:
 
 # round trip: 0 (not docmented. I guess.)
 OCIIntervalGetDaySecond:
-  :version: 910
+  :version: 900
   :args:    - dvoid *hndl
             - OCIError *err
             - sb4 *dy
@@ -1078,7 +1078,7 @@ OCIIntervalGetDaySecond:
 
 # round trip: 0 (not docmented. I guess.)
 OCIIntervalGetYearMonth:
-  :version: 910
+  :version: 900
   :args:    - dvoid *hndl
             - OCIError *err
             - sb4 *yr
@@ -1087,7 +1087,7 @@ OCIIntervalGetYearMonth:
 
 # round trip: 0 (not docmented. I guess.)
 OCIIntervalSetDaySecond:
-  :version: 910
+  :version: 900
   :args:    - dvoid *hndl
             - OCIError *err
             - sb4 dy
@@ -1099,7 +1099,7 @@ OCIIntervalSetDaySecond:
 
 # round trip: 0 (not docmented. I guess.)
 OCIIntervalSetYearMonth:
-  :version: 910
+  :version: 900
   :args:    - dvoid *hndl
             - OCIError *err
             - sb4 yr
@@ -1108,7 +1108,7 @@ OCIIntervalSetYearMonth:
 
 # round trip: 0 (not docmented. I guess.)
 OCIRowidToChar:
-  :version: 910
+  :version: 900
   :args:    - OCIRowid *rowidDesc
             - OraText *outbfp
             - ub2 *outbflp

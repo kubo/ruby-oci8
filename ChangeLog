@@ -1,3 +1,11 @@
+2008-09-09  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.rb, ext/oci8/apiwrap.yml, ext/oci8/oci8.h,
+	  ext/oci8/ocidatetime.c, lib/oci8.rb.in, lib/oci8/datetime.rb,
+	  lib/oci8/metadata.rb, lib/oci8/oci8.rb, test/test_break.rb,
+	  test/test_datetime.rb, test/test_dbi.rb, test/test_metadata.rb:
+	    fix Oracle version number mistakes. rename ORAVER_9_1 to
+	    ORAVER_9_0.
+
 2008-08-31  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c, ext/oci8/stmt.c: disable DYNAMIC_FETCH to fetch
 	    LONG or LONG RAW columns. It doesn't work well.

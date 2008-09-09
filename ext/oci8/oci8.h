@@ -33,8 +33,8 @@ extern "C"
 
 #define ORAVER_8_0 ORAVERNUM(8, 0, 0, 0, 0)
 #define ORAVER_8_1 ORAVERNUM(8, 1, 0, 0, 0)
-#define ORAVER_9_1 ORAVERNUM(9, 1, 0, 0, 0)
-#define ORAVER_9_2 ORAVERNUM(9, 1, 0, 0, 0)
+#define ORAVER_9_0 ORAVERNUM(9, 0, 0, 0, 0)
+#define ORAVER_9_2 ORAVERNUM(9, 2, 0, 0, 0)
 #define ORAVER_10_1 ORAVERNUM(10, 1, 0, 0, 0)
 #define ORAVER_10_2 ORAVERNUM(10, 2, 0, 0, 0)
 #define ORAVER_11_1 ORAVERNUM(11, 1, 0, 0, 0)
