@@ -1,3 +1,13 @@
+2008-09-10  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/ocidatetime.c: use session time zone when time zone
+	    is not specified to set bind objects of timestamp with time
+	    zone datatype.
+	* lib/oci8/datetime.rb: add OCI8::BindType::Util.default_timezone
+	    to get Time or DateTime objects from bind objects of date
+	    datatype.
+	* test/test_datetime.rb: fix test_datetype_duck_typing and add
+	    test_timezone for the above changes.
+
 2008-09-09  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.rb, ext/oci8/apiwrap.yml, ext/oci8/oci8.h,
 	  ext/oci8/ocidatetime.c, lib/oci8.rb.in, lib/oci8/datetime.rb,

@@ -132,7 +132,7 @@ VALUE oci8_make_ocitimestamp(OCIDateTime *dttm)
                        have_tz ? INT2FIX(tz_minute) : Qnil);
 }
 
-OCIDateTime *oci8_set_ocitimestamp(OCIDateTime *dttm, VALUE val)
+OCIDateTime *oci8_set_ocitimestamp(OCIDateTime *dttm, VALUE val, VALUE svc)
 {
     long year;
     long month;
@@ -141,7 +141,10 @@ OCIDateTime *oci8_set_ocitimestamp(OCIDateTime *dttm, VALUE val)
     long minute;
     long sec;
     long fsec;
+    OraText *tz;
+    size_t tzlen;
     char tz_str[32];
+    OCISession *seshp = NULL;
 
     Check_Type(val, T_ARRAY);
     if (RARRAY_LEN(val) != 9) {
@@ -184,15 +187,22 @@ OCIDateTime *oci8_set_ocitimestamp(OCIDateTime *dttm, VALUE val)
     }
     /* time zone */
     if (NIL_P(RARRAY_PTR(val)[7]) && NIL_P(RARRAY_PTR(val)[8])) {
-        /* use session timezone. */
-        tz_str[0] = '\0';
+        if (!NIL_P(svc)) {
+            /* use session timezone. */
+            seshp = oci8_get_oci_session(svc);
+        }
+        tz = NULL;
+        tzlen = 0;
     } else {
-        sprintf(tz_str, "%+02ld:%02ld",
-                NUM2LONG(RARRAY_PTR(val)[7]),
-                NUM2LONG(RARRAY_PTR(val)[8]));
+        snprintf(tz_str, sizeof(tz_str), "%+02ld:%02ld",
+                 NUM2LONG(RARRAY_PTR(val)[7]),
+                 NUM2LONG(RARRAY_PTR(val)[8]));
+        tz_str[sizeof(tz_str) - 1] = '\0';
+        tz = (OraText*)tz_str;
+        tzlen = strlen(tz_str);
     }
     /* construct */
-    oci_lc(OCIDateTimeConstruct(oci8_envhp, oci8_errhp, dttm,
+    oci_lc(OCIDateTimeConstruct(seshp ? (void*)seshp : (void*)oci8_envhp, oci8_errhp, dttm,
                                 (sb2)year,
                                 (ub1)month,
                                 (ub1)day,
@@ -200,8 +210,7 @@ OCIDateTime *oci8_set_ocitimestamp(OCIDateTime *dttm, VALUE val)
                                 (ub1)minute,
                                 (ub1)sec,
                                 (ub4)fsec,
-                                (OraText *)tz_str,
-                                strlen(tz_str)));
+                                tz, tzlen));
     return dttm;
 }
 
@@ -235,7 +244,22 @@ static VALUE bind_ocitimestamp_get(oci8_bind_t *obind, void *data, void *null_st
 
 static void bind_ocitimestamp_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
-    oci8_set_ocitimestamp(*(OCIDateTime **)data, val);
+    oci8_base_t *stmt;
+    oci8_base_t *svcctx;
+
+    stmt = obind->base.parent;
+    if (stmt == NULL || stmt->type != OCI_HTYPE_STMT) {
+        rb_raise(rb_eRuntimeError, "oci8lib.so internal error [%s:%d, %p, %d]",
+                 __FILE__, __LINE__,
+                 stmt, stmt ? stmt->type : -1);
+    }
+    svcctx = stmt->parent;
+    if (svcctx == NULL || svcctx->type != OCI_HTYPE_SVCCTX) {
+        rb_raise(rb_eRuntimeError, "oci8lib.so internal error [%s:%d, %p, %d]",
+                 __FILE__, __LINE__,
+                 svcctx, svcctx ? svcctx->type : -1);
+    }
+    oci8_set_ocitimestamp(*(OCIDateTime **)data, val, svcctx->self);
 }
 
 static void bind_ocitimestamp_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)

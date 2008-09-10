@@ -10,6 +10,24 @@ class OCI8
       @@time_offset = ::Time.now.utc_offset
       @@datetime_offset = ::DateTime.now.offset
 
+      @@default_timezone = :local
+      def self.default_timezone
+        @@default_timezone
+      end
+
+      # Determines default timezone of Time and DateTime retrived from Oracle.
+      # This accepts :local or :utc. The default is :local.
+      #
+      # This parameter is used when both or either of Oracle server and client
+      # version is Oracle 8i or lower. If both versions are Oracle 9i or upper,
+      # the default timezone is determined by session timezone.
+      def self.default_timezone=(tz)
+        if tz != :local and tz != :utc
+          raise ArgumentError, "expected :local or :utc but #{tz}"
+        end
+        @@default_timezone = tz
+      end
+
       private
 
       def datetime_to_array(val, full)
@@ -83,13 +101,18 @@ class OCI8
 
       def ocidate_to_datetime(ary)
         year, month, day, hour, minute, sec = ary
-        ::DateTime.civil(year, month, day, hour, minute, sec, @@datetime_offset)
+        if @@default_timezone == :local
+          offset = @@datetime_offset
+        else
+          offset = 0
+        end
+        ::DateTime.civil(year, month, day, hour, minute, sec, offset)
       end
 
       def ocidate_to_time(ary)
         year, month, day, hour, minute, sec = ary
         begin
-          ::Time.local(year, month, day, hour, minute, sec)
+          ::Time.send(@@default_timezone, year, month, day, hour, minute, sec)
         rescue StandardError
           ocidate_to_datetime(ary)
         end
@@ -277,7 +300,11 @@ class OCI8
     class DateTime
       if OCI8.oracle_client_version >= ORAVER_9_0
         def self.create(con, val, param, max_array_size)
-          DateTimeViaOCITimestamp.new(con, val, param, max_array_size)
+          if true # TODO: check Oracle server version
+            DateTimeViaOCITimestamp.new(con, val, param, max_array_size)
+          else
+            DateTimeViaOCIDate.new(con, val, param, max_array_size)
+          end
         end
       else
         def self.create(con, val, param, max_array_size)
@@ -289,7 +316,11 @@ class OCI8
     class Time
       if OCI8.oracle_client_version >= ORAVER_9_0
         def self.create(con, val, param, max_array_size)
-          TimeViaOCITimestamp.new(con, val, param, max_array_size)
+          if true # TODO: check Oracle server version
+            TimeViaOCITimestamp.new(con, val, param, max_array_size)
+          else
+            TimeViaOCIDate.new(con, val, param, max_array_size)
+          end
         end
       else
         def self.create(con, val, param, max_array_size)
