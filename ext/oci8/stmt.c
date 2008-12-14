@@ -539,10 +539,10 @@ static VALUE oci8_stmt_get_row_count(VALUE self)
  *   cursor.exec
  *   cursor.rowid # => the inserted row's rowid
  *
- * <em>Changes between ruby-oci8 1.0 and 2.0.</em>
+ * <em>Changes between ruby-oci8 1.0.3 and 1.0.4.</em>
  *
- * [ruby-oci8 2.0] The return value is a String.
- * [ruby-oci8 1.0] It returns an OCIRowid object which is available only as a bind value.
+ * [ruby-oci8 1.0.4 or upper] The return value is a String.
+ * [ruby-oci8 1.0.3 or lower] It returns an OCIRowid object.
  */
 static VALUE oci8_stmt_get_rowid(VALUE self)
 {

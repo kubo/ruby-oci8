@@ -17,6 +17,7 @@ EOS
     cursor = @conn.parse("INSERT INTO test_table values(1)");
     cursor.exec
     rid1 = cursor.rowid
+    assert_instance_of(String, rid1)
     cursor.close
     rid2 = nil
     @conn.exec('select rowid from test_table where rowid = :1', rid1) do |row|

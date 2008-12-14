@@ -1,3 +1,7 @@
+2008-12-14  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/stmt.c: fix comment.
+	* test/test_rowid.rb: add one assertion as ruby-oci8 1.0 branch does.
+
 2008-09-10  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocidatetime.c: use session time zone when time zone
 	    is not specified to set bind objects of timestamp with time
