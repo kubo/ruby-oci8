@@ -77,6 +77,8 @@ VALUE eOCISuccessWithInfo;
 VALUE cOraDate;
 VALUE cOraNumber;
 
+static void Init_OCIRowid(void);
+
 void
 Init_oci8lib()
 {
@@ -131,7 +133,46 @@ Init_oci8lib()
   Init_ora_date();
   Init_ora_number();
 
+  Init_OCIRowid();
+
 #ifdef DEBUG_CORE_FILE
   signal(SIGSEGV, SIG_DFL);
+#endif
+}
+
+#if defined(WIN32)
+typedef sword (*OCIRowidToChar_func_t)(OCIRowid *rowidDesc, OraText *outbfp, ub2 *outbflp, OCIError *errhp);
+static OCIRowidToChar_func_t OCIRowidToChar_func;
+#define OCIRowidToChar OCIRowidToChar_func
+#endif
+
+#if defined(WIN32) || defined(HAVE_OCIROWIDTOCHAR)
+static VALUE oci8_rowid_to_s(VALUE self)
+{
+  oci8_handle_t *h;
+  char buf[64];
+  ub2 buflen = sizeof(buf);
+  sword rv;
+
+  Get_Handle(self, h);
+  rv = OCIRowidToChar(h->hp, (text*)buf, &buflen, h->errhp);
+  if (rv != OCI_SUCCESS)
+    oci8_raise(h->errhp, rv, NULL);
+  return rb_str_new(buf, buflen);
+}
+#endif
+
+static void Init_OCIRowid(void)
+{
+#if defined(WIN32)
+  HANDLE hModule = GetModuleHandle("OCI.DLL");
+  if (hModule != NULL) {
+    OCIRowidToChar_func = (OCIRowidToChar_func_t)GetProcAddress(hModule, "OCIRowidToChar");
+  }
+  if (OCIRowidToChar_func != NULL) {
+    rb_define_method(cOCIRowid, "to_s", oci8_rowid_to_s, 0);
+  }
+#elif defined(HAVE_OCIROWIDTOCHAR)
+  rb_define_method(cOCIRowid, "to_s", oci8_rowid_to_s, 0);
 #endif
 }

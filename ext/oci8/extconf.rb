@@ -77,6 +77,8 @@ have_func("OCILobCreateTemporary")
 have_func("OCILobGetChunkSize")
 have_func("OCILobLocatorAssign")
 
+have_func("OCIRowidToChar")
+
 $defs.push("-DHAVE_OCIRESET") unless /80./ =~ oraconf.version
 
 # Checking gcc or not

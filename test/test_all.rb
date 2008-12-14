@@ -18,6 +18,7 @@ require "#{srcdir}/test_break"
 require "#{srcdir}/test_oci8"
 require "#{srcdir}/test_connstr"
 require "#{srcdir}/test_metadata"
+require "#{srcdir}/test_rowid"
 
 # Ruby/DBI
 begin

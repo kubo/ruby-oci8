@@ -351,7 +351,7 @@ class OCI8
   def describe_table(table_name)
     desc = @@env.alloc(OCIDescribe)
     desc.attrSet(OCI_ATTR_DESC_PUBLIC, -1)
-    desc.describeAny(@svc, table_name.to_s, OCI_PTYPE_UNK)
+    do_ocicall(@ctx) { desc.describeAny(@svc, table_name.to_s, OCI_PTYPE_UNK) }
     param = desc.attrGet(OCI_ATTR_PARAM)
 
     case param.attrGet(OCI_ATTR_PTYPE)
@@ -811,8 +811,25 @@ class OCI8
       @stmttype = nil
     end # close
 
+    # Get the rowid of the last inserted/updated/deleted row.
     def rowid
-      @stmt.attrGet(OCI_ATTR_ROWID)
+      # get the binary rowid
+      rid = @stmt.attrGet(OCI_ATTR_ROWID)
+      # convert it to a string rowid.
+      if rid.respond_to? :to_s
+        # (Oracle 9.0 or upper)
+        rid.to_s
+      else
+        # (Oracle 8.1 or lower)
+        stmt = @env.alloc(OCIStmt)
+        stmt.prepare('begin :1 := :2; end;')
+        b = stmt.bindByPos(1, OCI8::SQLT_CHR, 64)
+        stmt.bindByPos(2, OCI8::SQLT_RDD, rid)
+        do_ocicall(@ctx) { stmt.execute(@svc, 1, OCI_DEFAULT) }
+        str_rid = b.get()
+        stmt.free()
+        str_rid
+      end
     end
 
     def prefetch_rows=(rows)
@@ -899,6 +916,8 @@ class OCI8
         datatype = :nclob if p.attrGet(OCI_ATTR_CHARSET_FORM) == SQLCS_NCHAR
       when SQLT_BIN
         datasize *= 2 if OCI8::BindType::Mapping[datatype] == OCI8::BindType::String
+      when SQLT_RDD
+        datasize = 64
       end
 
       bind_or_define(:define, i, nil, datatype, datasize, precision, scale, true)
@@ -1210,7 +1229,7 @@ class OCI8
   # datatype        type     size prec scale
   # -------------------------------------------------
   # ROWID         SQLT_RDD      4    0    0
-  BindType::Mapping[OCI8::SQLT_RDD] = BindType::OCIRowid
+  BindType::Mapping[OCI8::SQLT_RDD] = BindType::String
 
   # datatype           type     size prec scale
   # -----------------------------------------------------

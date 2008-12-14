@@ -1,3 +1,19 @@
+2008-12-14  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8.rb.in:
+	    1. fix to fetch a rowid column as s String.
+	    2. change the return type of OCI8#rowid from OCIRowid
+	       to String. It is a local call on Oracle 9.0 or upper.
+	       But on Oracle 8.x client, it needs one network roundtrip
+	       to convert OCIRowid to String on server side.
+	    3. fix OCI8#describe_table to prevent OCIStillExecuting when
+	       non-blocking mode is enabled and it needs a time to
+	       retrieve table information.
+	* ext/oci8/extconf.rb, ext/oci8/oci8.c: add OCIRowid#to_s
+	    when OCIRowidToChar() is available.
+	* test/test_all.rb, test/test_rowid.rb: add a rowid test case.
+	* test/test_dbi_clob.rb: fix to pass tests when the test directory
+	    path is too long.
+
 2008-08-10  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 1.0.2 and 1.0.3.
 	* VERSION: change version to 1.0.3.
@@ -12,7 +28,7 @@
 2008-08-09  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c: fix OCILobLocator#getLength for a lob over 1GB,
 	    which affect OCI8::LOB#size and OCI8::LOB#read. fix
-	    OCILobLocator#read and OCILobLocator#write to set offset over 2BG,
+	    OCILobLocator#read and OCILobLocator#write to set offset over 2GB,
 	    which affect OCI8::LOB#read and OCI8::LOB#write.
 	    (This probmem was reported by Jonathan Hadders.)
 
