@@ -23,14 +23,11 @@ typedef struct {
 
 /* Oracle charset id -> Oracle charset name */
 static VALUE csid2name;
-VALUE oci8_charset_id2name(VALUE svc, VALUE csid);
 
-#ifdef HAVE_TYPE_RB_ENCODING
 /* Oracle charset name -> Oracle charset id */
 static ID id_upcase;
 static VALUE csname2id;
 static VALUE oci8_charset_name2id(VALUE svc, VALUE name);
-#endif /* HAVE_TYPE_RB_ENCODING */
 
 VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
 {
@@ -79,22 +76,19 @@ VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
     }
     OBJ_FREEZE(name);
     rb_hash_aset(csid2name, csid, name);
-#ifdef HAVE_TYPE_RB_ENCODING
     rb_hash_aset(csname2id, name, csid);
-#endif /* HAVE_TYPE_RB_ENCODING */
     return name;
 }
 
-#ifdef HAVE_TYPE_RB_ENCODING
-
 static VALUE oci8_charset_name2id(VALUE svc, VALUE name)
 {
-    VALUE csid = rb_hash_aref(csname2id, StringValue(name));
+    VALUE csid;
 
+    name = rb_funcall(name, id_upcase, 0);
+    csid = rb_hash_aref(csname2id, StringValue(name));
     if (!NIL_P(csid)) {
         return csid;
     }
-    name = rb_funcall(name, id_upcase, 0);
     if (have_OCINlsCharSetNameToId) {
         /* Oracle 9iR2 or upper */
         ub2 rv;
@@ -124,32 +118,27 @@ static VALUE oci8_charset_name2id(VALUE svc, VALUE name)
         bind_vars[1].alenp = NULL;
 
         /* convert chaset name to charset id by querying Oracle server. */
-        oci8_exec_sql(oci8_get_svcctx(svc), "BEGIN :csid := nls_charset_id(:name); END;", 0, NULL, 2, bind_vars);
+        oci8_exec_sql(oci8_get_svcctx(svc), "BEGIN :csid := nls_charset_id(:name); END;", 0, NULL, 2, bind_vars, 1);
         if (ind) {
             return Qnil;
         }
-        csid = INT2FIX(id);
+        csid = INT2FIX(ival);
     }
     rb_hash_aset(csid2name, csid, name);
     rb_hash_aset(csname2id, name, csid);
     return csid;
 }
 
-#endif /* HAVE_TYPE_RB_ENCODING */
 
 void Init_oci8_encoding(VALUE cOCI8)
 {
     csid2name = rb_hash_new();
     rb_global_variable(&csid2name);
 
-#ifdef HAVE_TYPE_RB_ENCODING
     id_upcase = rb_intern("upcase");
     csname2id = rb_hash_new();
     rb_global_variable(&csname2id);
-#endif /* HAVE_TYPE_RB_ENCODING */
 
-#if 0
     rb_define_method(cOCI8, "charset_name2id", oci8_charset_name2id, 1);
     rb_define_method(cOCI8, "charset_id2name", oci8_charset_id2name, 1);
-#endif
 }

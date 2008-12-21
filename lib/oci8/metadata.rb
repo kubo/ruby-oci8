@@ -501,10 +501,10 @@ class OCI8
         when 189; :interval_ym # OCI_TYPECODE_INTERVAL_YM
         when 190; :interval_ds # OCI_TYPECODE_INTERVAL_DS
         when 104; :urowid      # OCI_TYPECODE_UROWID
-        when 228; :otmfirst    # OCI_TYPECODE_OTMFIRST
-        when 320; :otmlast     # OCI_TYPECODE_OTMLAST
-        when 228; :sysfirst    # OCI_TYPECODE_SYSFIRST
-        when 235; :syslast     # OCI_TYPECODE_SYSLAST
+        #when 228; :otmfirst   # OCI_TYPECODE_OTMFIRST
+        #when 320; :otmlast    # OCI_TYPECODE_OTMLAST
+        #when 228; :sysfirst   # OCI_TYPECODE_SYSFIRST
+        #when 235; :syslast    # OCI_TYPECODE_SYSLAST
         when 266; :pls_integer # OCI_TYPECODE_PLS_INTEGER
         end
       end

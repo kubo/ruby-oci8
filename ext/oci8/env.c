@@ -7,11 +7,8 @@
 */
 #include "oci8.h"
 
-/* ruby_setenv */
-#ifdef HAVE_RUBY_UTIL_H
-#include <ruby/util.h>
-#endif
-#ifdef HAVE_UTIL_H
+#if !defined(RUBY_VM)
+/* ruby_setenv for workaround ruby 1.8.4 */
 #include <util.h>
 #endif
 

@@ -35,5 +35,6 @@ if is_dbi_loaded
 end
 
 #Test::Unit::AutoRunner.run(true, true)
-Test::Unit::AutoRunner.run()
-
+if defined? Test::Unit::AutoRunner
+  Test::Unit::AutoRunner.run()
+end

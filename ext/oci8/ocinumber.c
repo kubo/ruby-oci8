@@ -10,6 +10,7 @@
  */
 #include "oci8.h"
 #include <orl.h>
+#include <errno.h>
 
 #ifndef RUBY_VM
 /* ruby 1.8 */

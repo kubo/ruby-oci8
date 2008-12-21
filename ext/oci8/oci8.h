@@ -8,7 +8,6 @@
 #define _RUBY_OCI_H_ 1
 
 #include "ruby.h"
-#include "rubyio.h"
 #ifdef HAVE_INTERN_H
 #include "intern.h"
 #endif

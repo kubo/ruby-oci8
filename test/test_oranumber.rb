@@ -98,6 +98,9 @@ class TestOraNumber < Test::Unit::TestCase
           puts '-----------'
           raise $!
         end
+        # explicity convert actual_val to a Float to prevent SEGV
+        # in OCINumberSub().
+        actual_val = actual_val.to_f if defined? ::MiniTest
         assert_in_delta(expected_val, actual_val, delta, x)
       end
     end

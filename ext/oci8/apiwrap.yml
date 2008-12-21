@@ -1126,6 +1126,12 @@ OCINlsCharSetIdToName:
             - size_t buflen
             - ub2 id
 
+OCINlsCharSetNameToId:
+  :version: 920
+  :ret:     ub2
+  :args:    - dvoid *envhp
+            - const oratext *name
+
 #
 # Oracle 10.1
 #

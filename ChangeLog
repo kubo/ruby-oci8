@@ -1,3 +1,19 @@
+2008-12-21  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml: add OCINlsCharSetNameToId()
+	* ext/oci8/encoding.c: add OCI8#charset_name2id and
+	    OCI8#charset_id2name.
+	* ext/oci8/env.c: include <util.h> only when ruby 1.8.
+	* ext/oci8/oci8.h: don't include <rubyio.h> which is not used
+	    anywhere.
+	* ext/oci8/ocinumber.c: include <errno.h> to compile
+	    ruby-oci8 for ruby 1.9.
+	* lib/oci8/metadata.rb: comment duplicated typecode.
+	* test/test_all.rb: use AutoRunner when it is found.
+	    Ruby 1.9's test unit does't has AutoRunner.
+	* test/test_oranumber.rb: explicity convert actual_val, which is
+	    passed to before assert_in_delta(), to a Float to prevent
+	    SEGV in OCINumberSub().
+
 2008-12-14  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/stmt.c: fix comment.
 	* test/test_rowid.rb: add one assertion as ruby-oci8 1.0 branch does.
