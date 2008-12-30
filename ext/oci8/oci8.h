@@ -12,9 +12,18 @@
 #include "intern.h"
 #endif
 
+#ifndef rb_pid_t
+#ifdef WIN32
+#define rb_pid_t int
+#else
+#define rb_pid_t pid_t
+#endif
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+
 #ifdef __cplusplus
 extern "C"
 {
@@ -234,6 +243,7 @@ typedef struct  {
     enum logon_type_t logon_type;
     OCISession *authhp;
     OCIServer *srvhp;
+    rb_pid_t pid;
     char is_autocommit;
 #ifdef RUBY_VM
     char non_blocking;
@@ -335,6 +345,7 @@ VALUE Init_oci8(void);
 oci8_svcctx_t *oci8_get_svcctx(VALUE obj);
 OCISvcCtx *oci8_get_oci_svcctx(VALUE obj);
 OCISession *oci8_get_oci_session(VALUE obj);
+void oci8_check_pid_consistency(oci8_svcctx_t *svcctx);
 #define TO_SVCCTX oci8_get_oci_svcctx
 #define TO_SESSION oci8_get_oci_session
 

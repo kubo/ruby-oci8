@@ -6,6 +6,16 @@
  *
  */
 #include "oci8.h"
+#ifdef HAVE_UNISTD_H
+#include <unistd.h> /* getpid() */
+#endif
+
+#ifdef WIN32
+#ifndef getpid
+extern rb_pid_t rb_w32_getpid(void);
+#define getpid() rb_w32_getpid()
+#endif
+#endif
 
 /*
  * Document-class: OCI8
@@ -236,6 +246,7 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
     default:
         break;
     }
+    svcctx->pid = getpid();
     svcctx->is_autocommit = 0;
 #ifdef RUBY_VM
     svcctx->non_blocking = 0;
@@ -565,3 +576,11 @@ OCISession *oci8_get_oci_session(VALUE obj)
     }
     return svcctx->authhp;
 }
+
+void oci8_check_pid_consistency(oci8_svcctx_t *svcctx)
+{
+    if (svcctx->pid != getpid()) {
+        rb_raise(rb_eRuntimeError, "The connection cannot be reused in the forked process.");
+    }
+}
+

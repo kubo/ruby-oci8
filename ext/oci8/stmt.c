@@ -67,7 +67,7 @@ static VALUE oci8_stmt_initialize(int argc, VALUE *argv, VALUE self)
 
     rb_scan_args(argc, argv, "11", &svc, &sql);
 
-    oci8_get_svcctx(svc); /* check argument */
+    oci8_check_pid_consistency(oci8_get_svcctx(svc));
     if (argc > 1)
         StringValue(sql);
 

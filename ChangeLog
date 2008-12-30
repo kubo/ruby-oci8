@@ -1,4 +1,11 @@
 2008-12-30  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/attr.c: rewrite code converting the rowid descriptor
+	    to string representation by using oci8_exec_sql().
+	* ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c,
+	  ext/oci8/stmt.c: add check code to ensure that the process id
+	    is not changed.
+
+2008-12-30  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: add code to check the cpu type of Mac OS X
 	    libclntsh.dylib.
 

@@ -75,7 +75,6 @@ typedef struct {
     oci8_base_t *base;
     ub4 attrtype;
     OCIRowid *ridp;
-    OCIStmt *stmtp;
 } rowid_arg_t;
 
 static VALUE get_rowid_attr(rowid_arg_t *arg)
@@ -86,7 +85,7 @@ static VALUE get_rowid_attr(rowid_arg_t *arg)
     ub2 buflen;
     sword rv;
 
-	/* get a rowid descriptor from OCIHandle */
+    /* get a rowid descriptor from OCIHandle */
     rv = OCIDescriptorAlloc(oci8_envhp, (dvoid*)&arg->ridp, OCI_DTYPE_ROWID, 0, NULL);
     if (rv != OCI_SUCCESS)
         oci8_env_raise(oci8_envhp, rv);
@@ -107,9 +106,7 @@ static VALUE get_rowid_attr(rowid_arg_t *arg)
          * Oracle Server.
          */
         oci8_base_t *svc;
-        OCIBind *bind1 = NULL;
-        OCIBind *bind2 = NULL;
-        sword rv;
+        oci8_exec_sql_var_t bind_vars[2];
 
         /* search a connection from the handle */
         svc = base;
@@ -119,43 +116,29 @@ static VALUE get_rowid_attr(rowid_arg_t *arg)
                 rb_raise(rb_eRuntimeError, "No connection is found!!");
             }
         }
-        /*
-         * equivalent code:
-         *   cursor = conn.parse("BEGIN :1 := :2; END;")
-         *   cursor.bind(1, nil, String, MAX_ROWID_LEN)
-         *   cursor.bind(2, rowid, OCIRowid)
-         *   cursor.exec()
-         *   cursor[1] # => rowid's string representation
-         */
-#define ROWIDTOCHAR_SQL "BEGIN :1 := :2; END;"
-        buflen = 0;
-        rv = OCIHandleAlloc(oci8_envhp, (dvoid*)&arg->stmtp, OCI_HTYPE_STMT, 0, NULL);
-        if (rv != OCI_SUCCESS) {
-            oci8_env_raise(oci8_envhp, rv);
+        /* :strval */
+        bind_vars[0].valuep = buf;
+        bind_vars[0].value_sz = sizeof(buf);
+        bind_vars[0].dty = SQLT_CHR;
+        bind_vars[0].indp = NULL;
+        bind_vars[0].alenp = &buflen;
+        /* :rowid */
+        bind_vars[1].valuep = &arg->ridp;
+        bind_vars[1].value_sz = sizeof(void *);
+        bind_vars[1].dty = SQLT_RDD;
+        bind_vars[1].indp = NULL;
+        bind_vars[1].alenp = NULL;
+        /* convert the rowid descriptor to a string value by querying Oracle server. */
+        oci8_exec_sql((oci8_svcctx_t*)svc, "BEGIN :strval := :rowid; END;", 0, NULL, 2, bind_vars, 1);
+        if (buflen == 0) {
+            return Qnil;
         }
-        oci_lc(OCIStmtPrepare(arg->stmtp, oci8_errhp, (text*)ROWIDTOCHAR_SQL, strlen(ROWIDTOCHAR_SQL), OCI_NTV_SYNTAX, OCI_DEFAULT));
-        oci_lc(OCIBindByPos(arg->stmtp, &bind1, oci8_errhp, 1, buf, MAX_ROWID_LEN, SQLT_STR, NULL, &buflen, 0, 0, 0, OCI_DEFAULT));
-        oci_lc(OCIBindByPos(arg->stmtp, &bind2, oci8_errhp, 2, (dvoid*)&arg->ridp, sizeof(void*), SQLT_RDD, NULL, NULL, 0, 0, 0, OCI_DEFAULT));
-        rv = OCIStmtExecute_nb((oci8_svcctx_t*)svc, svc->hp.svc, arg->stmtp, oci8_errhp, 1, 0, NULL, NULL, OCI_DEFAULT);
-        if (rv == OCI_ERROR) {
-            if (oci8_get_error_code(oci8_errhp) == 1000) {
-                /* run GC to close unreferred cursors
-                 * when ORA-01000 (maximum open cursors exceeded).
-                 */
-                rb_gc();
-                rv = OCIStmtExecute_nb((oci8_svcctx_t*)svc, svc->hp.svc, arg->stmtp, oci8_errhp, 1, 0, NULL, NULL, OCI_DEFAULT);
-            }
-        }
-        oci_lc(rv);
     }
     return rb_str_new(buf, buflen);
 }
 
 static VALUE rowid_ensure(rowid_arg_t *arg)
 {
-    if (arg->stmtp != NULL) {
-        OCIHandleFree(arg->stmtp, OCI_HTYPE_STMT);
-    }
     if (arg->ridp != NULL) {
         OCIDescriptorFree(arg->ridp, OCI_DTYPE_ROWID);
     }
@@ -168,6 +151,5 @@ VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype)
     arg.base = base;
     arg.attrtype = attrtype;
     arg.ridp = NULL;
-    arg.stmtp = NULL;
     return rb_ensure(get_rowid_attr, (VALUE)&arg, rowid_ensure, (VALUE)&arg);
 }

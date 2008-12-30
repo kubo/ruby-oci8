@@ -317,6 +317,8 @@ static VALUE ensure_func(cb_arg_t *arg);
 sword oci8_exec_sql(oci8_svcctx_t *svcctx, const char *sql_text, ub4 num_define_vars, oci8_exec_sql_var_t *define_vars, ub4 num_bind_vars, oci8_exec_sql_var_t *bind_vars, int raise_on_error)
 {
     cb_arg_t arg;
+
+    oci8_check_pid_consistency(svcctx);
     arg.svcctx = svcctx;
     arg.sql_text = sql_text;
     arg.num_define_vars = num_define_vars;
