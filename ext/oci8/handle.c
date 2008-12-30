@@ -13,7 +13,7 @@ See ((<Class Hierarchy>)).
 
 static void oci8_handle_do_free(oci8_handle_t *h)
 {
-  int i;
+  unsigned int i;
   if (h->type == 0) {
     return;
   }
@@ -104,7 +104,7 @@ VALUE oci8_s_new(VALUE self)
 static void oci8_handle_mark(oci8_handle_t *h)
 {
   oci8_bind_handle_t *bh;
-  int i;
+  unsigned int i;
 
   switch (h->type) {
   case OCI_HTYPE_SVCCTX:
@@ -221,8 +221,8 @@ oci8_handle_t *oci8_make_handle(ub4 type, dvoid *hp, OCIError *errhp, oci8_handl
 
 void oci8_link(oci8_handle_t *parent, oci8_handle_t *child)
 {
-  int i;
-  int new_size;
+  unsigned int i;
+  int new_size, n;
 
   if (parent == NULL)
     return;
@@ -238,8 +238,8 @@ void oci8_link(oci8_handle_t *parent, oci8_handle_t *child)
   new_size = parent->size + CHILDREN_ARRAY_GROW_SIZE;
   parent->children = xrealloc(parent->children, sizeof(oci8_handle_t *) * new_size);
   parent->children[parent->size] = child;
-  for (i = parent->size + 1;i < new_size;i++) {
-    parent->children[i] = NULL;
+  for (n = parent->size + 1;n < new_size;n++) {
+    parent->children[n] = NULL;
   }
   parent->size = new_size;
   return;
@@ -248,7 +248,7 @@ void oci8_link(oci8_handle_t *parent, oci8_handle_t *child)
 void oci8_unlink(oci8_handle_t *self)
 {
   oci8_handle_t *parent = self->parent;
-  int i;
+  unsigned int i;
 
   if (self->parent == NULL)
     return;

@@ -45,7 +45,7 @@ static oci8_names_t oci8_typecode[] = {
 static VALUE oci8_make_names(oci8_names_t *names, size_t size)
 {
   volatile VALUE ary;
-  int i;
+  unsigned int i;
 
   ary = rb_ary_new();
   for (i = 0;i < size;i++)
@@ -55,7 +55,7 @@ static VALUE oci8_make_names(oci8_names_t *names, size_t size)
 
 void  Init_oci8_const(void)
 {
-  int i;
+  unsigned int i;
 
   oci8_id_code = rb_intern("code");
   oci8_id_define_array = rb_intern("define_array");

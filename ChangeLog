@@ -1,4 +1,8 @@
 2008-12-30  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/const.c, ext/oci8/handle.c: suppress compilation warnings.
+	    (contributed by Daniel Berger)
+
+2008-12-30  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: add code to check the cpu type of Mac OS X
 	    libclntsh.dylib.
 
