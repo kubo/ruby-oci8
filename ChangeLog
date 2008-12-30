@@ -1,7 +1,11 @@
+2008-12-30  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: add code to check the cpu type of Mac OS X
+	    libclntsh.dylib.
+
 2008-12-14  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8.rb.in:
 	    1. fix to fetch a rowid column as s String.
-	    2. change the return type of OCI8#rowid from OCIRowid
+	    2. change the return type of OCI8::Cursor#rowid from OCIRowid
 	       to String. It is a local call on Oracle 9.0 or upper.
 	       But on Oracle 8.x client, it needs one network roundtrip
 	       to convert OCIRowid to String on server side.
