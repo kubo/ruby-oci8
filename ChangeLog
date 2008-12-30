@@ -1,3 +1,7 @@
+2008-12-30  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: add code to check the cpu type of Mac OS X
+	    libclntsh.dylib.
+
 2008-12-21  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.yml: add OCINlsCharSetNameToId()
 	* ext/oci8/encoding.c: add OCI8#charset_name2id and

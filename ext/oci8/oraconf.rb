@@ -110,8 +110,23 @@ class MiniSOReader
       when "MZ"
         # Windows
         read_pe(f)
+      when "\x02\x10"
+        # HP-UX PA-RISC1.1
+        read_parisc(f)
+      when "\xfe\xed"
+        # Big-endian Mach-O File
+        read_mach_o_be(f)
+      when "\xce\xfa"
+        # 32-bit Little-endian Mach-O File
+        read_mach_o_le(f, 32)
+      when "\xcf\xfa"
+        # 64-bit Little-endian Mach-O File
+        read_mach_o_le(f, 64)
+      when "\xca\xfe"
+        # Universal binary
+        read_mach_o_unversal(f)
       else
-        # HP-UX(32-bit), AIX, Mac OS X and Tru64
+        # AIX and Tru64
         raise format("unknown file header: %02x %02x", file_header[0], file_header[1])
       end
     ensure
@@ -200,6 +215,79 @@ class MiniSOReader
       @bits = 64
     else
       raise "Invalid coff machine: #{machine}"
+    end
+  end
+
+  # HP-UX PA-RISC(32 bit)
+  def read_parisc(f)
+    # 0-1 system_id  - CPU_PA_RISC1_1
+    @file_format = :pa_risc
+    # 2-3 a_magic    - SHL_MAGIC
+    raise 'invalid a_magic' if f.read(2).unpack('n')[0] != 0x10e
+    @bits = 32
+    @endian = :big
+    @cpu = :parisc
+  end
+
+  # Big-endian Mach-O File
+  def read_mach_o_be(f)
+    @file_format = :mach_o
+    @endian = :big
+    case f.read(2)
+    when "\xfa\xce" # feedface
+      @cpu = :ppc
+      @bits = 32
+    when "\xfa\xcf" # feedfacf
+      @cpu = :ppc64
+      @bits = 64
+    else
+      raise "unknown file format"
+    end
+  end
+
+  def read_mach_o_le(f, bits)
+    @file_format = :mach_o
+    @endian = :little
+    raise 'unknown file format' if f.read(2) != "\xed\xfe"
+    case bits
+    when 32
+      @cpu = :i386
+      @bits = 32
+    when 64
+      @cpu = :x86_64
+      @bits = 64
+    end
+  end
+
+  def read_mach_o_unversal(f)
+    raise 'unknown file format' if f.read(2) != "\xba\xbe" # cafebabe
+    @file_format = :universal
+    nfat_arch = f.read(4).unpack('N')[0]
+    @cpu = []
+    @endian = []
+    @bits = []
+    nfat_arch.times do
+      case cputype = f.read(4).unpack('N')[0]
+      when 7
+        @cpu    << :i386
+        @endian << :little
+        @bits   << 32
+      when 7 + 0x01000000
+        @cpu    << :x86_64
+        @endian << :little
+        @bits   << 64
+      when 18
+        @cpu    << :ppc
+        @endian << :big
+        @bits   << 32
+      when 18 + 0x01000000
+        @cpu    << :ppc64
+        @endian << :big
+        @bits   << 64
+      else
+        raise "Unknown mach-o cputype: #{cputype}"
+      end
+      f.seek(4 * 4, IO::SEEK_CUR)
     end
   end
 end
@@ -335,6 +423,39 @@ EOS
     when /darwin/
       @@ld_envs = %w[DYLD_LIBRARY_PATH]
       so_ext = 'dylib'
+      check_proc = Proc.new do |file|
+        is_32bit = [0].pack('l!').size == 4
+        is_big_endian = "\x01\x02".unpack('s') == 0x0102
+        if is_32bit
+          if is_big_endian
+            this_cpu = :ppc    # 32-bit big-endian
+          else
+            this_cpu = :i386   # 32-bit little-endian
+          end
+        else
+          if is_big_endian
+            this_cpu = :ppc64  # 64-bit big-endian
+          else
+            this_cpu = :x86_64 # 64-bit little-endian
+          end
+        end
+        so = MiniSOReader.new(file)
+        if so.file_format == :universal
+          if so.cpu.include? this_cpu
+            true
+          else
+            puts "  skip: #{file} is for #{so.cpu} cpu."
+            false
+          end
+        else
+          if so.cpu == this_cpu
+            true
+          else
+            puts "  skip: #{file} is for #{so.cpu} cpu."
+            false
+          end
+        end
+      end
     end
 
     glob_name = "#{oci_basename}.#{so_ext}#{oci_glob_postfix}"
