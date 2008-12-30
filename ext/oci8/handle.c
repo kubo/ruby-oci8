@@ -10,6 +10,16 @@ See ((<Class Hierarchy>)).
 =end
 */
 #include "oci8.h"
+#ifdef HAVE_UNISTD_H
+#include <unistd.h> /* getpid() */
+#endif
+
+#ifdef WIN32
+#ifndef getpid
+extern rb_pid_t rb_w32_getpid(void);
+#define getpid() rb_w32_getpid()
+#endif
+#endif
 
 static void oci8_handle_do_free(oci8_handle_t *h)
 {
@@ -149,6 +159,7 @@ oci8_handle_t *oci8_make_handle(ub4 type, dvoid *hp, OCIError *errhp, oci8_handl
     break;
   case OCI_HTYPE_SVCCTX:
     obj = Data_Make_Struct(cOCISvcCtx, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);
+    h->u.svcctx.pid = getpid();
     break;
   case OCI_HTYPE_STMT:
     obj = Data_Make_Struct(cOCIStmt, oci8_handle_t, oci8_handle_mark, oci8_handle_cleanup, h);

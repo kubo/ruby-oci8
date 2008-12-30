@@ -1,4 +1,11 @@
 2008-12-30  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/handle.c, ext/oci8/oci8.h, ext/oci8/svcctx.c: add
+	    OCISvcCtx.pid, which returns id of the process where the
+	    OCISvcCtx is created.
+	* lib/oci8.rb.in: add check code to ensure that the process id
+	    is not changed.
+
+2008-12-30  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/const.c, ext/oci8/handle.c: suppress compilation warnings.
 	    (contributed by Daniel Berger)
 

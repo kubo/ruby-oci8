@@ -679,6 +679,9 @@ class OCI8
     end
 
     def initialize(env, svc, ctx, stmt = nil)
+      if Process.pid != svc.pid
+        raise "The connection cannot be reused in the forked process."
+      end
       @env = env
       @svc = svc
       @ctx = ctx

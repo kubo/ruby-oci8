@@ -10,6 +10,14 @@
 #include "rubyio.h"
 #include "intern.h"
 
+#ifndef rb_pid_t
+#ifdef WIN32
+#define rb_pid_t int
+#else
+#define rb_pid_t pid_t
+#endif
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef __cplusplus
@@ -134,6 +142,9 @@ struct oci8_handle {
       int char_width;
     } lob_locator;
 #endif
+    struct {
+      rb_pid_t pid;
+    } svcctx;
   } u;
 };
 typedef struct oci8_handle oci8_handle_t;

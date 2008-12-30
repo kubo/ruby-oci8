@@ -180,6 +180,14 @@ static VALUE oci8_close_all_files(VALUE self)
   return self;
 }
 
+static VALUE oci8_pid(VALUE self)
+{
+  oci8_handle_t *h;
+
+  Get_Handle(self, h); /* 0 */
+  return INT2FIX(h->u.svcctx.pid);
+}
+
 void Init_oci8_svcctx(void)
 {
   rb_define_method(cOCISvcCtx, "logoff", oci8_svcctx_logoff, 0);
@@ -196,6 +204,7 @@ void Init_oci8_svcctx(void)
   rb_define_method(cOCISvcCtx, "reset", oci8_reset, 0);
 #endif
   rb_define_method(cOCISvcCtx, "close_all_files", oci8_close_all_files, 0);
+  rb_define_method(cOCISvcCtx, "pid", oci8_pid, 0);
 }
 
 /*
