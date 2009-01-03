@@ -850,7 +850,7 @@ static VALUE onum_to_char(int argc, VALUE *argv, VALUE self)
         if (errcode == 22065) {
             /* OCI-22065: number to text translation for the given format causes overflow */
             if (NIL_P(fmt)) /* implicit conversion */
-                return rb_str_new2("overflow");
+                return rb_usascii_str_new_cstr("overflow");
         }
         oci8_raise(oci8_errhp, rv, NULL);
     }
@@ -978,7 +978,7 @@ static VALUE onum_inspect(VALUE self)
 
     snprintf(str, len, "#<%s:%s>", name, RSTRING_PTR(s));
     str[len - 1] = '\0';
-    return rb_str_new2(str);
+    return rb_usascii_str_new_cstr(str);
 }
 
 /*

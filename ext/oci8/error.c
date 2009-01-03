@@ -74,7 +74,7 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, c
         if (RARRAY_LEN(vmessages) > 0) {
             msg = RARRAY_PTR(vmessages)[0];
         } else {
-            msg = rb_str_new2("ERROR");
+            msg = rb_usascii_str_new_cstr("ERROR");
         }
         if (status == OCI_ERROR) {
             exc = eOCIError;
@@ -103,28 +103,28 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, c
         break;
     case OCI_NO_DATA:
         exc = eOCINoData;
-        msg = rb_str_new2("No Data");
+        msg = rb_usascii_str_new_cstr("No Data");
         break;
     case OCI_INVALID_HANDLE:
         exc = eOCIInvalidHandle;
-        msg = rb_str_new2("Invalid Handle");
+        msg = rb_usascii_str_new_cstr("Invalid Handle");
         break;
     case OCI_NEED_DATA:
         exc = eOCINeedData;
-        msg = rb_str_new2("Need Data");
+        msg = rb_usascii_str_new_cstr("Need Data");
         break;
     case OCI_STILL_EXECUTING:
         exc = eOCIStillExecuting;
-        msg = rb_str_new2("Still Executing");
+        msg = rb_usascii_str_new_cstr("Still Executing");
         break;
     case OCI_CONTINUE:
         exc = eOCIContinue;
-        msg = rb_str_new2("Continue");
+        msg = rb_usascii_str_new_cstr("Continue");
         break;
     default:
         sprintf(errmsg, "Unknown error (%d)", status);
         exc = rb_eStandardError;
-        msg = rb_str_new2(errmsg);
+        msg = rb_usascii_str_new_cstr(errmsg);
     }
     exc = rb_funcall(exc, oci8_id_new, 1, msg);
     if (!NIL_P(vcodes)) {
@@ -159,7 +159,7 @@ static void set_backtrace_and_raise(VALUE exc, const char *file, int line)
     if (TYPE(backtrace) == T_ARRAY) {
         snprintf(errmsg, sizeof(errmsg), "%s:%d:in oci8lib.so", file, line);
         errmsg[sizeof(errmsg) - 1] = '\0';
-        rb_ary_unshift(backtrace, rb_str_new2(errmsg));
+        rb_ary_unshift(backtrace, rb_usascii_str_new_cstr(errmsg));
         rb_funcall(exc, oci8_id_set_backtrace, 1, backtrace);
     }
     rb_exc_raise(exc);
@@ -294,7 +294,7 @@ void oci8_do_env_raise(OCIEnv *envhp, sword status, const char *file, int line)
 
 void oci8_do_raise_init_error(const char *file, int line)
 {
-    VALUE msg = rb_str_new2("OCI Library Initialization Error");
+    VALUE msg = rb_usascii_str_new_cstr("OCI Library Initialization Error");
     VALUE exc = rb_funcall(eOCIError, oci8_id_new, 1, msg);
 
     rb_ivar_set(exc, oci8_id_code, rb_ary_new3(1, INT2FIX(-1)));

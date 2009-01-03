@@ -200,7 +200,7 @@ static VALUE ora_date_to_s(VALUE self)
     Data_Get_Struct(self, ora_date_t, od);
     sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d", Get_year(od), Get_month(od),
             Get_day(od), Get_hour(od), Get_minute(od), Get_second(od));
-    return rb_str_new2(buf);
+    return rb_usascii_str_new_cstr(buf);
 }
 
 /*
@@ -495,7 +495,7 @@ static VALUE ora_date_dump(int argc, VALUE *argv, VALUE self)
 {
     ora_date_t *od;
     Data_Get_Struct(self, ora_date_t, od);
-    return rb_str_new((const char*)od, sizeof(ora_date_t));
+    return rb_str_new((const char*)od, sizeof(ora_date_t)); /* ASCII-8BIT */
 }
 
 /*

@@ -89,6 +89,12 @@ typedef struct OCIAdmin OCIAdmin;
 typedef VALUE rb_blocking_function_t(void *);
 #endif
 
+#ifndef HAVE_TYPE_RB_ENCODING
+#define rb_external_str_new_with_enc(ptr, len, enc) rb_tainted_str_new((ptr), (len))
+#define rb_usascii_str_new(ptr, len) rb_str_new((ptr), (len))
+#define rb_usascii_str_new_cstr(ptr) rb_str_new2(ptr)
+#endif
+
 /* macros depends on the compiler.
  *  LIKELY(x)      hint for the compiler that 'x' is 1(TRUE) in many cases.
  *  UNLIKELY(x)    hint for the compiler that 'x' is 0(FALSE) in many cases.

@@ -1,4 +1,17 @@
 2009-01-03  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/encoding.c, ext/oci8/error.c, ext/oci8/ocinumber.c,
+	  ext/oci8/oradate.c: use rb_usascii_str_new() or
+	    rb_usascii_str_new_cstr() when its encoding is always
+	    us-ascii.
+	* ext/oci8/extconf.rb: add type checking for rb_encoding
+	    for ruby 1.9.
+	* ext/oci8/oci8.h: use rb_str_new(), rb_str_new2() and
+	    rb_tainted_str_new() if rb_usascii_str_new(),
+	    rb_usascii_str_new_cstr() and rb_external_str_new_with_enc()
+	    are not usable.
+	* ext/oci8/oci8lib.c: use ORAVERNUM macro.
+
+2009-01-03  KUBO Takehiro  <kubo@jiubao.org>
 	* custom-rdoc.rb: fix for rdoc bundled with ruby 1.9.
 	* ext/oci8/apiwrap.yml, ext/oci8/oci8lib.c: set the value of
 	    OCI8.oracle_client_version by OCIClientVersion() if

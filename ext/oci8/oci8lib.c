@@ -114,7 +114,7 @@ Init_oci8lib()
     if (have_OCIClientVersion) {
         sword major, minor, update, patch, port_update;
         OCIClientVersion(&major, &minor, &update, &patch, &port_update);
-        oracle_client_version = (major << 24) | (minor << 20) | (update << 12) | (patch << 8) | port_update;
+        oracle_client_version = ORAVERNUM(major, minor, update, patch, port_update);
     }
 #endif
 

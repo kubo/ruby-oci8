@@ -93,6 +93,7 @@ have_header("intern.h")
 have_header("util.h")
 # ruby 1.9 headers
 have_header("ruby/util.h")
+have_type('rb_encoding', ['ruby/ruby.h', 'ruby/encoding.h'])
 
 # $! in C API
 have_var("ruby_errinfo", "ruby.h") # ruby 1.8

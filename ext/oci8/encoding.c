@@ -46,7 +46,7 @@ VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
         if (rv != OCI_SUCCESS) {
             return Qnil;
         }
-        name = rb_str_new2(buf);
+        name = rb_usascii_str_new_cstr(buf);
     } else {
         /* Oracle 9iR1 or lower */
         oci8_exec_sql_var_t bind_vars[2];
@@ -72,7 +72,7 @@ VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
         if (buflen == 0) {
             return Qnil;
         }
-        name = rb_str_new(buf, buflen);
+        name = rb_usascii_str_new(buf, buflen);
     }
     OBJ_FREEZE(name);
     rb_hash_aset(csid2name, csid, name);
