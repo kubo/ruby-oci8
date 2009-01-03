@@ -1190,6 +1190,16 @@ OCILobWrite2_nb:
 # Oracle 10.2
 #
 
+# round trip: 0
+OCIClientVersion:
+  :version: 1020
+  :ret:     void
+  :args:    - sword *major_version
+            - sword *minor_version
+            - sword *update_num
+            - sword *patch_num
+            - sword *port_update_num
+
 # round trip: 1
 OCIDBStartup_nb:
   :version: 1020
