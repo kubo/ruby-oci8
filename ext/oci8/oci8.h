@@ -2,7 +2,7 @@
 /*
   oci8.h - part of ruby-oci8
 
-  Copyright (C) 2002-2008 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002-2009 KUBO Takehiro <kubo@jiubao.org>
 */
 #ifndef _RUBY_OCI_H_
 #define _RUBY_OCI_H_ 1
@@ -173,7 +173,11 @@ static ALWAYS_INLINE char *to_charptr(OraText *c)
 #define RSTRING_ORATEXT(obj) TO_ORATEXT(RSTRING_PTR(obj))
 #define rb_str_new2_ora(str) rb_str_new2(TO_CHARPTR(str))
 
+/*
+ * prevent rdoc from gathering the specified method.
+ */
 #define rb_define_method_nodoc rb_define_method
+#define rb_define_singleton_method_nodoc rb_define_singleton_method
 
 /* data structure for SQLT_LVC and SQLT_LVB. */
 typedef struct {

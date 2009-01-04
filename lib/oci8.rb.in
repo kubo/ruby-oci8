@@ -19,15 +19,38 @@ if RUBY_PLATFORM =~ /cygwin/
 end
 
 require 'oci8lib'
+require 'oci8/oracle_version.rb'
 
 class OCI8
-  ORAVER_8_0  = 0x08000000 #  8.0
-  ORAVER_8_1  = 0x08100000 #  8.1
-  ORAVER_9_0  = 0x09000000 #  9.0
-  ORAVER_9_2  = 0x09200000 #  9.2
-  ORAVER_10_1 = 0x0a100000 # 10.1
-  ORAVER_10_2 = 0x0a200000 # 10.2
-  ORAVER_11_1 = 0x0b100000 # 11.1
+  ORAVER_8_0  = OCI8::OracleVersion.new(8, 0)
+  ORAVER_8_1  = OCI8::OracleVersion.new(8, 1)
+  ORAVER_9_0  = OCI8::OracleVersion.new(9, 0)
+  ORAVER_9_2  = OCI8::OracleVersion.new(9, 2)
+  ORAVER_10_1 = OCI8::OracleVersion.new(10, 1)
+  ORAVER_10_2 = OCI8::OracleVersion.new(10, 2)
+  ORAVER_11_1 = OCI8::OracleVersion.new(11, 1)
+
+  @@oracle_client_version = OCI8::OracleVersion.new(self.oracle_client_vernum)
+
+  # :call-seq:
+  #   OCI8.oracle_client_version -> oraver
+  #
+  # Returns an OCI8::OracleVersion of the Oracle client version.
+  #
+  # If this library is configured without '--with-runtime-check',
+  # and compiled for Oracle 10.1 or lower, the major and minor
+  # numbers are determined at compile-time. The rests are zeros.
+  #
+  # If this library is configured with '--with-runtime-check'
+  # and the runtime Oracle library is Oracle 10.1 or lower, the
+  # major and minor numbers are determined at run-time. The
+  # rests are zeros.
+  #
+  # Otherwise, it is the version retrieved from an OCI function
+  # OCIClientVersion().
+  def self.oracle_client_version
+    @@oracle_client_version
+  end
 end
 
 require 'oci8/datetime.rb'

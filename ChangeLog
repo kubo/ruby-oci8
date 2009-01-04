@@ -1,3 +1,18 @@
+2009-01-04  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c: delete OCI8.oracle_client_version implemented
+	    in C. add OCI8.oracle_client_vernum whose value is retrieved
+	    by OCIClientVersion() if Oracle 10.2 or upper.
+	* ext/oci8/oci8.h: add macro rb_define_singleton_method_nodoc,
+	    which prevents rdoc from gathering the specified method.
+	* lib/.document, lib/oci8/.document: add lib/oci8.rb and
+	    lib/oci8/oracle_version.rb to rdoc targets.
+	* lib/oci8.rb.in, lib/oci8/oracle_version.rb: add
+	    OCI8::OracleVersion OCI8.oracle_client_version.
+	* test/config.rb: change version checking code to use
+	    OCI8::OracleVersion.
+	* test/test_all.rb, test/test_oracle_version.rb: add test cases
+	    of OCI8::OracleVersion.
+
 2009-01-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/encoding.c, ext/oci8/error.c, ext/oci8/ocinumber.c,
 	  ext/oci8/oradate.c: use rb_usascii_str_new() or

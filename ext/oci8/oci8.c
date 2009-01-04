@@ -2,7 +2,7 @@
 /*
  * oci8.c - part of ruby-oci8
  *
- * Copyright (C) 2002-2008 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2009 KUBO Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
@@ -57,15 +57,16 @@ static oci8_base_class_t oci8_svcctx_class = {
     sizeof(oci8_svcctx_t)
 };
 
+static VALUE oracle_client_vernum; /* Oracle client version number */
 static VALUE sym_SYSDBA;
 static VALUE sym_SYSOPER;
 static ID id_at_prefetch_rows;
 static ID id_at_username;
 static ID id_set_prefetch_rows;
 
-static VALUE oci8_s_oracle_client_version(VALUE klass)
+static VALUE oci8_s_oracle_client_vernum(VALUE klass)
 {
-    return INT2FIX(oracle_client_version);
+    return oracle_client_vernum;
 }
 
 #define CONN_STR_REGEX "/^([^(\\s|\\@)]*)\\/([^(\\s|\\@)]*)(?:\\@(\\S+))?(?:\\s+as\\s+(\\S*)\\s*)?$/i"
@@ -527,13 +528,20 @@ VALUE Init_oci8(void)
 {
     cOCI8 = oci8_define_class("OCI8", &oci8_svcctx_class);
 
+    oracle_client_vernum = oracle_client_version;
+    if (have_OCIClientVersion) {
+        sword major, minor, update, patch, port_update;
+        OCIClientVersion(&major, &minor, &update, &patch, &port_update);
+        oracle_client_vernum = INT2FIX(ORAVERNUM(major, minor, update, patch, port_update));
+    }
+
     sym_SYSDBA = ID2SYM(rb_intern("SYSDBA"));
     sym_SYSOPER = ID2SYM(rb_intern("SYSOPER"));
     id_at_prefetch_rows = rb_intern("@prefetch_rows");
     id_at_username = rb_intern("@username");
     id_set_prefetch_rows = rb_intern("prefetch_rows=");
 
-    rb_define_singleton_method(cOCI8, "oracle_client_version", oci8_s_oracle_client_version, 0);
+    rb_define_singleton_method_nodoc(cOCI8, "oracle_client_vernum", oci8_s_oracle_client_vernum, 0);
     rb_define_private_method(cOCI8, "parse_connect_string", oci8_parse_connect_string, 1);
     rb_define_method(cOCI8, "initialize", oci8_svcctx_initialize, -1);
     rb_define_method(cOCI8, "logoff", oci8_svcctx_logoff, 0);
