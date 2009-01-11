@@ -66,7 +66,7 @@ VALUE oci8_get_string_attr(oci8_base_t *base, ub4 attrtype)
     rv = OCIAttrGet(base->hp.ptr, base->type, &val, &size, attrtype, oci8_errhp);
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);
-    return rb_str_new(TO_CHARPTR(val), size);
+    return rb_external_str_new_with_enc(TO_CHARPTR(val), size, oci8_encoding);
 }
 
 #define MAX_ROWID_LEN 128
@@ -134,7 +134,7 @@ static VALUE get_rowid_attr(rowid_arg_t *arg)
             return Qnil;
         }
     }
-    return rb_str_new(buf, buflen);
+    return rb_external_str_new_with_enc(buf, buflen, rb_usascii_encoding());
 }
 
 static VALUE rowid_ensure(rowid_arg_t *arg)

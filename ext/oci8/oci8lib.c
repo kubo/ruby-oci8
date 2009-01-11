@@ -459,7 +459,7 @@ void *oci8_find_symbol(const char *symbol_name)
             if (handle != NULL) {
                 break;
             }
-            rb_ary_push(err, rb_str_new2(dlerror()));
+            rb_ary_push(err, rb_locale_str_new_cstr(dlerror()));
         }
         if (handle == NULL) {
             VALUE msg;

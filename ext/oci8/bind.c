@@ -20,14 +20,14 @@ static VALUE cOCI8BindTypeBase;
 static VALUE bind_string_get(oci8_bind_t *obind, void *data, void *null_struct)
 {
     oci8_vstr_t *vstr = (oci8_vstr_t *)data;
-    return rb_str_new(vstr->buf, vstr->size);
+    return rb_external_str_new_with_enc(vstr->buf, vstr->size, oci8_encoding);
 }
 
 static void bind_string_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     oci8_vstr_t *vstr = (oci8_vstr_t *)data;
 
-    StringValue(val);
+    OCI8StringValue(val);
     if (RSTRING_LEN(val) > obind->value_sz - sizeof(vstr->size)) {
         rb_raise(rb_eArgError, "too long String to set. (%ld for %d)", RSTRING_LEN(val), obind->value_sz - (sb4)sizeof(vstr->size));
     }
@@ -74,13 +74,19 @@ static const oci8_bind_class_t bind_string_class = {
 /*
  * bind_raw
  */
+static VALUE bind_raw_get(oci8_bind_t *obind, void *data, void *null_struct)
+{
+    oci8_vstr_t *vstr = (oci8_vstr_t *)data;
+    return rb_str_new(vstr->buf, vstr->size);
+}
+
 static const oci8_bind_class_t bind_raw_class = {
     {
         NULL,
         oci8_bind_free,
         sizeof(oci8_bind_t)
     },
-    bind_string_get,
+    bind_raw_get,
     bind_string_set,
     bind_string_init,
     NULL,

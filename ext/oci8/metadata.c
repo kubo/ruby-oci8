@@ -174,7 +174,7 @@ static VALUE metadata_get_text(VALUE self, VALUE idx)
 
     /* remote call sometimes? */
     oci_lc(OCIAttrGet_nb(svcctx, md->base.hp.ptr, md->base.type, &value, &size, FIX2INT(idx), oci8_errhp));
-    return rb_str_new(TO_CHARPTR(value), size);
+    return rb_external_str_new_with_enc(TO_CHARPTR(value), size, oci8_encoding);
 }
 
 static VALUE metadata_get_oradate(VALUE self, VALUE idx)
@@ -284,7 +284,7 @@ static VALUE oci8_do_describe(VALUE self, void *objptr, ub4 objlen, ub1 objtype,
 
 static VALUE oci8_describe(VALUE self, VALUE name, VALUE klass, VALUE check_public)
 {
-    StringValue(name);
+    OCI8SafeStringValue(name);
     if (RSTRING_LEN(name) == 0) {
         rb_raise(rb_eArgError, "empty string is set.");
     }

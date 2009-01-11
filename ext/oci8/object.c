@@ -150,8 +150,9 @@ static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *dat
     Check_Type(datatype, T_FIXNUM);
     switch (FIX2INT(datatype)) {
     case ATTR_STRING:
-        return rb_str_new(TO_CHARPTR(OCIStringPtr(oci8_envhp, *(OCIString **)data)),
-                          OCIStringSize(oci8_envhp, *(OCIString **)data));
+        return rb_external_str_new_with_enc(TO_CHARPTR(OCIStringPtr(oci8_envhp, *(OCIString **)data)),
+                                            OCIStringSize(oci8_envhp, *(OCIString **)data),
+                                            oci8_encoding);
     case ATTR_RAW:
         return rb_str_new(TO_CHARPTR(OCIRawPtr(oci8_envhp, *(OCIRaw **)data)),
                           OCIRawSize(oci8_envhp, *(OCIRaw **)data));
@@ -417,7 +418,7 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
     Check_Type(datatype, T_FIXNUM);
     switch (FIX2INT(datatype)) {
     case ATTR_STRING:
-        StringValue(val);
+        OCI8StringValue(val);
         oci_lc(OCIStringAssignText(oci8_envhp, oci8_errhp,
                                    RSTRING_ORATEXT(val), RSTRING_LEN(val),
                                    (OCIString **)data));

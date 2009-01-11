@@ -154,7 +154,7 @@ static VALUE oci8_lob_do_initialize(int argc, VALUE *argv, VALUE self, ub1 csfrm
     if (!NIL_P(val)) {
         if (have_OCILobCreateTemporary_nb) {
             oci8_svcctx_t *svcctx = oci8_get_svcctx(svc);
-            StringValue(val);
+            OCI8StringValue(val);
             oci_lc(OCILobCreateTemporary_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, 0, csfrm, lobtype, TRUE, OCI_DURATION_SESSION));
             oci8_lob_write(self, val);
         } else {
@@ -358,7 +358,10 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
     if (RARRAY_LEN(v) == 0) {
         return Qnil;
     }
-    return rb_ary_join(v, Qnil);
+    v = rb_ary_join(v, Qnil);
+    OBJ_TAINT(v);
+    rb_enc_associate(v, oci8_encoding);
+    return rb_str_conv_enc(v, oci8_encoding, rb_default_internal_encoding());
 }
 
 static VALUE oci8_lob_write(VALUE self, VALUE data)
@@ -368,7 +371,7 @@ static VALUE oci8_lob_write(VALUE self, VALUE data)
     ub4 amt;
 
     lob_open(lob);
-    StringValue(data);
+    OCI8StringValue(data);
     amt = RSTRING_LEN(data);
     oci_lc(OCILobWrite_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, RSTRING_PTR(data), amt, OCI_ONE_PIECE, NULL, NULL, 0, lob->csfrm));
     lob->pos += amt;
@@ -462,8 +465,8 @@ static void oci8_bfile_get_name(VALUE self, VALUE *dir_alias_p, VALUE *filename_
         VALUE filename;
 
         oci_lc(OCILobFileGetName(oci8_envhp, oci8_errhp, lob->base.hp.lob, TO_ORATEXT(d_buf), &d_length, TO_ORATEXT(f_buf), &f_length));
-        dir_alias = rb_str_new(d_buf, d_length);
-        filename = rb_str_new(f_buf, f_length);
+        dir_alias = rb_external_str_new_with_enc(d_buf, d_length, oci8_encoding);
+        filename = rb_external_str_new_with_enc(f_buf, f_length, oci8_encoding);
         rb_ivar_set(self, id_dir_alias, dir_alias);
         rb_ivar_set(self, id_filename, filename);
         if (dir_alias_p != NULL) {
@@ -502,8 +505,8 @@ static VALUE oci8_bfile_initialize(int argc, VALUE *argv, VALUE self)
     lob->csfrm = SQLCS_IMPLICIT;
     lob->state = S_BFILE_CLOSE;
     if (argc != 1) {
-        StringValue(dir_alias);
-        StringValue(filename);
+        OCI8SafeStringValue(dir_alias);
+        OCI8SafeStringValue(filename);
         oci8_bfile_set_name(self, dir_alias, filename);
     }
     oci8_link_to_parent((oci8_base_t*)lob, (oci8_base_t*)DATA_PTR(svc));
@@ -530,7 +533,7 @@ static VALUE oci8_bfile_set_dir_alias(VALUE self, VALUE dir_alias)
 {
     VALUE filename;
 
-    StringValue(dir_alias);
+    OCI8SafeStringValue(dir_alias);
     oci8_bfile_get_name(self, NULL, &filename);
     oci8_bfile_set_name(self, dir_alias, filename);
     rb_ivar_set(self, id_dir_alias, dir_alias);
@@ -541,7 +544,7 @@ static VALUE oci8_bfile_set_filename(VALUE self, VALUE filename)
 {
     VALUE dir_alias;
 
-    StringValue(filename);
+    OCI8SafeStringValue(filename);
     oci8_bfile_get_name(self, &dir_alias, NULL);
     oci8_bfile_set_name(self, dir_alias, filename);
     rb_ivar_set(self, id_filename, filename);

@@ -69,7 +69,7 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, c
                 }
             }
             rb_ary_push(vcodes, INT2FIX(errcode));
-            rb_ary_push(vmessages, rb_str_new2(errmsg));
+            rb_ary_push(vmessages, rb_external_str_new_with_enc(errmsg, strlen(errmsg), oci8_encoding));
         }
         if (RARRAY_LEN(vmessages) > 0) {
             msg = RARRAY_PTR(vmessages)[0];
@@ -96,7 +96,7 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, c
             ub4 size;
             rv = OCIAttrGet(stmthp, OCI_HTYPE_STMT, &sql, &size, OCI_ATTR_STATEMENT, errhp);
             if (rv == OCI_SUCCESS) {
-                vsql = rb_str_new(TO_CHARPTR(sql), size);
+                vsql = rb_external_str_new_with_enc(TO_CHARPTR(sql), size, oci8_encoding);
             }
         }
 #endif

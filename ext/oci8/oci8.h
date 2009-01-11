@@ -8,9 +8,6 @@
 #define _RUBY_OCI_H_ 1
 
 #include "ruby.h"
-#ifdef HAVE_INTERN_H
-#include "intern.h"
-#endif
 
 #ifndef rb_pid_t
 #ifdef WIN32
@@ -48,6 +45,9 @@ extern "C"
 #define ORAVER_11_1 ORAVERNUM(11, 1, 0, 0, 0)
 
 #include "extconf.h"
+#ifdef HAVE_TYPE_RB_ENCODING
+#include <ruby/encoding.h>
+#endif
 
 #if ACTUAL_ORACLE_CLIENT_VERSION < ORAVER_10_2
 typedef struct OCIAdmin OCIAdmin;
@@ -90,7 +90,10 @@ typedef VALUE rb_blocking_function_t(void *);
 #endif
 
 #ifndef HAVE_TYPE_RB_ENCODING
+#define rb_enc_associate(str, enc) do {} while(0)
 #define rb_external_str_new_with_enc(ptr, len, enc) rb_tainted_str_new((ptr), (len))
+#define rb_locale_str_new_cstr(ptr)  rb_str_new2(ptr)
+#define rb_str_conv_enc(str, from, to) (str)
 #define rb_usascii_str_new(ptr, len) rb_str_new((ptr), (len))
 #define rb_usascii_str_new_cstr(ptr) rb_str_new2(ptr)
 #endif
@@ -432,6 +435,22 @@ VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype);
 /* encoding.c */
 void Init_oci8_encoding(VALUE cOCI8);
 VALUE oci8_charset_id2name(VALUE svc, VALUE charset_id);
+
+#ifdef HAVE_TYPE_RB_ENCODING
+extern rb_encoding *oci8_encoding;
+
+#define OCI8StringValue(v) do { \
+    StringValue(v); \
+    (v) = rb_str_export_to_enc(v, oci8_encoding); \
+} while (0)
+#define OCI8SafeStringValue(v) do { \
+    SafeStringValue(v); \
+    (v) = rb_str_export_to_enc(v, oci8_encoding); \
+} while (0)
+#else
+#define OCI8StringValue(v)     StringValue(v)
+#define OCI8SafeStringValue(v) SafeStringValue(v)
+#endif
 
 #include "apiwrap.h"
 

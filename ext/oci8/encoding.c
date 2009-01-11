@@ -28,6 +28,9 @@ static VALUE csid2name;
 static ID id_upcase;
 static VALUE csname2id;
 static VALUE oci8_charset_name2id(VALUE svc, VALUE name);
+#ifdef HAVE_TYPE_RB_ENCODING
+rb_encoding *oci8_encoding;
+#endif
 
 VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
 {
@@ -129,6 +132,51 @@ static VALUE oci8_charset_name2id(VALUE svc, VALUE name)
     return csid;
 }
 
+#ifdef HAVE_TYPE_RB_ENCODING
+
+/*
+ * call-seq:
+ *   OCI8.encoding -> enc
+ *
+ * (new in ruby 1.9)
+ *
+ * Returns Oracle client encoding.
+ *
+ * String values passed to Oracle, such as SQL statements,
+ * bind values etc., are converted from their encoding to
+ * the Oracle client encoding.
+ *
+ * If <code>Encoding.default_internal</code> is nil,
+ * string values got from Oracle are tagged by
+ * <code>OCI8.encoding</code>. If not nil, they are
+ * converted from <code>OCI8.encoding</code> to
+ * <code>Encoding.default_internal</code> by default.
+ *
+ * If it is 'ASCII-8BIT', no encoding conversions are done.
+ */
+static VALUE oci8_get_encoding(VALUE klass)
+{
+    return rb_enc_from_encoding(oci8_encoding);
+}
+
+/*
+ * call-seq:
+ *   OCI8.encoding = enc or nil
+ *
+ * (new in ruby 1.9)
+ *
+ * Sets Oracle client encoding.
+ */
+static VALUE oci8_set_encoding(VALUE klass, VALUE encoding)
+{
+    if (NIL_P(encoding)) {
+        oci8_encoding = NULL;
+    } else {
+        oci8_encoding = rb_to_encoding(encoding);
+    }
+    return encoding;
+}
+#endif
 
 void Init_oci8_encoding(VALUE cOCI8)
 {
@@ -141,4 +189,8 @@ void Init_oci8_encoding(VALUE cOCI8)
 
     rb_define_method(cOCI8, "charset_name2id", oci8_charset_name2id, 1);
     rb_define_method(cOCI8, "charset_id2name", oci8_charset_id2name, 1);
+#ifdef HAVE_TYPE_RB_ENCODING
+    rb_define_singleton_method(cOCI8, "encoding", oci8_get_encoding, 0);
+    rb_define_singleton_method(cOCI8, "encoding=", oci8_set_encoding, 1);
+#endif
 }

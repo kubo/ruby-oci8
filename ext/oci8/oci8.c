@@ -77,7 +77,7 @@ static void oci8_do_parse_connect_string(VALUE conn_str, VALUE *user, VALUE *pas
         re = rb_eval_string(CONN_STR_REGEX);
         rb_global_variable(&re);
     }
-    StringValue(conn_str);
+    OCI8SafeStringValue(conn_str);
     if (RTEST(rb_reg_match(re, conn_str))) {
         *user = rb_reg_nth_match(1, rb_backref_get());
         *pass = rb_reg_nth_match(2, rb_backref_get());
@@ -90,7 +90,7 @@ static void oci8_do_parse_connect_string(VALUE conn_str, VALUE *user, VALUE *pas
         }
         if (!NIL_P(*mode)) {
             char *ptr;
-            StringValue(*mode);
+            SafeStringValue(*mode);
             ptr = RSTRING_PTR(*mode);
             if (strcasecmp(ptr, "SYSDBA") == 0) {
                 *mode = sym_SYSDBA;
@@ -175,11 +175,11 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
         cred = OCI_CRED_EXT;
     } else {
         /* RDBMS credential */
-        StringValue(vusername); /* 1 */
-        StringValue(vpassword); /* 2 */
+        OCI8SafeStringValue(vusername); /* 1 */
+        OCI8SafeStringValue(vpassword); /* 2 */
     }
     if (!NIL_P(vdbname)) {
-        StringValue(vdbname); /* 3 */
+        OCI8SafeStringValue(vdbname); /* 3 */
     }
     if (!NIL_P(vmode)) { /* 4 */
         logon_type = T_EXPLICIT;

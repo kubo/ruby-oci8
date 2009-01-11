@@ -854,7 +854,7 @@ static VALUE onum_to_char(int argc, VALUE *argv, VALUE self)
         }
         oci8_raise(oci8_errhp, rv, NULL);
     }
-    return rb_str_new(buf, buf_size);
+    return rb_usascii_str_new(buf, buf_size);
 }
 
 /*

@@ -69,7 +69,7 @@ static VALUE oci8_stmt_initialize(int argc, VALUE *argv, VALUE self)
 
     oci8_check_pid_consistency(oci8_get_svcctx(svc));
     if (argc > 1)
-        StringValue(sql);
+        OCI8SafeStringValue(sql);
 
     rv = OCIHandleAlloc(oci8_envhp, &stmt->base.hp.ptr, OCI_HTYPE_STMT, 0, NULL);
     if (rv != OCI_SUCCESS)
@@ -168,7 +168,7 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     } else if (FIXNUM_P(vplaceholder)) {
         position = NUM2INT(vplaceholder);
     } else {
-        StringValue(vplaceholder);
+        OCI8StringValue(vplaceholder);
         placeholder_ptr = RSTRING_PTR(vplaceholder);
         placeholder_len = RSTRING_LEN(vplaceholder);
     }
