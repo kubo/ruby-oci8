@@ -282,7 +282,7 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
     char buf[8192];
     size_t buf_size_in_char;
     VALUE size;
-    VALUE v = Qnil;
+    VALUE v = rb_ary_new();
 
     rb_scan_args(argc, argv, "01", &size);
     length = oci8_lob_get_length(lob);
@@ -348,17 +348,17 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
         if (amt > buf_size_in_char)
             rb_raise(eOCIException, "Too large buffer fetched or you set too large size of a character.");
         amt *= lob->char_width;
-        if (v == Qnil)
-            v = rb_str_new(buf, amt);
-        else
-            v = rb_str_cat(v, buf, amt);
+        rb_ary_push(v, rb_str_new(buf, amt));
     } while (rv == OCI_NEED_DATA);
     lob->pos += nchar;
     if (nchar == length) {
         lob_close(lob);
         bfile_close(lob);
     }
-    return v;
+    if (RARRAY_LEN(v) == 0) {
+        return Qnil;
+    }
+    return rb_ary_join(v, Qnil);
 }
 
 static VALUE oci8_lob_write(VALUE self, VALUE data)

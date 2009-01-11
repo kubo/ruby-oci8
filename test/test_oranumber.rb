@@ -101,7 +101,7 @@ class TestOraNumber < Test::Unit::TestCase
         # explicity convert actual_val to a Float to prevent
         # SEGV in OCINumberSub() if the Oracle client vesion
         # is less than 10.2.0.4.
-        if defined? ::MiniTest and OCI8.oracle_client_version < 0x0a200400
+        if defined? ::MiniTest and OCI8.oracle_client_version < OCI8::OracleVersion.new('10.2.0.4')
           actual_val = actual_val.to_f
         end
         assert_in_delta(expected_val, actual_val, delta, x)

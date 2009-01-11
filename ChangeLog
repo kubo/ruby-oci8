@@ -1,3 +1,8 @@
+2009-01-11  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c: concatenate read data at the end, instead of
+	    appending them for each pieces when reading LOB data.
+	* test/test_oranumber.rb: fix for ruby 1.9.
+
 2009-01-04  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c: delete OCI8.oracle_client_version implemented
 	    in C. add OCI8.oracle_client_vernum whose value is retrieved
