@@ -1,3 +1,11 @@
+2009-01-13  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8.rb.in, lib/oci8/encoding-init.rb: (ruby 1.9) set
+	    OCI8.encoding by querying NLS_LANG. If DEFAULT_OCI8_ENCODING
+	    is defined, use it by default.
+	* lib/oci8/encoding.yml: (ruby 1.9) add a new file containing
+	    mapping table from Oracle characterset name to Ruby encoding
+	    name.
+
 2009-01-11  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/encoding.c: (ruby 1.9) add OCI8.encoding and
 	    OCI8.encoding= to get and set the encoding of the Oracle

@@ -19,6 +19,15 @@ if RUBY_PLATFORM =~ /cygwin/
 end
 
 require 'oci8lib'
+
+if OCI8.respond_to? :encoding
+  if defined? DEFAULT_OCI8_ENCODING
+    OCI8.encoding = DEFAULT_OCI8_ENCODING
+  else
+    load 'oci8/encoding-init.rb'
+  end
+end
+
 require 'oci8/oracle_version.rb'
 
 class OCI8
