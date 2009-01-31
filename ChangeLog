@@ -1,4 +1,10 @@
 2009-01-31  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: fix for Oracle 11.1.0.7.0 instant
+	    client rpm package. The directory tree is a bit different
+	    with that of 11.1.0.6.0 or earlier.
+	    (reported by Luis Parravicini.)
+
+2009-01-31  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/DBD/OCI8/OCI8.rb: renamed to lib/dbd/OCI8.rb.
 	* lib/dbd/OCI8.rb: 1. renamed from lib/DBD/OCI8/OCI8.rb
 	    2. fix USED_DBD_VERSION from 0.2 to 0.4.
