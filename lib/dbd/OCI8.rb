@@ -42,7 +42,11 @@ module DBD # :nodoc:
 module OCI8
 
 VERSION          = "0.1"
-USED_DBD_VERSION = "0.2"
+USED_DBD_VERSION = "0.4"
+
+def self.driver_name
+  "OCI8"
+end
 
 module Util
 
