@@ -1,3 +1,10 @@
+2009-01-31  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/DBD/OCI8/OCI8.rb: renamed to lib/dbd/OCI8.rb.
+	* lib/dbd/OCI8.rb: 1. renamed from lib/DBD/OCI8/OCI8.rb
+	    2. fix USED_DBD_VERSION from 0.2 to 0.4.
+	    3. add DBI::DBD::OCI8.driver_name
+	    (changes for ruby-dbi 0.4 contributed by James Cao.)
+
 2009-01-13  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8.rb.in, lib/oci8/encoding-init.rb: (ruby 1.9) set
 	    OCI8.encoding by querying NLS_LANG. If DEFAULT_OCI8_ENCODING
