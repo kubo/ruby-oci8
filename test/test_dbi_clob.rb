@@ -1,4 +1,5 @@
 require 'dbi'
+require 'oci8'
 require 'test/unit'
 require File.dirname(__FILE__) + '/config'
 

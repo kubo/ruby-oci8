@@ -166,17 +166,27 @@ EOS
   end
 
   def test_bind_dbi_data_type
-    inval = DBI::Date.new(2004, 3, 20)
-    sth = @dbh.execute("BEGIN ? := ?; END;", DBI::Date, inval)
-    outval = sth.func(:bind_value, 1)
-    assert_instance_of(DBI::Date, outval)
-    assert_equal(inval.to_time, outval.to_time)
+    begin
+      if DBI::VERSION >= '0.4.0'
+        # suppress deprecated warnings while running this test.
+        saved_action = Deprecated.action
+        Deprecated.set_action(Proc.new {})
+      end
 
-    inval = DBI::Timestamp.new(2004, 3, 20, 18, 26, 33)
-    sth = @dbh.execute("BEGIN ? := ?; END;", DBI::Timestamp, inval)
-    outval = sth.func(:bind_value, 1)
-    assert_instance_of(DBI::Timestamp, outval)
-    assert_equal(inval.to_time, outval.to_time)
+      inval = DBI::Date.new(2004, 3, 20)
+      sth = @dbh.execute("BEGIN ? := ?; END;", DBI::Date, inval)
+      outval = sth.func(:bind_value, 1)
+      assert_instance_of(DBI::Date, outval)
+      assert_equal(inval.to_time, outval.to_time)
+
+      inval = DBI::Timestamp.new(2004, 3, 20, 18, 26, 33)
+      sth = @dbh.execute("BEGIN ? := ?; END;", DBI::Timestamp, inval)
+      outval = sth.func(:bind_value, 1)
+      assert_instance_of(DBI::Timestamp, outval)
+      assert_equal(inval.to_time, outval.to_time)
+    ensure
+      Deprecated.set_action(saved_action) if saved_action
+    end
   end
 
   def test_column_info
