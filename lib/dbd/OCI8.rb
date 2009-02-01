@@ -48,6 +48,27 @@ def self.driver_name
   "OCI8"
 end
 
+# type converstion handler to bind values. (ruby-dbi 0.4)
+if DBI.const_defined?(:TypeUtil)
+  DBI::TypeUtil.register_conversion("OCI8") do |obj|
+    case obj
+    when ::TrueClass
+      ['1', false]
+    when ::FalseClass
+      ['0', false]
+    else
+      [obj, false]
+    end
+  end
+end
+
+# no type converstion is required for result set. (ruby-dbi 0.4)
+class NoTypeConversion
+  def self.parse(obj)
+    obj
+  end
+end
+
 module Util
 
   ERROR_MAP = {
@@ -138,6 +159,7 @@ module Util
       'nullable' => col.nullable?,
       'precision' => precision,
       'scale' => scale,
+      'dbi_type' => NoTypeConversion,
     }
   end
   private :column_metadata_to_column_info

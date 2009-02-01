@@ -54,5 +54,5 @@ class TestDbiCLob < RUNIT::TestCase
 end
 
 if $0 == __FILE__
-  RUNIT::CUI::TestRunner.run(TestCLob.suite())
+  RUNIT::CUI::TestRunner.run(TestDbiCLob.suite())
 end
