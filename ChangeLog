@@ -1,3 +1,13 @@
+2009-02-06  KUBO Takehiro  <kubo@jiubao.org>
+	* setup.rb: 1. install lib/**/*.yml flies also.
+	    (It is pointed by Nate Wiger that encoding.yml is not installed.)
+	    2. exclude .svn or .git directories on installation.
+	* lib/oci8/oci8.rb: A private method define_a_column was renamed
+	    to define_one_column to prevent activerecord oracle adapter
+	    and oracle enhanced adapter from redefining the method.
+	* dist-files: add newly added file names which must be included
+	    in gem or tar.gz packages.
+
 2009-02-01  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/dbd/OCI8.rb: add code for ruby-dbi 0.4 type conversion.
 	* test/test_dbi.rb: suppress deprecated warnings while running

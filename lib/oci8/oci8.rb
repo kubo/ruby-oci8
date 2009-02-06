@@ -529,15 +529,15 @@ class OCI8
       num_cols = __param_count
       1.upto(num_cols) do |i|
         parm = __paramGet(i)
-        define_a_column(i, parm) unless __defined?(i)
+        define_one_column(i, parm) unless __defined?(i)
         @column_metadata[i - 1] = parm
       end
       num_cols
     end # define_columns
 
-    def define_a_column(pos, param)
+    def define_one_column(pos, param)
       __define(pos, make_bind_object(param))
-    end # define_a_column
+    end # define_one_column
 
     def bind_params(*bindvars)
       bindvars.each_with_index do |val, i|

@@ -495,7 +495,7 @@ module FileOperations
   end
 
   REJECT_DIRS = %w(
-    CVS SCCS RCS CVS.adm
+    CVS SCCS RCS CVS.adm .svn .git
   )
 
   def all_dirs_in(dirname)
@@ -1163,7 +1163,7 @@ class Installer
   end
 
   def ruby_scripts
-    collect_filenames_auto().select {|n| /\.rb\z/ =~ n }
+    collect_filenames_auto().select {|n| /\.(rb|yml)\z/ =~ n }
   end
   
   # picked up many entries from cvs-1.11.1/src/ignore.c
