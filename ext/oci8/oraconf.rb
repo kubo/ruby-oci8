@@ -712,6 +712,7 @@ class OraConfFC < OraConf
       sqlplus = "sqlplus"
     end
     Logging::open do
+      ENV['NLS_LANG'] = 'american_america.us7ascii'
       open("|#{@oracle_home}/bin/#{sqlplus} < #{dev_null}") do |f|
         while line = f.gets
           print line

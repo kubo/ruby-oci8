@@ -436,6 +436,9 @@ VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype);
 void Init_oci8_encoding(VALUE cOCI8);
 VALUE oci8_charset_id2name(VALUE svc, VALUE charset_id);
 
+/* win32.c */
+void Init_oci8_win32(VALUE cOCI8);
+
 #ifdef HAVE_TYPE_RB_ENCODING
 extern rb_encoding *oci8_encoding;
 

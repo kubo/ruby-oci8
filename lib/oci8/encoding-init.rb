@@ -5,8 +5,17 @@
 # try to get NLS_LANG.
 nls_lang = ENV['NLS_LANG']
 
-if nls_lang.nil? and RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/
-  # TODO
+if defined? OCI8::Win32Util
+  dll_path = OCI8::Win32Util.dll_path.upcase
+  if dll_path =~ %r{\\BIN\\OCI.DLL}
+    oracle_home = $`
+    OCI8::Win32Util.enum_homes do |home, lang|
+      if oracle_home == home.upcase
+        nls_lang = lang
+        break
+      end
+    end
+  end
 end
 
 if nls_lang

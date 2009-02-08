@@ -160,6 +160,10 @@ Init_oci8lib()
     Init_oci_object(cOCI8);
     Init_oci_xmldb();
 
+#ifdef USE_WIN32_C
+    Init_oci8_win32(cOCI8);
+#endif
+
 #ifdef DEBUG_CORE_FILE
     signal(SIGSEGV, SIG_DFL);
 #endif

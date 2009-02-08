@@ -2,8 +2,10 @@ ChangeLog
 Makefile
 README
 VERSION
+dist-files
 metaconfig
 pre-distclean.rb
+ruby-oci8.gemspec
 setup.rb
 doc/api.en.html
 doc/api.en.rd
@@ -34,6 +36,7 @@ ext/oci8/oradate.c
 ext/oci8/post-config.rb
 ext/oci8/stmt.c
 ext/oci8/object.c
+ext/oci8/win32.c
 ext/oci8/xmldb.c
 lib/.document
 lib/oci8.rb.in

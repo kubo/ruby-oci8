@@ -1,3 +1,22 @@
+2009-02-08  KUBO Takehiro  <kubo@jiubao.org>
+	* VERSION: change version from 2.0-svn to 2.0.0 to pass ruby
+	    gem's version string validator.
+	* ruby-oci8.gemspec: added.
+	* ext/oci8/extconf.rb, ext/oci8/oci8.h, ext/oci8/oci8lib.c,
+	  ext/oci8/win32.c: 1. add OCI8::Win32Util.dll_path to
+	    retrieve Oracle home location from the OCI.DLL location.
+	    2. add OCI8::Win32Util.enum_homes to get Oracle home and
+	    NLS_LANG pairs in Windows registry.
+	* lib/oci8/encoding-init.rb: get NLS_LANG from Windows registry
+	    if environment variable NLS_LANG is not set.
+	* ext/oci8/oraconf.rb: Change the output encoding of sqlplus to
+	    US7ASCII by setting NLS_LANG. If the output encoding is
+	    incompatible with the default external encoding, it raises
+	    'invalid byte sequence' when using ruby 1.9.
+	* lib/oci8/datetime.rb: fix for ruby 1.9. Ruby 1.9 Time
+	    class's resolution is nanosecond.
+	* dist-files: add dist-files, ruby-oci8.gemspec and ext/oci8/win32.c.
+
 2009-02-06  KUBO Takehiro  <kubo@jiubao.org>
 	* setup.rb: 1. install lib/**/*.yml flies also.
 	    (It is pointed by Nate Wiger that encoding.yml is not installed.)

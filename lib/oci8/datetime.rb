@@ -151,7 +151,10 @@ class OCI8
           end
           if timezone
             begin
-              return ::Time.send(timezone, year, month, day, hour, minute, sec, fsec / 1000)
+              # Ruby 1.9 Time class's resolution is nanosecond.
+              # But the last argument type is millisecond.
+              # 'fsec' is converted to a Float to pass sub-millisecond part.
+              return ::Time.send(timezone, year, month, day, hour, minute, sec, fsec / 1000.0)
             rescue StandardError
             end
           end

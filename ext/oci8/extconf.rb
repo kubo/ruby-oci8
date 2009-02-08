@@ -81,6 +81,11 @@ $objs = ["oci8lib.o", "env.o", "error.o", "oci8.o",
          "ocinumber.o", "ocidatetime.o", "object.o", "apiwrap.o",
          "encoding.o", "xmldb.o"]
 
+if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/
+  $defs << "-DUSE_WIN32_C"
+  $objs << "win32.o"
+end
+
 # Checking gcc or not
 if oraconf.cc_is_gcc
   $CFLAGS += " -Wall"
