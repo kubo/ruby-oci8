@@ -3,6 +3,7 @@
 	* VERSION: change version to 1.0.4.
 	* dist-files: add newly added file names which must be included
 	    in gem or tar.gz packages.
+	* metaconfig: follow the change of dbd/OCI8.rb location.
 
 2009-02-01  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/dbd/OCI8.rb: add code for ruby-dbi 0.4 type conversion.

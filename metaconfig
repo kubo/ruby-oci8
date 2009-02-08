@@ -120,8 +120,8 @@ install_files['oci8lib.so'] = <<-EOS
 install_files['oci8.rb'] = <<-EOS
 #{get_zcontent('lib/oci8.rb')}EOS
 
-install_files['DBD/OCI8/OCI8.rb'] = <<-EOS
-#{get_zcontent('lib/DBD/OCI8/OCI8.rb')}EOS
+install_files['dbd/OCI8.rb'] = <<-EOS
+#{get_zcontent('lib/dbd/OCI8.rb')}EOS
 
 begin
   installer = Installer.new(install_files)
