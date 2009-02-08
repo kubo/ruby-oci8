@@ -39,7 +39,7 @@ ext/oci8/session.c
 ext/oci8/stmt.c
 ext/oci8/svcctx.c
 lib/oci8.rb.in
-lib/DBD/OCI8/OCI8.rb
+lib/dbd/OCI8.rb
 support/README
 support/runit/assert.rb
 support/runit/cui/testrunner.rb
@@ -68,3 +68,4 @@ test/test_oci8.rb
 test/test_oradate.rb
 test/test_oranumber.rb
 test/test_metadata.rb
+test/test_rowid.rb

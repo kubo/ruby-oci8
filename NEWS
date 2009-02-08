@@ -1,3 +1,41 @@
+1.0.4:
+
+1. [dbi] support ruby-dbi 0.4
+   (Thanks to James Cao and Peter Zingg.)
+
+   Ruby-dbi 0.4 is supported by DBD::OCI8 after 6 months from the
+   release of 0.4.
+
+   If you are using ruby-dbi 0.1.1, you need to copy dbd/OCI8.rb
+   to DBD/OCI8/OCI8.rb. The file itself works fine with ruby-dbi
+   0.1.1, but the dbi cannot find the file by default.
+
+2. Rowid column data are fetched as a String by default.
+
+3. The return type of OCI8::Cursor#rowid is changed from OCIRowid
+   to String.
+
+   Note: It needs one network roundtrip to convert OCIRowid to
+   String on server side when using Oracle 8.x client.
+   On Oracle 9.0 or upper it is converted in the client side.
+
+4. An exception is raised if a connection is used in a process which is
+   different with a process to establish the connection.
+
+   If you encounter an exception "The connection cannot be reused in the
+   forked process," see the following link.
+
+     http://groups.google.com/group/phusion-passenger/browse_thread/thread/b00d4770bc1d00b8
+
+5. fix for 11.1.0.7.0 instant rpm package.
+   (reported by Luis Parravicini.)
+
+   The directory tree is a bit different with that of 11.1.0.6.0
+   or earlier.
+
+6. suppress compilation warnings.
+   (contributed by Daniel Berger)
+
 1.0.3:
 
 1. add workaround code for a losing character problem when reading CLOB.

@@ -1,3 +1,9 @@
+2009-02-08  KUBO Takehiro  <kubo@jiubao.org>
+	* NEWS: add changes between 1.0.3 and 1.0.4.
+	* VERSION: change version to 1.0.4.
+	* dist-files: add newly added file names which must be included
+	    in gem or tar.gz packages.
+
 2009-02-01  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/dbd/OCI8.rb: add code for ruby-dbi 0.4 type conversion.
 	* test/test_dbi.rb: suppress deprecated warnings while running
