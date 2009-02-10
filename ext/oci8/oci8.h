@@ -241,6 +241,7 @@ struct oci8_bind {
     sb4 alloc_sz; /* size of a element. */
     ub4 maxar_sz; /* maximum array size. */
     ub4 curar_sz; /* current array size. */
+    ub4 curar_idx;/* current array index. */
     VALUE tdo;
     union {
         void **null_structs;
@@ -375,6 +376,8 @@ void oci8_bind_free(oci8_base_t *base);
 void oci8_bind_hp_obj_mark(oci8_base_t *base);
 void Init_oci8_bind(VALUE cOCI8BindTypeBase);
 oci8_bind_t *oci8_get_bind(VALUE obj);
+void oci8_bind_set_data(VALUE self, VALUE val);
+VALUE oci8_bind_get_data(VALUE self);
 
 /* metadata.c */
 extern VALUE cOCI8MetadataBase;

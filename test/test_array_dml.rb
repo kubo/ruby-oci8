@@ -22,7 +22,8 @@ CREATE TABLE test_table
    N NUMBER(10, 2),
    D DATE,
    INT NUMBER(30), 
-   BIGNUM NUMBER(30))
+   BIGNUM NUMBER(30),
+   T TIMESTAMP)
 STORAGE (
    INITIAL 4k
    NEXT 4k
@@ -31,23 +32,25 @@ STORAGE (
    PCTINCREASE 0)
 EOS
     @conn.exec(sql)
-    cursor = @conn.parse("INSERT INTO test_table VALUES (:C, :V, :N, :D, :INT, :BIGNUM)")
+    cursor = @conn.parse("INSERT INTO test_table VALUES (:C, :V, :N, :D, :INT, :BIGNUM, :T)")
     max_array_size = 3
     cursor.max_array_size= max_array_size
     
     cursor.bind_param_array(1, nil, String)
     cursor.bind_param_array(2, nil ,String)
     cursor.bind_param_array(3, nil, Fixnum)
-    cursor.bind_param_array(4, nil, OraDate)    
+    cursor.bind_param_array(4, nil, OraDate)
     cursor.bind_param_array(5, nil, Integer)
     cursor.bind_param_array(6, nil, Bignum)
-    
+    cursor.bind_param_array(7, nil, DateTime)
+
     c_arr = Array.new
     v_arr = Array.new
     n_arr = Array.new
     d_arr = Array.new
     int_arr = Array.new
     bignum_arr = Array.new
+    t_arr = Array.new
     
     1.upto(30) do |i|
       c_arr << format("%10d", i * 10)
@@ -56,6 +59,7 @@ EOS
       d_arr <<  OraDate.new(2000 + i, 12, 24, 23, 59, 59)
       int_arr << i * 11111111111
       bignum_arr << i * 10000000000
+      t_arr <<  DateTime.new(2000 + i, 12, 24, 23, 59, 59)
       
       if i%max_array_size == 0
         cursor[1] = c_arr
@@ -64,15 +68,24 @@ EOS
         cursor[4] = d_arr
         cursor[5] = int_arr
         cursor[6] = bignum_arr
+        cursor[7] = t_arr
         
         r = cursor.exec_array
         assert_equal(max_array_size, r)
+        assert_equal(c_arr, cursor[1])
+        assert_equal(v_arr, cursor[2])
+        assert_equal(n_arr, cursor[3])
+        assert_equal(d_arr, cursor[4])
+        assert_equal(int_arr, cursor[5])
+        assert_equal(bignum_arr, cursor[6])
+        assert_equal(t_arr, cursor[7])
         c_arr.clear
         v_arr.clear
         n_arr.clear
         d_arr.clear
         int_arr.clear
         bignum_arr.clear
+        t_arr.clear
       end
     end
     cursor.close
@@ -81,7 +94,7 @@ EOS
     cursor.define(5, Integer)
     cursor.define(6, Bignum)
     cursor.exec
-    assert_equal(["C","V","N","D","INT","BIGNUM"], cursor.get_col_names)
+    assert_equal(["C","V","N","D","INT","BIGNUM","T"], cursor.get_col_names)
     1.upto(30) do |i|
       rv = cursor.fetch
       assert_equal(format("%10d", i * 10), rv[0])
@@ -91,6 +104,7 @@ EOS
       assert_equal(tm, rv[3])
       assert_equal(i * 11111111111, rv[4])
       assert_equal(i * 10000000000, rv[5])
+      assert_equal(tm, rv[6])
     end
     assert_nil(cursor.fetch)
     drop_table('test_table')

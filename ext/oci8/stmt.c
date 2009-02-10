@@ -25,7 +25,6 @@ static ID id_at_names;
 static ID id_empty_p;
 static ID id_at_con;
 static ID id_clear;
-static ID id_set;
 
 VALUE cOCIStmt;
 
@@ -428,7 +427,7 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
 #endif /* USE_DYNAMIC_FETCH */
     ary = rb_ary_new2(RARRAY_LEN(stmt->defns));
     for (idx = 0; idx < RARRAY_LEN(stmt->defns); idx++) {
-        rb_ary_store(ary, idx, rb_funcall(RARRAY_PTR(stmt->defns)[idx], oci8_id_get, 0));
+        rb_ary_store(ary, idx, oci8_bind_get_data(RARRAY_PTR(stmt->defns)[idx]));
     }
     return ary;
 }
@@ -599,7 +598,7 @@ static VALUE oci8_stmt_aref(VALUE self, VALUE key)
     if (NIL_P(obj)) {
         return Qnil;
     }
-    return rb_funcall(obj, oci8_id_get, 0);
+    return oci8_bind_get_data(obj);
 }
 
 /*
@@ -650,8 +649,8 @@ static VALUE oci8_stmt_aset(VALUE self, VALUE key, VALUE val)
             rb_ivar_set(self, id_at_actual_array_size, INT2NUM(bind_array_size));
         }
     }     
-
-    return rb_funcall(obj, oci8_id_set, 1, val);
+    oci8_bind_set_data(obj, val);
+    return val;
 }
 
 /*
@@ -781,7 +780,6 @@ void Init_oci8_stmt(VALUE cOCI8)
     id_at_con = rb_intern("@con");
     id_empty_p = rb_intern("empty?");
     id_clear = rb_intern("clear");
-    id_set = rb_intern("set");
 
     rb_define_private_method(cOCIStmt, "initialize", oci8_stmt_initialize, -1);
     rb_define_private_method(cOCIStmt, "__define", oci8_define_by_pos, 2);

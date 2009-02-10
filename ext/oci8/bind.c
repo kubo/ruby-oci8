@@ -10,7 +10,6 @@
 #include "oci8.h"
 
 static ID id_bind_type;
-static ID id_set;
 
 static VALUE cOCI8BindTypeBase;
 
@@ -330,8 +329,11 @@ static const oci8_bind_class_t bind_binary_double_class = {
     SQLT_BDOUBLE
 };
 
-static inline VALUE oci8_get_data_at(const oci8_bind_class_t *obc, oci8_bind_t *obind, ub4 idx)
+static VALUE oci8_bind_get(VALUE self)
 {
+    oci8_bind_t *obind = DATA_PTR(self);
+    const oci8_bind_class_t *obc = (const oci8_bind_class_t *)obind->base.klass;
+    ub4 idx = obind->curar_idx;
     void **null_structp = NULL;
 
     if (NIL_P(obind->tdo)) {
@@ -345,26 +347,30 @@ static inline VALUE oci8_get_data_at(const oci8_bind_class_t *obc, oci8_bind_t *
     return obc->get(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_structp);
 }
 
-static VALUE oci8_get_data(VALUE self)
+VALUE oci8_bind_get_data(VALUE self)
 {
     oci8_bind_t *obind = DATA_PTR(self);
-    const oci8_bind_class_t *obc = (const oci8_bind_class_t *)obind->base.klass;
 
     if (obind->maxar_sz == 0) {
-        return oci8_get_data_at(obc, obind, 0);
+        obind->curar_idx = 0;
+        return rb_funcall(self, oci8_id_get, 0);
     } else {
         volatile VALUE ary = rb_ary_new2(obind->curar_sz);
         ub4 idx;
 
         for (idx = 0; idx < obind->curar_sz; idx++) {
-            rb_ary_store(ary, idx, oci8_get_data_at(obc, obind, idx));
+            obind->curar_idx = idx;
+            rb_ary_store(ary, idx, rb_funcall(self, oci8_id_get, 0));
         }
         return ary;
     }
 }
 
-static inline void oci8_set_data_at(const oci8_bind_class_t *obc, oci8_bind_t *obind, ub4 idx, VALUE val)
+static VALUE oci8_bind_set(VALUE self, VALUE val)
 {
+    oci8_bind_t *obind = DATA_PTR(self);
+    const oci8_bind_class_t *obc = (const oci8_bind_class_t *)obind->base.klass;
+    ub4 idx = obind->curar_idx;
 
     if (NIL_P(val)) {
         if (NIL_P(obind->tdo)) {
@@ -383,15 +389,16 @@ static inline void oci8_set_data_at(const oci8_bind_class_t *obc, oci8_bind_t *o
         }
         obc->set(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_structp, val);
     }
+    return self;
 }
 
-static VALUE oci8_set_data(VALUE self, VALUE val)
+void oci8_bind_set_data(VALUE self, VALUE val)
 {
     oci8_bind_t *obind = DATA_PTR(self);
-    const oci8_bind_class_t *obc = (const oci8_bind_class_t *)obind->base.klass;
 
     if (obind->maxar_sz == 0) {
-        oci8_set_data_at(obc, obind, 0, val);
+        obind->curar_idx = 0;
+        rb_funcall(self, oci8_id_set, 1, val);
     } else {
         ub4 size;
         ub4 idx;
@@ -402,11 +409,11 @@ static VALUE oci8_set_data(VALUE self, VALUE val)
             rb_raise(rb_eRuntimeError, "over the max array size");
         }
         for (idx = 0; idx < size; idx++) {
-            oci8_set_data_at(obc, obind, idx, RARRAY_PTR(val)[idx]);
+            obind->curar_idx = idx;
+            rb_funcall(self, oci8_id_set, 1, RARRAY_PTR(val)[idx]);
         }
         obind->curar_sz = size;
     }
-    return self;
 }
 
 static VALUE oci8_bind_initialize(VALUE self, VALUE svc, VALUE val, VALUE length, VALUE max_array_size)
@@ -438,7 +445,7 @@ static VALUE oci8_bind_initialize(VALUE self, VALUE svc, VALUE val, VALUE length
         bind_class->init_elem(obind, svc);
     }
     if (!NIL_P(val)) {
-        rb_funcall(self, id_set, 1, val);
+        oci8_bind_set_data(self, val);
     }
     return Qnil;
 }
@@ -474,11 +481,10 @@ void Init_oci8_bind(VALUE klass)
 {
     cOCI8BindTypeBase = klass;
     id_bind_type = rb_intern("bind_type");
-    id_set = rb_intern("set");
 
     rb_define_method(cOCI8BindTypeBase, "initialize", oci8_bind_initialize, 4);
-    rb_define_method(cOCI8BindTypeBase, "get", oci8_get_data, 0);
-    rb_define_method(cOCI8BindTypeBase, "set", oci8_set_data, 1);
+    rb_define_method(cOCI8BindTypeBase, "get", oci8_bind_get, 0);
+    rb_define_method(cOCI8BindTypeBase, "set", oci8_bind_set, 1);
 
     /* register primitive data types. */
     oci8_define_bind_class("String", &bind_string_class);
