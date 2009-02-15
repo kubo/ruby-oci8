@@ -1,3 +1,9 @@
+2009-02-15  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/ocidatetime.c: fix array DML and DateTime object problem.
+	    OCI8::Cursor#bind_param_array(key, array_of_datetime) didn't
+	    work. (Reported by Leoš Bitto)
+	* test/test_array_dml.rb: fix to test array DML and DateTime object.
+
 2009-02-10  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c, ext/oci8/oci8.h, ext/oci8/stmt.c: fix array DML
 	    and DateTime object problem. It didn't work with bind classes

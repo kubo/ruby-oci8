@@ -244,19 +244,19 @@ static VALUE bind_ocitimestamp_get(oci8_bind_t *obind, void *data, void *null_st
 
 static void bind_ocitimestamp_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
-    oci8_base_t *stmt;
+    oci8_base_t *parent;
     oci8_base_t *svcctx;
 
-    stmt = obind->base.parent;
-    if (stmt == NULL || stmt->type != OCI_HTYPE_STMT) {
-        rb_raise(rb_eRuntimeError, "oci8lib.so internal error [%s:%d, %p, %d]",
-                 __FILE__, __LINE__,
-                 stmt, stmt ? stmt->type : -1);
+    parent = obind->base.parent;
+    if (parent != NULL && parent->type == OCI_HTYPE_STMT) {
+        svcctx = parent->parent;
+    } else {
+        svcctx = parent;
     }
-    svcctx = stmt->parent;
     if (svcctx == NULL || svcctx->type != OCI_HTYPE_SVCCTX) {
-        rb_raise(rb_eRuntimeError, "oci8lib.so internal error [%s:%d, %p, %d]",
+        rb_raise(rb_eRuntimeError, "oci8lib.so internal error [%s:%d, %p, %d, %p, %d]",
                  __FILE__, __LINE__,
+                 parent, parent ? parent->type : -1,
                  svcctx, svcctx ? svcctx->type : -1);
     }
     oci8_set_ocitimestamp(*(OCIDateTime **)data, val, svcctx->self);
@@ -266,6 +266,7 @@ static void bind_ocitimestamp_init(oci8_bind_t *obind, VALUE svc, VALUE val, VAL
 {
     oci8_bind_dsc_t *obind_dsc = (oci8_bind_dsc_t *)obind;
 
+    oci8_link_to_parent((oci8_base_t*)obind, (oci8_base_t*)oci8_get_svcctx(svc));
     obind->value_sz = sizeof(OCIDateTime *);
     obind->alloc_sz = sizeof(OCIDateTime *);
     obind_dsc->type = OCI_DTYPE_TIMESTAMP_TZ;

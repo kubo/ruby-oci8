@@ -145,13 +145,15 @@ EOS
     sql = <<-EOS
 CREATE TABLE test_table
   (N NUMBER(10, 2) NOT NULL,
-   V VARCHAR(20))
+   V VARCHAR(20),
+   T TIMESTAMP)
 EOS
     @conn.exec(sql)
-    cursor = @conn.parse("INSERT INTO test_table VALUES (:N, :V)")
+    cursor = @conn.parse("INSERT INTO test_table VALUES (:N, :V, :T)")
     cursor.max_array_size = 3
     cursor.bind_param_array(1, [1, 2, 3])
     cursor.bind_param_array(2, ['happy', 'new', 'year'])
+    cursor.bind_param_array(3, [Time.gm(1990,1,1), Time.gm(2000,1,1), Time.gm(2010,1,1)])
     assert_nothing_raised() { cursor.exec_array }
     cursor.max_array_size = 2
     assert_raise(RuntimeError) { cursor.exec_array }
