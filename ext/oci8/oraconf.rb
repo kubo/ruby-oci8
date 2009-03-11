@@ -425,7 +425,7 @@ EOS
       so_ext = 'dylib'
       check_proc = Proc.new do |file|
         is_32bit = [0].pack('l!').size == 4
-        is_big_endian = "\x01\x02".unpack('s') == 0x0102
+        is_big_endian = "\x01\x02".unpack('s')[0] == 0x0102
         if is_32bit
           if is_big_endian
             this_cpu = :ppc    # 32-bit big-endian
@@ -444,7 +444,12 @@ EOS
           if so.cpu.include? this_cpu
             true
           else
-            puts "  skip: #{file} is for #{so.cpu} cpu."
+            if so.cpu.size > 1
+              arch_types = so.cpu[0..-2].join(', ') + ' and ' + so.cpu[-1].to_s
+            else
+              arch_types = so.cpu[0]
+            end
+            puts "  skip: #{file} is for #{arch_types} cpu."
             false
           end
         else
