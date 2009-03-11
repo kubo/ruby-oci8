@@ -1,3 +1,7 @@
+2009-03-11  KUBO Takehiro  <kubo@jiubao.org>
+	* oraconf.rb: fix big/little endian checking problem on Mac OS X ppc.
+	    (contributed by unknown. See: Bug ID 24284 on rubyforge.)
+
 2009-02-08  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 1.0.3 and 1.0.4.
 	* VERSION: change version to 1.0.4.
