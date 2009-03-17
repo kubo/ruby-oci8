@@ -1,3 +1,16 @@
+2009-03-17  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml: add prototypes for OCIServerVersion() and
+	    OCIServerRelease().
+	* ext/oci8/oci8.c: (1) add a private method OCI8#oracle_server_vernum,
+	    which returns Oracle server version number.
+	    (2) fix a class method OCI8.oracle_client_vernum when using Oracle
+	    client 10.1 or lower.
+	* lib/oci8/datetime.rb: fix year information when fetching a date
+	    whose year is between A.D. 1 and A.D. 139.
+	* lib/oci8/oci8.rb: (1) add OCI8#oracle_server_version.
+	*   (2) change the default data type for timestamp with time zone
+	    from DateTime to Time.
+
 2009-03-11  KUBO Takehiro  <kubo@jiubao.org>
 	* oraconf.rb: fix big/little endian checking problem on Mac OS X ppc.
 	    (contributed by unknown. See: Bug ID 24284 on rubyforge.)

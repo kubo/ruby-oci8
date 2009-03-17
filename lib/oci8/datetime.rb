@@ -20,7 +20,7 @@ class OCI8
       #
       # This parameter is used when both or either of Oracle server and client
       # version is Oracle 8i or lower. If both versions are Oracle 9i or upper,
-      # the default timezone is determined by session timezone.
+      # the default timezone is determined by the session timezone.
       def self.default_timezone=(tz)
         if tz != :local and tz != :utc
           raise ArgumentError, "expected :local or :utc but #{tz}"
@@ -111,11 +111,13 @@ class OCI8
 
       def ocidate_to_time(ary)
         year, month, day, hour, minute, sec = ary
-        begin
-          ::Time.send(@@default_timezone, year, month, day, hour, minute, sec)
-        rescue StandardError
-          ocidate_to_datetime(ary)
+        if year >= 139
+          begin
+            ::Time.send(@@default_timezone, year, month, day, hour, minute, sec)
+          rescue StandardError
+          end
         end
+        ocidate_to_datetime(ary)
       end
 
       if OCI8.oracle_client_version >= ORAVER_9_0
@@ -149,7 +151,7 @@ class OCI8
           elsif @@time_offset == tz_hour * 3600 + tz_min * 60
             timezone = :local
           end
-          if timezone
+          if timezone and year >= 139
             begin
               # Ruby 1.9 Time class's resolution is nanosecond.
               # But the last argument type is millisecond.

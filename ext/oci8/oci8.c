@@ -524,11 +524,43 @@ static VALUE oci8_set_prefetch_rows(VALUE self, VALUE val)
     return val;
 }
 
+/*
+ * call-seq:
+ *   oracle_server_vernum -> Oracle server version number
+ *
+ */
+static VALUE oci8_oracle_server_vernum(VALUE self)
+{
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    char buf[100];
+    ub4 version;
+    char *p;
+
+    if (have_OCIServerRelease) {
+        /* Oracle 9i or later */
+        oci_lc(OCIServerRelease(svcctx->base.hp.ptr, oci8_errhp, (text*)buf, sizeof(buf), svcctx->base.type, &version));
+        return UINT2NUM(version);
+    } else {
+        /* Oracle 8.x */
+        oci_lc(OCIServerVersion(svcctx->base.hp.ptr, oci8_errhp, (text*)buf, sizeof(buf), svcctx->base.type));
+        if ((p = strchr(buf, '.')) != NULL) {
+            unsigned int major, minor, update, patch, port_update;
+            while (p >= buf && *p != ' ') {
+                p--;
+            }
+            if (sscanf(p + 1, "%u.%u.%u.%u.%u", &major, &minor, &update, &patch, &port_update) == 5) {
+                return INT2FIX(ORAVERNUM(major, minor, update, patch, port_update));
+            }
+        }
+        return Qnil;
+    }
+}
+
 VALUE Init_oci8(void)
 {
     cOCI8 = oci8_define_class("OCI8", &oci8_svcctx_class);
 
-    oracle_client_vernum = oracle_client_version;
+    oracle_client_vernum = INT2FIX(oracle_client_version);
     if (have_OCIClientVersion) {
         sword major, minor, update, patch, port_update;
         OCIClientVersion(&major, &minor, &update, &patch, &port_update);
@@ -556,6 +588,7 @@ VALUE Init_oci8(void)
     rb_define_method(cOCI8, "long_read_len=", oci8_set_long_read_len, 1);
     rb_define_method(cOCI8, "break", oci8_break, 0);
     rb_define_method(cOCI8, "prefetch_rows=", oci8_set_prefetch_rows, 1);
+    rb_define_private_method(cOCI8, "oracle_server_vernum", oci8_oracle_server_vernum, 0);
     return cOCI8;
 }
 

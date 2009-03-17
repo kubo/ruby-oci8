@@ -773,6 +773,15 @@ OCIServerDetach_nb:
             - OCIError *errhp
             - ub4 mode
 
+# round trip: ?
+OCIServerVersion:
+  :version: 800
+  :args:    - dvoid *hndlp
+            - OCIError *errhp
+            - OraText *bufp
+            - ub4 bufsz
+            - ub1 hndltype
+
 # round trip: 1
 OCIStmtExecute_nb:
   :version: 800
@@ -1113,6 +1122,17 @@ OCIRowidToChar:
             - OraText *outbfp
             - ub2 *outbflp
             - OCIError *errhp
+
+# An undocumented function from Oracle 9i to Oracle 10g.
+# This is documented in Oracle 11g.
+OCIServerRelease:
+  :version: 900
+  :args:    - dvoid *hndlp
+            - OCIError *errhp
+            - OraText *bufp
+            - ub4 bufsz
+            - ub1 hndltype
+            - ub4 *version
 
 #
 # Oracle 9.2

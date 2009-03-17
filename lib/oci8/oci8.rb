@@ -135,6 +135,31 @@ class OCI8
     "#<OCI8:#{username}>"
   end
 
+  # :call-seq:
+  #   oracle_server_version -> oraver
+  #
+  # Returns an OCI8::OracleVersion of the Oracle server version.
+  #
+  # See also: OCI8.oracle_client_version
+  def oracle_server_version
+    unless defined? @oracle_server_version
+      if vernum = oracle_server_vernum
+        # If the Oracle client is Oracle 9i or upper,
+        # get the server version from the OCI function OCIServerRelease.
+        @oracle_server_version = OCI8::OracleVersion.new(vernum)
+      else
+        # Otherwise, get it from v$version.
+        self.exec('select banner from v$version') do |row|
+          if /^Oracle.*?(\d+\.\d+\.\d+\.\d+\.\d+)/ =~ row[0]
+            @oracle_server_version = OCI8::OracleVersion.new($1)
+            break
+          end
+        end
+      end
+    end
+    @oracle_server_version
+  end
+
   module BindType
     Mapping = {}
 
@@ -703,7 +728,7 @@ OCI8::BindType::Mapping[:date] = OCI8::BindType::Time
 
 if OCI8.oracle_client_version >= OCI8::ORAVER_9_0
   OCI8::BindType::Mapping[:timestamp] = OCI8::BindType::Time
-  OCI8::BindType::Mapping[:timestamp_tz] = OCI8::BindType::DateTime
+  OCI8::BindType::Mapping[:timestamp_tz] = OCI8::BindType::Time
   OCI8::BindType::Mapping[:timestamp_ltz] = OCI8::BindType::Time
   OCI8::BindType::Mapping[:interval_ym] = OCI8::BindType::IntervalYM
   OCI8::BindType::Mapping[:interval_ds] = OCI8::BindType::IntervalDS
