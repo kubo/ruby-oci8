@@ -1,6 +1,6 @@
 1.0.5:
 
-No changes for who try to install on Mac OS X ppc.
+No changes except who try to install on Mac OS X ppc.
 
 - fix big/little endian checking problem on Mac OS X ppc.
   (contributed by unknown. See: Bug ID 24284 on rubyforge.)
