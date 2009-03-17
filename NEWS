@@ -1,3 +1,10 @@
+1.0.5:
+
+No changes for who try to install on Mac OS X ppc.
+
+- fix big/little endian checking problem on Mac OS X ppc.
+  (contributed by unknown. See: Bug ID 24284 on rubyforge.)
+
 1.0.4:
 
 1. [dbi] support ruby-dbi 0.4
