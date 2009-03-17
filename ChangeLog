@@ -1,4 +1,17 @@
 2009-03-17  KUBO Takehiro  <kubo@jiubao.org>
+	* NEWS: add a new file.
+	* VERSION: change version to 2.0.1.
+	* Makefile: add targets to make a binary gem for Windows.
+	* dist-files: add NEWS
+	* ext/oci8/extconf.rb, lib/oci8.rb.in: rename oci8lib.so
+	    to oci8lib_18.so and oci8lib_191.so. The renamed name
+	    depends on the ruby version.
+	* lib/oci8/datetime.rb: fix the fetched type for date column
+	    when using Oracle 8.x.
+	* ruby-oci8.gemspec: fix to make a binary gem which contains
+	    both oci8lib_18.so and oci8lib_191.so.
+
+2009-03-17  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.yml: add prototypes for OCIServerVersion() and
 	    OCIServerRelease().
 	* ext/oci8/oci8.c: (1) add a private method OCI8#oracle_server_vernum,

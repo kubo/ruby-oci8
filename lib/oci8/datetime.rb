@@ -113,7 +113,7 @@ class OCI8
         year, month, day, hour, minute, sec = ary
         if year >= 139
           begin
-            ::Time.send(@@default_timezone, year, month, day, hour, minute, sec)
+            return ::Time.send(@@default_timezone, year, month, day, hour, minute, sec)
           rescue StandardError
           end
         end

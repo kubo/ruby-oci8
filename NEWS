@@ -1,0 +1,6 @@
+2.0.1:
+
+* release a binary gem for Windows, which contains libraries for both
+  ruby 1.8 and ruby 1.9.1.
+* add OCI8#oracle_server_version.
+* fix bugs when fetching and binding time objects.

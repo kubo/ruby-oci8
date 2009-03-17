@@ -6,6 +6,7 @@
 # To make a binary gems package:
 #   gem build ruby-oci8.gemspec -- current
 #
+require 'fileutils'
 
 if ARGV.size > 3
    gem_platform = ARGV[3]
@@ -28,27 +29,35 @@ EOS
   s.platform = gem_platform
   files = File.read('dist-files').split("\n")
   if gem_platform == Gem::Platform::RUBY
-    s.require_paths = ['lib']
     s.extensions << 'ext/oci8/extconf.rb'
     s.required_ruby_version = '>= 1.8.0'
   else
-    s.require_paths = ['lib', 'ext/oci8']
-    if RUBY_VERSION =~ /^1\.9\./
+    so_files = Dir.glob('ext/oci8/oci8lib_*.so')
+    has_1_8 = so_files.include? 'ext/oci8/oci8lib_18.so'
+    has_1_9_1 = so_files.include? 'ext/oci8/oci8lib_191.so'
+    if has_1_8 and has_1_9_1
+      puts 'Binary gem for ruby 1.8 and 1.9.1'
+      s.required_ruby_version = '>= 1.8.0'
+    elsif has_1_8 and !has_1_9_1
+      puts 'Binary gem for ruby 1.8'
+      s.required_ruby_version = '~> 1.8.0'
+    elsif !has_1_8 and has_1_9_1
+      puts 'Binary gem for ruby 1.9.1'
       s.required_ruby_version = '~> 1.9.1'
     else
-      s.required_ruby_version = '~> 1.8.0'
+      raise "No compiled binary are found. Run make in advance."
     end
-    # check files created by a make command.
-    ['ext/oci8/oci8lib.so', 'lib/oci8.rb'].each do |file|
-      raise <<EOS unless File.exist?(file)
-#{file} doesn't exist. Run make in advance.
-EOS
-      #'
-      files << file
+    FileUtils.copy so_files, 'lib', :preserve => true
+    files.reject! do |fname|
+      fname =~ /^ext/
     end
+    so_files.each do |fname|
+      files << 'lib/' + File.basename(fname)
+    end
+    files << 'lib/oci8.rb'
   end
   s.files = files
   s.test_files = 'test/test_all.rb'
-  s.rdoc_options = ['--main', 'README', '--exclude', 'ext/*']
+  s.rdoc_options = ['--main', 'README']
   s.extra_rdoc_files = ['README']
 end

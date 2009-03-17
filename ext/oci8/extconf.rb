@@ -113,6 +113,16 @@ replace = {
 # make ruby script before running create_makefile.
 replace_keyword(File.dirname(__FILE__) + '/../../lib/oci8.rb.in', '../../lib/oci8.rb', replace)
 
+case RUBY_VERSION
+when /^1\.9\.1/
+  so_basename = "oci8lib_191"
+when /^1\.8/
+  so_basename = "oci8lib_18"
+else
+  raise 'unsupported ruby version: ' + RUBY_VERSION
+end
+$defs << "-DInit_oci8lib=Init_#{so_basename}"
+
 create_header()
 
 # make dependency file
@@ -140,6 +150,6 @@ end
 
 create_apiwrap()
 
-create_makefile("oci8lib")
+create_makefile(so_basename)
 
 exit 0
