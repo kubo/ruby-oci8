@@ -49,8 +49,11 @@ extern "C"
 #include <ruby/encoding.h>
 #endif
 
-#if ACTUAL_ORACLE_CLIENT_VERSION < ORAVER_10_2
-typedef struct OCIAdmin OCIAdmin;
+#ifndef OCI_TEMP_CLOB
+#define OCI_TEMP_CLOB 1
+#endif
+#ifndef OCI_TEMP_BLOB
+#define OCI_TEMP_BLOB 2
 #endif
 
 #ifndef ORAXB8_DEFINED
@@ -66,6 +69,15 @@ typedef   signed __int64 orasb8;
 #endif
 #endif /* ORAXB8_DEFINED */
 
+#ifndef HAVE_TYPE_ORATEXT
+typedef unsigned char oratext;
+#endif
+#ifndef HAVE_TYPE_OCIDATETIME_
+typedef struct OCIDateTime OCIDateTime;
+#endif
+#ifndef HAVE_TYPE_OCIINTERVAL_
+typedef struct OCIInterval OCIInterval;
+#endif
 #ifndef HAVE_TYPE_OCICALLBACKLOBREAD2
 typedef sb4 (*OCICallbackLobRead2)(dvoid *ctxp, CONST dvoid *bufp, oraub8 len,
                                    ub1 piece, dvoid **changed_bufpp,
@@ -75,6 +87,9 @@ typedef sb4 (*OCICallbackLobRead2)(dvoid *ctxp, CONST dvoid *bufp, oraub8 len,
 typedef sb4 (*OCICallbackLobWrite2)(dvoid *ctxp, dvoid *bufp, oraub8 *lenp,
                                     ub1 *piece, dvoid **changed_bufpp,
                                     oraub8 *changed_lenp);
+#endif
+#ifndef HAVE_TYPE_OCIADMIN_
+typedef struct OCIAdmin OCIAdmin;
 #endif
 
 /* new macros in ruby 1.8.6.

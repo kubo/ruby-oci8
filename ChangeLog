@@ -1,6 +1,12 @@
 2009-03-24  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, ext/oci8/oci8.h, ext/oci8/oraconf.rb:
+	    fix a problem when compiling with Oracle 8.0.
+	    (reported by Axel Reinhold)
+
+2009-03-24  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, ext/oci8/oci8.h: fix a problem when
 	    compiling with Oracle 9.2.
+	    (reported by Axel Reinhold)
 	* ext/oci8/apiwrap.yml: suppres warnings 'discards qualifiers
 	    from pointer target type' when compiling with Oracle 8i.
 
