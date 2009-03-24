@@ -63,6 +63,9 @@ funcs.keys.sort.each do |version|
 end
 $defs << "-DACTUAL_ORACLE_CLIENT_VERSION=#{format('0x%08x', oci_actual_client_version)}"
 
+have_type('OCICallbackLobRead2', 'ociap.h')
+have_type('OCICallbackLobWrite2', 'ociap.h')
+
 if with_config('oracle-version')
   oci_client_version = with_config('oracle-version').to_i
 else

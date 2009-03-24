@@ -53,6 +53,30 @@ extern "C"
 typedef struct OCIAdmin OCIAdmin;
 #endif
 
+#ifndef ORAXB8_DEFINED
+#if SIZEOF_LONG == 8
+typedef unsigned long oraub8;
+typedef   signed long orasb8;
+#elif SIZEOF_LONG_LONG == 8
+typedef unsigned long long oraub8;
+typedef   signed long long orasb8;
+#elif SIZEOF___INT64 == 8
+typedef unsigned __int64 oraub8;
+typedef   signed __int64 orasb8;
+#endif
+#endif /* ORAXB8_DEFINED */
+
+#ifndef HAVE_TYPE_OCICALLBACKLOBREAD2
+typedef sb4 (*OCICallbackLobRead2)(dvoid *ctxp, CONST dvoid *bufp, oraub8 len,
+                                   ub1 piece, dvoid **changed_bufpp,
+                                   oraub8 *changed_lenp);
+#endif
+#ifndef HAVE_TYPE_OCICALLBACKLOBWRITE2
+typedef sb4 (*OCICallbackLobWrite2)(dvoid *ctxp, dvoid *bufp, oraub8 *lenp,
+                                    ub1 *piece, dvoid **changed_bufpp,
+                                    oraub8 *changed_lenp);
+#endif
+
 /* new macros in ruby 1.8.6.
  * define compatible macros for ruby 1.8.5 or lower.
  */

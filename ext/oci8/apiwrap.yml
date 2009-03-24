@@ -6,7 +6,7 @@
 # use thie for 0 round trip
 OCIAttrGet:
   :version: 800
-  :args:    - const dvoid *trgthndlp
+  :args:    - CONST dvoid *trgthndlp
             - ub4 trghndltyp
             - dvoid *attributep
             - ub4 *sizep
@@ -16,7 +16,7 @@ OCIAttrGet:
 # use thie for 1 or 2 round trips
 OCIAttrGet_nb:
   :version: 800
-  :args:    - const dvoid *trgthndlp
+  :args:    - CONST dvoid *trgthndlp
             - ub4 trghndltyp
             - dvoid *attributep
             - ub4 *sizep
@@ -48,7 +48,7 @@ OCIBindByName:
   :args:    - OCIStmt *stmtp
             - OCIBind **bindp
             - OCIError *errhp
-            - const text *placeholder
+            - CONST text *placeholder
             - sb4 placeh_len
             - dvoid *valuep
             - sb4 value_sz
@@ -82,7 +82,7 @@ OCIBindObject:
   :version: 800
   :args:    - OCIBind *bindp
             - OCIError *errhp
-            - const OCIType *type
+            - CONST OCIType *type
             - dvoid **pgvpp
             - ub4 *pvszsp
             - dvoid **indpp
@@ -99,8 +99,8 @@ OCICollAppend:
   :version: 800
   :args:    - OCIEnv *env
             - OCIError *err
-            - const dvoid *elem
-            - const dvoid *elemind
+            - CONST dvoid *elem
+            - CONST dvoid *elemind
             - OCIColl *coll
 
 # round trip: 0
@@ -109,8 +109,8 @@ OCICollAssignElem:
   :args:    - OCIEnv *env
             - OCIError *err
             - sb4 index
-            - const dvoid *elem
-            - const dvoid *elemind
+            - CONST dvoid *elem
+            - CONST dvoid *elemind
             - OCIColl *coll
 
 # round trip: 0
@@ -118,7 +118,7 @@ OCICollGetElem:
   :version: 800
   :args:    - OCIEnv *env
             - OCIError *err
-            - const OCIColl *coll
+            - CONST OCIColl *coll
             - sb4 index
             - boolean *exists
             - dvoid **elem
@@ -129,7 +129,7 @@ OCICollSize:
   :version: 800
   :args:    - OCIEnv *env
             - OCIError *err
-            - const OCIColl *coll
+            - CONST OCIColl *coll
             - sb4 *size
 
 # round trip: 0
@@ -170,7 +170,7 @@ OCIDefineObject:
   :version: 800
   :args:    - OCIDefine *defnp
             - OCIError *errhp
-            - const OCIType *type
+            - CONST OCIType *type
             - dvoid **pgvpp
             - ub4 *pvszsp
             - dvoid **indpp
@@ -190,7 +190,7 @@ OCIDescribeAny_nb:
 
 OCIDescriptorAlloc:
   :version: 800
-  :args:    - const dvoid *parenth
+  :args:    - CONST dvoid *parenth
             - dvoid **descpp
             - ub4 type
             - size_t xtramem_sz
@@ -220,7 +220,7 @@ OCIErrorGet:
 
 OCIHandleAlloc:
   :version: 800
-  :args:    - const dvoid *parenth
+  :args:    - CONST dvoid *parenth
             - dvoid **hndlpp
             - ub4 type
             - size_t xtramem_sz
@@ -245,7 +245,7 @@ OCILobAssign:
   :version: 800
   :args:    - OCIEnv *envhp
             - OCIError *errhp
-            - const OCILobLocator *src_locp
+            - CONST OCILobLocator *src_locp
             - OCILobLocator **dst_locpp
 
 # round trip: 1
@@ -274,7 +274,7 @@ OCILobFileGetName:
   :version: 800
   :args:    - OCIEnv *envhp
             - OCIError *errhp
-            - const OCILobLocator *filep
+            - CONST OCILobLocator *filep
             - text *dir_alias
             - ub2 *d_length
             - text *filename
@@ -294,9 +294,9 @@ OCILobFileSetName:
   :args:    - OCIEnv *envhp
             - OCIError *errhp
             - OCILobLocator **filepp
-            - const text *dir_alias
+            - CONST text *dir_alias
             - ub2 d_length
-            - const text *filename
+            - CONST text *filename
             - ub2 f_length
 
 # round trip: 1
@@ -312,7 +312,7 @@ OCILobLocatorIsInit:
   :version: 800
   :args:    - OCIEnv *envhp
             - OCIError *errhp
-            - const OCILobLocator *locp
+            - CONST OCILobLocator *locp
             - boolean *is_initialized
 
 # round trip: 0 or 1
@@ -366,113 +366,113 @@ OCILogon_nb:
   :args:    - OCIEnv *envhp
             - OCIError *errhp
             - OCISvcCtx **svchp
-            - const text *username
+            - CONST text *username
             - ub4 uname_len
-            - const text *password
+            - CONST text *password
             - ub4 passwd_len
-            - const text *dbname
+            - CONST text *dbname
             - ub4 dbname_len
 
 # round trip: 0
 OCINumberAbs:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberAdd:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number1
-            - const OCINumber *number2
+            - CONST OCINumber *number1
+            - CONST OCINumber *number2
             - OCINumber *result
 
 # round trip: 0
 OCINumberArcCos:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberArcSin:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberArcTan:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberArcTan2:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number1
-            - const OCINumber *number2
+            - CONST OCINumber *number1
+            - CONST OCINumber *number2
             - OCINumber *result
 
 # round trip: 0
 OCINumberAssign:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *from
+            - CONST OCINumber *from
             - OCINumber *to
 
 # round trip: 0
 OCINumberCeil:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberCmp:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number1
-            - const OCINumber *number2
+            - CONST OCINumber *number1
+            - CONST OCINumber *number2
             - sword *result
 
 # round trip: 0
 OCINumberCos:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberDiv:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number1
-            - const OCINumber *number2
+            - CONST OCINumber *number1
+            - CONST OCINumber *number2
             - OCINumber *result
 
 # round trip: 0
 OCINumberExp:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberFloor:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberFromInt:
   :version: 800
   :args:    - OCIError *err
-            - const dvoid *inum
+            - CONST dvoid *inum
             - uword inum_length
             - uword inum_s_flag
             - OCINumber *number
@@ -481,7 +481,7 @@ OCINumberFromInt:
 OCINumberFromReal:
   :version: 800
   :args:    - OCIError *err
-            - const dvoid *rnum
+            - CONST dvoid *rnum
             - uword rnum_length
             - OCINumber *number
 
@@ -489,11 +489,11 @@ OCINumberFromReal:
 OCINumberFromText:
   :version: 800
   :args:    - OCIError *err
-            - const text *str
+            - CONST text *str
             - ub4 str_length
-            - const text *fmt
+            - CONST text *fmt
             - ub4 fmt_length
-            - const text *nls_params
+            - CONST text *nls_params
             - ub4 nls_p_length
             - OCINumber *number
 
@@ -501,89 +501,89 @@ OCINumberFromText:
 OCINumberHypCos:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberHypSin:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberHypTan:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberIntPower:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *base
-            - const sword exp
+            - CONST OCINumber *base
+            - CONST sword exp
             - OCINumber *result
 
 # round trip: 0
 OCINumberIsZero:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - boolean *result
 
 # round trip: 0
 OCINumberLn:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberLog:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *base
-            - const OCINumber *number
+            - CONST OCINumber *base
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberMod:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number1
-            - const OCINumber *number2
+            - CONST OCINumber *number1
+            - CONST OCINumber *number2
             - OCINumber *result
 
 # round trip: 0
 OCINumberMul:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number1
-            - const OCINumber *number2
+            - CONST OCINumber *number1
+            - CONST OCINumber *number2
             - OCINumber *result
 
 # round trip: 0
 OCINumberNeg:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberPower:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *base
-            - const OCINumber *number
+            - CONST OCINumber *base
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberRound:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - sword decplace
             - OCINumber *result
 
@@ -598,36 +598,36 @@ OCINumberSetZero:
 OCINumberSin:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberSub:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number1
-            - const OCINumber *number2
+            - CONST OCINumber *number1
+            - CONST OCINumber *number2
             - OCINumber *result
 
 # round trip: 0
 OCINumberSqrt:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberTan:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - OCINumber *result
 
 # round trip: 0
 OCINumberToInt:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - uword rsl_length
             - uword rsl_flag
             - dvoid *rsl
@@ -636,7 +636,7 @@ OCINumberToInt:
 OCINumberToReal:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - uword rsl_length
             - dvoid *rsl
 
@@ -644,10 +644,10 @@ OCINumberToReal:
 OCINumberToText:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
-            - const text *fmt
+            - CONST OCINumber *number
+            - CONST text *fmt
             - ub4 fmt_length
-            - const text *nls_params
+            - CONST text *nls_params
             - ub4 nls_p_length
             - ub4 *buf_size
             - text *buf
@@ -656,7 +656,7 @@ OCINumberToText:
 OCINumberTrunc:
   :version: 800
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - sword decplace
             - OCINumber *resulty
 
@@ -681,7 +681,7 @@ OCIObjectNew:
   :version: 800
   :args:    - OCIEnv *env
             - OCIError *err
-            - const OCISvcCtx *svc
+            - CONST OCISvcCtx *svc
             - OCITypeCode typecode
             - OCIType *tdo
             - dvoid *table
@@ -711,7 +711,7 @@ OCIObjectUnpin:
 # round trip: ???
 OCIParamGet:
   :version: 800
-  :args:    - const dvoid *hndlp
+  :args:    - CONST dvoid *hndlp
             - ub4 htype
             - OCIError *errhp
             - dvoid **parmdpp
@@ -731,7 +731,7 @@ OCIRawAssignBytes:
   :version: 800
   :args:    - OCIEnv *env
             - OCIError *err
-            - const ub1 *rhs
+            - CONST ub1 *rhs
             - ub4 rhs_len
             - OCIRaw **lhs
 
@@ -740,14 +740,14 @@ OCIRawPtr:
   :version: 800
   :ret:     ub1 *
   :args:    - OCIEnv *env
-            - const OCIRaw *raw
+            - CONST OCIRaw *raw
 
 # round trip: 0
 OCIRawSize:
   :version: 800
   :ret:     ub4
   :args:    - OCIEnv *env
-            - const OCIRaw *raw
+            - CONST OCIRaw *raw
 
 # round trip: 1
 OCISessionEnd_nb:
@@ -762,7 +762,7 @@ OCIServerAttach_nb:
   :version: 800
   :args:    - OCIServer *srvhp
             - OCIError *errhp
-            - const text *dblink
+            - CONST text *dblink
             - sb4 dblink_len
             - ub4 mode
 
@@ -790,7 +790,7 @@ OCIStmtExecute_nb:
             - OCIError *errhp
             - ub4 iters
             - ub4 rowoff
-            - const OCISnapshot *snap_in
+            - CONST OCISnapshot *snap_in
             - OCISnapshot *snap_out
             - ub4 mode
 
@@ -818,7 +818,7 @@ OCIStmtPrepare:
   :version: 800
   :args:    - OCIStmt *stmtp
             - OCIError *errhp
-            - const text *stmt
+            - CONST text *stmt
             - ub4 stmt_len
             - ub4 language
             - ub4 mode
@@ -828,10 +828,10 @@ OCIStmtSetPieceInfo:
   :args:    - dvoid *hndlp
             - ub4 type
             - OCIError *errhp
-            - const dvoid *bufp
+            - CONST dvoid *bufp
             - ub4 *alenp
             - ub1 piece
-            - const dvoid *indp
+            - CONST dvoid *indp
             - ub2 *rcodep
 
 # round trip: 0
@@ -839,7 +839,7 @@ OCIStringAssignText:
   :version: 800
   :args:    - OCIEnv *env
             - OCIError *err
-            - const text *rhs
+            - CONST text *rhs
             - ub4 rhs_len
             - OCIString **lhs
 
@@ -848,14 +848,14 @@ OCIStringPtr:
   :version: 800
   :ret:     text *
   :args:    - OCIEnv *env
-            - const OCIString *vs
+            - CONST OCIString *vs
 
 # round trip: 0
 OCIStringSize:
   :version: 800
   :ret:     ub4
   :args:    - OCIEnv *env
-            - const OCIString *vs
+            - CONST OCIString *vs
 
 # round trip: 1
 OCITransCommit_nb:
@@ -877,7 +877,7 @@ OCITypeTypeCode:
   :ret:     OCITypeCode
   :args:    - OCIEnv *env
             - OCIError *err
-            - const OCIType *tdo
+            - CONST OCIType *tdo
 
 
 #
@@ -924,7 +924,7 @@ OCILobLocatorAssign_nb:
   :version: 810
   :args:    - OCISvcCtx *svchp
             - OCIError *errhp
-            - const OCILobLocator *src_locp
+            - CONST OCILobLocator *src_locp
             - OCILobLocator **dst_locpp
 
 # round trip 1
@@ -939,7 +939,7 @@ OCILobOpen_nb:
 OCINumberIsInt:
   :version: 810
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - boolean *result
   :code_if_not_found: |
     /* pseude code
@@ -966,7 +966,7 @@ OCINumberIsInt:
 OCINumberPrec:
   :version: 810
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - eword nDigs
             - OCINumber *result
 
@@ -988,15 +988,15 @@ OCINumberSetPi:
 OCINumberShift:
   :version: 810
   :args:    - OCIError *err
-            - const OCINumber *number
-            - const sword nDig
+            - CONST OCINumber *number
+            - CONST sword nDig
             - OCINumber *result
 
 # round trip: 0
 OCINumberSign:
   :version: 810
   :args:    - OCIError *err
-            - const OCINumber *number
+            - CONST OCINumber *number
             - sword *result
   :code_if_not_found: |
     /* pseude code
@@ -1048,7 +1048,7 @@ OCIDateTimeGetDate:
   :version: 900
   :args:    - dvoid *hndl
             - OCIError *err
-            - const OCIDateTime *date
+            - CONST OCIDateTime *date
             - sb2 *yr
             - ub1 *mnth
             - ub1 *dy
@@ -1069,7 +1069,7 @@ OCIDateTimeGetTimeZoneOffset:
   :version: 900
   :args:    - dvoid *hndl
             - OCIError *err
-            - const OCIDateTime *datetime
+            - CONST OCIDateTime *datetime
             - sb1 *hr
             - sb1 *mm
 
@@ -1083,7 +1083,7 @@ OCIIntervalGetDaySecond:
             - sb4 *mm
             - sb4 *ss
             - sb4 *fsec
-            - const OCIInterval *result
+            - CONST OCIInterval *result
 
 # round trip: 0 (not docmented. I guess.)
 OCIIntervalGetYearMonth:
@@ -1092,7 +1092,7 @@ OCIIntervalGetYearMonth:
             - OCIError *err
             - sb4 *yr
             - sb4 *mnth
-            - const OCIInterval *result
+            - CONST OCIInterval *result
 
 # round trip: 0 (not docmented. I guess.)
 OCIIntervalSetDaySecond:
