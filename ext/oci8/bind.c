@@ -46,7 +46,7 @@ static void bind_string_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE len
     } else {
         sz = NUM2INT(length);
     }
-    if (sz <= 0) {
+    if (sz < 0) {
         rb_raise(rb_eArgError, "invalid bind length %d", sz);
     }
     sz += sizeof(sb4);

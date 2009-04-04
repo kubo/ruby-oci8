@@ -1,3 +1,8 @@
+2009-04-04  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/bind.c: fix an error when executing "select NULL from dual".
+	    http://rubyforge.org/forum/forum.php?thread_id=32468&forum_id=1078
+	    (contributed by Raimonds Simanovskis)
+
 2009-03-24  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, ext/oci8/oci8.h, ext/oci8/oraconf.rb:
 	    fix a problem when compiling with Oracle 8.0.
