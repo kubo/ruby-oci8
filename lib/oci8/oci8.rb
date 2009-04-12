@@ -218,15 +218,36 @@ class OCI8
     end
 
     class String
+      # 1333 <= ceil(4000 / 3). 4000 is max size of char. 3 is NLS ratio of UTF-8.
+      @@minimum_bind_length = 1333
+
+      def self.minimum_bind_length
+        @@minimum_bind_length
+      end
+
+      def self.minimum_bind_length=(val)
+        @@minimum_bind_length = val
+      end
+
       def self.create(con, val, param, max_array_size)
         case param
         when Hash
-          # 1333 = ceil(4000 (max size of char) / 3 (NLS ratio of UTF8))
-          length = 1333 # default length
           if param[:length]
+            # If length is passed explicitly, use it.
             length = param[:length]
-          elsif val.respond_to? :to_str and val.to_str.size > length
-            length = val.to_str.size
+          elsif val.is_a? String or (val.respond_to? :to_str and val = val.to_str)
+            if OCI8.respond_to? :encoding and OCI8.encoding != val.encoding
+              # If the string encoding is different with NLS_LANG character set,
+              # convert it to get the length.
+              val = val.encode(OCI8.encoding)
+            end
+            if val.respond_to? :bytesize
+              # ruby 1.8.7 or upper
+              length = val.bytesize
+            else
+              # ruby 1.8.6 or lower
+              length = val.size
+            end
           end
         when OCI8::Metadata::Base
           case param.data_type
@@ -239,10 +260,9 @@ class OCI8
           when :raw
             # HEX needs twice space.
             length = param.data_size * 2
-          else
-            length = 100
           end
         end
+        length = @@minimum_bind_length if length.nil? or length < @@minimum_bind_length
         self.new(con, val, length, max_array_size)
       end
     end

@@ -71,6 +71,29 @@ EOS
     drop_table('test_table')
   end
 
+  if OCI8.encoding.name == "UTF-8"
+    def test_bind_string_with_code_conversion
+      drop_table('test_table')
+      @conn.exec(<<EOS)
+CREATE TABLE test_table
+  (V VARCHAR2(3000))
+STORAGE (
+   INITIAL 4k
+   NEXT 4k
+   MINEXTENTS 1
+   MAXEXTENTS UNLIMITED
+   PCTINCREASE 0)
+EOS
+      utf_8 = "\u00A1" * 1500 # 3000 byte
+      iso_8859_1 = utf_8.encode("ISO-8859-1") # 1500 byte
+      @conn.exec("INSERT INTO test_table VALUES (:1)", iso_8859_1)
+      @conn.exec("SELECT * FROM test_table") do |row|
+        assert_equal(utf_8, row[0])
+      end
+      drop_table('test_table')
+    end
+  end
+
   def teardown
     @conn.logoff
   end

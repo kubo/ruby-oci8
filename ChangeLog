@@ -1,4 +1,8 @@
 2009-04-12  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb, test/test_encoding.rb: The string bind length should
+	    be got from the string bytesize converted to OCI8.encoding.
+
+2009-04-12  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c: OCI8::BLOB#read should return ASCII-8BIT.
 	    OCI8::BLOB#write should not convert the specified string
 	    to OCI8.encoding.
