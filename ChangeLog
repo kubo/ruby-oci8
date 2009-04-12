@@ -1,4 +1,10 @@
 2009-04-12  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/dbd/OCI8.rb: A data dictionary all_constraints doesn't have
+	    index_name column on Oracle 8i or lower. Rewrite
+	    DBI::DBD::OCI8::Database#column by using all_cons_columns.
+	    (backport from ruby-oci8 trunk)
+
+2009-04-12  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, ext/oci8/oci8.h, ext/oci8/oraconf.rb:
 	    fix a problem when compiling for Oracle 8.0.
 	    (reported by Axel Reinhold as a ruby-oci8 2.0 issue)

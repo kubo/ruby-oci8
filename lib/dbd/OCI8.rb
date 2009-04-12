@@ -245,19 +245,21 @@ class Database < DBI::BaseDatabase
 
     dbh = DBI::DatabaseHandle.new(self)
 
-    pk_index_name = nil
+    primaries = {}
     dbh.select_all(<<EOS, tab.obj_schema, tab.obj_name) do |row|
-select index_name
-  from all_constraints
- where constraint_type = 'P'
-   and owner = :1
-   and table_name = :2
+select column_name
+  from all_cons_columns a, all_constraints b
+ where a.owner = b.owner
+   and a.constraint_name = b.constraint_name
+   and a.table_name = b.table_name
+   and b.constraint_type = 'P'
+   and b.owner = :1
+   and b.table_name = :2
 EOS
-      pk_index_name = row[0]
+      primaries[row[0]] = true
     end
 
     indices = {}
-    primaries = {}
     uniques = {}
     dbh.select_all(<<EOS, tab.obj_schema, tab.obj_name) do |row|
 select a.column_name, a.index_name, b.uniqueness
@@ -269,7 +271,6 @@ select a.column_name, a.index_name, b.uniqueness
 EOS
       col_name, index_name, uniqueness = row
       indices[col_name] = true
-      primaries[col_name] = true if index_name == pk_index_name
       uniques[col_name] = true if uniqueness == 'UNIQUE'
     end
 
