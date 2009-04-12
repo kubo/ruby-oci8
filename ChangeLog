@@ -1,3 +1,9 @@
+2009-04-12  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/dbd/OCI8.rb: fix DBI::DBD::OCI8::BindType::DBIStatementHandle
+	    to pass a newly added sanity check in dbi 0.4.1.
+	    (reported by Dirk Herzhauser)
+	* test/test_all.rb: fix to use dbi installed as a rubygem.
+
 2009-04-04  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c: fix an error when executing "select NULL from dual".
 	    http://rubyforge.org/forum/forum.php?thread_id=32468&forum_id=1078
