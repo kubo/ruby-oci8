@@ -21,6 +21,10 @@ require "#{srcdir}/test_array_dml"
 require "#{srcdir}/test_rowid"
 require "#{srcdir}/test_oracle_version"
 
+if OCI8.respond_to? :encoding
+  require "#{srcdir}/test_encoding"
+end
+
 # Ruby/DBI
 begin
   require 'dbi'

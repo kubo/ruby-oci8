@@ -252,7 +252,7 @@ EOS
 
     drop_table('test_table')
     @dbh.execute(<<-EOS)
-CREATE TABLE test_table (#{i = 0; coldef.collect do |c| i += 1; "C#{i} " + c[1] + (c[8] ? ' PRIMARY KEY' : ''); end.join(',')})
+CREATE TABLE test_table (#{n = 0; coldef.collect do |c| n += 1; "C#{n} " + c[1] + (c[8] ? ' PRIMARY KEY' : ''); end.join(',')})
 STORAGE (
    INITIAL 100k
    NEXT 100k

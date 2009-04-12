@@ -1,4 +1,13 @@
 2009-04-12  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c: OCI8::BLOB#read should return ASCII-8BIT.
+	    OCI8::BLOB#write should not convert the specified string
+	    to OCI8.encoding.
+	* test/test_dbi.rb: suppress warning: "shadowing outer local
+	    variable - i"
+	* test/test_all.rb, test/test_encoding.rb: add string encoding
+	    tests.
+
+2009-04-12  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/dbd/OCI8.rb: fix DBI::DBD::OCI8::BindType::DBIStatementHandle
 	    to pass a newly added sanity check in dbi 0.4.1.
 	    (reported by Dirk Herzhauser)

@@ -26,6 +26,7 @@ typedef struct {
     ub4 pos;
     int char_width;
     ub1 csfrm;
+    ub1 lobtype;
     enum state state;
 } oci8_lob_t;
 
@@ -149,6 +150,7 @@ static VALUE oci8_lob_do_initialize(int argc, VALUE *argv, VALUE self, ub1 csfrm
     lob->pos = 0;
     lob->char_width = 1;
     lob->csfrm = csfrm;
+    lob->lobtype = lobtype;
     lob->state = S_NO_OPEN_CLOSE;
     oci8_link_to_parent((oci8_base_t*)lob, (oci8_base_t*)DATA_PTR(svc));
     if (!NIL_P(val)) {
@@ -360,8 +362,14 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
     }
     v = rb_ary_join(v, Qnil);
     OBJ_TAINT(v);
-    rb_enc_associate(v, oci8_encoding);
-    return rb_str_conv_enc(v, oci8_encoding, rb_default_internal_encoding());
+    if (lob->lobtype == OCI_TEMP_CLOB) {
+        /* set encoding */
+        rb_enc_associate(v, oci8_encoding);
+        return rb_str_conv_enc(v, oci8_encoding, rb_default_internal_encoding());
+    } else {
+        /* ASCII-8BIT */
+        return v;
+    }
 }
 
 static VALUE oci8_lob_write(VALUE self, VALUE data)
@@ -371,7 +379,11 @@ static VALUE oci8_lob_write(VALUE self, VALUE data)
     ub4 amt;
 
     lob_open(lob);
-    OCI8StringValue(data);
+    if (lob->lobtype == OCI_TEMP_CLOB) {
+        OCI8StringValue(data);
+    } else {
+        StringValue(data);
+    }
     amt = RSTRING_LEN(data);
     oci_lc(OCILobWrite_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, RSTRING_PTR(data), amt, OCI_ONE_PIECE, NULL, NULL, 0, lob->csfrm));
     lob->pos += amt;
@@ -503,6 +515,7 @@ static VALUE oci8_bfile_initialize(int argc, VALUE *argv, VALUE self)
     lob->pos = 0;
     lob->char_width = 1;
     lob->csfrm = SQLCS_IMPLICIT;
+    lob->lobtype = OCI_TEMP_BLOB;
     lob->state = S_BFILE_CLOSE;
     if (argc != 1) {
         OCI8SafeStringValue(dir_alias);
