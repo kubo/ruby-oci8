@@ -944,21 +944,18 @@ EOS
         end
       end
 
-      # remove object files from libs.
-      objs = []
-      libs.gsub!(/\S+\.o\b/) do |obj|
-        objs << obj
-        ""
-      end
-      # change object files to an archive file to work around.
-      if objs.length > 0
-        Logging::open do
-          puts "change object files to an archive file."
-          command = Config::CONFIG["AR"] + " cru oracle_objs.a " + objs.join(" ")
-          puts command
-          system(command)
-          libs = "oracle_objs.a " + libs
+      # check whether object files are included.
+      if /\S+\.o\b/ =~ libs
+
+        # monkey patching!
+        Object.module_eval do
+          alias :orig_link_command :link_command
+          def link_command(ldflags, opt="", libpath=$DEFLIBPATH|$LIBPATH)
+            opt = "" if opt == $libs
+            orig_link_command(ldflags, opt, libpath)
+          end
         end
+
       end
       libs
     end # get_libs

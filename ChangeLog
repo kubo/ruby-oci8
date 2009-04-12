@@ -1,3 +1,12 @@
+2009-04-12  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, ext/oci8/oci8.h, ext/oci8/oraconf.rb:
+	    fix a problem when compiling for Oracle 8.0.
+	    (reported by Axel Reinhold as a ruby-oci8 2.0 issue)
+	* lib/dbd/OCI8.rb: fix DBI::DBD::OCI8::BindType::DBIStatementHandle
+	    to pass a newly added sanity check in dbi 0.4.1.
+	    (reported by Dirk Herzhauser as a ruby-oci8 2.0 issue)
+	* test/test_all.rb: fix to use dbi installed as a rubygem.
+
 2009-03-17  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 1.0.4 and 1.0.5.
 	* VERSION: change version to 1.0.5.

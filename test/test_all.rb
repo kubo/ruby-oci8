@@ -23,11 +23,15 @@ require "#{srcdir}/test_rowid"
 # Ruby/DBI
 begin
   require 'dbi'
-  is_dbi_loaded = true
 rescue LoadError
-  is_dbi_loaded = false
+  begin
+    require 'rubygems'
+    require 'dbi'
+  rescue LoadError
+    dbi_not_found = false
+  end
 end
-if is_dbi_loaded
+unless dbi_not_found
   require "#{srcdir}/test_dbi"
   if $test_clob
     require "#{srcdir}/test_dbi_clob"

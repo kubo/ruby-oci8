@@ -44,6 +44,8 @@ $objs = ["oci8.o", "handle.o", "const.o", "env.o", "error.o", "svcctx.o",
 $CFLAGS += oraconf.cflags
 $libs += oraconf.libs
 
+have_type('oratext', 'ociap.h')
+
 # OCIEnvCreate
 #   8.0.5  - NG
 #   9.0.1  - OK

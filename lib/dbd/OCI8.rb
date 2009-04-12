@@ -401,6 +401,21 @@ class Statement < DBI::BaseStatement
   end
 end
 
+# DBI_STMT_NEW_ARGS is DBI::StatementHandle.new's arguments except +handle+.
+#
+# FYI: DBI::StatementHandle.new method signatures are follows:
+#   0.2.2: handle, fetchable=false, prepared=true
+#   0.4.0: handle, fetchable=false, prepared=true, convert_types=true
+#   0.4.1: handle, fetchable=false, prepared=true, convert_types=true, executed=false
+begin
+  DBI::StatementHandle.new(nil, false, true, true, true)
+  # dbi 0.4.1
+  DBI_STMT_NEW_ARGS = [true, true, true, true] # :nodoc:
+rescue ArgumentError
+  # dbi 0.4.0 or lower
+  DBI_STMT_NEW_ARGS = [true] # :nodoc:
+end
+
 if defined? ::OCI8::BindType::Base
   ##
   ## ruby-oci8 2.0 bind classes.
@@ -490,7 +505,7 @@ if defined? ::OCI8::BindType::Base
         val = super
         return nil if val.nil?
         stmt = DBI::DBD::OCI8::Statement.new(val)
-        DBI::StatementHandle.new(stmt, true, false)
+        DBI::StatementHandle.new(stmt, *DBI_STMT_NEW_ARGS)
       end
     end
   end # BindType
@@ -559,7 +574,7 @@ else
           return val if val.nil?
           cur = ::OCI8::Cursor.new(@env, @svc, @ctx, val)
           stmt = DBI::DBD::OCI8::Statement.new(cur)
-          DBI::StatementHandle.new(stmt, true, false)
+          DBI::StatementHandle.new(stmt, *DBI_STMT_NEW_ARGS)
         end
       end
     end

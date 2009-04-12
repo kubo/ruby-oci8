@@ -52,6 +52,10 @@ extern "C" {
 #define RARRAY_LEN(obj) RARRAY(obj)->len
 #endif
 
+#ifndef HAVE_TYPE_ORATEXT
+typedef unsigned char oratext;
+#endif
+
 #define IS_OCI_ERROR(v) (((v) != OCI_SUCCESS) && ((v) != OCI_SUCCESS_WITH_INFO))
 
 #if defined(__GNUC__) && ((__GNUC__ > 3) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
