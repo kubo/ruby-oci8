@@ -1,3 +1,7 @@
+2009-04-14  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: Gets ORACLE_HOME from the Windows regitry
+	    by enumerating subkeys of \\HKEY_LOCAL_MACHINE\SOFTWARE\ORACLE.
+
 2009-04-12  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/oci8.rb, test/test_encoding.rb: The string bind length should
 	    be got from the string bytesize converted to OCI8.encoding.

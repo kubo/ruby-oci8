@@ -48,48 +48,69 @@ module MiniRegistry
     # copy the minimum code and reorganize it.
     ERROR_SUCCESS = 0
     ERROR_FILE_NOT_FOUND = 2
+    ERROR_NO_MORE_ITEMS = 259
 
     HKEY_LOCAL_MACHINE = 0x80000002
+    KEY_ENUMERATE_SUB_KEYS = 0x0008
+    KEY_QUERY_VALUE = 0x0001
     RegOpenKeyExA = Win32API.new('advapi32', 'RegOpenKeyExA', 'LPLLP', 'L')
+    RegEnumKeyExA = Win32API.new('advapi32', 'RegEnumKeyExA', 'LLPPPPPP', 'L')
     RegQueryValueExA = Win32API.new('advapi32','RegQueryValueExA','LPPPPP','L')
     RegCloseKey = Win32API.new('advapi32', 'RegCloseKey', 'L', 'L')
 
-    def get_reg_value(root, subkey, name)
-      result = [0].pack('L')
-      code = RegOpenKeyExA.call(root, subkey, 0, 0x20019, result)
+    def self.get_str_value(hKey, name)
+      lpcbData = [0].pack('L')
+      code = RegQueryValueExA.call(hKey, name, nil, nil, nil, lpcbData)
+      if code == ERROR_FILE_NOT_FOUND
+        return nil
+      elsif code != ERROR_SUCCESS
+        raise MiniRegistryError.new("Win32::RegQueryValueExA",code)
+      end
+      len = lpcbData.unpack('L')[0]
+      lpType = [0].pack('L')
+      lpData = "\0"*len
+      lpcbData = [len].pack('L')
+      code = RegQueryValueExA.call(hKey, name, nil, lpType, lpData, lpcbData)
+      if code != ERROR_SUCCESS
+        raise MiniRegistryError.new("Win32::RegQueryValueExA",code)
+      end
+      lpData.unpack('Z*')[0]
+    end
+
+    def self.enum_homes
+      phkResult = [0].pack('L')
+      code = RegOpenKeyExA.call(HKEY_LOCAL_MACHINE, 'SOFTWARE\ORACLE', 0, 0x20019, phkResult)
       if code != ERROR_SUCCESS
         raise MiniRegistryError.new("Win32::RegOpenKeyExA", code)
       end
-      hkey = result.unpack('L')[0]
-      begin
-        lpcbData = [0].pack('L')
-        code = RegQueryValueExA.call(hkey, name, nil, nil, nil, lpcbData)
-        if code == ERROR_FILE_NOT_FOUND
-          return nil
-        elsif code != ERROR_SUCCESS
-          raise MiniRegistryError.new("Win32::RegQueryValueExA",code)
-        end
-        len = lpcbData.unpack('L')[0]
-        lpType = "\0\0\0\0"
-        lpData = "\0"*len
-        lpcbData = [len].pack('L')
-        code = RegQueryValueExA.call(hkey, name, nil, lpType, lpData, lpcbData)
+      hKey = phkResult.unpack('L')[0]
+      idx = 0
+      maxkeylen = 256
+      loop do
+        lpName = "\0" * maxkeylen
+        lpcName = [maxkeylen].pack('L')
+        code = RegEnumKeyExA.call(hKey, idx, lpName, lpcName, nil, nil, nil, nil);
+        break if code == ERROR_NO_MORE_ITEMS
         if code != ERROR_SUCCESS
-          raise MiniRegistryError.new("Win32::RegQueryValueExA",code)
+          RegCloseKey.call(hKey)
+          raise MiniRegistryError.new("Win32::RegEnumKeyEx", code)
         end
-        lpData.unpack('Z*')[0]
-      ensure
-        RegCloseKey.call(hkey)
+        code = RegOpenKeyExA.call(hKey, lpName, 0, KEY_QUERY_VALUE, phkResult)
+        if code != ERROR_SUCCESS
+          RegCloseKey.call(hKey)
+          raise MiniRegistryError.new("Win32::RegEnumKeyEx", code)
+        end
+        hSubkey = phkResult.unpack('L')[0]
+
+        name = get_str_value(hSubkey, 'ORACLE_HOME_NAME')
+        path = get_str_value(hSubkey, 'ORACLE_HOME')
+        yield name, path
+        RegCloseKey.call(hSubkey)
+        idx += 1
       end
+      RegCloseKey.call(hKey)
     end
-    def get_local_registry(subkey, name)
-      get_reg_value(HKEY_LOCAL_MACHINE, subkey, name)
-    end
-  else
-    # UNIX
-    def get_local_registry(subkey, name)
-      nil
-    end
+
   end
 end # module MiniRegistry
 
@@ -293,8 +314,6 @@ class MiniSOReader
 end
 
 class OraConf
-  include MiniRegistry
-
   attr_reader :cc_is_gcc
   attr_reader :version
   attr_reader :cflags
@@ -756,26 +775,10 @@ class OraConfFC < OraConf
       if oracle_home.nil?
         struct = Struct.new("OracleHome", :name, :path)
         oracle_homes = []
-        begin
-          last_home = get_local_registry("SOFTWARE\\ORACLE\\ALL_HOMES", 'LAST_HOME')
-          0.upto last_home.to_i do |id|
-             oracle_homes << "HOME#{id}"
-          end
-        rescue MiniRegistryError
+        MiniRegistry.enum_homes do |name, path|
+          path.chomp!("\\") if path
+          oracle_homes << struct.new(name, path) if is_valid_home?(path)
         end
-        oracle_homes << "KEY_XE"
-        oracle_homes << "KEY_XEClient"
-        oracle_homes.collect! do |home|
-          begin
-            name = get_local_registry("SOFTWARE\\ORACLE\\#{home}", 'ORACLE_HOME_NAME')
-            path = get_local_registry("SOFTWARE\\ORACLE\\#{home}", 'ORACLE_HOME')
-            path.chomp!("\\")
-            struct.new(name, path) if is_valid_home?(path)
-          rescue MiniRegistryError
-            nil
-          end
-        end
-        oracle_homes.compact!
         if oracle_homes.empty?
           raise <<EOS
 Set the environment variable ORACLE_HOME if Oracle Full Client.
