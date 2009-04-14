@@ -1,9 +1,9 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
-  oci8.h - part of ruby-oci8
-
-  Copyright (C) 2002-2009 KUBO Takehiro <kubo@jiubao.org>
-*/
+ * oci8.h - part of ruby-oci8
+ *
+ * Copyright (C) 2002-2009 KUBO Takehiro <kubo@jiubao.org>
+ */
 #ifndef _RUBY_OCI_H_
 #define _RUBY_OCI_H_ 1
 
@@ -434,13 +434,13 @@ VALUE oci8_make_bfile(oci8_svcctx_t *svcctx, OCILobLocator *s);
 void Init_ora_date(void);
 
 /* ocinumber.c */
-void Init_oci_number(VALUE mOCI);
+void Init_oci_number(VALUE mOCI, OCIError *errhp);
 OCINumber *oci8_get_ocinumber(VALUE num);
-VALUE oci8_make_ocinumber(OCINumber *s);
-VALUE oci8_make_integer(OCINumber *s);
-VALUE oci8_make_float(OCINumber *s);
-OCINumber *oci8_set_ocinumber(OCINumber *result, VALUE self);
-OCINumber *oci8_set_integer(OCINumber *result, VALUE self);
+VALUE oci8_make_ocinumber(OCINumber *s, OCIError *errhp);
+VALUE oci8_make_integer(OCINumber *s, OCIError *errhp);
+VALUE oci8_make_float(OCINumber *s, OCIError *errhp);
+OCINumber *oci8_set_ocinumber(OCINumber *result, VALUE self, OCIError *errhp);
+OCINumber *oci8_set_integer(OCINumber *result, VALUE self, OCIError *errhp);
 
 /* ocidatetim.c */
 void Init_oci_datetime(void);

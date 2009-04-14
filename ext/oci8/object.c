@@ -1,5 +1,10 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
+ * Copyright (C) 2002-2009 KUBO Takehiro <kubo@jiubao.org>
+ */
+
+/*
+ *
  * Document-class: OCI8::TDO
  *
  * OCI8::TDO is the class for Type Descriptor Object, which describe
@@ -157,11 +162,11 @@ static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *dat
         return rb_str_new(TO_CHARPTR(OCIRawPtr(oci8_envhp, *(OCIRaw **)data)),
                           OCIRawSize(oci8_envhp, *(OCIRaw **)data));
     case ATTR_OCINUMBER:
-        return oci8_make_ocinumber((OCINumber *)data);
+        return oci8_make_ocinumber((OCINumber *)data, oci8_errhp);
     case ATTR_FLOAT:
-        return oci8_make_float((OCINumber *)data);
+        return oci8_make_float((OCINumber *)data, oci8_errhp);
     case ATTR_INTEGER:
-        return oci8_make_integer((OCINumber *)data);
+        return oci8_make_integer((OCINumber *)data, oci8_errhp);
     case ATTR_BINARY_DOUBLE:
         return rb_float_new(*(double*)data);
     case ATTR_BINARY_FLOAT:
@@ -431,10 +436,10 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
         break;
     case ATTR_OCINUMBER:
     case ATTR_FLOAT:
-        oci8_set_ocinumber((OCINumber*)data, val);
+        oci8_set_ocinumber((OCINumber*)data, val, oci8_errhp);
         break;
     case ATTR_INTEGER:
-        oci8_set_integer((OCINumber*)data, val);
+        oci8_set_integer((OCINumber*)data, val, oci8_errhp);
         break;
     case ATTR_BINARY_DOUBLE:
         *(double*)data = NUM2DBL(val);

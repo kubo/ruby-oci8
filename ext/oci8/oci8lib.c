@@ -1,6 +1,6 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
- * Copyright (C) 2002-2008 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2009 KUBO Takehiro <kubo@jiubao.org>
  */
 
 #include "oci8.h"
@@ -155,7 +155,7 @@ Init_oci8lib()
     Init_oci8_lob(cOCI8);
 
     Init_ora_date();
-    Init_oci_number(cOCI8);
+    Init_oci_number(cOCI8, oci8_errhp);
     Init_oci_datetime();
     Init_oci_object(cOCI8);
     Init_oci_xmldb();

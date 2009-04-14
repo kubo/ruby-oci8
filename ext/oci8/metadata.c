@@ -2,7 +2,7 @@
 /*
  * metadata.c
  *
- * Copyright (C) 2006-2007 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2006-2009 KUBO Takehiro <kubo@jiubao.org>
  *
  * implement private methods of classes in OCI8::Metadata module.
  *
@@ -210,7 +210,7 @@ static VALUE metadata_get_oraint(VALUE self, VALUE idx)
     memset(&on, 0, sizeof(on));
     on.OCINumberPart[0] = size;
     memcpy(&on.OCINumberPart[1], value, size);
-    return oci8_make_integer(&on);
+    return oci8_make_integer(&on, oci8_errhp);
 }
 
 static VALUE metadata_get_param(VALUE self, VALUE idx)

@@ -1,4 +1,10 @@
 2009-04-14  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.h, ext/oci8/oci8lib.c, ext/oci8/ocinumber.c,
+	  ext/oci8/metadata.c, ext/oci8/object.c: pass an OCIError to
+	    OraNumber functions if it can. (This is the first step to
+	    delay OCIEnv initialization.)
+
+2009-04-14  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: Gets ORACLE_HOME from the Windows regitry
 	    by enumerating subkeys of \\HKEY_LOCAL_MACHINE\SOFTWARE\ORACLE.
 
