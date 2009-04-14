@@ -1,3 +1,7 @@
+2009-04-14  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: Gets ORACLE_HOME from the Windows regitry
+	    by enumerating subkeys of \\HKEY_LOCAL_MACHINE\SOFTWARE\ORACLE.
+
 2009-04-12  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/dbd/OCI8.rb: A data dictionary all_constraints doesn't have
 	    index_name column on Oracle 8i or lower. Rewrite
