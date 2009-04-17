@@ -495,9 +495,15 @@ static void oci8_bfile_set_name(VALUE self, VALUE dir_alias, VALUE filename)
     oci8_lob_t *lob = DATA_PTR(self);
 
     bfile_close(lob);
+    if (RSTRING_LEN(dir_alias) > UB2MAXVAL) {
+        rb_raise(rb_eRuntimeError, "dir_alias is too long.");
+    }
+    if (RSTRING_LEN(filename) > UB2MAXVAL) {
+        rb_raise(rb_eRuntimeError, "filename is too long.");
+    }
     oci_lc(OCILobFileSetName(oci8_envhp, oci8_errhp, &lob->base.hp.lob,
-                             RSTRING_ORATEXT(dir_alias), RSTRING_LEN(dir_alias),
-                             RSTRING_ORATEXT(filename), RSTRING_LEN(filename)));
+                             RSTRING_ORATEXT(dir_alias), (ub2)RSTRING_LEN(dir_alias),
+                             RSTRING_ORATEXT(filename), (ub2)RSTRING_LEN(filename)));
 }
 
 static VALUE oci8_bfile_initialize(int argc, VALUE *argv, VALUE self)

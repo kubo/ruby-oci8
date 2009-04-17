@@ -45,7 +45,7 @@ VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
         char buf[OCI_NLS_MAXBUFSZ];
         sword rv;
 
-        rv = OCINlsCharSetIdToName(oci8_envhp, TO_ORATEXT(buf), sizeof(buf), FIX2INT(csid));
+        rv = OCINlsCharSetIdToName(oci8_envhp, TO_ORATEXT(buf), sizeof(buf), (ub2)FIX2INT(csid));
         if (rv != OCI_SUCCESS) {
             return Qnil;
         }

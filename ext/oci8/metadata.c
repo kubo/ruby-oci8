@@ -277,7 +277,7 @@ static VALUE oci8_do_describe(VALUE self, void *objptr, ub4 objlen, ub1 objtype,
         oci_lc(OCIAttrSet(desc->hp.dschp, OCI_HTYPE_DESCRIBE, &val, 0, OCI_ATTR_DESC_PUBLIC, oci8_errhp));
     }
     oci_lc(OCIDescribeAny_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, objptr, objlen,
-                             objtype, OCI_DEFAULT, FIX2INT(type), desc->hp.dschp));
+                             objtype, OCI_DEFAULT, (ub1)FIX2INT(type), desc->hp.dschp));
     oci_lc(OCIAttrGet(desc->hp.dschp, OCI_HTYPE_DESCRIBE, &parmhp, 0, OCI_ATTR_PARAM, oci8_errhp));
     return oci8_metadata_create(parmhp, self, obj);
 }

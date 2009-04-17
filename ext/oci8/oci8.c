@@ -538,11 +538,11 @@ static VALUE oci8_oracle_server_vernum(VALUE self)
 
     if (have_OCIServerRelease) {
         /* Oracle 9i or later */
-        oci_lc(OCIServerRelease(svcctx->base.hp.ptr, oci8_errhp, (text*)buf, sizeof(buf), svcctx->base.type, &version));
+        oci_lc(OCIServerRelease(svcctx->base.hp.ptr, oci8_errhp, (text*)buf, sizeof(buf), (ub1)svcctx->base.type, &version));
         return UINT2NUM(version);
     } else {
         /* Oracle 8.x */
-        oci_lc(OCIServerVersion(svcctx->base.hp.ptr, oci8_errhp, (text*)buf, sizeof(buf), svcctx->base.type));
+        oci_lc(OCIServerVersion(svcctx->base.hp.ptr, oci8_errhp, (text*)buf, sizeof(buf), (ub1)svcctx->base.type));
         if ((p = strchr(buf, '.')) != NULL) {
             unsigned int major, minor, update, patch, port_update;
             while (p >= buf && *p != ' ') {
