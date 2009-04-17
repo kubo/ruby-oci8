@@ -1,3 +1,10 @@
+2009-04-17  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml, ext/oci8/env.c, ext/oci8/extconf.rb,
+	  ext/oci8/oci8.h, ext/oci8/oci8lib.c: OCIEnv is initialized
+	    when it is needed. This makes a basis to enable an event
+	    notification after "require 'oci8'."
+	* test/test_all.rb: fix a bug added four days ago.
+
 2009-04-14  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.h, ext/oci8/oci8lib.c, ext/oci8/ocinumber.c,
 	  ext/oci8/metadata.c, ext/oci8/object.c: pass an OCIError to

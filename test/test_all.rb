@@ -33,7 +33,7 @@ rescue LoadError
     require 'rubygems'
     require 'dbi'
   rescue LoadError
-    dbi_not_found = false
+    dbi_not_found = true
   end
 end
 unless dbi_not_found

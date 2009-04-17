@@ -1,10 +1,9 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
-  env.c - part of ruby-oci8
-
-  Copyright (C) 2002-2008 KUBO Takehiro <kubo@jiubao.org>
-
-*/
+ * env.c - part of ruby-oci8
+ *
+ * Copyright (C) 2002-2009 KUBO Takehiro <kubo@jiubao.org>
+ */
 #include "oci8.h"
 
 #if !defined(RUBY_VM)
@@ -12,7 +11,37 @@
 #include <util.h>
 #endif
 
-OCIEnv *oci8_envhp;
+#ifdef _WIN32
+#ifdef HAVE_RUBY_WIN32_H
+#include <ruby/win32.h> /* for rb_w32_getenv() */
+#else
+#include <win32/win32.h> /* for rb_w32_getenv() */
+#endif
+#endif
+
+#ifdef HAVE_RUBY_UTIL_H
+#include <ruby/util.h>
+#endif
+
+#ifdef RUBY_VM
+ub4 oci8_env_mode = OCI_OBJECT | OCI_THREADED;
+#else
+ub4 oci8_env_mode = OCI_OBJECT;
+#endif
+
+OCIEnv *oci8_global_envhp;
+
+OCIEnv *oci8_make_envhp(void)
+{
+    sword rv;
+
+    rv = OCIEnvCreate(&oci8_global_envhp, oci8_env_mode, NULL, NULL, NULL, NULL, 0, NULL);
+    if (rv != OCI_SUCCESS) {
+        oci8_raise_init_error();
+    }
+    return oci8_global_envhp;
+}
+
 #ifdef RUBY_VM
 /*
  * oci8_errhp is a thread local object in ruby 1.9.
@@ -53,17 +82,23 @@ OCIError *oci8_make_errhp(void)
 /*
  * oci8_errhp is global in ruby 1.8.
  */
-OCIError *oci8_errhp;
+OCIError *oci8_global_errhp;
+
+OCIError *oci8_make_errhp(void)
+{
+    sword rv;
+
+    rv = OCIHandleAlloc(oci8_envhp, (dvoid *)&oci8_global_errhp, OCI_HTYPE_ERROR, 0, NULL);
+    if (rv != OCI_SUCCESS)
+        oci8_env_raise(oci8_envhp, rv);
+    return oci8_global_errhp;
+}
 #endif
 
 void Init_oci8_env(void)
 {
-    sword rv;
 #ifdef RUBY_VM
-    ub4 mode = OCI_OBJECT | OCI_THREADED;
     int error;
-#else
-    ub4 mode = OCI_OBJECT;
 #endif
 
 #if !defined(RUBY_VM) && !defined(_WIN32)
@@ -85,23 +120,38 @@ void Init_oci8_env(void)
         }
     }
 #endif /* WIN32 */
-    rv = OCIInitialize(mode, NULL, NULL, NULL, NULL);
-    if (rv != OCI_SUCCESS) {
-        oci8_raise_init_error();
+
+    /* workaround code.
+     *
+     * When ORACLE_HOME ends with '/' and the Oracle client is
+     * an instant client lower than 10.2.0.3, OCIEvnCreate()
+     * doesn't work even though the combination of OCIInitialize()
+     * and OCIEnvInit() works fine. Delete the last slash for
+     * a workaround.
+     */
+    if (oracle_client_version < ORAVERNUM(10, 2, 0, 3, 0)) {
+#ifdef _WIN32
+#define DIR_SEP '\\'
+#else
+#define DIR_SEP '/'
+#endif
+        char *home = getenv("ORACLE_HOME");
+        if (home != NULL) {
+            size_t homelen = strlen(home);
+            if (homelen > 0 && home[homelen - 1] == DIR_SEP) {
+                home = ruby_strdup(home);
+                home[homelen - 1] = '\0';
+                ruby_setenv("ORACLE_HOME", home);
+                xfree(home);
+            }
+        }
     }
-    rv = OCIEnvInit(&oci8_envhp, OCI_DEFAULT, 0, NULL);
-    if (rv != OCI_SUCCESS) {
-        oci8_raise_init_error();
-    }
+
 #ifdef RUBY_VM
     id_thread_key = rb_intern("__oci8_errhp__");
     error = oci8_tls_key_init(&oci8_tls_key);
     if (error != 0) {
         rb_raise(rb_eRuntimeError, "Cannot create thread local key (errno = %d)", error);
     }
-#else /* RUBY_VM */
-    rv = OCIHandleAlloc(oci8_envhp, (dvoid *)&oci8_errhp, OCI_HTYPE_ERROR, 0, NULL);
-    if (rv != OCI_SUCCESS)
-        oci8_env_raise(oci8_envhp, rv);
 #endif
 }

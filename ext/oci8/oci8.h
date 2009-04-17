@@ -344,12 +344,24 @@ typedef struct {
 #define UB4_TO_NUM UINT2NUM
 #endif
 
-/* env.c */
-extern OCIEnv *oci8_envhp;
+/* The folloiwng macros oci8_envhp and oci8_errhp are used
+ * as if they are defined as follows:
+ *
+ *   extern OCIEnv *oci8_envhp;
+ *   extern OCIError *oci8_errhp;
+ */
+#define oci8_envhp (LIKELY(oci8_global_envhp != NULL) ? oci8_global_envhp : oci8_make_envhp())
 #ifdef RUBY_VM
-/* oci8_errhp is a thread local object in ruby 1.9. */
 #define oci8_errhp oci8_get_errhp()
+#else
+#define oci8_errhp (LIKELY(oci8_global_errhp != NULL) ? oci8_global_errhp : oci8_make_errhp())
+#endif
 
+/* env.c */
+extern ub4 oci8_env_mode;
+extern OCIEnv *oci8_global_envhp;
+OCIEnv *oci8_make_envhp(void);
+#ifdef RUBY_VM
 extern oci8_tls_key_t oci8_tls_key; /* native thread key */
 OCIError *oci8_make_errhp(void);
 
@@ -360,8 +372,8 @@ static inline OCIError *oci8_get_errhp()
 }
 
 #else
-/* oci8_errhp is global in ruby 1.8. */
-extern OCIError *oci8_errhp;
+extern OCIError *oci8_global_errhp;
+OCIError *oci8_make_errhp(void);
 #endif
 void Init_oci8_env(void);
 

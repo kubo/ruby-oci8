@@ -884,6 +884,18 @@ OCITypeTypeCode:
 # Oracle 8.1
 #
 
+# round trip: 0
+OCIEnvCreate:
+  :version: 810
+  :args:    - OCIEnv **envp
+            - ub4 mode
+            - dvoid *ctxp
+            - dvoid *(*malocfp)(dvoid *ctxp, size_t size)
+            - dvoid *(*ralocfp)(dvoid *ctxp, dvoid *memptr, size_t newsize)
+            - void   (*mfreefp)(dvoid *ctxp, dvoid *memptr)
+            - size_t xtramem_sz
+            - dvoid **usrmempp
+
 # round trip: 1
 OCILobClose_nb:
   :version: 810
