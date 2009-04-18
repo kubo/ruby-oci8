@@ -1,3 +1,8 @@
+2009-04-18  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb: move OCI8::BindType module to bindtype.rb.
+	* lib/oci8/bindtype.rb: added. This defines OCI8::BindType.
+	* lib/oci8.rb.in: require 'oci8/bindtype.rb'
+
 2009-04-17  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/encoding.c, ext/oci8/lob.c, ext/oci8/metadata.c,
 	  ext/oci8/oci8.c: suppress "warning C4761: integral size mismatch
