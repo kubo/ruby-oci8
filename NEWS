@@ -1,3 +1,17 @@
+1.0.6:
+
+* fix a problem when compiling for Oracle 8.0.
+  (reported by Axel Reinhold as a ruby-oci8 2.0 issue)
+
+* [dbi] fix to pass a newly added sanity check in dbi 0.4.1.
+  (reported by Dirk Herzhauser as a ruby-oci8 2.0 issue)
+
+* [dbi] fix dbh#columns for Oracle 8.1 or lower.
+  The data dictionary all_constraints doesn't have index_name
+  column on Oracle 8i. Rewrite DBI::DBD::OCI8::Database#columns
+  by using all_cons_columns.
+  (backport from ruby-oci8 trunk)
+
 1.0.5:
 
 No changes except who try to install on Mac OS X ppc.
