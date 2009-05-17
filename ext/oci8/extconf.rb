@@ -127,6 +127,7 @@ else
   raise 'unsupported ruby version: ' + RUBY_VERSION
 end
 $defs << "-DInit_oci8lib=Init_#{so_basename}"
+$defs << "-Doci8lib=#{so_basename}"
 
 create_header()
 

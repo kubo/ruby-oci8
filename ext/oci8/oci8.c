@@ -17,6 +17,10 @@ extern rb_pid_t rb_w32_getpid(void);
 #endif
 #endif
 
+#ifndef OCI_ATTR_CLIENT_IDENTIFIER
+#define OCI_ATTR_CLIENT_IDENTIFIER 278
+#endif
+
 /*
  * Document-class: OCI8
  *
@@ -556,6 +560,83 @@ static VALUE oci8_oracle_server_vernum(VALUE self)
     }
 }
 
+/*
+ * call-seq:
+ *   ping -> true or false
+ *
+ * Verifies that the Oracle connection is alive.
+ *
+ * OCI8#ping also can be used to flush all the pending OCI client-side calls
+ * to the server if any exist. See: OCI8#client_identifier=.
+ *
+ * For Oracle 10.2 client or upper, a dummy round trip call is made by a newly
+ * added OCI function in Oracle 10.2.
+ *
+ * For Oracle 10.1 client or lower, a simple PL/SQL block "BEGIN NULL; END;"
+ * is executed to make a round trip call.
+ */
+static VALUE oci8_ping(VALUE self)
+{
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
+    if (have_OCIPing_nb) {
+        /* Oracle 10.2 or upper */
+        oci_lc(OCIPing_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT));
+    } else {
+        /* Oracle 10.1 or lower */
+        oci8_exec_sql(svcctx, "BEGIN NULL; END;", 0U, NULL, 0U, NULL, 1);
+    }
+    return self;
+}
+
+/*
+ * call-seq:
+ *   client_identifier = string
+ *
+ * Sets the CLIENT_IDENTIFIER column in the V$SESSION dictionary view.
+ * This can be up to 64 bytes long. The first character should not be ':'.
+ *
+ * If the Oracle client is 9i or upper, the change is not reflected to the
+ * server immediately. It is postponed until the next round trip call for
+ * example OCI8#exec, OCI8#ping, etc.
+ *
+ * This call is equivalent to "DBMS_SESSION.SET_IDENTIFIER(client_id VARCHAR2);"
+ * and available when the server is Oracle 9i or upper.
+ */
+static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
+{
+    OCISession *sess = oci8_get_oci_session(self);
+    char *ptr;
+    ub4 size;
+
+    if (!NIL_P(val)) {
+        OCI8SafeStringValue(val);
+        ptr = RSTRING_PTR(val);
+        size = RSTRING_LEN(val);
+    } else {
+        ptr = "";
+        size = 0;
+    }
+    if (oracle_client_version >= 900) {
+        if (size > 0 && ptr[0] == ':') {
+            rb_raise(rb_eArgError, "client identifier should not start with ':'.");
+        }
+        oci_lc(OCIAttrSet(sess, OCI_HTYPE_SESSION, ptr,
+                          size, OCI_ATTR_CLIENT_IDENTIFIER, oci8_errhp));
+    } else {
+        oci8_exec_sql_var_t bind_vars[1];
+
+        /* :client_id */
+        bind_vars[0].valuep = ptr;
+        bind_vars[0].value_sz = size;
+        bind_vars[0].dty = SQLT_CHR;
+        bind_vars[0].indp = NULL;
+        bind_vars[0].alenp = NULL;
+
+        oci8_exec_sql(oci8_get_svcctx(self), "BEGIN DBMS_SESSION.SET_IDENTIFIER(:client_id); END;", 0, NULL, 1, bind_vars, 1);
+    }
+    return val;
+}
+
 VALUE Init_oci8(void)
 {
     cOCI8 = oci8_define_class("OCI8", &oci8_svcctx_class);
@@ -589,6 +670,8 @@ VALUE Init_oci8(void)
     rb_define_method(cOCI8, "break", oci8_break, 0);
     rb_define_method(cOCI8, "prefetch_rows=", oci8_set_prefetch_rows, 1);
     rb_define_private_method(cOCI8, "oracle_server_vernum", oci8_oracle_server_vernum, 0);
+    rb_define_method(cOCI8, "ping", oci8_ping, 0);
+    rb_define_method(cOCI8, "client_identifier=", oci8_set_client_identifier, 1);
     return cOCI8;
 }
 

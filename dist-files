@@ -54,6 +54,7 @@ lib/oci8/oracle_version.rb
 test/README
 test/config.rb
 test/test_all.rb
+test/test_appinfo.rb
 test/test_array_dml.rb
 test/test_bind_raw.rb
 test/test_bind_time.rb

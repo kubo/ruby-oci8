@@ -157,7 +157,7 @@ static void set_backtrace_and_raise(VALUE exc, const char *file, int line)
 #endif
     backtrace = rb_funcall(rb_cObject, oci8_id_caller, 0);
     if (TYPE(backtrace) == T_ARRAY) {
-        snprintf(errmsg, sizeof(errmsg), "%s:%d:in oci8lib.so", file, line);
+        snprintf(errmsg, sizeof(errmsg), "%s:%d:in " STRINGIZE(oci8lib) DLEXT, file, line);
         errmsg[sizeof(errmsg) - 1] = '\0';
         rb_ary_unshift(backtrace, rb_usascii_str_new_cstr(errmsg));
         rb_funcall(exc, oci8_id_set_backtrace, 1, backtrace);

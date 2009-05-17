@@ -3,6 +3,8 @@ require 'oci8'
 require 'test/unit'
 require File.dirname(__FILE__) + '/config'
 require 'yaml'
+require 'bigdecimal'
+require 'rational'
 
 class TestOraNumber < Test::Unit::TestCase
 
@@ -478,6 +480,28 @@ class TestOraNumber < Test::Unit::TestCase
       expected_val = x.to_f.zero?
       actual_val = OraNumber.new(x).zero?
       assert_equal(expected_val, actual_val, x)
+    end
+  end
+
+  def test_new_from_bigdecimal
+    ["+Infinity", "-Infinity", "NaN"].each do |n|
+      assert_raise TypeError do
+        OraNumber.new(BigDecimal.new(n))
+      end
+    end
+
+    LARGE_RANGE_VALUES.each do |val|
+      assert_equal(val, OraNumber.new(BigDecimal.new(val)).to_s)
+    end
+  end
+
+  def test_new_from_rational
+    [
+     [Rational(1, 2), "0.5"],
+     [Rational(3, 5), "0.6"],
+     [Rational(10, 3), "3.3333333333333333333333333333333333333"],
+    ].each do |ary|
+      assert_equal(ary[1], OraNumber.new(ary[0]).to_s)
     end
   end
 end

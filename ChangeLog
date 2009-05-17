@@ -1,3 +1,20 @@
+2009-05-17  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/error.c, ext/oci8/extconf.rb, ext/oci8/oci8.h:
+	    fix the native library name in error messages from oci8lib.so
+	    to oci8lib_18.so or oci8lib_191.so.
+	* ext/oci8/ocinumber.c, test/test_oranumber.rb: fix OraNumber.new
+	    to accept BigDecimal and Rational.
+	* ext/oci8/bind.c, test/test_oci8.rb: implicitly convert the
+	    specified number to Float when the bind handle is for Float.
+	* ext/oci8/attr.c: fix for Oracle client which doesn't have
+	    OCIRowidToChar().
+	* ext/oci8/oci8.c, test/test_appinfo.rb, test/test_all.rb, dist-files:
+	    add new methods OCI8#ping and OCI8#client_identifier=.
+	    add test cases.
+	* ext/oci8/oci8lib.c: fix a bug for Oracle 8.0.
+	* lib/oci8/oci8.rb: add a convenient method OCI8#select_one
+	    to fetch one row.
+
 2009-04-18  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/oci8.rb: move OCI8::BindType module to bindtype.rb.
 	* lib/oci8/bindtype.rb: added. This defines OCI8::BindType.

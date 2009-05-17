@@ -19,6 +19,7 @@ require "#{srcdir}/test_connstr"
 require "#{srcdir}/test_metadata"
 require "#{srcdir}/test_array_dml"
 require "#{srcdir}/test_rowid"
+require "#{srcdir}/test_appinfo"
 require "#{srcdir}/test_oracle_version"
 
 if OCI8.respond_to? :encoding

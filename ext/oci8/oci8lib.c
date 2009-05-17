@@ -168,7 +168,7 @@ Init_oci8lib()
         if (rv != OCI_SUCCESS) {
             oci8_raise_init_error();
         }
-        rv = OCIEnvInit(&oci8_global_envhp, OCI_DEFAULT, 0, NULL);
+        rv = OCIEnvInit(&envhp, OCI_DEFAULT, 0, NULL);
         if (rv != OCI_SUCCESS) {
             oci8_raise_init_error();
         }

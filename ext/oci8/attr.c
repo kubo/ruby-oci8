@@ -106,7 +106,8 @@ static VALUE get_rowid_attr(rowid_arg_t *arg)
          * Oracle Server.
          */
         oci8_base_t *svc;
-        oci8_exec_sql_var_t bind_vars[2];
+        oci8_exec_sql_var_t define_var;
+        oci8_exec_sql_var_t bind_var;
 
         /* search a connection from the handle */
         svc = base;
@@ -117,19 +118,19 @@ static VALUE get_rowid_attr(rowid_arg_t *arg)
             }
         }
         /* :strval */
-        bind_vars[0].valuep = buf;
-        bind_vars[0].value_sz = sizeof(buf);
-        bind_vars[0].dty = SQLT_CHR;
-        bind_vars[0].indp = NULL;
-        bind_vars[0].alenp = &buflen;
+        define_var.valuep = buf;
+        define_var.value_sz = sizeof(buf);
+        define_var.dty = SQLT_CHR;
+        define_var.indp = NULL;
+        define_var.alenp = &buflen;
         /* :rowid */
-        bind_vars[1].valuep = &arg->ridp;
-        bind_vars[1].value_sz = sizeof(void *);
-        bind_vars[1].dty = SQLT_RDD;
-        bind_vars[1].indp = NULL;
-        bind_vars[1].alenp = NULL;
+        bind_var.valuep = &arg->ridp;
+        bind_var.value_sz = sizeof(void *);
+        bind_var.dty = SQLT_RDD;
+        bind_var.indp = NULL;
+        bind_var.alenp = NULL;
         /* convert the rowid descriptor to a string value by querying Oracle server. */
-        oci8_exec_sql((oci8_svcctx_t*)svc, "BEGIN :strval := :rowid; END;", 0, NULL, 2, bind_vars, 1);
+        oci8_exec_sql((oci8_svcctx_t*)svc, "SELECT :rid FROM dual", 1, &define_var, 1, &bind_var, 1);
         if (buflen == 0) {
             return Qnil;
         }

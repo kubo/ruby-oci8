@@ -17,6 +17,10 @@
 
 static ID id_power; /* rb_intern("**") */
 static ID id_cmp;   /* rb_intern("<=>") */
+static ID id_finite_p;
+static ID id_split;
+static ID id_numerator;
+static ID id_denominator;
 
 static VALUE cOCINumber;
 static OCINumber const_p1;   /*  +1 */
@@ -147,6 +151,9 @@ static int set_oci_number_from_num(OCINumber *result, VALUE num, int force, OCIE
 
     if (!RTEST(rb_obj_is_kind_of(num, rb_cNumeric)))
         rb_raise(rb_eTypeError, "expect Numeric but %s", rb_class2name(CLASS_OF(num)));
+    if (rb_respond_to(num, id_finite_p) && !RTEST(rb_funcall(num, id_finite_p, 0))) {
+        rb_raise(rb_eTypeError, "cannot accept number which isn't finite.");
+    }
     switch (rb_type(num)) {
     case T_FIXNUM:
         /* set from long. */
@@ -168,6 +175,74 @@ static int set_oci_number_from_num(OCINumber *result, VALUE num, int force, OCIE
         /* OCI::Number */
         oci_lc(OCINumberAssign(errhp, DATA_PTR(num), result));
         return 1;
+    }
+    if (rb_respond_to(num, id_split)) {
+        /* BigDecimal */
+        VALUE split = rb_funcall(num, id_split, 0);
+
+        if (TYPE(split) == T_ARRAY && RARRAY_LEN(split) == 4) {
+            /*
+             * sign, significant_digits, base, exponent = num.split
+             * onum = sign * "0.#{significant_digits}".to_f * (base ** exponent)
+             */
+            VALUE *ary = RARRAY_PTR(split);
+            int sign;
+            OCINumber digits;
+            int exponent;
+            int digits_len;
+            OCINumber work;
+
+            /* check sign */
+            if (TYPE(ary[0]) != T_FIXNUM) {
+                goto is_not_big_decimal;
+            }
+            sign = FIX2INT(ary[0]);
+            /* check digits */
+            StringValue(ary[1]);
+            digits_len = RSTRING_LEN(ary[1]);
+            set_oci_number_from_str(&digits, ary[1], Qnil, Qnil, errhp);
+            /* check base */
+            if (TYPE(ary[2]) != T_FIXNUM || FIX2LONG(ary[2]) != 10) {
+                goto is_not_big_decimal;
+            }
+            /* check exponent */
+            if (TYPE(ary[3]) != T_FIXNUM) {
+                goto is_not_big_decimal;
+            }
+            exponent = FIX2INT(ary[3]);
+
+            if (have_OCINumberShift) {
+                /* Oracle 8.1 or upper */
+                oci_lc(OCINumberShift(errhp, &digits, exponent - digits_len, &work));
+            } else {
+                /* Oracle 8.0 */
+                int n = 10;
+                OCINumber base;
+                OCINumber exp;
+
+                oci_lc(OCINumberFromInt(errhp, &n, sizeof(n), OCI_NUMBER_SIGNED, &base));
+                oci_lc(OCINumberIntPower(errhp, &base, exponent - digits_len, &exp));
+                oci_lc(OCINumberMul(errhp, &digits, &exp, &work));
+            }
+            if (sign >= 0) {
+                oci_lc(OCINumberAssign(errhp, &work, result));
+            } else {
+                oci_lc(OCINumberNeg(errhp, &work, result));
+            }
+            return 1;
+        }
+    }
+is_not_big_decimal:
+    if (rb_respond_to(num, id_numerator) && rb_respond_to(num, id_denominator)) {
+        /* Rational */
+        OCINumber numerator;
+        OCINumber denominator;
+
+        if (set_oci_number_from_num(&numerator, rb_funcall(num, id_numerator, 0), 0, errhp) &&
+            set_oci_number_from_num(&denominator, rb_funcall(num, id_denominator, 0), 0, errhp)) {
+            oci_lc(OCINumberDiv(errhp, &numerator, &denominator, result));
+            return 1;
+        }
     }
     if (force) {
         /* change via string as a last resort. */
@@ -1139,6 +1214,10 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
 
     id_power = rb_intern("**");
     id_cmp = rb_intern("<=>");
+    id_finite_p = rb_intern("finite?");
+    id_split = rb_intern("split");
+    id_numerator = rb_intern("numerator");
+    id_denominator = rb_intern("denominator");
 
     cOCINumber = rb_define_class("OraNumber", rb_cNumeric);
     mMath = rb_define_module_under(cOCI8, "Math");

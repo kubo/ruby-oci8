@@ -117,6 +117,9 @@ typedef struct OCIAdmin OCIAdmin;
 #ifndef RFLOAT_VALUE
 #define RFLOAT_VALUE(obj) RFLOAT(obj)->value
 #endif
+#ifndef STRINGIZE
+#define STRINGIZE(name) #name
+#endif
 
 /* new functions in ruby 1.9.
  * define compatible macros for ruby 1.8 or lower.

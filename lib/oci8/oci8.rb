@@ -129,6 +129,20 @@ class OCI8
     end
   end # exec
 
+  # :call-seq:
+  #   select_one(sql, *bindvars) -> first_one_row
+  #
+  def select_one(sql, *bindvars)
+    cursor = self.parse(sql)
+    begin
+      cursor.exec(*bindvars)
+      row = cursor.fetch
+    ensure
+      cursor.close
+    end
+    return row
+  end
+
   def username
     @username || begin
       exec('select user from dual') do |row|

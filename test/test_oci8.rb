@@ -1,6 +1,8 @@
 require 'oci8'
 require 'test/unit'
 require File.dirname(__FILE__) + '/config'
+require 'bigdecimal'
+require 'rational'
 
 class TestOCI8 < Test::Unit::TestCase
 
@@ -364,6 +366,41 @@ EOS
       assert_instance_of(Float, row[4])
     end
     drop_table('test_table')
+  end
+
+  def test_bind_number_with_implicit_conversions
+    src = [1, 1.2, BigDecimal("1.2"), Rational(12, 10)]
+    int = [1, 1, 1, 1]
+    flt = [1, 1.2, 1.2, 1.2]
+
+    cursor = @conn.parse("begin :1 := :2; end;")
+
+    # Float
+    cursor.bind_param(1, nil, Float)
+    cursor.bind_param(2, nil, Float)
+    src.each_with_index do |s, idx|
+      cursor[2] = s
+      cursor.exec
+      assert_equal(cursor[1], flt[idx])
+    end
+
+    # Fixnum
+    cursor.bind_param(1, nil, Fixnum)
+    cursor.bind_param(2, nil, Fixnum)
+    src.each_with_index do |s, idx|
+      cursor[2] = s
+      cursor.exec
+      assert_equal(cursor[1], int[idx])
+    end
+
+    # Integer
+    cursor.bind_param(1, nil, Integer)
+    cursor.bind_param(2, nil, Integer)
+    src.each_with_index do |s, idx|
+      cursor[2] = s
+      cursor.exec
+      assert_equal(cursor[1], int[idx])
+    end
   end
 
 end # TestOCI8
