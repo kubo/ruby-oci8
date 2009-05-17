@@ -578,14 +578,16 @@ static VALUE oci8_oracle_server_vernum(VALUE self)
 static VALUE oci8_ping(VALUE self)
 {
     oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
+    sword rv;
+
     if (have_OCIPing_nb) {
         /* Oracle 10.2 or upper */
-        oci_lc(OCIPing_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT));
+        rv = OCIPing_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT);
     } else {
         /* Oracle 10.1 or lower */
-        oci8_exec_sql(svcctx, "BEGIN NULL; END;", 0U, NULL, 0U, NULL, 1);
+        rv = oci8_exec_sql(svcctx, "BEGIN NULL; END;", 0U, NULL, 0U, NULL, 0);
     }
-    return self;
+    return rv == OCI_SUCCESS ? Qtrue : FALSE;
 }
 
 /*

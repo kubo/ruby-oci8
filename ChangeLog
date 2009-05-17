@@ -1,4 +1,13 @@
 2009-05-17  KUBO Takehiro  <kubo@jiubao.org>
+	* NEWS: add changes between 2.0.1 and 2.0.2.
+	* VERSION: change version to 2.0.2.
+	* dist-files: append newly added files.
+	* ext/oci8/oci8.c: fix OCI8#ping not to raise an exception
+	    when OCIPing() failed. It should returns true or false.
+	* ext/oci8/oci8lib.c: Memory allocated by xmalloc() should be
+	    freed by xfree().
+
+2009-05-17  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/error.c, ext/oci8/extconf.rb, ext/oci8/oci8.h:
 	    fix the native library name in error messages from oci8lib.so
 	    to oci8lib_18.so or oci8lib_191.so.

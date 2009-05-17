@@ -66,7 +66,7 @@ static void oci8_handle_mark(oci8_base_t *base)
 static void oci8_handle_cleanup(oci8_base_t *base)
 {
     oci8_base_free(base);
-    free(base);
+    xfree(base);
 }
 
 static VALUE oci8_s_allocate(VALUE klass)

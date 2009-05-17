@@ -43,6 +43,7 @@ lib/.document
 lib/oci8.rb.in
 lib/dbd/OCI8.rb
 lib/oci8/.document
+lib/oci8/bindtype.rb
 lib/oci8/compat.rb
 lib/oci8/datetime.rb
 lib/oci8/encoding-init.rb
@@ -61,6 +62,7 @@ test/test_bind_time.rb
 test/test_break.rb
 test/test_clob.rb
 test/test_connstr.rb
+test/test_encoding.rb
 test/test_datetime.rb
 test/test_dbi.rb
 test/test_dbi_clob.rb

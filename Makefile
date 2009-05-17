@@ -50,38 +50,40 @@ dist-check: dist
 #
 # for Windows
 #
-GEMPKG = ruby-oci8-unstable-2.0.1-x86-mswin32-60.gem
+RUBY_18 = c:\ruby
+RUBY_191 = c:\ruby-1.9.1
+GEMPKG = ruby-oci8-2.0.2-x86-mswin32-60.gem
 
 ext\oci8\oci8lib_18.so:
-	c:\ruby\bin\ruby -r fileutils -e "FileUtils.rm_rf('ruby18')"
+	$(RUBY_18)\bin\ruby -r fileutils -e "FileUtils.rm_rf('ruby18')"
 	md ruby18
 	cd ruby18
-	c:\ruby\bin\ruby ..\setup.rb config -- --with-runtime-check
-	c:\ruby\bin\ruby ..\setup.rb setup
-	rem c:\ruby\bin\ruby ..\setup.rb test
+	$(RUBY_18)\bin\ruby ..\setup.rb config -- --with-runtime-check
+	$(RUBY_18)\bin\ruby ..\setup.rb setup
+	rem $(RUBY_18)\bin\ruby ..\setup.rb test
 	cd ..
 	copy ruby18\ext\oci8\oci8lib_18.so ext\oci8\oci8lib_18.so
 
 ext\oci8\oci8lib_191.so:
-	c:\ruby\bin\ruby -r fileutils -e "FileUtils.rm_rf('ruby191')"
+	$(RUBY_191)\bin\ruby -r fileutils -e "FileUtils.rm_rf('ruby191')"
 	md ruby191
 	cd ruby191
-	c:\ruby-1.9.1\bin\ruby ..\setup.rb config -- --with-runtime-check
-	c:\ruby-1.9.1\bin\ruby ..\setup.rb setup
-	rem c:\ruby-1.9.1\bin\ruby ..\setup.rb test
+	$(RUBY_191)\bin\ruby ..\setup.rb config -- --with-runtime-check
+	$(RUBY_191)\bin\ruby ..\setup.rb setup
+	rem $(RUBY_191)\bin\ruby ..\setup.rb test
 	cd ..
 	copy ruby191\ext\oci8\oci8lib_191.so ext\oci8\oci8lib_191.so
 	copy ruby191\lib\oci8.rb lib\oci8.rb
 
 $(GEMPKG): ext\oci8\oci8lib_18.so ext\oci8\oci8lib_191.so ruby-oci8.gemspec
-	c:\ruby-1.9.1\bin\gem build ruby-oci8.gemspec -- current
+	$(RUBY_191)\bin\gem build ruby-oci8.gemspec -- current
 
 test-win32-ruby18: $(GEMPKG)
-	c:\ruby\bin\gem install $(GEMPKG) --no-rdoc --no-ri
-	c:\ruby\bin\ruby -rubygems test\test_all.rb
+	$(RUBY_18)\bin\gem install $(GEMPKG) --no-rdoc --no-ri --local
+	$(RUBY_18)\bin\ruby -rubygems test\test_all.rb
 
 test-win32-ruby191: $(GEMPKG)
-	c:\ruby-1.9.1\bin\gem install $(GEMPKG) --no-rdoc --no-ri
-	c:\ruby-1.9.1\bin\ruby test\test_all.rb
+	$(RUBY_191)\bin\gem install $(GEMPKG) --no-rdoc --no-ri --local
+	$(RUBY_191)\bin\ruby test\test_all.rb
 
 test-win32: test-win32-ruby18 test-win32-ruby191

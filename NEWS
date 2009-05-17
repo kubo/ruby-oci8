@@ -1,3 +1,39 @@
+2.0.2:
+
+* add new methods
+  - OCI8#select_one(sql, *bindvars)  -> first_row
+
+  - OCI8#ping   -> true or false
+
+    Verifies that the Oracle connection is alive.
+    OCI8#ping also can be used to flush all the pending OCI
+    client-side calls to the server if any exist.
+
+  - OCI8#client_identifier = client_id
+
+    Look at the following link to know what is the client identifier.
+      http://it.toolbox.com/blogs/database-solutions/oracle-session-tracing-part-i-16356
+
+    Note that the specified identifier doesn't change the v$session
+    immediately. It is done by the next network round trip
+    such as OCI8#exec or OCI8#ping.
+
+* fix problems when compiling with Oracle 9.2 and 8.0.
+  (reported by Axel Reinhold)
+
+* [dbi] fix to pass a newly added sanity check in dbi 0.4.1.
+  (reported by Dirk Herzhauser)
+
+* fix an error when executing "select NULL from dual".
+  http://rubyforge.org/forum/forum.php?thread_id=32468&forum_id=1078
+  (contributed by Raimonds Simanovskis)
+
+* [ruby 1.9] fix OCI8::BLOB to read/write binary. Prior to 2.0.1,
+  it was treated as text tagged with NLS_LANG encoding.
+
+* [ruby 1.9] fix to bind string data by the length got from String#bytesize
+  converted to OCI8.encoding, not by String#size.
+
 2.0.1:
 
 * release a binary gem for Windows, which contains libraries for both
