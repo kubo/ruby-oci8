@@ -23,6 +23,34 @@ class TestAppInfo < Test::Unit::TestCase
     assert_nil(@conn.select_one("SELECT SYS_CONTEXT('USERENV', 'CLIENT_IDENTIFIER') FROM DUAL")[0]);
   end
 
+  def test_set_module
+    # set module
+    @conn.module = 'ruby-oci8'
+    assert_equal('ruby-oci8', @conn.select_one("SELECT SYS_CONTEXT('USERENV', 'MODULE') FROM DUAL")[0]);
+    # clear module
+    @conn.module = nil
+    assert_nil(@conn.select_one("SELECT SYS_CONTEXT('USERENV', 'MODULE') FROM DUAL")[0]);
+  end
+
+  def test_set_action
+    # set action
+    @conn.action = 'test_set_action'
+    assert_equal('test_set_action', @conn.select_one("SELECT SYS_CONTEXT('USERENV', 'ACTION') FROM DUAL")[0]);
+    # clear action
+    @conn.action = nil
+    assert_nil(@conn.select_one("SELECT SYS_CONTEXT('USERENV', 'ACTION') FROM DUAL")[0]);
+  end
+
+  def test_set_client_info
+    # set client_info
+    client_info = "ruby-oci8:#{Process.pid()}"
+    @conn.client_info = client_info
+    assert_equal(client_info, @conn.select_one("SELECT SYS_CONTEXT('USERENV', 'CLIENT_INFO') FROM DUAL")[0]);
+    # clear client_info
+    @conn.client_info = nil
+    assert_nil(@conn.select_one("SELECT SYS_CONTEXT('USERENV', 'CLIENT_INFO') FROM DUAL")[0]);
+  end
+
   def teardown
     @conn.logoff
   end

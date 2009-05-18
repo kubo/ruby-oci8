@@ -1,3 +1,10 @@
+2009-05-18  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c: revise rdoc comments for OCI8#ping and
+	    OCI8#client_identifier=. Add OCI8#module=, OCI8#action= and
+	    OCI8#client_info.
+	* test/test_appinfo.rb: add test cases for OCI8#module=,
+	    OCI8#action= and OCI8#client_info.
+
 2009-05-17  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 2.0.1 and 2.0.2.
 	* VERSION: change version to 2.0.2.

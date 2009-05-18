@@ -564,13 +564,15 @@ static VALUE oci8_oracle_server_vernum(VALUE self)
  * call-seq:
  *   ping -> true or false
  *
- * Verifies that the Oracle connection is alive.
+ * Makes a round trip call to the server to confirm that the connection and
+ * the server are active.
  *
  * OCI8#ping also can be used to flush all the pending OCI client-side calls
- * to the server if any exist. See: OCI8#client_identifier=.
+ * to the server if any exist.
  *
  * For Oracle 10.2 client or upper, a dummy round trip call is made by a newly
- * added OCI function in Oracle 10.2.
+ * added OCI function OCIPing[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14250/oci16msc007.htm#sthref3540]
+ * in Oracle 10.2.
  *
  * For Oracle 10.1 client or lower, a simple PL/SQL block "BEGIN NULL; END;"
  * is executed to make a round trip call.
@@ -592,21 +594,29 @@ static VALUE oci8_ping(VALUE self)
 
 /*
  * call-seq:
- *   client_identifier = string
+ *   client_identifier = string or nil
  *
- * Sets the CLIENT_IDENTIFIER column in the V$SESSION dictionary view.
- * This can be up to 64 bytes long. The first character should not be ':'.
+ * This is equivalent to the following PL/SQL block.
  *
- * If the Oracle client is 9i or upper, the change is not reflected to the
- * server immediately. It is postponed until the next round trip call for
- * example OCI8#exec, OCI8#ping, etc.
+ *   BEGIN
+ *     DBMS_SESSION.SET_IDENTIFIER(:client_id);
+ *   END;
  *
- * This call is equivalent to "DBMS_SESSION.SET_IDENTIFIER(client_id VARCHAR2);"
- * and available when the server is Oracle 9i or upper.
+ * If the Oracle client is 9i or upper, this doesn't perform network
+ * round trips. The change is reflected to the server by the next round
+ * trip such as OCI8#exec, OCI8#ping, etc. This means that you can
+ * reduce one SQL execution to set client identifier.
+ *
+ * As for Oracle 8i client or lower, this method executes the PL/SQL
+ * block internally.
+ *
+ * See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_sessio.htm#i996935]
+ *
+ * Note: The Oracle server must be 9i or upper to use this method.
+ *
  */
 static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
 {
-    OCISession *sess = oci8_get_oci_session(self);
     char *ptr;
     ub4 size;
 
@@ -618,11 +628,11 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
         ptr = "";
         size = 0;
     }
-    if (oracle_client_version >= 900) {
+    if (oracle_client_version >= ORAVER_9_0) {
         if (size > 0 && ptr[0] == ':') {
             rb_raise(rb_eArgError, "client identifier should not start with ':'.");
         }
-        oci_lc(OCIAttrSet(sess, OCI_HTYPE_SESSION, ptr,
+        oci_lc(OCIAttrSet(oci8_get_oci_session(self), OCI_HTYPE_SESSION, ptr,
                           size, OCI_ATTR_CLIENT_IDENTIFIER, oci8_errhp));
     } else {
         oci8_exec_sql_var_t bind_vars[1];
@@ -634,7 +644,186 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
         bind_vars[0].indp = NULL;
         bind_vars[0].alenp = NULL;
 
-        oci8_exec_sql(oci8_get_svcctx(self), "BEGIN DBMS_SESSION.SET_IDENTIFIER(:client_id); END;", 0, NULL, 1, bind_vars, 1);
+        oci8_exec_sql(oci8_get_svcctx(self),
+                      "BEGIN\n"
+                      "  DBMS_SESSION.SET_IDENTIFIER(:client_id);\n"
+                      "END;\n", 0, NULL, 1, bind_vars, 1);
+    }
+    return val;
+}
+
+/*
+ * call-seq:
+ *   module = string or nil
+ *
+ * This is equivalent to the following PL/SQL block.
+ *
+ *   DECLARE
+ *     action VARCHAR2(32);
+ *   BEGIN
+ *     -- retrieve action name.
+ *     SELECT SYS_CONTEXT('USERENV','ACTION') INTO action FROM DUAL;
+ *     -- change module name without modifying the action name.
+ *     DBMS_APPLICATION_INFO.SET_MODULE(:module, action);
+ *   END;
+ *
+ * If the Oracle client is 10g or upper, this doesn't perform network
+ * round trips. The change is reflected to the server by the next round
+ * trip such as OCI8#exec, OCI8#ping, etc. This means that you can
+ * reduce one SQL execution to set module name.
+ *
+ * As for Oracle 9i client or lower, this method executes the PL/SQL
+ * block internally.
+ *
+ * See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_appinf.htm#i996826]
+ */
+static VALUE oci8_set_module(VALUE self, VALUE val)
+{
+    char *ptr;
+    ub4 size;
+
+    if (!NIL_P(val)) {
+        OCI8SafeStringValue(val);
+        ptr = RSTRING_PTR(val);
+        size = RSTRING_LEN(val);
+    } else {
+        ptr = "";
+        size = 0;
+    }
+    if (oracle_client_version >= ORAVER_10_1) {
+        /* Oracle 10g or upper */
+        oci_lc(OCIAttrSet(oci8_get_oci_session(self), OCI_HTYPE_SESSION, ptr,
+                          size, OCI_ATTR_MODULE, oci8_errhp));
+    } else {
+        /* Oracle 9i or lower */
+        oci8_exec_sql_var_t bind_vars[1];
+
+        /* :module */
+        bind_vars[0].valuep = ptr;
+        bind_vars[0].value_sz = size;
+        bind_vars[0].dty = SQLT_CHR;
+        bind_vars[0].indp = NULL;
+        bind_vars[0].alenp = NULL;
+
+        oci8_exec_sql(oci8_get_svcctx(self),
+                      "DECLARE\n"
+                      "  action VARCHAR2(32);\n"
+                      "BEGIN\n"
+                      "  SELECT SYS_CONTEXT('USERENV','ACTION') INTO action FROM DUAL;\n"
+                      "  DBMS_APPLICATION_INFO.SET_MODULE(:module, action);\n"
+                      "END;\n", 0, NULL, 1, bind_vars, 1);
+    }
+    return self;
+}
+
+/*
+ * call-seq:
+ *   action = string or nil
+ *
+ * This is equivalent to the following PL/SQL block.
+ *
+ *   BEGIN
+ *     DBMS_APPLICATION_INFO.SET_ACTION(:action);
+ *   END;
+ *
+ * If the Oracle client is 10g or upper, this doesn't perform network
+ * round trips. The change is reflected to the server by the next round
+ * trip such as OCI8#exec, OCI8#ping, etc. This means that you can
+ * reduce one SQL execution to set action name.
+ *
+ * As for Oracle 9i client or lower, this method executes the PL/SQL
+ * block internally.
+ *
+ * See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_appinf.htm#i999254]
+ */
+static VALUE oci8_set_action(VALUE self, VALUE val)
+{
+    char *ptr;
+    ub4 size;
+
+    if (!NIL_P(val)) {
+        OCI8SafeStringValue(val);
+        ptr = RSTRING_PTR(val);
+        size = RSTRING_LEN(val);
+    } else {
+        ptr = "";
+        size = 0;
+    }
+    if (oracle_client_version >= ORAVER_10_1) {
+        /* Oracle 10g or upper */
+        oci_lc(OCIAttrSet(oci8_get_oci_session(self), OCI_HTYPE_SESSION, ptr,
+                          size, OCI_ATTR_ACTION, oci8_errhp));
+    } else {
+        /* Oracle 9i or lower */
+        oci8_exec_sql_var_t bind_vars[1];
+
+        /* :action */
+        bind_vars[0].valuep = ptr;
+        bind_vars[0].value_sz = size;
+        bind_vars[0].dty = SQLT_CHR;
+        bind_vars[0].indp = NULL;
+        bind_vars[0].alenp = NULL;
+
+        oci8_exec_sql(oci8_get_svcctx(self),
+                      "BEGIN\n"
+                      "  DBMS_APPLICATION_INFO.SET_ACTION(:action);\n"
+                      "END;\n", 0, NULL, 1, bind_vars, 1);
+    }
+    return val;
+}
+
+/*
+ * call-seq:
+ *   client_info = string or nil
+ *
+ * This is equivalent to the following PL/SQL block.
+ *
+ *   BEGIN
+ *     DBMS_APPLICATION_INFO.SET_CLIENT_INFO(:client_info);
+ *   END;
+ *
+ * If the Oracle client is 10g or upper, this doesn't perform network
+ * round trips. The change is reflected to the server by the next round
+ * trip such as OCI8#exec, OCI8#ping, etc. This means that you can
+ * reduce one SQL execution to set client info.
+ *
+ * As for Oracle 9i client or lower, this method executes the PL/SQL
+ * block internally.
+ *
+ * See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_appinf.htm#CHEJCFGG]
+ */
+static VALUE oci8_set_client_info(VALUE self, VALUE val)
+{
+    char *ptr;
+    ub4 size;
+
+    if (!NIL_P(val)) {
+        OCI8SafeStringValue(val);
+        ptr = RSTRING_PTR(val);
+        size = RSTRING_LEN(val);
+    } else {
+        ptr = "";
+        size = 0;
+    }
+    if (oracle_client_version >= ORAVER_10_1) {
+        /* Oracle 10g or upper */
+        oci_lc(OCIAttrSet(oci8_get_oci_session(self), OCI_HTYPE_SESSION, ptr,
+                          size, OCI_ATTR_CLIENT_INFO, oci8_errhp));
+    } else {
+        /* Oracle 9i or lower */
+        oci8_exec_sql_var_t bind_vars[1];
+
+        /* :client_info */
+        bind_vars[0].valuep = ptr;
+        bind_vars[0].value_sz = size;
+        bind_vars[0].dty = SQLT_CHR;
+        bind_vars[0].indp = NULL;
+        bind_vars[0].alenp = NULL;
+
+        oci8_exec_sql(oci8_get_svcctx(self), 
+                      "BEGIN\n"
+                      "  DBMS_APPLICATION_INFO.SET_CLIENT_INFO(:client_info);\n"
+                      "END;\n", 0, NULL, 1, bind_vars, 1);
     }
     return val;
 }
@@ -674,6 +863,9 @@ VALUE Init_oci8(void)
     rb_define_private_method(cOCI8, "oracle_server_vernum", oci8_oracle_server_vernum, 0);
     rb_define_method(cOCI8, "ping", oci8_ping, 0);
     rb_define_method(cOCI8, "client_identifier=", oci8_set_client_identifier, 1);
+    rb_define_method(cOCI8, "module=", oci8_set_module, 1);
+    rb_define_method(cOCI8, "action=", oci8_set_action, 1);
+    rb_define_method(cOCI8, "client_info=", oci8_set_client_info, 1);
     return cOCI8;
 }
 
