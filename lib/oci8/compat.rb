@@ -105,4 +105,9 @@ class OCI8
     # add alias compatible with 'Oracle7 Module for Ruby'.
     alias getColNames get_col_names
   end
+
+  module BindType
+    # alias to Integer for compatibility with ruby-oci8 1.0.
+    Fixnum = Integer
+  end
 end

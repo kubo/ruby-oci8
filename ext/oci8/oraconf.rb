@@ -860,10 +860,31 @@ EOS
     def get_home
       oracle_home = ENV['ORACLE_HOME']
       if oracle_home.nil?
-        raise <<EOS
+        msg = <<EOS
 Set the environment variable ORACLE_HOME if Oracle Full Client.
 Append the path of Oracle client libraries to #{OraConf.ld_envs[0]} if Oracle Instant Client.
 EOS
+
+        # check sudo environment
+        sudo_command = ENV['SUDO_COMMAND']
+        if /\w*make\b/ =~ sudo_command
+          msg += <<EOS
+
+'sudo' may unset environment variables for security reasons.
+Use it only when running 'make install' as follows
+     make
+     sudo make install
+EOS
+        end
+        if /\w+\/gem\b/ =~ sudo_command
+          msg += <<EOS
+
+'sudo' may unset environment variables for security reasons.
+Pass required varialbes as follows
+     sudo VAR1=val1 VAR2=val2 #{sudo_command}
+EOS
+        end
+        raise msg
       end
       oracle_home
     end

@@ -1,3 +1,14 @@
+2009-05-19  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/bind.c: delete OCI8::BindType::Fixnum.
+	* lib/oci8/compat.rb: add OCI8::BindType::Fixnum as an alias
+	    of OCI8::BindType::Integer.
+	* ext/oci8/extconf.rb: change extconf.rb's argument value of
+	    '--with-oracle-version' to accept dotted version such as
+	    '9.2.0.'
+	* ext/oci8/oraconf.rb: When extconf.rb fails and it is run
+	    by sudo command, change the error message to notice that
+	    'sudo' may unset environment variables.
+
 2009-05-18  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c: revise rdoc comments for OCI8#ping and
 	    OCI8#client_identifier=. Add OCI8#module=, OCI8#action= and

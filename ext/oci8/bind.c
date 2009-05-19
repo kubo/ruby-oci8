@@ -239,42 +239,6 @@ static const oci8_bind_class_t bind_long_raw_class = {
 #endif /* USE_DYNAMIC_FETCH */
 
 /*
- * bind_fixnum
- */
-static VALUE bind_fixnum_get(oci8_bind_t *obind, void *data, void *null_struct)
-{
-    return LONG2NUM(*(long*)data);
-}
-
-static void bind_fixnum_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
-{
-    Check_Type(val, T_FIXNUM);
-    *(long*)data = FIX2LONG(val);
-}
-
-static void bind_fixnum_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
-{
-    obind->value_sz = sizeof(long);
-    obind->alloc_sz = sizeof(long);
-}
-
-static const oci8_bind_class_t bind_fixnum_class = {
-    {
-        NULL,
-        oci8_bind_free,
-        sizeof(oci8_bind_t)
-    },
-    bind_fixnum_get,
-    bind_fixnum_set,
-    bind_fixnum_init,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    SQLT_INT
-};
-
-/*
  * bind_float
  */
 static VALUE bind_float_get(oci8_bind_t *obind, void *data, void *null_struct)
@@ -493,7 +457,6 @@ void Init_oci8_bind(VALUE klass)
     oci8_define_bind_class("Long", &bind_long_class);
     oci8_define_bind_class("LongRaw", &bind_long_raw_class);
 #endif /* USE_DYNAMIC_FETCH */
-    oci8_define_bind_class("Fixnum", &bind_fixnum_class);
     oci8_define_bind_class("Float", &bind_float_class);
     if (oracle_client_version >= ORAVER_10_1) {
         oci8_define_bind_class("BinaryDouble", &bind_binary_double_class);

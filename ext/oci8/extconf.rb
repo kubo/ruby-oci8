@@ -11,6 +11,7 @@ end
 
 require File.dirname(__FILE__) + '/oraconf'
 require File.dirname(__FILE__) + '/apiwrap'
+require File.dirname(__FILE__) + '/../../lib/oci8/oracle_version.rb'
 
 RUBY_OCI8_VERSION = File.read("#{File.dirname(__FILE__)}/../../VERSION").chomp
 
@@ -70,7 +71,7 @@ have_type('OCICallbackLobWrite2', 'ociap.h')
 have_type('OCIAdmin*', 'ociap.h')
 
 if with_config('oracle-version')
-  oci_client_version = with_config('oracle-version').to_i
+  oci_client_version = OCI8::OracleVersion.new(with_config('oracle-version')).to_i
 else
   oci_client_version = oci_actual_client_version
 end
