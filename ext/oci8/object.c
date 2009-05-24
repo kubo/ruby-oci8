@@ -37,6 +37,7 @@ enum {
     ATTR_OCINUMBER,
     ATTR_FLOAT,
     ATTR_INTEGER,
+    ATTR_OCIDATE,
     ATTR_BINARY_DOUBLE,
     ATTR_BINARY_FLOAT,
     ATTR_NAMED_TYPE,
@@ -167,6 +168,8 @@ static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *dat
         return oci8_make_float((OCINumber *)data, oci8_errhp);
     case ATTR_INTEGER:
         return oci8_make_integer((OCINumber *)data, oci8_errhp);
+    case ATTR_OCIDATE:
+        return oci8_make_ocidate((OCIDate *)data);
     case ATTR_BINARY_DOUBLE:
         return rb_float_new(*(double*)data);
     case ATTR_BINARY_FLOAT:
@@ -309,6 +312,9 @@ static VALUE oci8_named_coll_set_coll_element(VALUE self, VALUE datatype, VALUE 
         OCINumberSetZero(oci8_errhp, &cb_data.data.num);
         cb_data.indp = &cb_data.ind;
         break;
+    case ATTR_OCIDATE:
+        cb_data.indp = &cb_data.ind;
+        break;
     case ATTR_BINARY_DOUBLE:
         cb_data.data.dbl = 0.0;
         cb_data.indp = &cb_data.ind;
@@ -370,6 +376,7 @@ static VALUE set_coll_element_func(set_coll_element_cb_data_t *cb_data)
         case ATTR_OCINUMBER:
         case ATTR_FLOAT:
         case ATTR_INTEGER:
+        case ATTR_OCIDATE:
         case ATTR_BINARY_DOUBLE:
         case ATTR_BINARY_FLOAT:
             elem_ptr = &cb_data->data;
@@ -403,6 +410,7 @@ static VALUE set_coll_element_ensure(set_coll_element_cb_data_t *cb_data)
     case ATTR_OCINUMBER:
     case ATTR_FLOAT:
     case ATTR_INTEGER:
+    case ATTR_OCIDATE:
     case ATTR_BINARY_DOUBLE:
     case ATTR_BINARY_FLOAT:
         break;
@@ -440,6 +448,9 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
         break;
     case ATTR_INTEGER:
         oci8_set_integer((OCINumber*)data, val, oci8_errhp);
+        break;
+    case ATTR_OCIDATE:
+        oci8_set_ocidate((OCIDate*)data, val);
         break;
     case ATTR_BINARY_DOUBLE:
         *(double*)data = NUM2DBL(val);
@@ -592,6 +603,7 @@ void Init_oci_object(VALUE cOCI8)
     rb_define_const(cOCI8TDO, "ATTR_OCINUMBER", INT2FIX(ATTR_OCINUMBER));
     rb_define_const(cOCI8TDO, "ATTR_FLOAT", INT2FIX(ATTR_FLOAT));
     rb_define_const(cOCI8TDO, "ATTR_INTEGER", INT2FIX(ATTR_INTEGER));
+    rb_define_const(cOCI8TDO, "ATTR_OCIDATE", INT2FIX(ATTR_OCIDATE));
     rb_define_const(cOCI8TDO, "ATTR_BINARY_DOUBLE", INT2FIX(ATTR_BINARY_DOUBLE));
     rb_define_const(cOCI8TDO, "ATTR_BINARY_FLOAT", INT2FIX(ATTR_BINARY_FLOAT));
     rb_define_const(cOCI8TDO, "ATTR_NAMED_TYPE", INT2FIX(ATTR_NAMED_TYPE));

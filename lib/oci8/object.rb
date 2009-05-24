@@ -425,6 +425,9 @@ EOS
       'INTERVAL DAY TO SECOND'  => :interval_ds,
     }
 
+    # for datetime_to_array and ocidate_to_datetime
+    extend OCI8::BindType::Util
+
     def self.check_metadata(con, metadata)
       case metadata.typecode
       when :char, :varchar, :varchar2
@@ -437,6 +440,11 @@ EOS
         [ATTR_INTEGER,   nil, SIZE_OF_OCINUMBER, 2, ALIGNMENT_OF_OCINUMBER]
       when :real, :double, :float
         [ATTR_FLOAT,     nil, SIZE_OF_OCINUMBER, 2, ALIGNMENT_OF_OCINUMBER]
+      when :date
+        [ATTR_OCIDATE,   nil, SIZE_OF_OCIDATE, 2, ALIGNMENT_OF_OCIDATE,
+         Proc.new do |val| datetime_to_array(val, false) end, # set_proc
+         Proc.new do |val| ocidate_to_datetime(val) end, # get_proc
+        ]
       when :binary_double
         [ATTR_BINARY_DOUBLE, nil, SIZE_OF_DOUBLE, 2, ALIGNMENT_OF_DOUBLE]
       when :binary_float
@@ -461,11 +469,13 @@ EOS
       attr_reader :alignment
       attr_reader :datatype
       attr_reader :typeinfo
+      attr_reader :set_proc
+      attr_reader :get_proc
       def initialize(con, metadata, val_offset, ind_offset)
         if metadata.respond_to? :name
           @name = metadata.name.downcase.intern
         end
-        @datatype, @typeinfo, @val_size, @ind_size, @alignment, = OCI8::TDO.check_metadata(con, metadata)
+        @datatype, @typeinfo, @val_size, @ind_size, @alignment, @set_proc, @get_proc, = OCI8::TDO.check_metadata(con, metadata)
         @val_offset = (val_offset + @alignment - 1) & ~(@alignment - 1)
         @ind_offset = ind_offset
       end
@@ -485,7 +495,9 @@ EOS
     def attributes
       attrs = {}
       tdo.attributes.each do |attr|
-        attrs[attr.name] = get_attribute(attr.datatype, attr.typeinfo, attr.val_offset, attr.ind_offset)
+        attr_val = get_attribute(attr.datatype, attr.typeinfo, attr.val_offset, attr.ind_offset)
+        attr_val = attr.get_proc.call(attr_val) if attr.get_proc
+        attrs[attr.name] = attr_val
       end
       attrs
     end
@@ -493,7 +505,9 @@ EOS
     def attributes=(obj)
       obj = obj.instance_variable_get(:@attributes) unless obj.is_a? Hash
       tdo.attributes.each do |attr|
-        set_attribute(attr.datatype, attr.typeinfo, attr.val_offset, attr.ind_offset, obj[attr.name])
+        attr_val = obj[attr.name]
+        attr_val = attr.set_proc.call(attr_val) if attr.set_proc
+        set_attribute(attr.datatype, attr.typeinfo, attr.val_offset, attr.ind_offset, attr_val)
       end
     end
   end

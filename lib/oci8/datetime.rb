@@ -31,6 +31,8 @@ class OCI8
       private
 
       def datetime_to_array(val, full)
+        return nil if val.nil?
+
         # year
         year = val.year
         # month
@@ -100,6 +102,8 @@ class OCI8
       end
 
       def ocidate_to_datetime(ary)
+        return nil if ary.nil?
+
         year, month, day, hour, minute, sec = ary
         if @@default_timezone == :local
           offset = @@datetime_offset
@@ -110,6 +114,8 @@ class OCI8
       end
 
       def ocidate_to_time(ary)
+        return nil if ary.nil?
+
         year, month, day, hour, minute, sec = ary
         if year >= 139
           begin
@@ -123,6 +129,8 @@ class OCI8
       if OCI8.oracle_client_version >= ORAVER_9_0
 
         def ocitimestamp_to_datetime(ary)
+          return nil if ary.nil?
+
           year, month, day, hour, minute, sec, fsec, tz_hour, tz_min = ary
           if sec >= 59 and fsec != 0
             # convert to a DateTime via a String as a last resort.
@@ -144,6 +152,8 @@ class OCI8
         end
 
         def ocitimestamp_to_time(ary)
+          return nil if ary.nil?
+
           year, month, day, hour, minute, sec, fsec, tz_hour, tz_min = ary
 
           if tz_hour == 0 and tz_min == 0
@@ -169,13 +179,11 @@ class OCI8
       include OCI8::BindType::Util
 
       def set(val) # :nodoc:
-        val &&= datetime_to_array(val, false)
-        super(val)
+        super(datetime_to_array(val, false))
       end
 
       def get() # :nodoc:
-        val = super()
-        val ? ocidate_to_datetime(val) : nil
+        ocidate_to_datetime(super())
       end
     end
 
@@ -183,13 +191,11 @@ class OCI8
       include OCI8::BindType::Util
 
       def set(val) # :nodoc:
-        val &&= datetime_to_array(val, false)
-        super(val)
+        super(datetime_to_array(val, false))
       end
 
       def get() # :nodoc:
-        val = super()
-        val ? ocidate_to_time(val) : nil
+        ocidate_to_time(super())
       end
     end
 
@@ -198,13 +204,11 @@ class OCI8
         include OCI8::BindType::Util
 
         def set(val) # :nodoc:
-          val &&= datetime_to_array(val, true)
-          super(val)
+          super(datetime_to_array(val, true))
         end
 
         def get() # :nodoc:
-          val = super()
-          val ? ocitimestamp_to_datetime(val) : nil
+          ocitimestamp_to_datetime(super())
         end
       end
 
@@ -212,13 +216,11 @@ class OCI8
         include OCI8::BindType::Util
 
         def set(val) # :nodoc:
-          val &&= datetime_to_array(val, true)
-          super(val)
+          super(datetime_to_array(val, true))
         end
 
         def get() # :nodoc:
-          val = super()
-          val ? ocitimestamp_to_time(val) : nil
+          ocitimestamp_to_time(super())
         end
       end
     end

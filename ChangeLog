@@ -1,3 +1,7 @@
+2009-05-24  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/object.c, lib/oci8/datetime.rb, lib/oci8/object.rb:
+	    add DATE datatype support in object types.
+
 2009-05-19  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c: delete OCI8::BindType::Fixnum.
 	* lib/oci8/compat.rb: add OCI8::BindType::Fixnum as an alias
