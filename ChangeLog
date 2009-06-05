@@ -1,3 +1,9 @@
+2009-06-05  KUBO Takehiro  <kubo@jiubao.org>
+	* Makefile: check rdoc version when making rdoc documentation.
+	    The rdoc version must be 2.4.
+	* ext/oci8/.document, ext/oci8/oci8.c, lib/.document,
+	  lib/oci8/.document, lib/oci8/oci8.rb: fix rdoc comments a bit.
+
 2009-05-24  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/object.c, lib/oci8/datetime.rb, lib/oci8/object.rb:
 	    add DATE datatype support in object types.

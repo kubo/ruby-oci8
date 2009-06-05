@@ -1,16 +1,28 @@
-#--
-# oci8.rb -- OCI8 and OCI8::Cursor
+# oci8.rb -- implements OCI8 and OCI8::Cursor
 #
 # Copyright (C) 2002-2009 KUBO Takehiro <kubo@jiubao.org>
 #
 # Original Copyright is:
 #   Oracle module for Ruby
 #   1998-2000 by yoshidam
-#++
+#
 
 require 'date'
 
-# The database connection class.
+# A connection to a Oracle database server.
+#
+# example:
+#   # output the emp table's content as CSV format.
+#   conn = OCI8.new(username, password)
+#   conn.exec('select * from emp') do |row|
+#     puts row.join(',')
+#   end
+#
+#   # execute PL/SQL block with bind variables.
+#   conn = OCI8.new(username, password)
+#   conn.exec('BEGIN procedure_name(:1, :2); END;',
+#              value_for_the_first_parameter,
+#              value_for_the_second_parameter)
 class OCI8
   # Executes the sql statement. The type of return value depends on
   # the type of sql statement: select; insert, update and delete;

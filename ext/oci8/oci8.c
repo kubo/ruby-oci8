@@ -21,24 +21,6 @@ extern rb_pid_t rb_w32_getpid(void);
 #define OCI_ATTR_CLIENT_IDENTIFIER 278
 #endif
 
-/*
- * Document-class: OCI8
- *
- * The class to access Oracle database server.
- *
- * example:
- *   # output the emp table's content as CSV format.
- *   conn = OCI8.new(username, password)
- *   conn.exec('select * from emp') do |row|
- *     puts row.join(',')
- *   end
- *
- *   # execute PL/SQL block with bind variables.
- *   conn = OCI8.new(username, password)
- *   conn.exec('BEGIN procedure_name(:1, :2); END;',
- *              value_for_the_first_parameter,
- *              value_for_the_second_parameter)
- */
 static VALUE cOCI8;
 
 static void oci8_svcctx_free(oci8_base_t *base)
@@ -830,6 +812,14 @@ static VALUE oci8_set_client_info(VALUE self, VALUE val)
 
 VALUE Init_oci8(void)
 {
+#if 0
+    /*
+     * OCIHandle is the abstract base class for all OCI handles and
+     * descriptors which are opaque data types of Oracle Call Interface.
+     */
+    oci8_cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
+    cOCI8 = rb_define_class("OCI8", oci8_cOCIHandle);
+#endif
     cOCI8 = oci8_define_class("OCI8", &oci8_svcctx_class);
 
     oracle_client_vernum = INT2FIX(oracle_client_version);

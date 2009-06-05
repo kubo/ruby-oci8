@@ -1,5 +1,6 @@
 VERSION = `cat VERSION`
 RUBY = ruby -w
+RDOC = rdoc
 
 all: build
 
@@ -30,10 +31,16 @@ format_c_source:
 	astyle --options=none --style=linux --indent=spaces=4 --brackets=linux --suffix=none ext/oci8/*.[ch]
 
 # internal use only
-.PHONY: rdoc
+.PHONY: rdoc check-rdoc-version run-rdoc
 
-rdoc:
-	$(RUBY) custom-rdoc.rb -o rdoc -U README ext/oci8 lib
+rdoc: check-rdoc-version run-rdoc
+
+check-rdoc-version:
+	@echo check rdoc version
+	@expr match "`$(RDOC) --version`" '^rdoc 2\.4' > /dev/null || (echo 'rdoc version is not 2.4.'; exit 1)
+
+run-rdoc:
+	TZ= $(RDOC) -o rdoc -c us-ascii --threads=1 -W http://ruby-oci8.rubyforge.org/svn/trunk/ruby-oci8/ ext/oci8 lib
 
 dist:
 	-rm -rf ruby-oci8-$(VERSION)
