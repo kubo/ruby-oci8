@@ -1,3 +1,6 @@
+2009-06-07  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c: revise rdoc comments.
+
 2009-06-05  KUBO Takehiro  <kubo@jiubao.org>
 	* Makefile: check rdoc version when making rdoc documentation.
 	    The rdoc version must be 2.4.

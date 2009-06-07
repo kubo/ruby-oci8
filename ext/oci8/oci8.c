@@ -90,7 +90,16 @@ static void oci8_do_parse_connect_string(VALUE conn_str, VALUE *user, VALUE *pas
 }
 
 /*
- * Add a private method to test oci8_do_parse_connect_string().
+ * call-seq:
+ *   parse_connect_string(string) -> [username, password, dbname, privilege]
+ *
+ * Extracts +username+, +password+, +dbname+ and +privilege+ from the specified +string+.
+ *
+ * example:
+ *   "scott/tiger" -> ["scott", "tiger", nil, nil],
+ *   "scott/tiger@oradb.example.com" -> ["scott", "tiger", "oradb.example.com", nil]
+ *   "sys/change_on_install as sysdba" -> ["sys", "change_on_install", nil, :SYSDBA]
+ *
  */
 static VALUE oci8_parse_connect_string(VALUE self, VALUE conn_str)
 {
@@ -107,30 +116,68 @@ static VALUE oci8_parse_connect_string(VALUE self, VALUE conn_str)
  * call-seq:
  *   new(username, password, dbname = nil, privilege = nil)
  *
- * connect to Oracle by _username_ and _password_.
- * set _dbname_ nil to connect the local database or TNS name to connect
- * via network. You can use the following syntax for _dbname_ if the client
- * library is Oracle 10g or upper.
+ * Connects to an Oracle database server by +username+ and +password+
+ * at +dbname+ as +privilege+.
  *
- *   //HOST_NAME_OR_IP:TNS_LISTENER_PORT/ORACLE_SID
+ * === connecting to the local server
  *
- * If you need DBA privilege, use :SYSDBA or :SYSOPER to _privilege_.
+ * Set +username+ and +password+ or pass "username/password" as a
+ * single argument.
  *
- *   # connect to the local database.
- *   #   sqlplus scott/tiger
- *   conn = OCI8.new("scott", "tiger")
+ *   OCI8.new('scott', 'tiger')
+ * or
+ *   OCI8.new('scott/tiger')
  *
- *   # connect via network with TNS name.
- *   # sqlplus scott/tiger@orcl.world
- *   conn = OCI8.new("scott", "tiger", "orcl.world")
+ * === connecting to a remote server
  *
- *   # connect via network with database's host, port and SID.
- *   #   sqlplus scott/tiger@//localhost:1521/XE
- *   conn = OCI8.new("scott", "tiger", "//localhost:1521/XE")
+ * Set +username+, +password+ and +dbname+ or pass
+ * "username/password@dbname" as a single argument.
  *
- *   # connect as SYSDBA
- *   #   sqlplus 'sys/change_on_install as sysdba'
- *   conn = OCI8.new("sys", "change_on_install", nil, :SYSDBA)
+ *   OCI8.new('scott', 'tiger', 'orcl.world')
+ * or
+ *   OCI8.new('scott/tiger@orcl.world')
+ *
+ * The +dbname+ is a net service name or an easy connectection
+ * identifier. The former is a name listed in the file tnsnames.ora.
+ * Ask to your DBA if you don't know what it is. The latter has the
+ * syntax as "//host:port/service_name".
+ *
+ *   OCI8.new('scott', 'tiger', '//remote-host:1521/XE')
+ * or
+ *   OCI8.new('scott/tiger@//remote-host:1521/XE')
+ *
+ * === connecting as a privileged user
+ *
+ * Set :SYSDBA or :SYSOPER to +privilege+, otherwise
+ * "username/password as sysdba" or "username/password as sysoper"
+ * as a single argument.
+ *
+ *   OCI8.new('sys', 'change_on_install', nil, :SYSDBA)
+ * or
+ *   OCI8.new('sys/change_on_install as sysdba')
+ *
+ * === external OS authentication
+ *
+ * Set nil to +username+ and +password+, or "/" as a single argument.
+ *
+ *   OCI8.new(nil, nil)
+ * or
+ *   OCI8.new('/')
+ *
+ * To connect to a remote host:
+ *
+ *   OCI8.new(nil, nil, 'dbname')
+ * or
+ *   OCI8.new('/@dbname')
+ *
+ * === proxy authentication
+ *
+ * Enclose end user's username with square brackets and add it at the
+ * end of proxy user's username.
+ *
+ *   OCI8.new('proxy_user_name[end_user_name]', 'proxy_password')
+ * or
+ *   OCI8.new('proxy_user_name[end_user_name]/proxy_password')
  *
  */
 static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
@@ -247,13 +294,8 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
  * call-seq:
  *   logoff
  *
- * disconnect from Oracle. Uncommitted transaction will be
+ * Disconnects from the Oracle server. The uncommitted transaction is
  * rollbacked.
- *
- * example:
- *   conn = OCI8.new("scott", "tiger")
- *   ... do something ...
- *   conn.logoff
  */
 static VALUE oci8_svcctx_logoff(VALUE self)
 {
@@ -294,7 +336,7 @@ static VALUE oci8_svcctx_logoff(VALUE self)
  * call-seq:
  *   parse(sql_text) -> an instance of OCI8::Cursor
  *
- * prepare the SQL statement and return an instance of OCI8::Cursor.
+ * Prepares the SQL statement and returns a new OCI8::Cursor.
  */
 static VALUE oci8_svcctx_parse(VALUE self, VALUE sql)
 {
@@ -310,13 +352,7 @@ static VALUE oci8_svcctx_parse(VALUE self, VALUE sql)
  * call-seq:
  *   commit
  *
- * commit the transaction.
- *
- * example:
- *   conn = OCI8.new("scott", "tiger")
- *   conn.exec("UPDATE emp SET sal = sal * 1.1") # yahoo
- *   conn.commit
- *   conn.logoff
+ * Commits the transaction.
  */
 static VALUE oci8_commit(VALUE self)
 {
@@ -329,13 +365,7 @@ static VALUE oci8_commit(VALUE self)
  * call-seq:
  *   rollback
  *
- * rollback the transaction.
- *
- * example:
- *   conn = OCI8.new("scott", "tiger")
- *   conn.exec("UPDATE emp SET sal = sal * 0.9") # boos
- *   conn.rollback
- *   conn.logoff
+ * Rollbacks the transaction.
  */
 static VALUE oci8_rollback(VALUE self)
 {
@@ -410,8 +440,8 @@ static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
  * call-seq:
  *   autocommit? -> true or false
  *
- * return the state of the autocommit mode. The default value is
- * false. If true, the transaction is committed on every SQL executions.
+ * Returns +true+ if the connection is in autocommit mode, +false+
+ * otherwise. The default value is +false+.
  */
 static VALUE oci8_autocommit_p(VALUE self)
 {
@@ -423,13 +453,7 @@ static VALUE oci8_autocommit_p(VALUE self)
  * call-seq:
  *   autocommit = true or false
  *
- * change the status of the autocommit mode.
- *
- * example:
- *   conn = OCI8.new("scott", "tiger")
- *   conn.autocommit = true
- *   ... do something ...
- *   conn.logoff
+ * Sets the autocommit mode. The default value is +false+.
  */
 static VALUE oci8_set_autocommit(VALUE self, VALUE val)
 {
@@ -440,9 +464,15 @@ static VALUE oci8_set_autocommit(VALUE self, VALUE val)
 
 /*
  * call-seq:
- *   long_read_len -> aFixnum   (new in 0.1.16)
+ *   long_read_len -> fixnum
  *
- * get the maximum fetch size for a LONG and LONG RAW column.
+ * Gets the maximum length in bytes to fetch a LONG or LONG RAW
+ * column. The default value is 65535.
+ *
+ * If the actual data length is longer than long_read_len,
+ * "ORA-01406: fetched column value was truncated" is raised.
+ *
+ * Note: long_read_len is also used for XMLTYPE data type in 2.0.
  */
 static VALUE oci8_long_read_len(VALUE self)
 {
@@ -452,16 +482,13 @@ static VALUE oci8_long_read_len(VALUE self)
 
 /*
  * call-seq:
- *   long_read_len = aFixnum   (new in 0.1.16)
+ *   long_read_len = fixnum
  *
- * change the maximum fetch size for a LONG and LONG RAW column.
- * The default value is 65535.
+ * Sets the maximum length in bytes to fetch a LONG or LONG RAW
+ * column.
  *
- * example:
- *   conn = OCI8.new('scott', 'tiger'
- *   conn.long_read_len = 1000000
- *   cursor = con.exec('select content from articles where id = :1', 23478)
- *   row = cursor.fetch
+ * See also #long_read_len
+ *
  */
 static VALUE oci8_set_long_read_len(VALUE self, VALUE val)
 {
@@ -475,8 +502,9 @@ static VALUE oci8_set_long_read_len(VALUE self, VALUE val)
  * call-seq:
  *   break
  *
- * cancel an executing SQL in an other thread.
- * See non_blocking= also.
+ * Cancels the executing SQL.
+ *
+ * See also #non_blocking=.
  */
 static VALUE oci8_break(VALUE self)
 {
@@ -499,10 +527,14 @@ static VALUE oci8_break(VALUE self)
 
 /*
  * call-seq:
- *   prefetch_rows = aFixnum   (new in 0.1.14)
+ *   prefetch_rows = number
  *
- * change the prefetch rows size. This reduces network round trips
- * when fetching multiple rows.
+ * Sets the prefetch rows size. The default value is one.
+ * When executing select statements, the OCI library allocate prefetch
+ * buffer to reduce the number of network round trips by retrieving
+ * specified number of rows in one round trip.
+ *
+ * Note: Active record adaptors set 100 by default.
  */
 static VALUE oci8_set_prefetch_rows(VALUE self, VALUE val)
 {
@@ -512,8 +544,13 @@ static VALUE oci8_set_prefetch_rows(VALUE self, VALUE val)
 
 /*
  * call-seq:
- *   oracle_server_vernum -> Oracle server version number
+ *   oracle_server_vernum -> an integer
  *
+ * <b>(new in 2.0.1)</b>
+ *
+ * Returns a numerical format of the Oracle server version.
+ *
+ * See also: #oracle_server_version
  */
 static VALUE oci8_oracle_server_vernum(VALUE self)
 {
@@ -546,18 +583,20 @@ static VALUE oci8_oracle_server_vernum(VALUE self)
  * call-seq:
  *   ping -> true or false
  *
+ * <b>(new in 2.0.2)</b>
+ *
  * Makes a round trip call to the server to confirm that the connection and
  * the server are active.
  *
  * OCI8#ping also can be used to flush all the pending OCI client-side calls
  * to the server if any exist.
  *
- * For Oracle 10.2 client or upper, a dummy round trip call is made by a newly
- * added OCI function OCIPing[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14250/oci16msc007.htm#sthref3540]
- * in Oracle 10.2.
+ * === Oracle 10.2 client or upper
+ * A dummy round trip call is made by a newly added OCI function
+ * OCIPing[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14250/oci16msc007.htm#sthref3540] in Oracle 10.2.
  *
- * For Oracle 10.1 client or lower, a simple PL/SQL block "BEGIN NULL; END;"
- * is executed to make a round trip call.
+ * === Oracle 10.1 client or lower
+ * A simple PL/SQL block "BEGIN NULL; END;" is executed to make a round trip call.
  */
 static VALUE oci8_ping(VALUE self)
 {
@@ -578,23 +617,27 @@ static VALUE oci8_ping(VALUE self)
  * call-seq:
  *   client_identifier = string or nil
  *
- * This is equivalent to the following PL/SQL block.
+ * <b>(new in 2.0.3)</b>
+ *
+ * Sets the client ID. This information is stored in the V$SESSION
+ * view.
+ *
+ * === Oracle 9i client or upper
+ *
+ * This doesn't perform network round trips. The change is reflected
+ * to the server by the next round trip such as OCI8#exec, OCI8#ping,
+ * etc.
+ *
+ * === Oracle 8i client or lower
+ *
+ * This executes the following PL/SQL block internally.
+ * The change is reflected immediately by a network round trip.
  *
  *   BEGIN
  *     DBMS_SESSION.SET_IDENTIFIER(:client_id);
  *   END;
  *
- * If the Oracle client is 9i or upper, this doesn't perform network
- * round trips. The change is reflected to the server by the next round
- * trip such as OCI8#exec, OCI8#ping, etc. This means that you can
- * reduce one SQL execution to set client identifier.
- *
- * As for Oracle 8i client or lower, this method executes the PL/SQL
- * block internally.
- *
  * See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_sessio.htm#i996935]
- *
- * Note: The Oracle server must be 9i or upper to use this method.
  *
  */
 static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
@@ -638,7 +681,23 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
  * call-seq:
  *   module = string or nil
  *
- * This is equivalent to the following PL/SQL block.
+ * <b>(new in 2.0.3)</b>
+ *
+ * Sets the name of the current current module. This information is
+ * stored in the V$SESSION view and is also stored in the V$SQL view
+ * and the V$SQLAREA view when a SQL statement is executed and the SQL
+ * statement is first parsed in the Oracle server.
+ *
+ * === Oracle 10g client or upper
+ *
+ * This doesn't perform network round trips. The change is reflected
+ * to the server by the next round trip such as OCI8#exec, OCI8#ping,
+ * etc.
+ *
+ * === Oracle 9i client or lower
+ *
+ * This executes the following PL/SQL block internally.
+ * The change is reflected immediately by a network round trip.
  *
  *   DECLARE
  *     action VARCHAR2(32);
@@ -649,15 +708,8 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
  *     DBMS_APPLICATION_INFO.SET_MODULE(:module, action);
  *   END;
  *
- * If the Oracle client is 10g or upper, this doesn't perform network
- * round trips. The change is reflected to the server by the next round
- * trip such as OCI8#exec, OCI8#ping, etc. This means that you can
- * reduce one SQL execution to set module name.
+ * See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_appinf.htm#i999254]
  *
- * As for Oracle 9i client or lower, this method executes the PL/SQL
- * block internally.
- *
- * See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_appinf.htm#i996826]
  */
 static VALUE oci8_set_module(VALUE self, VALUE val)
 {
@@ -702,21 +754,31 @@ static VALUE oci8_set_module(VALUE self, VALUE val)
  * call-seq:
  *   action = string or nil
  *
- * This is equivalent to the following PL/SQL block.
+ * <b>(new in 2.0.3)</b>
+ *
+ * Sets the name of the current action within the current module.
+ * This information is stored in the V$SESSION view and is also
+ * stored in the V$SQL view and the V$SQLAREA view when a SQL
+ * statement is executed and the SQL statement is first parsed
+ * in the Oracle server.
+ *
+ * === Oracle 10g client or upper
+ *
+ * This doesn't perform network round trips. The change is reflected
+ * to the server by the next round trip such as OCI8#exec, OCI8#ping,
+ * etc.
+ *
+ * === Oracle 9i client or lower
+ *
+ * This executes the following PL/SQL block internally.
+ * The change is reflected immediately by a network round trip.
  *
  *   BEGIN
  *     DBMS_APPLICATION_INFO.SET_ACTION(:action);
  *   END;
  *
- * If the Oracle client is 10g or upper, this doesn't perform network
- * round trips. The change is reflected to the server by the next round
- * trip such as OCI8#exec, OCI8#ping, etc. This means that you can
- * reduce one SQL execution to set action name.
- *
- * As for Oracle 9i client or lower, this method executes the PL/SQL
- * block internally.
- *
  * See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_appinf.htm#i999254]
+ *
  */
 static VALUE oci8_set_action(VALUE self, VALUE val)
 {
@@ -758,19 +820,25 @@ static VALUE oci8_set_action(VALUE self, VALUE val)
  * call-seq:
  *   client_info = string or nil
  *
- * This is equivalent to the following PL/SQL block.
+ * <b>(new in 2.0.3)</b>
+ *
+ * Sets additional information about the client application.
+ * This information is stored in the V$SESSION view.
+ *
+ * === Oracle 10g client or upper
+ *
+ * This doesn't perform network round trips. The change is reflected
+ * to the server by the next round trip such as OCI8#exec, OCI8#ping,
+ * etc.
+ *
+ * === Oracle 9i client or lower
+ *
+ * This executes the following PL/SQL block internally.
+ * The change is reflected immediately by a network round trip.
  *
  *   BEGIN
  *     DBMS_APPLICATION_INFO.SET_CLIENT_INFO(:client_info);
  *   END;
- *
- * If the Oracle client is 10g or upper, this doesn't perform network
- * round trips. The change is reflected to the server by the next round
- * trip such as OCI8#exec, OCI8#ping, etc. This means that you can
- * reduce one SQL execution to set client info.
- *
- * As for Oracle 9i client or lower, this method executes the PL/SQL
- * block internally.
  *
  * See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_appinf.htm#CHEJCFGG]
  */
