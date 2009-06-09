@@ -283,7 +283,7 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
     svcctx->pid = getpid();
     svcctx->is_autocommit = 0;
 #ifdef RUBY_VM
-    svcctx->non_blocking = 0;
+    svcctx->non_blocking = 1;
 #endif
     svcctx->long_read_len = INT2FIX(65535);
     return Qnil;
@@ -378,8 +378,10 @@ static VALUE oci8_rollback(VALUE self)
  * call-seq:
  *   non_blocking? -> true or false
  *
- * return the status of blocking/non-blocking mode.
- * See non_blocking= also.
+ * Returns +true+ if the connection is in non-blocking mode, +false+
+ * otherwise.
+ *
+ * See also #non_blocking=.
  */
 static VALUE oci8_non_blocking_p(VALUE self)
 {
@@ -401,20 +403,38 @@ static VALUE oci8_non_blocking_p(VALUE self)
  * call-seq:
  *   non_blocking = true or false
  *
- * change the status of blocking/non-blocking mode. true for non-blocking
- * mode. false for blocking mode. The default is blocking.
+ * Sets +true+ to enable non-blocking mode, +false+ otherwise.
+ * The default setting depends on the ruby version and ruby-oci8
+ * version.
  *
- * When blocking mode, long-time SQL execution blocks the ruby process
- * itself even though multithread application because ruby's thread is
- * not native one.
+ * When the connection is in blocking mode (non_blocking = false),
+ * SQL executions block not only the thread, but also the ruby
+ * process. It makes the whole application stop while a SQL execution
+ * needs long time.
  *
- * when non-blocking mode, long-time SQL execution doesn't block the ruby
- * process. It only blocks the thread which executing the SQL statement.
- * But each SQL will need a bit more time because it checks the status by
- * polling.
+ * When in non-blocking mode (non_blocking = true), SQL executions
+ * block only the thread. It does't prevent other threads.
+ * A SQL execution which blocks a thread can be canceled by
+ * OCI8#break.
  *
- * You can cancel an executing SQL by using OCI8#break from another thread.
- * The canceled thread raises OCIBreak exception.
+ * === ruby 1.9
+ * The default setting is +true+ if the ruby-oci8 version is 2.0.3 or
+ * upper, +false+ otherwise.
+ *
+ * Ruby-oci8 makes the connection non-blocking by releasing ruby
+ * interpreter's GVL (Global VM Lock or Giant VM Lock) while OCI
+ * functions which may need more than one network round trips are in
+ * execution.
+ *
+ * === ruby 1.8
+ * The default setting is +false+.
+ *
+ * Ruby-oci8 makes the connection non-blocking by polling the return
+ * values of OCI functions. When an OCI function returns
+ * OCI_STILL_EXECUTING, the thread sleeps for 10 milli seconds to make
+ * a time for other threads to run. The sleep time is doubled up to
+ * 640 milli seconds as the function returns the same value.
+ *
  */
 static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
 {
@@ -530,9 +550,9 @@ static VALUE oci8_break(VALUE self)
  *   prefetch_rows = number
  *
  * Sets the prefetch rows size. The default value is one.
- * When executing select statements, the OCI library allocate prefetch
- * buffer to reduce the number of network round trips by retrieving
- * specified number of rows in one round trip.
+ * When a select statement is executed, the OCI library allocate
+ * prefetch buffer to reduce the number of network round trips by
+ * retrieving specified number of rows in one round trip.
  *
  * Note: Active record adaptors set 100 by default.
  */

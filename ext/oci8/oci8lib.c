@@ -320,7 +320,7 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
         rb_raise(rb_eRuntimeError /* FIXME */, "executing in another thread");
     }
     tv.tv_sec = 0;
-    tv.tv_usec = 100000;
+    tv.tv_usec = 10000;
     svcctx->executing_thread = rb_thread_current();
     while ((rv = func(data)) == OCI_STILL_EXECUTING) {
         rb_thread_wait_for(tv);
