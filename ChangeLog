@@ -1,4 +1,8 @@
 2009-09-12  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb: Fixed for ruby 1.9.2 preview1.
+	    (pointed by Raimonds Simanovskis)
+
+2009-09-12  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: Fixed to compile for AIX instant clients.
 	    (reported by Kazuya Teramoto)
 
