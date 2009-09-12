@@ -1,3 +1,7 @@
+2009-09-12  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: Fixed to compile for AIX instant clients.
+	    (reported by Kazuya Teramoto)
+
 2009-05-17  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 1.0.5 and 1.0.6.
 	* VERSION: change version to 1.0.6.
