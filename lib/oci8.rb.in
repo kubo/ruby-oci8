@@ -19,7 +19,7 @@ if RUBY_PLATFORM =~ /cygwin/
 end
 
 case RUBY_VERSION
-when /^1\.9\.1/
+when /^1\.9/
   require 'oci8lib_191'
 when /^1\.8/
   require 'oci8lib_18'

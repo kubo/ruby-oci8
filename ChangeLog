@@ -1,5 +1,5 @@
 2009-09-12  KUBO Takehiro  <kubo@jiubao.org>
-	* ext/oci8/extconf.rb: Fixed for ruby 1.9.2 preview1.
+	* ext/oci8/extconf.rb, lib/oci8.rb.in: Fixed for ruby 1.9.2 preview1.
 	    (pointed by Raimonds Simanovskis)
 
 2009-09-12  KUBO Takehiro  <kubo@jiubao.org>
