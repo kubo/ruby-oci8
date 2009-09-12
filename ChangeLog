@@ -1,3 +1,7 @@
+2009-09-12  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: Fixed to compile for AIX instant clients.
+	    (reported by Kazuya Teramoto)
+
 2009-06-09  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8lib.c: Change the initial polling interval of
 	    non-blocking mode for ruby 1.8 from 100 msec to 10 msec, which

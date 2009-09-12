@@ -383,15 +383,16 @@ EOS
     # get library load path names
     oci_basename = 'libclntsh'
     oci_glob_postfix = '.[0-9]*'
-    ocidata_basename = ['libociei', 'libociicus']
+    nls_data_basename = ['libociei', 'libociicus']
     @@ld_envs = %w[LD_LIBRARY_PATH]
     so_ext = 'so'
+    nls_data_ext = nil
     check_proc = nil
     case RUBY_PLATFORM
     when /mswin32|cygwin|mingw32|bccwin32/
       oci_basename = 'oci'
       oci_glob_postfix = ''
-      ocidata_basename = ['oraociei11', 'oraociicus11', 'oraociei10', 'oraociicus10']
+      nls_data_basename = ['oraociei11', 'oraociicus11', 'oraociei10', 'oraociicus10']
       @@ld_envs = %w[PATH]
       so_ext = 'dll'
     when /i.86-linux/
@@ -434,6 +435,7 @@ EOS
       oci_glob_postfix = ''
       @@ld_envs = %w[LIBPATH]
       so_ext = 'a'
+      nls_data_ext = 'so'
     when /hppa.*-hpux/
       if [0].pack('l!').length == 4
         @@ld_envs = %w[SHLIB_PATH]
@@ -529,8 +531,9 @@ EOS
     end
 
     if ld_path
-      ocidata_basename.each do |basename|
-        if File.exist?(File.join(ld_path, "#{basename}.#{so_ext}"))
+      nls_data_ext ||= so_ext # nls_data_ext is same with so_ext by default.
+      nls_data_basename.each do |basename|
+        if File.exist?(File.join(ld_path, "#{basename}.#{nls_data_ext}"))
           puts "  #{file} looks like an instant client."
           return ld_path
         end
