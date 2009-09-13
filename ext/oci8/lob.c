@@ -379,11 +379,13 @@ static VALUE oci8_lob_write(VALUE self, VALUE data)
     ub4 amt;
 
     lob_open(lob);
-    if (lob->lobtype == OCI_TEMP_CLOB) {
-        OCI8StringValue(data);
-    } else {
-        StringValue(data);
+    if (TYPE(data) != T_STRING) {
+        data = rb_obj_as_string(data);
     }
+    if (lob->lobtype == OCI_TEMP_CLOB) {
+        data = rb_str_export_to_enc(data, oci8_encoding);
+    }
+    RB_GC_GUARD(data);
     amt = RSTRING_LEN(data);
     oci_lc(OCILobWrite_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, RSTRING_PTR(data), amt, OCI_ONE_PIECE, NULL, NULL, 0, lob->csfrm));
     lob->pos += amt;

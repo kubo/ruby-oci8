@@ -120,6 +120,9 @@ typedef struct OCIAdmin OCIAdmin;
 #ifndef STRINGIZE
 #define STRINGIZE(name) #name
 #endif
+#ifndef RB_GC_GUARD
+#define RB_GC_GUARD(v) (*(volatile VALUE *)&(v))
+#endif
 
 /* new functions in ruby 1.9.
  * define compatible macros for ruby 1.8 or lower.
@@ -136,6 +139,7 @@ typedef VALUE rb_blocking_function_t(void *);
 #define rb_external_str_new_with_enc(ptr, len, enc) rb_tainted_str_new((ptr), (len))
 #define rb_locale_str_new_cstr(ptr)  rb_str_new2(ptr)
 #define rb_str_conv_enc(str, from, to) (str)
+#define rb_str_export_to_enc(str, enc) (str)
 #define rb_usascii_str_new(ptr, len) rb_str_new((ptr), (len))
 #define rb_usascii_str_new_cstr(ptr) rb_str_new2(ptr)
 #endif

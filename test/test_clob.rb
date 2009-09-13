@@ -39,6 +39,19 @@ class TestCLob < Test::Unit::TestCase
     lob.close
   end
 
+  def test_insert_symbol
+    filename = 'test_symbol'
+    value = :foo_bar
+    @conn.exec("DELETE FROM test_clob WHERE filename = :1", filename)
+    @conn.exec("INSERT INTO test_clob(filename, content) VALUES (:1, EMPTY_CLOB())", filename)
+    cursor = @conn.exec("SELECT content FROM test_clob WHERE filename = :1 FOR UPDATE", filename)
+    lob = cursor.fetch[0]
+    lob.write(value)
+    lob.rewind
+    assert_equal(value.to_s, lob.read);
+    lob.close
+  end
+
   def test_read
     test_insert() # first insert data.
     filename = File.basename($lobfile)
