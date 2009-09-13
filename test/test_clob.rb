@@ -64,6 +64,27 @@ class TestCLob < RUNIT::TestCase
     lob.free()
   end
 
+  def test_insert_symbol
+    filename = 'test_symbol'
+    value = :foo_bar
+    @stmt.prepare("DELETE FROM test_clob WHERE filename = :1")
+    @stmt.bindByPos(1, String, filename.size).set(filename)
+    @stmt.execute(@svc)
+
+    @stmt.prepare("INSERT INTO test_clob(filename, content) VALUES (:1, EMPTY_CLOB())")
+    @stmt.bindByPos(1, String, filename.size).set(filename)
+    @stmt.execute(@svc)
+
+    lob = @env.alloc(OCILobLocator)
+    @stmt.prepare("SELECT content FROM test_clob WHERE filename = :1 FOR UPDATE")
+    @stmt.bindByPos(1, String, filename.size).set(filename)
+    @stmt.defineByPos(1, OCI_TYPECODE_CLOB, lob)
+    @stmt.execute(@svc, 1)
+    lob.write(@svc, 1, value)
+    assert_equal(value.to_s, lob.read(@svc, 1, 30))
+    lob.free()
+  end
+
   def test_read
     filename = File.basename($lobfile)
     test_insert() # first insert data.

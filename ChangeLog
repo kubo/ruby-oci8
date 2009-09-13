@@ -1,3 +1,9 @@
+2009-09-13  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c, ext/oci8/oci8.h, test/test_clob.rb: Change
+	    OCI8::LOB#write to accept an object which is not a String and
+	    doesn't respond to 'to_str' as IO#write does.
+	    (requested by Christopher Jones)
+
 2009-09-12  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: Fixed to compile for AIX instant clients.
 	    (reported by Kazuya Teramoto)

@@ -184,6 +184,10 @@ static VALUE oci8_lob_write(int argc, VALUE *argv, VALUE self)
   Get_Handle(self, h); /* 0 */
   Check_Handle(vsvc, OCISvcCtx, svch); /* 1 */
   offset = NUM2UINT(voffset); /* 2 */
+  if (TYPE(vbuf) != T_STRING) {
+    vbuf = rb_obj_as_string(vbuf);
+  }
+  RB_GC_GUARD(vbuf);
   Get_String(vbuf, buf); /* 3 */
   csid = NIL_P(vcsid) ? 0 : NUM2INT(vcsid); /* 4 */
   csfrm = NIL_P(vcsfrm) ? SQLCS_IMPLICIT : NUM2INT(vcsfrm); /* 5 */

@@ -52,6 +52,10 @@ extern "C" {
 #define RARRAY_LEN(obj) RARRAY(obj)->len
 #endif
 
+#ifndef RB_GC_GUARD
+#define RB_GC_GUARD(v) (*(volatile VALUE *)&(v))
+#endif
+
 #ifndef HAVE_TYPE_ORATEXT
 typedef unsigned char oratext;
 #endif
