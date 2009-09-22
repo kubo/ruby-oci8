@@ -4,23 +4,44 @@ class OCI8
 
   module BindType
 
+    # call-seq:
+    #   OCI8::BindType.default_timezone -> :local or :utc
+    #
+    # Returns the default time zone when using Oracle 8.x client.
+    # The value is unused when using Oracle 9i or upper client.
+    #
+    # See also: OCI8::BindType::Time
+    def self.default_timezone
+      OCI8::BindType::Util.default_timezone
+    end
+
+    # call-seq:
+    #   OCI8::BindType.default_timezone = :local or :utc
+    #
+    # Sets the default time zone when using Oracle 8.x client.
+    # The value is unused when using Oracle 9i or upper client.
+    #
+    # See also: OCI8::BindType::Time
+    def self.default_timezone=(tz)
+      OCI8::BindType::Util.default_timezone = tz
+    end
+
     module Util # :nodoc:
 
       @@datetime_fsec_base = (1 / ::DateTime.parse('0001-01-01 00:00:00.000000001').sec_fraction).to_i
-      @@time_offset = ::Time.now.utc_offset
-      @@datetime_offset = ::DateTime.now.offset
 
       @@default_timezone = :local
+      begin
+        Time.new(2001, 1, 1, 0, 0, 0, '+00:00')
+        @@time_new_accepts_timezone = true  # after ruby 1.9.2
+      rescue ArgumentError
+        @@time_new_accepts_timezone = false # prior to ruby 1.9.2
+      end
+
       def self.default_timezone
         @@default_timezone
       end
 
-      # Determines default timezone of Time and DateTime retrived from Oracle.
-      # This accepts :local or :utc. The default is :local.
-      #
-      # This parameter is used when both or either of Oracle server and client
-      # version is Oracle 8i or lower. If both versions are Oracle 9i or upper,
-      # the default timezone is determined by the session timezone.
       def self.default_timezone=(tz)
         if tz != :local and tz != :utc
           raise ArgumentError, "expected :local or :utc but #{tz}"
@@ -106,7 +127,12 @@ class OCI8
 
         year, month, day, hour, minute, sec = ary
         if @@default_timezone == :local
-          offset = @@datetime_offset
+          if ::DateTime.respond_to? :local_offset
+            offset = ::DateTime.local_offset # Use a method defined by active support.
+          else
+            # Do as active support does.
+            offset = ::Time.local(2007).utc_offset.to_r / 86400
+          end
         else
           offset = 0
         end
@@ -117,7 +143,7 @@ class OCI8
         return nil if ary.nil?
 
         year, month, day, hour, minute, sec = ary
-        if year >= 139
+        if @@time_new_accepts_timezone || year >= 139 || year < 0
           begin
             return ::Time.send(@@default_timezone, year, month, day, hour, minute, sec)
           rescue StandardError
@@ -151,31 +177,46 @@ class OCI8
           end
         end
 
-        def ocitimestamp_to_time(ary)
-          return nil if ary.nil?
+        if @@time_new_accepts_timezone
 
-          year, month, day, hour, minute, sec, fsec, tz_hour, tz_min = ary
+          # after ruby 1.9.2
+          def ocitimestamp_to_time(ary)
+            return nil if ary.nil?
 
-          if tz_hour == 0 and tz_min == 0
-            timezone = :utc
-          elsif @@time_offset == tz_hour * 3600 + tz_min * 60
-            timezone = :local
+            year, month, day, hour, minute, sec, fsec, tz_hour, tz_min = ary
+
+            sec += fsec / Rational(1000000000)
+            utc_offset = tz_hour * 3600 + tz_min * 60
+            return ::Time.new(year, month, day, hour, minute, sec, utc_offset)
           end
-          if timezone and year >= 139
-            begin
-              # Ruby 1.9 Time class's resolution is nanosecond.
-              # But the last argument type is millisecond.
-              # 'fsec' is converted to a Float to pass sub-millisecond part.
-              return ::Time.send(timezone, year, month, day, hour, minute, sec, fsec / 1000.0)
-            rescue StandardError
+
+        else
+
+          # prior to ruby 1.9.2
+          def ocitimestamp_to_time(ary)
+            return nil if ary.nil?
+
+            year, month, day, hour, minute, sec, fsec, tz_hour, tz_min = ary
+
+            if year >= 139 || year < 0
+              begin
+                if tz_hour == 0 and tz_min == 0
+                  return ::Time.utc(year, month, day, hour, minute, sec, fsec / Rational(1000))
+                else
+                  tm = ::Time.local(year, month, day, hour, minute, sec, fsec / Rational(1000))
+                  return tm if tm.utc_offset == tz_hour * 3600 + tz_min * 60
+                end
+              rescue StandardError
+              end
             end
+            ocitimestamp_to_datetime(ary)
           end
-          ocitimestamp_to_datetime(ary)
+
         end
       end
     end
 
-    class DateTimeViaOCIDate < OCI8::BindType::OCIDate
+    class DateTimeViaOCIDate < OCI8::BindType::OCIDate # :nodoc:
       include OCI8::BindType::Util
 
       def set(val) # :nodoc:
@@ -187,7 +228,7 @@ class OCI8
       end
     end
 
-    class TimeViaOCIDate < OCI8::BindType::OCIDate
+    class TimeViaOCIDate < OCI8::BindType::OCIDate # :nodoc:
       include OCI8::BindType::Util
 
       def set(val) # :nodoc:
@@ -200,7 +241,7 @@ class OCI8
     end
 
     if OCI8.oracle_client_version >= ORAVER_9_0
-      class DateTimeViaOCITimestamp < OCI8::BindType::OCITimestamp
+      class DateTimeViaOCITimestamp < OCI8::BindType::OCITimestamp # :nodoc:
         include OCI8::BindType::Util
 
         def set(val) # :nodoc:
@@ -212,7 +253,7 @@ class OCI8
         end
       end
 
-      class TimeViaOCITimestamp < OCI8::BindType::OCITimestamp
+      class TimeViaOCITimestamp < OCI8::BindType::OCITimestamp # :nodoc:
         include OCI8::BindType::Util
 
         def set(val) # :nodoc:
@@ -225,88 +266,70 @@ class OCI8
       end
     end
 
-
     #--
     # OCI8::BindType::DateTime
     #++
-    # This is a helper class to bind ruby's
-    # DateTime[http://www.ruby-doc.org/core/classes/DateTime.html]
-    # object as Oracle's <tt>TIMESTAMP WITH TIME ZONE</tt> datatype.
+    # This is a helper class to select or bind Oracle data types such as
+    # <tt>DATE</tt>, <tt>TIMESTAMP</tt>, <tt>TIMESTAMP WITH TIME ZONE</tt>
+    # and <tt>TIMESTAMP WITH LOCAL TIME ZONE</tt>. The retrieved value
+    # is a \DateTime.
     #
-    # == Select
+    # === How to select \DataTime values.
     #
-    # The fetched value for a <tt>DATE</tt>, <tt>TIMESTAMP</tt>, <tt>TIMESTAMP WITH
-    # TIME ZONE</tt> or <tt>TIMESTAMP WITH LOCAL TIME ZONE</tt> column
-    # is a DateTime[http://www.ruby-doc.org/core/classes/DateTime.html].
-    # The time zone part is a session time zone if the Oracle datatype doesn't
-    # have time zone information. The session time zone is the client machine's
-    # time zone by default.
+    # <tt>DATE</tt>, <tt>TIMESTAMP</tt>, <tt>TIMESTAMP WITH TIME ZONE</tt>
+    # and <tt>TIMESTAMP WITH LOCAL TIME ZONE</tt> are selected as a \Time
+    # by default. You change the behaviour by explicitly calling
+    # OCI8::Cursor#define as follows:
     #
-    # You can change the session time zone by executing the following SQL.
+    #   cursor = conn.parse("SELECT hiredate FROM emp")
+    #   cursor.define(1, nil, DateTime)
+    #   cursor.exec()
+    #
+    # Otherwise, you can change the default mapping for all queries.
+    #
+    #   # Changes the mapping for DATE
+    #   OCI8::BindType::Mapping[OCI8::SQLT_DAT] = OCI8::BindType::DateTime
+    #   
+    #   # Changes the mapping for TIMESTAMP
+    #   OCI8::BindType::Mapping[OCI8::SQLT_TIMESTAMP] = OCI8::BindType::DateTime
+    #   
+    #   # Changes the mapping for TIMESTAMP WITH TIME ZONE
+    #   OCI8::BindType::Mapping[OCI8::SQLT_TIMESTAMP_TZ] = OCI8::BindType::DateTime
+    #   
+    #   # Changes the mapping for TIMESTAMP WITH LOCAL TIME ZONE
+    #   OCI8::BindType::Mapping[OCI8::SQLT_TIMESTAMP_LTZ] = OCI8::BindType::DateTime
+    #
+    # === Note for default time zone
+    #
+    # The retrieved value's time zone is determined by the session time zone
+    # if its data type is <tt>DATE</tt>, <tt>TIMESTAMP</tt> or <tt>TIMESTAMP
+    # WITH LOCAL TIME ZONE</tt>.
+    #
+    # The session time zone is same with local machine's by default.
+    # It is changed by the following SQL.
     #
     #   ALTER SESSION SET TIME_ZONE='-05:00'
     #
-    # == Bind
+    # === Note for Oracle 8.x client
     #
-    # To bind a DateTime[http://www.ruby-doc.org/core/classes/DateTime.html]
-    # value implicitly:
+    # Timestamp data types and session time zone are new features in
+    # Oracle 9i. This class is available only to fetch or bind <tt>DATE</tt>
+    # when using Oracle 8.x client.
     #
-    #   conn.exec("INSERT INTO lunar_landings(ship_name, landing_time) VALUES(:1, :2)",
-    #             'Apollo 11',
-    #             DateTime.parse('1969-7-20 20:17:40 00:00'))
+    # The retrieved value's time zone is determined not by the session
+    # time zone, but by the OCI8::BindType.default_timezone
+    # The time zone can be changed as follows:
     #
-    # The bind variable <code>:2</code> is bound as <tt>TIMESTAMP WITH TIME ZONE</tt> on Oracle.
+    #  OCI8::BindType.default_timezone = :local
+    #  # or
+    #  OCI8::BindType.default_timezone = :utc
     #
-    # To bind explicitly:
-    #
-    #   cursor = conn.exec("INSERT INTO lunar_landings(ship_name, landing_time) VALUES(:1, :2)")
-    #   cursor.bind_param(':1', nil, String, 60)
-    #   cursor.bind_param(':2', nil, DateTime)
-    #   [['Apollo 11', DateTime.parse('1969-07-20 20:17:40 00:00'))],
-    #    ['Apollo 12', DateTime.parse('1969-11-19 06:54:35 00:00'))],
-    #    ['Apollo 14', DateTime.parse('1971-02-05 09:18:11 00:00'))],
-    #    ['Apollo 15', DateTime.parse('1971-07-30 22:16:29 00:00'))],
-    #    ['Apollo 16', DateTime.parse('1972-04-21 02:23:35 00:00'))],
-    #    ['Apollo 17', DateTime.parse('1972-12-11 19:54:57 00:00'))]
-    #   ].each do |ship_name, landing_time|
-    #     cursor[':1'] = ship_name
-    #     cursor[':2'] = landing_time
-    #     cursor.exec
-    #   end
-    #   cursor.close
-    #
-    # On setting a object to the bind variable, you can use any object
-    # which has at least three instance methods _year_, _mon_ (or _month_)
-    # and _mday_ (or _day_). If the object responses to _hour_, _min_,
-    # _sec_ or _sec_fraction_, the responsed values are used for hour,
-    # minute, second or fraction of a second respectively.
-    # If not, zeros are set. If the object responses to _offset_ or
-    # _utc_offset_, it is used for time zone. If not, the session time
-    # zone is used.
-    #
-    # The acceptable value are listed below.
-    # _year_:: -4712 to 9999 [excluding year 0]
-    # _mon_ (or _month_):: 0 to 12
-    # _mday_ (or _day_):: 0 to 31 [depends on the month]
-    # _hour_:: 0 to 23
-    # _min_:: 0 to 59
-    # _sec_:: 0 to 59
-    # _sec_fraction_:: 0 to (999_999_999.to_r / (24*60*60* 1_000_000_000)) [999,999,999 nanoseconds]
-    # _offset_:: (-12.to_r / 24) to (14.to_r / 24) [-12:00 to +14:00]
-    # _utc_offset_:: -12*3600 <= utc_offset <= 24*3600 [-12:00 to +14:00]
-    #
-    # The output value of the bind varible is always a
-    # DateTime[http://www.ruby-doc.org/core/classes/DateTime.html].
-    #
-    #   cursor = conn.exec("BEGIN :ts := current_timestamp; END")
-    #   cursor.bind_param(:ts, nil, DateTime)
-    #   cursor.exec
-    #   cursor[:ts] # => a DateTime.
-    #   cursor.close
+    # If you are in the regions where daylight saving time is adopted,
+    # you should use OCI8::BindType::Time.
     #
     class DateTime
       if OCI8.oracle_client_version >= ORAVER_9_0
-        def self.create(con, val, param, max_array_size)
+        def self.create(con, val, param, max_array_size) # :nodoc:
           if true # TODO: check Oracle server version
             DateTimeViaOCITimestamp.new(con, val, param, max_array_size)
           else
@@ -314,15 +337,78 @@ class OCI8
           end
         end
       else
-        def self.create(con, val, param, max_array_size)
+        def self.create(con, val, param, max_array_size) # :nodoc:
           DateTimeViaOCIDate.new(con, val, param, max_array_size)
         end
       end
     end
 
+    #--
+    # OCI8::BindType::Time
+    #++
+    # This is a helper class to select or bind Oracle data types such as
+    # <tt>DATE</tt>, <tt>TIMESTAMP</tt>, <tt>TIMESTAMP WITH TIME ZONE</tt>
+    # and <tt>TIMESTAMP WITH LOCAL TIME ZONE</tt>. The retrieved value
+    # is a \Time.
+    #
+    # === How to select \Time values.
+    #
+    # <tt>DATE</tt>, <tt>TIMESTAMP</tt>, <tt>TIMESTAMP WITH TIME ZONE</tt>
+    # and <tt>TIMESTAMP WITH LOCAL TIME ZONE</tt> are selected as a \Time
+    # by default. If the default behaviour is changed, you can select it
+    # as a \Time by explicitly calling OCI8::Cursor#define as follows:
+    #
+    #   cursor = conn.parse("SELECT hiredate FROM emp")
+    #   cursor.define(1, nil, Time)
+    #   cursor.exec()
+    #
+    # === Note for ruby prior to 1.9.2
+    #
+    # If the retrieved value cannot be represented by \Time, it become
+    # a \DateTime. The fallback is done only when the ruby is before 1.9.2
+    # and one of the following conditions are met.
+    # - The timezone part is neither local nor utc.
+    # - The time is out of the time_t[http://en.wikipedia.org/wiki/Time_t].
+    #
+    # If the retrieved value has the precision of fractional second more
+    # than 6, the fractional second is truncated to microsecond, which
+    # is the precision of standard \Time class.
+    #
+    # To avoid this fractional second truncation:
+    # - Upgrade to ruby 1.9.2, whose \Time precision is nanosecond.
+    # - Otherwise, change the defalt mapping to use \DateTime as follows.
+    #    OCI8::BindType::Mapping[OCI8::SQLT_TIMESTAMP] = OCI8::BindType::DateTime
+    #    OCI8::BindType::Mapping[OCI8::SQLT_TIMESTAMP_TZ] = OCI8::BindType::DateTime
+    #    OCI8::BindType::Mapping[OCI8::SQLT_TIMESTAMP_LTZ] = OCI8::BindType::DateTime
+    #
+    # === Note for default time zone
+    #
+    # The retrieved value's time zone is determined by the session time zone
+    # if its data type is <tt>DATE</tt>, <tt>TIMESTAMP</tt> or <tt>TIMESTAMP
+    # WITH LOCAL TIME ZONE</tt>.
+    #
+    # The session time zone is same with local machine's by default.
+    # It is changed by the following SQL.
+    #
+    #   ALTER SESSION SET TIME_ZONE='-05:00'
+    #
+    # === Note for Oracle 8.x client
+    #
+    # Timestamp data types and session time zone are new features in
+    # Oracle 9i. This class is available only to fetch or bind <tt>DATE</tt>
+    # when using Oracle 8.x client.
+    #
+    # The retrieved value's time zone is determined not by the session
+    # time zone, but by the OCI8::BindType.default_timezone
+    # The time zone can be changed as follows:
+    #
+    #  OCI8::BindType.default_timezone = :local
+    #  # or
+    #  OCI8::BindType.default_timezone = :utc
+    #
     class Time
       if OCI8.oracle_client_version >= ORAVER_9_0
-        def self.create(con, val, param, max_array_size)
+        def self.create(con, val, param, max_array_size) # :nodoc:
           if true # TODO: check Oracle server version
             TimeViaOCITimestamp.new(con, val, param, max_array_size)
           else
@@ -330,7 +416,7 @@ class OCI8
           end
         end
       else
-        def self.create(con, val, param, max_array_size)
+        def self.create(con, val, param, max_array_size) # :nodoc:
           TimeViaOCIDate.new(con, val, param, max_array_size)
         end
       end

@@ -1,3 +1,14 @@
+2009-09-22  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/.document, lib/oci8/datetime.rb: 1. Add
+	    OCI8::BindType.default_timezone and OCI8::BindType.default_timezone=.
+	    2. Change the logic to convert to Time and DateTime to adapt DST.
+	    3. Use new features of Time class in ruby 1.9.2 if they are available.
+	    4. Add rdoc comments.
+	* spec/fetch_datetime8_spec.rb, spec/fetch_datetime_spec.rb,
+	  spec/fetch_time8_spec.rb, spec/fetch_time_spec.rb,
+	  spec/spec_helper.rb: Add tests for OCI8::BindType::DateTime and
+	    OCI8::BindType::Time.
+
 2009-09-13  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c, ext/oci8/oci8.h, test/test_clob.rb: Change
 	    OCI8::LOB#write to accept an object which is not a String and
