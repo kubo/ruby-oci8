@@ -84,7 +84,7 @@ EOS
           csr.bind_param(key, nil, :named_type_internal, tdo)
           csr[key].attributes = val
         else
-          csr.bind_param(key, val)
+          csr.bind_param(key, val ? val : '')
         end
       end
       csr.exec

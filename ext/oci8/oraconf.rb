@@ -353,8 +353,10 @@ EOS
       end
       print <<EOS
 ---------------------------------------------------
-error messages:
-#{$!.to_s}
+Error Message:
+  #{$!.to_s.gsub(/\n/, "\n  ")}
+Backtrace:
+  #{$!.backtrace.join("\n  ")}
 ---------------------------------------------------
 See:
  * http://ruby-oci8.rubyforge.org/#{lang}/HowToInstall.html
@@ -616,6 +618,7 @@ You need /usr/include/sys/types.h to compile ruby-oci8.
 EOS
     end
     puts "ok"
+    $stdout.flush
   end # check_ruby_header
 
   def try_link_oci
@@ -873,7 +876,7 @@ EOS
         if /\w*make\b/ =~ sudo_command
           msg += <<EOS
 
-'sudo' may unset environment variables for security reasons.
+The 'sudo' command unset some environment variables for security reasons.
 Use it only when running 'make install' as follows
      make
      sudo make install
@@ -882,9 +885,11 @@ EOS
         if /\w+\/gem\b/ =~ sudo_command
           msg += <<EOS
 
-'sudo' may unset environment variables for security reasons.
+The 'sudo' command unset some environment variables for security reasons.
 Pass required varialbes as follows
-     sudo VAR1=val1 VAR2=val2 #{sudo_command}
+     sudo env #{OraConf.ld_envs[0]}=$#{OraConf.ld_envs[0]} #{sudo_command}
+  or 
+     sudo env ORACLE_HOME=$ORACLE_HOME #{sudo_command}
 EOS
         end
         raise msg
@@ -977,10 +982,10 @@ EOS
 
         # monkey patching!
         Object.module_eval do
-          alias :orig_link_command :link_command
-          def link_command(ldflags, opt="", libpath=$DEFLIBPATH|$LIBPATH)
-            opt = "" if opt == $libs
-            orig_link_command(ldflags, opt, libpath)
+          alias :link_command_pre_oci8 :link_command
+          def link_command(*args)
+            args[1] = "" if args[1] == $libs
+            link_command_pre_oci8(*args)
           end
         end
 

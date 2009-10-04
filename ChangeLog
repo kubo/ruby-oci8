@@ -1,3 +1,17 @@
+2009-10-04  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c: Add constants missing in Oracle client prior to 10g.
+	* ext/oci8/oraconf.rb:
+	    1. Fix for ruby 1.8.5 with Oracle 8.x which needs some object
+	       files to link with.
+	    2. Revise the error message under the sudo environemnt.
+	    3. Print not only error message but also the error backtrace when
+	       oraconf.rb fails.
+	* lib/oci8/object.rb: Fix to accept nil attribute in object type's
+	    constructors. This works only for simple data types such as number,
+	    string. But it doesn't for complex types such as object types.
+	    (requested by Remi Gagnon)
+	* spec/object_type_spec.rb: Add a test for object type's constructors.
+
 2009-09-22  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/.document, lib/oci8/datetime.rb: 1. Add
 	    OCI8::BindType.default_timezone and OCI8::BindType.default_timezone=.

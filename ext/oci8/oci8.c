@@ -20,6 +20,15 @@ extern rb_pid_t rb_w32_getpid(void);
 #ifndef OCI_ATTR_CLIENT_IDENTIFIER
 #define OCI_ATTR_CLIENT_IDENTIFIER 278
 #endif
+#ifndef OCI_ATTR_MODULE
+#define OCI_ATTR_MODULE 366
+#endif
+#ifndef OCI_ATTR_ACTION
+#define OCI_ATTR_ACTION 367
+#endif
+#ifndef OCI_ATTR_CLIENT_INFO
+#define OCI_ATTR_CLIENT_INFO 368
+#endif
 
 static VALUE cOCI8;
 
