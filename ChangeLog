@@ -3,6 +3,7 @@
 	* ext/oci8/oraconf.rb:
 	    1. Fix for ruby 1.8.5 with Oracle 8.x which needs some object
 	       files to link with.
+	       (reported by Jayson Cena)
 	    2. Revise the error message under the sudo environemnt.
 	    3. Print not only error message but also the error backtrace when
 	       oraconf.rb fails.
