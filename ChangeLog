@@ -1,3 +1,12 @@
+2009-10-04  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb:
+	    1. Fix for ruby 1.8.5 with Oracle 8.x which needs some object
+	       files to link with.
+	       (reported by Jayson Cena)
+	    2. Add additional error message if under the sudo environemnt.
+	    3. Print not only error message but also the error backtrace when
+	       oraconf.rb fails.
+
 2009-09-13  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c, ext/oci8/oci8.h, test/test_clob.rb: Change
 	    OCI8::LOB#write to accept an object which is not a String and

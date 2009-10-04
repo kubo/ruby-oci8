@@ -353,8 +353,10 @@ EOS
       end
       print <<EOS
 ---------------------------------------------------
-error messages:
-#{$!.to_s}
+Error Message:
+  #{$!.to_s.gsub(/\n/, "\n  ")}
+Backtrace:
+  #{$!.backtrace.join("\n  ")}
 ---------------------------------------------------
 See:
  * http://ruby-oci8.rubyforge.org/#{lang}/HowToInstall.html
@@ -616,6 +618,7 @@ You need /usr/include/sys/types.h to compile ruby-oci8.
 EOS
     end
     puts "ok"
+    $stdout.flush
   end # check_ruby_header
 
   def try_link_oci
@@ -863,10 +866,33 @@ EOS
     def get_home
       oracle_home = ENV['ORACLE_HOME']
       if oracle_home.nil?
-        raise <<EOS
+        msg = <<EOS
 Set the environment variable ORACLE_HOME if Oracle Full Client.
 Append the path of Oracle client libraries to #{OraConf.ld_envs[0]} if Oracle Instant Client.
 EOS
+
+        # check sudo environment
+        sudo_command = ENV['SUDO_COMMAND']
+        if /\w*make\b/ =~ sudo_command
+          msg += <<EOS
+
+The 'sudo' command unset some environment variables for security reasons.
+Use it only when running 'make install' as follows
+     make
+     sudo make install
+EOS
+        end
+        if /\w+\/gem\b/ =~ sudo_command
+          msg += <<EOS
+
+The 'sudo' command unset some environment variables for security reasons.
+Pass required varialbes as follows
+     sudo env #{OraConf.ld_envs[0]}=$#{OraConf.ld_envs[0]} #{sudo_command}
+  or 
+     sudo env ORACLE_HOME=$ORACLE_HOME #{sudo_command}
+EOS
+        end
+        raise msg
       end
       oracle_home
     end
@@ -956,10 +982,10 @@ EOS
 
         # monkey patching!
         Object.module_eval do
-          alias :orig_link_command :link_command
-          def link_command(ldflags, opt="", libpath=$DEFLIBPATH|$LIBPATH)
-            opt = "" if opt == $libs
-            orig_link_command(ldflags, opt, libpath)
+          alias :link_command_pre_oci8 :link_command
+          def link_command(*args)
+            args[1] = "" if args[1] == $libs
+            link_command_pre_oci8(*args)
           end
         end
 
