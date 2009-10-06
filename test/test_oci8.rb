@@ -359,10 +359,10 @@ EOS
       assert_equal(row[2], 123456789012.34)
       assert_equal(row[3], 1234567890123.45)
       assert_equal(row[4], 1234.5)
-      assert_instance_of(OraNumber, row[0])
+      assert_instance_of(BigDecimal, row[0])
       assert_instance_of(Bignum, row[1])
       assert_instance_of(Float, row[2])
-      assert_instance_of(OraNumber, row[3])
+      assert_instance_of(BigDecimal, row[3])
       assert_instance_of(Float, row[4])
     end
     drop_table('test_table')
@@ -372,6 +372,8 @@ EOS
     src = [1, 1.2, BigDecimal("1.2"), Rational(12, 10)]
     int = [1, 1, 1, 1]
     flt = [1, 1.2, 1.2, 1.2]
+    dec = [BigDecimal("1"), BigDecimal("1.2"), BigDecimal("1.2"), BigDecimal("1.2")]
+    rat = [Rational(1), Rational(12, 10), Rational(12, 10), Rational(12, 10)]
 
     cursor = @conn.parse("begin :1 := :2; end;")
 
@@ -382,6 +384,7 @@ EOS
       cursor[2] = s
       cursor.exec
       assert_equal(cursor[1], flt[idx])
+      assert_kind_of(Float, cursor[1])
     end
 
     # Fixnum
@@ -391,6 +394,7 @@ EOS
       cursor[2] = s
       cursor.exec
       assert_equal(cursor[1], int[idx])
+      assert_kind_of(Fixnum, cursor[1])
     end
 
     # Integer
@@ -400,6 +404,27 @@ EOS
       cursor[2] = s
       cursor.exec
       assert_equal(cursor[1], int[idx])
+      assert_kind_of(Integer, cursor[1])
+    end
+
+    # BigDecimal
+    cursor.bind_param(1, nil, BigDecimal)
+    cursor.bind_param(2, nil, BigDecimal)
+    src.each_with_index do |s, idx|
+      cursor[2] = s
+      cursor.exec
+      assert_equal(cursor[1], dec[idx])
+      assert_kind_of(BigDecimal, cursor[1])
+    end
+
+    # Rational
+    cursor.bind_param(1, nil, Rational)
+    cursor.bind_param(2, nil, Rational)
+    src.each_with_index do |s, idx|
+      cursor[2] = s
+      cursor.exec
+      assert_equal(cursor[1], rat[idx])
+      assert_kind_of(Rational, cursor[1])
     end
   end
 

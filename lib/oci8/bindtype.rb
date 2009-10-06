@@ -24,6 +24,28 @@ class OCI8
       end
     end
 
+    class BigDecimal < OCI8::BindType::OraNumber
+      @@bigdecimal_is_required = false
+      def get()
+        unless @@bigdecimal_is_required
+          require 'bigdecimal'
+          @@bigdecimal_is_required = true
+        end
+        (val = super()) && val.to_d
+      end
+    end
+
+    class Rational < OCI8::BindType::OraNumber
+      @@rational_is_required = false
+      def get()
+        unless @@rational_is_required
+          require 'rational'
+          @@rational_is_required = true
+        end
+        (val = super()) && val.to_r
+      end
+    end
+
     # get/set Number (for OCI8::SQLT_NUM)
     class Number
       def self.create(con, val, param, max_array_size)
@@ -54,8 +76,8 @@ class OCI8
           if precision < 15 # the precision of double.
             klass = OCI8::BindType::Float
           else
-            # use BigDecimal instead?
-            klass = OCI8::BindType::OraNumber
+            # use BigDecimal instead
+            klass = OCI8::BindType::BigDecimal
           end
         end
         klass.new(con, val, nil, max_array_size)
@@ -156,6 +178,8 @@ end
 # bind or explicitly define
 OCI8::BindType::Mapping[String]       = OCI8::BindType::String
 OCI8::BindType::Mapping[OraNumber]    = OCI8::BindType::OraNumber
+OCI8::BindType::Mapping['BigDecimal'] = OCI8::BindType::BigDecimal
+OCI8::BindType::Mapping['Rational']   = OCI8::BindType::Rational
 OCI8::BindType::Mapping[Fixnum]       = OCI8::BindType::Integer
 OCI8::BindType::Mapping[Float]        = OCI8::BindType::Float
 OCI8::BindType::Mapping[Integer]      = OCI8::BindType::Integer
@@ -263,9 +287,9 @@ OCI8::BindType::Mapping[:number] = OCI8::BindType::Number
 # datatypes that have no explicit setting of their precision
 # and scale.
 #
-# The default mapping is Float for ruby-oci8 1.0. It is OraNumber
-# for ruby-oci8 2.0.
-OCI8::BindType::Mapping[:number_unknown_prec] = OCI8::BindType::OraNumber
+# The default mapping is Float for ruby-oci8 1.0, OraNumber for 2.0.0 ~ 2.0.2,
+# BigDecimal for 2.0.3 ~.
+OCI8::BindType::Mapping[:number_unknown_prec] = OCI8::BindType::BigDecimal
 
 # mapping for number without precision and scale.
 #
@@ -276,9 +300,9 @@ OCI8::BindType::Mapping[:number_unknown_prec] = OCI8::BindType::OraNumber
 # note: This is available only on Oracle 9.2.0.3 or above.
 # see:  Oracle 9.2.0.x Patch Set Notes.
 #
-# The default mapping is Float for ruby-oci8 1.0. It is OraNumber
-# for ruby-oci8 2.0.
-OCI8::BindType::Mapping[:number_no_prec_setting] = OCI8::BindType::OraNumber
+# The default mapping is Float for ruby-oci8 1.0, OraNumber for 2.0.0 ~ 2.0.2,
+# BigDecimal for 2.0.3 ~.
+OCI8::BindType::Mapping[:number_no_prec_setting] = OCI8::BindType::BigDecimal
 
 if defined? OCI8::BindType::BinaryDouble
   OCI8::BindType::Mapping[:binary_float] = OCI8::BindType::BinaryDouble

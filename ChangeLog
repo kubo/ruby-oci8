@@ -1,3 +1,21 @@
+2009-10-06  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/ocinumber.c: Add a global function OraNumber(obj) as a
+	    shortcut of OraNumber.new(obj) as Rational and BigDecimal do.
+	    Changes the return type of the four rules of arithmetic;
+	    addition, subtraction, multiplication and division. It was
+	    OraNumber, but now it depends on the operand.
+	* lib/oci8/bindtype.rb: Add OCI8::BindType::BigDecimal and
+	    OCI8::BindType::Rational. Change the default data type for
+	    number column which fit neither Integer nor Float from
+	    OraNumber to BigDecimal.
+	* lib/oci8/oci8.rb: Fix for OCI8::BindType::Mapping to accept
+	    a class name instead of the class object to support
+	    OCI8::BindType::BigDecimal and OCI8::BindType::Rational without
+	    requiring 'bigdecimal' and 'rational'.
+	* spec/oranumber_spec.rb: Add a spec file for OraNumber arithmetic.
+	* test/test_oci8.rb: Add tests for OCI8::BindType::BigDecimal and
+	    OCI8::BindType::Rational.
+
 2009-10-04  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c: Add constants missing in Oracle client prior to 10g.
 	* ext/oci8/oraconf.rb:

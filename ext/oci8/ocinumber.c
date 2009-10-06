@@ -21,6 +21,13 @@ static ID id_finite_p;
 static ID id_split;
 static ID id_numerator;
 static ID id_denominator;
+static ID id_Rational;
+static ID id_BigDecimal;
+
+#ifndef T_RATIONAL
+static VALUE cRational;
+#endif
+static VALUE cBigDecimal;
 
 static VALUE cOCINumber;
 static OCINumber const_p1;   /*  +1 */
@@ -50,6 +57,58 @@ static OCINumber const_shreshold;
 #define NUMBER_FORMAT_INT_LEN (sizeof(NUMBER_FORMAT_INT_STR) - 1)
 
 #define _NUMBER(val) ((OCINumber *)DATA_PTR(val)) /* dangerous macro */
+
+#define RBOCI8_T_ORANUMBER (T_MASK + 1)
+#define RBOCI8_T_BIGDECIMAL (T_MASK + 2)
+#ifdef T_RATIONAL
+#define RBOCI8_T_RATIONAL T_RATIONAL
+#else
+#define RBOCI8_T_RATIONAL (T_MASK + 3)
+#endif
+
+static int rboci8_type(VALUE obj)
+{
+    int type = TYPE(obj);
+    VALUE klass;
+
+    switch (type) {
+#ifndef T_RATIONAL
+    case T_OBJECT:
+        klass = CLASS_OF(obj);
+        if (cRational != 0) {
+            if (klass == cRational) {
+                return RBOCI8_T_RATIONAL;
+            }
+        } else {
+            if (strcmp(rb_class2name(klass), "Rational") == 0) {
+                cRational = rb_const_get(rb_cObject, id_Rational);
+                return RBOCI8_T_RATIONAL;
+            }
+        }
+        break;
+#endif
+    case T_DATA:
+        klass = CLASS_OF(obj);
+        if (klass == cOCINumber) {
+            return RBOCI8_T_ORANUMBER;
+        }
+        if (cBigDecimal != 0) {
+            if (klass == cBigDecimal) {
+                return RBOCI8_T_BIGDECIMAL;
+            }
+        } else {
+            if (strcmp(rb_class2name(klass), "BigDecimal") == 0) {
+                cBigDecimal = rb_const_get(rb_cObject, id_BigDecimal);
+                return RBOCI8_T_BIGDECIMAL;
+            }
+        }
+    }
+    return type;
+}
+
+static VALUE onum_to_f(VALUE self);
+static VALUE onum_to_r(VALUE self);
+static VALUE onum_to_d(VALUE self);
 
 static VALUE onum_s_alloc(VALUE klass)
 {
@@ -573,6 +632,20 @@ static VALUE omath_sqrt(VALUE obj, VALUE num)
     return oci8_make_ocinumber(&r, errhp);
 }
 
+
+/*
+ *  call-seq:
+ *     OraNumber(obj)   -> oranumber
+ *
+ *  Returns a new <code>OraNumber</code>.
+ */
+static VALUE onum_f_new(int argc, VALUE *argv, VALUE self)
+{
+    VALUE obj = rb_obj_alloc(cOCINumber);
+    rb_obj_call_init(obj, argc, argv);
+    return obj;
+}
+
 static VALUE onum_initialize(int argc, VALUE *argv, VALUE self)
 {
     OCIError *errhp = oci8_errhp;
@@ -602,12 +675,26 @@ static VALUE onum_initialize_copy(VALUE lhs, VALUE rhs)
 
 static VALUE onum_coerce(VALUE self, VALUE other)
 {
-    OCIError *errhp = oci8_errhp;
+    signed long sl;
     OCINumber n;
 
-    if (RTEST(rb_obj_is_kind_of(other, rb_cNumeric)))
-        if (set_oci_number_from_num(&n, other, 0, errhp))
-            return rb_assoc_new(oci8_make_ocinumber(&n, errhp), self);
+    switch(rboci8_type(other)) {
+    case T_FIXNUM:
+        sl = NUM2LONG(other);
+        oci_lc(OCINumberFromInt(oci8_errhp, &sl, sizeof(sl), OCI_NUMBER_SIGNED, &n));
+        return rb_assoc_new(oci8_make_ocinumber(&n, oci8_errhp), self);
+    case T_BIGNUM:
+        /* change via string. */
+        other = rb_big2str(other, 10);
+        set_oci_number_from_str(&n, other, Qnil, Qnil, oci8_errhp);
+        return rb_assoc_new(oci8_make_ocinumber(&n, oci8_errhp), self);
+    case T_FLOAT:
+        return rb_assoc_new(other, onum_to_f(self));
+    case RBOCI8_T_RATIONAL:
+        return rb_assoc_new(other, onum_to_r(self));
+    case RBOCI8_T_BIGDECIMAL:
+        return rb_assoc_new(other, onum_to_d(self));
+    }
     rb_raise(rb_eTypeError, "Can't coerce %s to %s",
              rb_class2name(CLASS_OF(other)), rb_class2name(cOCINumber));
 }
@@ -616,7 +703,7 @@ static VALUE onum_coerce(VALUE self, VALUE other)
  *  call-seq:
  *     -onum   -> oranumber
  *
- *  Returns an <code>OraNumber</code>, negated.
+ *  Returns a negated <code>OraNumber</code>.
  */
 static VALUE onum_neg(VALUE self)
 {
@@ -627,12 +714,12 @@ static VALUE onum_neg(VALUE self)
     return oci8_make_ocinumber(&r, errhp);
 }
 
+
 /*
  *  call-seq:
- *    onum + other   -> oranumber
+ *    onum + other    -> number
  *
- *  Returns a new <code>OraNumber</code> which is the sum of <i>onum</i>
- *  and <i>other</i>.
+ *  Returns the sum of <i>onum</i> and <i>other</i>.
  */
 static VALUE onum_add(VALUE lhs, VALUE rhs)
 {
@@ -640,20 +727,33 @@ static VALUE onum_add(VALUE lhs, VALUE rhs)
     OCINumber n;
     OCINumber r;
 
-    /* change to OCINumber */
-    if (!set_oci_number_from_num(&n, rhs, 0, errhp))
-        return rb_num_coerce_bin(lhs, rhs, '+');
-    /* add */
-    oci_lc(OCINumberAdd(errhp, _NUMBER(lhs), &n, &r));
-    return oci8_make_ocinumber(&r, errhp);
+    switch (rboci8_type(rhs)) {
+    case T_FIXNUM:
+    case T_BIGNUM:
+        if (set_oci_number_from_num(&n, rhs, 0, errhp)) {
+            oci_lc(OCINumberAdd(errhp, _NUMBER(lhs), &n, &r));
+            return oci8_make_ocinumber(&r, errhp);
+        }
+        break;
+    case RBOCI8_T_ORANUMBER:
+        oci_lc(OCINumberAdd(errhp, _NUMBER(lhs), _NUMBER(rhs), &r));
+        return oci8_make_ocinumber(&r, errhp);
+    case T_FLOAT:
+        return rb_funcall(onum_to_f(lhs), '+', 1, rhs);
+    case RBOCI8_T_RATIONAL:
+        return rb_funcall(onum_to_r(lhs), '+', 1, rhs);
+    case RBOCI8_T_BIGDECIMAL:
+        return rb_funcall(onum_to_d(lhs), '+', 1, rhs);
+    }
+    return rb_num_coerce_bin(lhs, rhs, '+');
 }
 
 /*
  *  call-seq:
- *    onum - other   -> oranumber
+ *    onum - integer   -> oranumber
+ *    onum - numeric   -> numeric
  *
- *  Returns a new <code>OraNumber</code> which is the difference of <i>onum</i>
- *  and <i>other</i>.
+ *  Returns the difference of <i>onum</i> and <i>other</i>.
  */
 static VALUE onum_sub(VALUE lhs, VALUE rhs)
 {
@@ -661,20 +761,32 @@ static VALUE onum_sub(VALUE lhs, VALUE rhs)
     OCINumber n;
     OCINumber r;
 
-    /* change to OCINumber */
-    if (!set_oci_number_from_num(&n, rhs, 0, errhp))
-        return rb_num_coerce_bin(lhs, rhs, '-');
-    /* subtracting */
-    oci_lc(OCINumberSub(errhp, _NUMBER(lhs), &n, &r));
-    return oci8_make_ocinumber(&r, errhp);
+    switch (rboci8_type(rhs)) {
+    case T_FIXNUM:
+    case T_BIGNUM:
+        if (set_oci_number_from_num(&n, rhs, 0, errhp)) {
+            oci_lc(OCINumberSub(errhp, _NUMBER(lhs), &n, &r));
+            return oci8_make_ocinumber(&r, errhp);
+        }
+        break;
+    case RBOCI8_T_ORANUMBER:
+        oci_lc(OCINumberSub(errhp, _NUMBER(lhs), _NUMBER(rhs), &r));
+        return oci8_make_ocinumber(&r, errhp);
+    case T_FLOAT:
+        return rb_funcall(onum_to_f(lhs), '-', 1, rhs);
+    case RBOCI8_T_RATIONAL:
+        return rb_funcall(onum_to_r(lhs), '-', 1, rhs);
+    case RBOCI8_T_BIGDECIMAL:
+        return rb_funcall(onum_to_d(lhs), '-', 1, rhs);
+    }
+    return rb_num_coerce_bin(lhs, rhs, '-');
 }
 
 /*
  *  call-seq:
- *    onum * other   -> oranumber
+ *    onum * other   -> number
  *
- *  Returns a new <code>OraNumber</code> which is the product of <i>onum</i>
- *  and <i>other</i>.
+ *  Returns the product of <i>onum</i> and <i>other</i>.
  */
 static VALUE onum_mul(VALUE lhs, VALUE rhs)
 {
@@ -682,20 +794,33 @@ static VALUE onum_mul(VALUE lhs, VALUE rhs)
     OCINumber n;
     OCINumber r;
 
-    /* change to OCINumber */
-    if (!set_oci_number_from_num(&n, rhs, 0, errhp))
-        return rb_num_coerce_bin(lhs, rhs, '*');
-    /* multiply */
-    oci_lc(OCINumberMul(errhp, _NUMBER(lhs), &n, &r));
-    return oci8_make_ocinumber(&r, errhp);
+    switch (rboci8_type(rhs)) {
+    case T_FIXNUM:
+    case T_BIGNUM:
+        if (set_oci_number_from_num(&n, rhs, 0, errhp)) {
+            oci_lc(OCINumberMul(errhp, _NUMBER(lhs), &n, &r));
+            return oci8_make_ocinumber(&r, errhp);
+        }
+        break;
+    case RBOCI8_T_ORANUMBER:
+        oci_lc(OCINumberMul(errhp, _NUMBER(lhs), _NUMBER(rhs), &r));
+        return oci8_make_ocinumber(&r, errhp);
+    case T_FLOAT:
+        return rb_funcall(onum_to_f(lhs), '*', 1, rhs);
+    case RBOCI8_T_RATIONAL:
+        return rb_funcall(onum_to_r(lhs), '*', 1, rhs);
+    case RBOCI8_T_BIGDECIMAL:
+        return rb_funcall(onum_to_d(lhs), '*', 1, rhs);
+    }
+    return rb_num_coerce_bin(lhs, rhs, '*');
 }
 
 /*
  *  call-seq:
- *    onum / other   -> oranumber
+ *    onum / integer   -> oranumber
+ *    onum / numeric   -> numeric
  *
- *  Returns a new <code>OraNumber</code> which is the result of dividing
- *  <i>onum</i> by <i>other</i>.
+ *  Returns the result of dividing <i>onum</i> by <i>other</i>.
  */
 static VALUE onum_div(VALUE lhs, VALUE rhs)
 {
@@ -704,16 +829,32 @@ static VALUE onum_div(VALUE lhs, VALUE rhs)
     OCINumber r;
     boolean is_zero;
 
-    /* change to OCINumber */
-    if (!set_oci_number_from_num(&n, rhs, 0, errhp))
-        return rb_num_coerce_bin(lhs, rhs, '/');
-    /* check whether argument is not zero. */
-    oci_lc(OCINumberIsZero(errhp, &n, &is_zero));
-    if (is_zero)
-        rb_num_zerodiv();
-    /* division */
-    oci_lc(OCINumberDiv(errhp, _NUMBER(lhs), &n, &r));
-    return oci8_make_ocinumber(&r, errhp);
+    switch (rboci8_type(rhs)) {
+    case T_FIXNUM:
+        if (rhs == INT2FIX(0)) {
+            rb_num_zerodiv();
+        }
+    case T_BIGNUM:
+        if (set_oci_number_from_num(&n, rhs, 0, errhp)) {
+            oci_lc(OCINumberDiv(errhp, _NUMBER(lhs), &n, &r));
+            return oci8_make_ocinumber(&r, errhp);
+        }
+        break;
+    case RBOCI8_T_ORANUMBER:
+        oci_lc(OCINumberIsZero(errhp, _NUMBER(rhs), &is_zero));
+        if (is_zero) {
+            rb_num_zerodiv();
+        }
+        oci_lc(OCINumberDiv(errhp, _NUMBER(lhs), _NUMBER(rhs), &r));
+        return oci8_make_ocinumber(&r, errhp);
+    case T_FLOAT:
+        return rb_funcall(onum_to_f(lhs), '/', 1, rhs);
+    case RBOCI8_T_RATIONAL:
+        return rb_funcall(onum_to_r(lhs), '/', 1, rhs);
+    case RBOCI8_T_BIGDECIMAL:
+        return rb_funcall(onum_to_d(lhs), '/', 1, rhs);
+    }
+    return rb_num_coerce_bin(lhs, rhs, '/');
 }
 
 /*
@@ -975,7 +1116,7 @@ static VALUE onum_to_s(VALUE self)
  *  call-seq:
  *     onum.to_i       -> integer
  *
- *  Returns <i>onm</i> truncated to an <code>Integer</code>.
+ *  Returns <i>onum</i> truncated to an <code>Integer</code>.
  */
 static VALUE onum_to_i(VALUE self)
 {
@@ -990,7 +1131,7 @@ static VALUE onum_to_i(VALUE self)
  *  call-seq:
  *     onum.to_f -> float
  *
- *  Converts <i>onum</i> to a <code>Float</code>.
+ *  Return the value as a <code>Float</code>.
  *
  */
 static VALUE onum_to_f(VALUE self)
@@ -1004,7 +1145,68 @@ static VALUE onum_to_f(VALUE self)
 
 /*
  *  call-seq:
+ *     onum.to_r -> rational
+ *
+ *  Return the value as a <code>Rational</code>.
+ *
+ */
+static VALUE onum_to_r(VALUE self)
+{
+    VALUE x, y;
+    int nshift = 0;
+    OCINumber onum[2];
+    int current = 0;
+    boolean is_int;
+
+    oci_lc(OCINumberAssign(oci8_errhp, _NUMBER(self), &onum[0]));
+
+    for (;;) {
+        oci_lc(OCINumberIsInt(oci8_errhp, &onum[current], &is_int));
+        if (is_int) {
+            break;
+        }
+        nshift++;
+        oci_lc(OCINumberShift(oci8_errhp, &onum[current], 1, &onum[1 - current]));
+        current = 1 - current;
+    }
+    x = oci8_make_integer(&onum[current], oci8_errhp);
+    if (nshift == 0) {
+        y = INT2FIX(1);
+    } else {
+        y = rb_funcall(INT2FIX(10), rb_intern("**"), 1, INT2FIX(nshift));
+    }
+#ifdef T_RATIONAL
+    return rb_Rational(x, y);
+#else
+    if (!cRational) {
+        rb_require("rational");
+        cRational = rb_const_get(rb_cObject, id_Rational);
+    }
+    return rb_funcall(rb_cObject, id_Rational, 2, x, y);
+#endif
+}
+
+/*
+ *  call-seq:
+ *     onum.to_d -> bigdecimal
+ *
+ *  Return the value as a <code>BigDecimal</code>.
+ *
+ */
+static VALUE onum_to_d(VALUE self)
+{
+    if (!cBigDecimal) {
+        rb_require("bigdecimal");
+        cBigDecimal = rb_const_get(rb_cObject, id_BigDecimal);
+    }
+    return rb_funcall(rb_cObject, id_BigDecimal, 1, onum_to_s(self));
+}
+
+/*
+ *  call-seq:
  *     onum.to_onum -> oranumber
+ *
+ *  Returns self.
  *
  */
 static VALUE onum_to_onum(VALUE self)
@@ -1218,6 +1420,8 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
     id_split = rb_intern("split");
     id_numerator = rb_intern("numerator");
     id_denominator = rb_intern("denominator");
+    id_Rational = rb_intern("Rational");
+    id_BigDecimal = rb_intern("BigDecimal");
 
     cOCINumber = rb_define_class("OraNumber", rb_cNumeric);
     mMath = rb_define_module_under(cOCI8, "Math");
@@ -1275,6 +1479,7 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
     rb_define_alloc_func(cOCINumber, onum_s_alloc);
 
     /* methods of OCI::Number */
+    rb_define_method(rb_cObject, "OraNumber", onum_f_new, -1);
     rb_define_method_nodoc(cOCINumber, "initialize", onum_initialize, -1);
     rb_define_method_nodoc(cOCINumber, "initialize_copy", onum_initialize_copy, 1);
     rb_define_method_nodoc(cOCINumber, "coerce", onum_coerce, 1);
@@ -1302,6 +1507,8 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
     rb_define_method(cOCINumber, "to_char", onum_to_char, -1);
     rb_define_method(cOCINumber, "to_i", onum_to_i, 0);
     rb_define_method(cOCINumber, "to_f", onum_to_f, 0);
+    rb_define_method(cOCINumber, "to_r", onum_to_r, 0);
+    rb_define_method(cOCINumber, "to_d", onum_to_d, 0);
     rb_define_method_nodoc(cOCINumber, "to_onum", onum_to_onum, 0);
 
     rb_define_method(cOCINumber, "zero?", onum_zero_p, 0);

@@ -343,6 +343,10 @@ class OCI8
       end
       
       bindclass = OCI8::BindType::Mapping[type]
+      if bindclass.nil? and type.is_a? Class
+        bindclass = OCI8::BindType::Mapping[type.to_s]
+        OCI8::BindType::Mapping[type] = bindclass if bindclass
+      end
       raise "unsupported dataType: #{type}" if bindclass.nil?
       bindobj = bindclass.create(@con, var_array, param, @max_array_size)
       __bind(key, bindobj)
@@ -452,6 +456,10 @@ class OCI8
       end
 
       bindclass = OCI8::BindType::Mapping[key]
+      if bindclass.nil? and key.is_a? Class
+        bindclass = OCI8::BindType::Mapping[key.to_s]
+        OCI8::BindType::Mapping[key] = bindclass if bindclass
+      end
       raise "unsupported datatype: #{key}" if bindclass.nil?
       bindclass.create(@con, val, param, max_array_size)
     end
