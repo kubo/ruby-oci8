@@ -263,6 +263,8 @@ void oci8_unlink_from_parent(oci8_base_t *base)
 }
 
 #ifdef RUBY_VM
+
+#if 0
 typedef struct {
     dvoid *hndlp;
     OCIError *errhp;
@@ -285,6 +287,13 @@ static void oci8_unblock_func(void *user_data)
         rb_thread_blocking_region(call_OCIBreak, &arg, NULL, NULL);
     }
 }
+#else
+static void oci8_unblock_func(void *user_data)
+{
+    oci8_svcctx_t *svcctx = (oci8_svcctx_t *)user_data;
+    OCIBreak(svcctx->base.hp.ptr, oci8_errhp);
+}
+#endif
 
 /* ruby 1.9 */
 sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data)

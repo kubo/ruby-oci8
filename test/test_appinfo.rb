@@ -24,6 +24,9 @@ class TestAppInfo < Test::Unit::TestCase
   end
 
   def test_set_module
+    # FIXME: check again after upgrading Oracle 9.2 to 9.2.0.4.
+    return if @conn.oracle_server_version < OCI8::ORAVER_10_1
+
     # set module
     @conn.module = 'ruby-oci8'
     assert_equal('ruby-oci8', @conn.select_one("SELECT SYS_CONTEXT('USERENV', 'MODULE') FROM DUAL")[0]);
@@ -33,6 +36,9 @@ class TestAppInfo < Test::Unit::TestCase
   end
 
   def test_set_action
+    # FIXME: check again after upgrading Oracle 9.2 to 9.2.0.4.
+    return if @conn.oracle_server_version < OCI8::ORAVER_10_1
+
     # set action
     @conn.action = 'test_set_action'
     assert_equal('test_set_action', @conn.select_one("SELECT SYS_CONTEXT('USERENV', 'ACTION') FROM DUAL")[0]);

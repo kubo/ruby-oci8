@@ -167,6 +167,9 @@ EOS
   end
 
   def test_bind_cursor
+    # FIXME: check again after upgrading Oracle 9.2 to 9.2.0.4.
+    return if $oracle_version < OCI8::ORAVER_10_1
+
     drop_table('test_table')
     sql = <<-EOS
 CREATE TABLE test_table
@@ -357,7 +360,7 @@ EOS
       assert_equal(row[0], 12345678901234)
       assert_equal(row[1], 12345678901234567890)
       assert_equal(row[2], 123456789012.34)
-      assert_equal(row[3], 1234567890123.45)
+      assert_equal(row[3], BigDecimal("1234567890123.45"))
       assert_equal(row[4], 1234.5)
       assert_instance_of(BigDecimal, row[0])
       assert_instance_of(Bignum, row[1])

@@ -349,13 +349,18 @@ class TestOraNumber < Test::Unit::TestCase
 
   # onum <=> other -> -1, 0, +1
   def test_cmp
-    test_values = SMALL_RANGE_VALUES.collect do |x|
-      x[0,15] # donw the precision to pass this test.
-    end
-    compare_with_float2(test_values, test_values,
-                        Proc.new {|x, y| x <=> y.to_f})
-    compare_with_float2(test_values, test_values,
-                        Proc.new {|x, y| y.to_f <=> x})
+    assert_equal(-1, 1 <=> OraNumber(2))
+    assert_equal(-1, 1.0 <=> OraNumber(2))
+    assert_equal(-1, BigDecimal("1") <=> OraNumber(2))
+    assert_equal(-1, Rational(1) <=> OraNumber(2))
+    assert_equal(0, 2 <=> OraNumber(2))
+    assert_equal(0, 2.0 <=> OraNumber(2))
+    assert_equal(0, BigDecimal("2") <=> OraNumber(2))
+    assert_equal(0, Rational(2) <=> OraNumber(2))
+    assert_equal(1, 3 <=> OraNumber(2))
+    assert_equal(1, 3.0 <=> OraNumber(2))
+    assert_equal(1, BigDecimal("3") <=> OraNumber(2))
+    assert_equal(1, Rational(3) <=> OraNumber(2))
   end
 
   # onum.abs -> ocinumber

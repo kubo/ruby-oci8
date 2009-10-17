@@ -673,6 +673,7 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
 {
     char *ptr;
     ub4 size;
+    int use_attr_set = 1;
 
     if (!NIL_P(val)) {
         OCI8SafeStringValue(val);
@@ -682,7 +683,15 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
         ptr = "";
         size = 0;
     }
-    if (oracle_client_version >= ORAVER_9_0) {
+
+    if (oracle_client_version < ORAVER_9_0) {
+        use_attr_set = 0;
+    } else if (oracle_client_version < ORAVERNUM(9, 2, 0, 3, 0) && size == 0) {
+        /* Workaround for Bug 2449486 */
+        use_attr_set = 0;
+    }
+
+    if (use_attr_set) {
         if (size > 0 && ptr[0] == ':') {
             rb_raise(rb_eArgError, "client identifier should not start with ':'.");
         }

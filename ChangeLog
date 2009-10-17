@@ -1,3 +1,15 @@
+2009-10-17  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c: Add a workaround for Oracle 9.2.0.1 when clearing
+	    a client identifier.
+	* ext/oci8/oci8lib.c: Fix a segv when canceling a non-blocking
+	    execution.
+	* test_appinfo.rb: Fix temporarily to prevent a segmentation fault
+	    under Oracle 9.2.0.1.
+	* test/test_oci8.rb: Fix temporarily to prevent a segmentation fault
+	    under Oracle 9.2.0.1. Fix for BigDecimal bundled in ruby 1.8.5.
+	* test/test_oranumber.rb: Fix for Oracle 9.2. Comparing float values
+	    by <=> is too sensitive to use it in tests.
+
 2009-10-06  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocinumber.c: Add a global function OraNumber(obj) as a
 	    shortcut of OraNumber.new(obj) as Rational and BigDecimal do.
