@@ -1,3 +1,10 @@
+2009-10-18  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/ocidatetime.c: Add workarounds for Oracle 9.2.0.1.
+	* lib/oci8/datetime.rb: Change the unit of OCI8::BindType::IntervalDS
+	    from day to second. Add OCI8::BindType::IntervalDS.unit and
+	    OCI8::BindType::IntervalDS.unit.
+	* test/test_datetime.rb: Fix tests for the above changes.
+
 2009-10-17  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c: Add a workaround for Oracle 9.2.0.1 when clearing
 	    a client identifier.

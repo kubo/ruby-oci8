@@ -320,8 +320,26 @@ OCIInterval *oci8_set_ociinterval_ym(OCIInterval *intvl, VALUE val)
     }
     year = NUM2INT(RARRAY_PTR(val)[0]);
     month = NUM2INT(RARRAY_PTR(val)[1]);
-    oci_lc(OCIIntervalSetYearMonth(oci8_envhp, oci8_errhp,
-                                   year, month, intvl));
+    if (oracle_client_version >= ORAVERNUM(9, 2, 0, 3, 0)) {
+        oci_lc(OCIIntervalSetYearMonth(oci8_envhp, oci8_errhp,
+                                       year, month, intvl));
+    } else {
+        /* Workaround for Bug 2227982 */
+        char buf[64];
+        char *sign = "";
+
+        if (year < 0 && month != 0) {
+            year += 1;
+            month -= 12;
+        }
+        if (year < 0 || month < 0) {
+            sign = "-";
+            year = -year;
+            month = -month;
+        }
+        sprintf(buf, "%s%d-%d", sign, year, month);
+        oci_lc(OCIIntervalFromText(oci8_envhp, oci8_errhp, (text*)buf, strlen(buf), intvl));
+    }
     return intvl;
 }
 
@@ -357,8 +375,32 @@ OCIInterval *oci8_set_ociinterval_ds(OCIInterval *intvl, VALUE val)
     minute = NUM2INT(RARRAY_PTR(val)[2]);
     sec = NUM2INT(RARRAY_PTR(val)[3]);
     fsec = NUM2INT(RARRAY_PTR(val)[4]);
-    oci_lc(OCIIntervalSetDaySecond(oci8_envhp, oci8_errhp,
-                                   day, hour, minute, sec, fsec, intvl));
+    if (oracle_client_version >= ORAVERNUM(9, 2, 0, 3, 0)) {
+        oci_lc(OCIIntervalSetDaySecond(oci8_envhp, oci8_errhp,
+                                       day, hour, minute, sec, fsec, intvl));
+    } else {
+        /* Workaround for Bug 2227982 */
+        char buf[64];
+        char *sign = "";
+
+        if (day == 0) {
+            if (hour < 0) {
+                sign = "-";
+                hour = -hour;
+            } else if (minute < 0) {
+                sign = "-";
+                minute = -minute;
+            } else if (sec < 0) {
+                sign = "-";
+                sec = -sec;
+            } else if (fsec < 0) {
+                sign = "-";
+                fsec = -fsec;
+            }
+        }
+        sprintf(buf, "%s%d %02d:%02d:%02d.%09d", sign, day, hour, minute, sec, fsec);
+        oci_lc(OCIIntervalFromText(oci8_envhp, oci8_errhp, (text*)buf, strlen(buf), intvl));
+    }
     return intvl;
 }
 

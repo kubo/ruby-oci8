@@ -13,6 +13,31 @@ class TestDateTime < Test::Unit::TestCase
     end
   end
 
+  def string_to_time(str)
+    /(\d+)-(\d+)-(\d+) ?(?:(\d+):(\d+):(\d+))?(?:\.(\d+))? ?([+-]\d+:\d+)?/ =~ str
+    args = []
+    args << $1.to_i # year
+    args << $2.to_i # month
+    args << $3.to_i # day
+    args << $4.to_i if $4 # hour
+    args << $5.to_i if $5 # minute
+    if $8
+      args << $6.to_i + $7.to_i.to_r / ('1' + '0' * ($7.length)).to_i
+      args << $8
+      Time.new(*args)
+    else
+      if $6
+        args << $6.to_i
+      end
+      if $7
+        args << $7.to_i.to_r * 1000000 / ('1' + '0' * ($7.length)).to_i
+      end
+      # no time zone
+      Time.local(*args)
+    end
+    #Time.local(*str.split(/[- :\.]/).collect do |n| n.to_i; end)
+  end
+
   def setup
     @conn = get_oci8_connection
     @local_timezone = timezone_string(*((::Time.now.utc_offset / 60).divmod 60))
@@ -129,7 +154,12 @@ EOS
       @conn.exec(<<-EOS) do |row|
 SELECT TO_TIMESTAMP_TZ('#{date}', 'YYYY-MM-DD HH24:MI:SS.FF TZH:TZM') FROM dual
 EOS
-        assert_equal(DateTime.parse(date), row[0])
+        expected_val = begin
+                         string_to_time(date)
+                       rescue
+                         DateTime.parse(date)
+                       end
+        assert_equal(expected_val, row[0])
       end
     end
   end
@@ -274,6 +304,7 @@ EOS
               when Time
                 assert_equal(tz, timezone_string(*((dt.utc_offset / 60).divmod 60)))
               when DateTime
+                tz = tz.gsub(/:/, '') if RUBY_VERSION <= '1.8.5'
                 assert_equal(tz, dt.zone)
               else
                 flunk "unexpedted type #{dt.class}"
@@ -352,9 +383,14 @@ EOS
     cursor.bind_param(:out, nil, String, 36)
     cursor.bind_param(:in1, nil, String, 36)
     cursor.bind_param(:in2, nil, :interval_ym)
-    [['2006-01-01', -22],
-     ['2006-01-01', -10],
+    [['2006-01-01', -25],
+     ['2006-01-01', -24],
+     ['2006-01-01', -23],
+     ['2006-01-01', -13],
+     ['2006-01-01', -12],
+     ['2006-01-01', -11],
      ['2006-01-01',  +2],
+     ['2006-01-01',  -2],
      ['2006-01-01', +12]
     ].each do |date, interval|
       cursor[:in1] = date
@@ -388,7 +424,7 @@ SELECT (TO_TIMESTAMP('#{date1}', 'YYYY-MM-DD HH24:MI:SS.FF')
       - TO_TIMESTAMP('#{date2}', 'YYYY-MM-DD HH24:MI:SS.FF')) DAY(3) TO SECOND
   FROM dual
 EOS
-        assert_equal(DateTime.parse(date1) - DateTime.parse(date2), row[0])
+        assert_in_delta(string_to_time(date1) - string_to_time(date2), row[0], 0.0000000001)
       end
     end
   end
@@ -427,7 +463,7 @@ EOS
       cursor[:in1] = date1
       cursor[:in2] = date2
       cursor.exec
-      assert_equal(DateTime.parse(date1) - DateTime.parse(date2), cursor[:out])
+      assert_in_delta(string_to_time(date1) - string_to_time(date2), cursor[:out], 0.0000000001)
     end
     cursor.close
   end
@@ -440,6 +476,119 @@ DECLARE
   ts1 TIMESTAMP;
 BEGIN
   ts1 := TO_TIMESTAMP(:in1, 'YYYY-MM-DD HH24:MI:SS.FF');
+  :out := TO_CHAR(ts1 + :in2, 'YYYY-MM-DD HH24:MI:SS.FF6');
+END;
+EOS
+    cursor.bind_param(:out, nil, String, 36)
+    cursor.bind_param(:in1, nil, String, 36)
+    cursor.bind_param(:in2, nil, :interval_ds)
+    [['2006-01-01', -22],
+     ['2006-01-01', -10],
+     ['2006-01-01',  +2],
+     ['2006-01-01', +12],
+     ['2006-01-01', -1.to_r / 24], # one hour
+     ['2006-01-01', -1.to_r / (24*60)], # one minute
+     ['2006-01-01', -1.to_r / (24*60*60)], # one second
+     ['2006-01-01', -999999.to_r / (24*60*60*1000000)], # 0.999999 seconds
+     ['2006-01-01', +1.to_r / 24], # one hour
+     ['2006-01-01', +1.to_r / (24*60)], # one minute
+     ['2006-01-01', +1.to_r / (24*60*60)], # one second
+     ['2006-01-01', +999999.to_r / (24*60*60*1000000)] # 0.999999 seconds
+    ].each do |date, interval|
+      interval *= 86400
+      cursor[:in1] = date
+      cursor[:in2] = interval
+      cursor.exec
+      assert_equal(string_to_time(date) + interval, string_to_time(cursor[:out]))
+    end
+    cursor.close
+  end
+
+  def test_days_interval_ds_select
+    return if $oracle_version < OCI8::ORAVER_9_0
+
+    [['2006-01-01', '2004-03-01'],
+     ['2006-01-01', '2005-03-01'],
+     ['2006-01-01', '2006-03-01'],
+     ['2006-01-01', '2007-03-01'],
+     ['2006-01-01', '2006-01-01 23:00:00'],
+     ['2006-01-01', '2006-01-01 00:59:00'],
+     ['2006-01-01', '2006-01-01 00:00:59'],
+     ['2006-01-01', '2006-01-01 00:00:00.999999'],
+     ['2006-01-01', '2006-01-01 23:59:59.999999'],
+     ['2006-01-01', '2005-12-31 23:00:00'],
+     ['2006-01-01', '2005-12-31 00:59:00'],
+     ['2006-01-01', '2005-12-31 00:00:59'],
+     ['2006-01-01', '2005-12-31 00:00:00.999999'],
+     ['2006-01-01', '2005-12-31 23:59:59.999999']
+    ].each do |date1, date2|
+      begin
+        OCI8::BindType::IntervalDS.unit = :day
+        @conn.exec(<<-EOS) do |row|
+SELECT (TO_TIMESTAMP('#{date1}', 'YYYY-MM-DD HH24:MI:SS.FF')
+      - TO_TIMESTAMP('#{date2}', 'YYYY-MM-DD HH24:MI:SS.FF')) DAY(3) TO SECOND
+  FROM dual
+EOS
+          assert_equal(DateTime.parse(date1) - DateTime.parse(date2), row[0])
+        end
+      ensure
+        OCI8::BindType::IntervalDS.unit = :second
+      end
+    end
+  end
+
+  def test_days_interval_ds_out_bind
+    return if $oracle_version < OCI8::ORAVER_9_0
+
+    cursor = @conn.parse(<<-EOS)
+DECLARE
+  ts1 TIMESTAMP;
+  ts2 TIMESTAMP;
+BEGIN
+  ts1 := TO_TIMESTAMP(:in1, 'YYYY-MM-DD HH24:MI:SS.FF');
+  ts2 := TO_TIMESTAMP(:in2, 'YYYY-MM-DD HH24:MI:SS.FF');
+  :out := (ts1 - ts2) DAY TO SECOND(9);
+END;
+EOS
+    cursor.bind_param(:out, nil, :interval_ds)
+    cursor.bind_param(:in1, nil, String, 36)
+    cursor.bind_param(:in2, nil, String, 36)
+    [['2006-01-01', '2004-03-01'],
+     ['2006-01-01', '2005-03-01'],
+     ['2006-01-01', '2006-03-01'],
+     ['2006-01-01', '2007-03-01'],
+     ['2006-01-01', '2006-01-01 23:00:00'],
+     ['2006-01-01', '2006-01-01 00:59:00'],
+     ['2006-01-01', '2006-01-01 00:00:59'],
+     ['2006-01-01', '2006-01-01 00:00:00.999999'],
+     ['2006-01-01', '2006-01-01 23:59:59.999999'],
+     ['2006-01-01', '2005-12-31 23:00:00'],
+     ['2006-01-01', '2005-12-31 00:59:00'],
+     ['2006-01-01', '2005-12-31 00:00:59'],
+     ['2006-01-01', '2005-12-31 00:00:00.999999'],
+     ['2006-01-01', '2005-12-31 23:59:59.999999']
+    ].each do |date1, date2|
+      begin
+        OCI8::BindType::IntervalDS.unit = :day
+        cursor[:in1] = date1
+        cursor[:in2] = date2
+        cursor.exec
+        assert_equal(DateTime.parse(date1) - DateTime.parse(date2), cursor[:out])
+      ensure
+        OCI8::BindType::IntervalDS.unit = :second
+      end
+    end
+    cursor.close
+  end
+
+  def test_days_interval_ds_in_bind
+    return if $oracle_version < OCI8::ORAVER_9_0
+
+    cursor = @conn.parse(<<-EOS)
+DECLARE
+  ts1 TIMESTAMP;
+BEGIN
+  ts1 := TO_TIMESTAMP(:in1, 'YYYY-MM-DD');
   :out := TO_CHAR(ts1 + :in2, 'YYYY-MM-DD HH24:MI:SS.FF');
 END;
 EOS
@@ -459,11 +608,15 @@ EOS
      ['2006-01-01', +1.to_r / (24*60*60)], # one second
      ['2006-01-01', +999999.to_r / (24*60*60*1000000)] # 0.999999 seconds
     ].each do |date, interval|
-      cursor[:in1] = date
-      cursor[:in2] = interval
-      cursor.exec
-      assert_equal(DateTime.parse(date) + interval, DateTime.parse(cursor[:out]))
+      begin
+        OCI8::BindType::IntervalDS.unit = :day
+        cursor[:in1] = date
+        cursor[:in2] = interval
+        cursor.exec
+        assert_equal(DateTime.parse(date) + interval, DateTime.parse(cursor[:out]))
+      ensure
+        OCI8::BindType::IntervalDS.unit = :second
+      end
     end
-    cursor.close
   end
 end # TestOCI8

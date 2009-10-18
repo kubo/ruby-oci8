@@ -427,20 +427,26 @@ class OCI8
       # OCI8::BindType::IntervalYM
       #++
       #
-      # This is a helper class to bind ruby's
-      # Integer[http://www.ruby-doc.org/core/classes/Integer.html]
-      # object as Oracle's <tt>INTERVAL YEAR TO MONTH</tt> datatype.
+      # This is a helper class to select or bind Oracle data type
+      # <tt>INTERVAL YEAR TO MONTH</tt>. The retrieved value is
+      # the number of months between two timestamps.
       #
-      # == Select
+      # The value can be applied to \DateTime#>> to shift months.
+      # It can be applied to \Time#months_since if activisupport has
+      # been loaded.
       #
-      # The fetched value for a <tt>INTERVAL YEAR TO MONTH</tt> column
-      # is an Integer[http://www.ruby-doc.org/core/classes/Integer.html]
-      # which means the months between two timestamps.
+      # === How to select <tt>INTERVAL YEAR TO MONTH</tt>
       #
-      # == Bind
+      # <tt>INTERVAL YEAR TO MONTH</tt> is selected as an Integer.
       #
-      # You cannot bind as <tt>INTERVAL YEAR TO MONTH</tt> implicitly.
-      # It must be bound explicitly with :interval_ym.
+      #   conn.exec("select (current_timestamp - hiredate) year to month from emp") do |hired_months|
+      #     puts "hired_months = #{hired_months}"
+      #   end
+      #
+      # == How to bind <tt>INTERVAL YEAR TO MONTH</tt>
+      #
+      # You cannot bind a bind variable as <tt>INTERVAL YEAR TO MONTH</tt> implicitly.
+      # It must be bound explicitly by OCI8::Cursor#bind_param.
       #
       #   # output bind variable
       #   cursor = conn.parse(<<-EOS)
@@ -487,51 +493,43 @@ class OCI8
       # OCI8::BindType::IntervalDS
       #++
       #
-      # This is a helper class to bind ruby's
-      # Rational[http://www.ruby-doc.org/core/classes/Rational.html]
-      # object as Oracle's <tt>INTERVAL DAY TO SECOND</tt> datatype.
+      # (new in 2.0)
       #
-      # == Select
+      # This is a helper class to select or bind Oracle data type
+      # <tt>INTERVAL DAY TO SECOND</tt>. The retrieved value is
+      # the number of seconds between two typestamps as a \Float.
       #
-      # The fetched value for a <tt>INTERVAL DAY TO SECOND</tt> column
-      # is a Rational[http://www.ruby-doc.org/core/classes/Rational.html]
-      # or an Integer[http://www.ruby-doc.org/core/classes/Integer.html].
-      # The value is usable to apply to
-      # DateTime[http://www.ruby-doc.org/core/classes/DateTime.html]#+ and
-      # DateTime[http://www.ruby-doc.org/core/classes/DateTime.html]#-.
+      # Note that it is the number days as a \Rational if
+      # OCI8::BindType::IntervalDS.unit is :day or the ruby-oci8
+      # version is prior to 2.0.3.
       #
-      # == Bind
+      # == How to bind <tt>INTERVAL DAY TO SECOND</tt>
       #
-      # You cannot bind as <tt>INTERVAL YEAR TO MONTH</tt> implicitly.
-      # It must be bound explicitly with :interval_ds.
+      # You cannot bind a bind variable as <tt>INTERVAL DAY TO SECOND</tt>
+      # implicitly. It must be bound explicitly by OCI8::Cursor#bind_param.
       #
-      #   # output
-      #   ts1 = DateTime.parse('1969-11-19 06:54:35 00:00')
-      #   ts2 = DateTime.parse('1969-07-20 20:17:40 00:00')
+      #   # output bind variable
       #   cursor = conn.parse(<<-EOS)
       #     BEGIN
-      #       :itv := (:ts1 - :ts2) DAY TO SECOND;
+      #       :interval := (:ts1 - :ts2) DAY TO SECOND(9);
       #     END;
       #   EOS
-      #   cursor.bind_param(:itv, nil, :interval_ds)
-      #   cursor.bind_param(:ts1, ts1)
-      #   cursor.bind_param(:ts2, ts2)
+      #   cursor.bind_param(:interval, nil, :interval_ds)
+      #   cursor.bind_param(:ts1, DateTime.parse('1969-11-19 06:54:35 00:00'))
+      #   cursor.bind_param(:ts2, DateTime.parse('1969-07-20 20:17:40 00:00'))
       #   cursor.exec
-      #   cursor[:itv] # == ts1 - ts2
+      #   cursor[:interval] # => 10492615.0 seconds
       #   cursor.close
       #
-      #   # input
-      #   ts2 = DateTime.parse('1969-07-20 20:17:40 00:00')
-      #   itv = 121 + 10.to_r/24 + 36.to_r/(24*60) + 55.to_r/(24*60*60)
-      #   # 121 days, 10 hours,    36 minutes,       55 seconds
+      #   # input bind variable
       #   cursor = conn.parse(<<-EOS)
       #     BEGIN
-      #       :ts1 := :ts2 + :itv;
+      #       :ts1 := :ts2 + :interval;
       #     END;
       #   EOS
       #   cursor.bind_param(:ts1, nil, DateTime)
-      #   cursor.bind_param(:ts2, ts2)
-      #   cursor.bind_param(:itv, itv, :interval_ds)
+      #   cursor.bind_param(:ts2, DateTime.parse('1969-07-20 20:17:40 00:00'))
+      #   cursor.bind_param(:interval, 10492615.0, :interval_ds)
       #   cursor.exec
       #   cursor[:ts1].strftime('%Y-%m-%d %H:%M:%S') # => 1969-11-19 06:54:35
       #   cursor.close
@@ -541,6 +539,32 @@ class OCI8
         @@minute = @@hour / 60
         @@sec = @@minute / 60
         @@fsec = @@sec / 1000000000
+        @@unit = :second
+
+        # call-seq:
+        #   OCI8::BindType::IntervalDS.unit -> :second or :day
+        #
+        # (new in 2.0.3)
+        #
+        # Retrieves the unit of interval.
+        def self.unit
+          @@unit
+        end
+
+        # call-seq:
+        #   OCI8::BindType::IntervalDS.unit = :second or :day
+        #
+        # (new in 2.0.3)
+        #
+        # Changes the unit of interval. :second is the default.
+        def self.unit=(val)
+          case val
+          when :second, :day
+            @@unit = val
+          else
+            raise 'unit should be :second or :day'
+          end
+        end
 
         def set(val) # :nodoc:
           unless val.nil?
@@ -550,10 +574,17 @@ class OCI8
             else
               is_minus = false
             end
-            day, val = val.divmod 1
-            hour, val = (val * 24).divmod 1
-            minute, val = (val * 60).divmod 1
-            sec, val = (val * 60).divmod 1
+            if @@unit == :second
+              day, val = val.divmod 86400
+              hour, val = val.divmod 3600
+              minute, val = val.divmod 60
+              sec, val = val.divmod 1
+            else
+              day, val = val.divmod 1
+              hour, val = (val * 24).divmod 1
+              minute, val = (val * 60).divmod 1
+              sec, val = (val * 60).divmod 1
+            end
             fsec, val = (val * 1000000000).divmod 1
             if is_minus
               day = - day
@@ -571,7 +602,12 @@ class OCI8
           val = super()
           return nil if val.nil?
           day, hour, minute, sec, fsec = val
-          day + (hour * @@hour) + (minute * @@minute) + (sec * @@sec) + (fsec * @@fsec)
+          if @@unit == :second
+            fsec = fsec / 1000000000.0
+            day * 86400 + hour * 3600 + minute * 60 + sec + fsec
+          else
+            day + (hour * @@hour) + (minute * @@minute) + (sec * @@sec) + (fsec * @@fsec)
+          end
         end
       end # OCI8::BindType::IntervalDS
     end
