@@ -1077,6 +1077,15 @@ OCIDateTimeGetTime:
             - ub4 *fsec
 
 # round trip: 0 (not docmented. I guess.)
+OCIIntervalFromText:
+  :version: 900
+  :args:    - dvoid *hndl
+            - OCIError *err
+            - CONST OraText *inpstr
+            - size_t str_len
+            - OCIInterval *result
+
+# round trip: 0 (not docmented. I guess.)
 OCIDateTimeGetTimeZoneOffset:
   :version: 900
   :args:    - dvoid *hndl

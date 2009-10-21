@@ -721,7 +721,7 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
  *
  * <b>(new in 2.0.3)</b>
  *
- * Sets the name of the current current module. This information is
+ * Sets the name of the current module. This information is
  * stored in the V$SESSION view and is also stored in the V$SQL view
  * and the V$SQLAREA view when a SQL statement is executed and the SQL
  * statement is first parsed in the Oracle server.

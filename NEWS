@@ -1,3 +1,129 @@
+2.0.3:
+
+* Imcompatible Changes
+
+  - Number column in a SQL statement
+
+    Changes the default data type for number column which fit neither
+    Integer nor Float from OraNumber to BigDecimal.
+
+      conn.exec("select 1.0 from dual") do |row|
+        p row[0] # => BigDecimal("1") if the ruby-oci8 version is 2.0.3.
+                 # => OraNumber(1) if the version is 2.0.2.
+      end
+
+  - Priority of OraNumber within numerical types
+
+    The return types of basic arithmetic operations with other numerical
+    types are changed.
+
+    2.0.3:
+      OraNumber + Integer    => OraNumber  (OraNumber wins.)
+      OraNumber + Float      => Float      (OraNumber loses.)
+      OraNumber + Rational   => Rational   (OraNumber loses.)
+      OraNumber + BigDecimal => BigDecimal (OraNumber loses.)
+
+    2.0.2:
+      OraNumber + Integer    => OraNumber  (OraNumber wins always.)
+      OraNumber + Float      => OraNumber
+      OraNumber + Rational   => OraNumber
+      OraNumber + BigDecimal => OraNumber
+
+  - Interval day to second
+
+    The retrived value of Oracle data type "interval day to second"
+    was changed from the number of days as a Rational to the number
+    of seconds as a Float by default.
+    Use OCI8::BindType::IntervalDS.unit = :day to make it compatible
+    with the previous versions.
+
+      conn.exec("select to_dsinterval('0 00:00:01') from dual") do |row|
+        p row[0] # => 1.0 if the version is 2.0.3 and
+                 #    OCI8::BindType::IntervalDS.unit is :second.
+                 # => (1/86400) if the version is 2.0.3 and
+		 #    OCI8::BindType::IntervalDS.unit is :day or
+		 #    the version is 2.0.2.
+      end
+
+  - Date, timestamp, timestamp with time zone data types and ruby 1.9.2
+
+    These data types are retrived always as Time values when the
+    ruby version is 1.9.2 because the Time class is enhanced to
+    represent any time zone and is free from year 2038 problem.
+
+    Prior to ruby 1.9.2, if the time cannot be represented by
+    Unix time or the time zone is neither utc nor local, they are
+    retrived as DateTime values.
+
+  - Non-blocking mode and ruby 1.9
+
+    non-blocking mode is enabled by default when the ruby is 1.9.
+
+* New Features
+
+  - BigDecimal and Rational are availabe as bind values.
+
+  - New methods OCI8#module=, OCI8#action= and OCI8#client_info= are added.
+
+    These methods change the module name, the action name and the client_info
+    in the current session respectively.
+
+    After Oracle 10g client, these don't perform network round trips.
+    The change is reflected to the server by the next round trip such as
+    OCI8#exec, OCI8#ping, etc.
+
+    Prior to Oracle 10g client, these call PL/SQL functions such as
+    DBMS_APPLICATION_INFO.SET_MODULE, DBMS_APPLICATION_INFO.SET_ACTION,
+    and DBMS_APPLICATION_INFO.SET_CLIENT_INFO internally.
+    The change is reflected immediately by a network round trip.
+
+  - OCI8::BindType.default_timezone
+
+    The default time zone of Time or DateTime values.
+    This parameter is used only when
+    (1) date values are fetched and the Oracle client version is 8.x
+    or
+    (2) object types have date data type attributes.
+
+    Note that if the Oracle client version is 9i or upper, the time
+    zone is determined by the session time zone. The default value
+    is local time zone. You can change it to GMT by executing the
+    following SQL statement for each connection.
+
+       alter session set time_zone = '00:00'
+
+* Other specification changes
+
+  - Add a global function OraNumber(obj) as a shortcut of OraNumber.new(obj)
+    as Rational and BigDecimal do.
+
+  - Fix to accept nil attribute in object type's
+    constructors. This works only for simple data types such as number,
+    string. But it doesn't for complex types such as object types.
+    (requested by Remi Gagnon)
+
+  - add DATE datatype support in object types.
+
+  - Change OCI8::LOB#write to accept an object which is not a String and
+    doesn't respond to 'to_str' as IO#write does.
+    (requested by Christopher Jones)
+
+  - Change the initial polling interval of
+    non-blocking mode for ruby 1.8 from 100 msec to 10 msec, which
+    is same with ruby-oci8 1.0.
+
+* Fixed installation issues.
+
+  - Fix oraconf.rb for ruby 1.8.5 with Oracle 8.x which needs some object
+    files to link with.
+    (reported by Jayson Cena)
+
+  - Fix oraconf.rb for ruby 1.9.2 preview1.
+    (pointed by Raimonds Simanovskis)
+
+  - Fix oraconf.rb to compile for AIX instant clients.
+    (reported by Kazuya Teramoto)
+
 2.0.2:
 
 * add new methods

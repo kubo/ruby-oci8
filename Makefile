@@ -59,7 +59,7 @@ dist-check: dist
 #
 RUBY_18 = c:\ruby
 RUBY_191 = c:\ruby-1.9.1
-GEMPKG = ruby-oci8-2.0.2-x86-mswin32-60.gem
+GEMPKG = ruby-oci8-2.0.3-x86-mswin32-60.gem
 
 ext\oci8\oci8lib_18.so:
 	$(RUBY_18)\bin\ruby -r fileutils -e "FileUtils.rm_rf('ruby18')"

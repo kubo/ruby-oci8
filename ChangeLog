@@ -1,8 +1,14 @@
+2009-10-21  KUBO Takehiro  <kubo@jiubao.org>
+	* NEWS: add changes between 2.0.2 and 2.0.3.
+	* VERSION, Makefile: change the version to 2.0.3.
+	* ext/oci8/oci8.c: fix typo.
+	* ext/oci8/apiwrap.yml: add OCIIntervalFromText() prototype.
+
 2009-10-18  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocidatetime.c: Add workarounds for Oracle 9.2.0.1.
 	* lib/oci8/datetime.rb: Change the unit of OCI8::BindType::IntervalDS
 	    from day to second. Add OCI8::BindType::IntervalDS.unit and
-	    OCI8::BindType::IntervalDS.unit.
+	    OCI8::BindType::IntervalDS.unit=.
 	* test/test_datetime.rb: Fix tests for the above changes.
 
 2009-10-17  KUBO Takehiro  <kubo@jiubao.org>
