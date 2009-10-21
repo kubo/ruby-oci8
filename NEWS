@@ -1,3 +1,16 @@
+1.0.7:
+
+* change OCI8::LOB#write to accept an object which is not a String and
+  doesn't respond to 'to_str' as IO#write does.
+  (requested by Christopher Jones)
+
+* fix oraconf.rb for AIX instant clients.
+  (reported by Kazuya Teramoto)
+
+* fix oraconf.rb for ruby 1.8.5 with Oracle 8.x which needs some object
+  files to link with.
+  (reported by Jayson Cena)
+
 1.0.6:
 
 * fix a problem when compiling for Oracle 8.0.
