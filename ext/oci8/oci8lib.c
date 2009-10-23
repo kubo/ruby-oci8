@@ -10,28 +10,17 @@
 #include <signal.h>
 #endif
 
-static oci8_base_class_t oci8_base_class = {
-    NULL,
-    NULL,
-    sizeof(oci8_base_t),
-};
-
 ID oci8_id_new;
 ID oci8_id_get;
 ID oci8_id_set;
 ID oci8_id_keys;
+ID oci8_id_oci8_class;
 int oci8_in_finalizer = 0;
 VALUE oci8_cOCIHandle;
 
-static ID id_oci8_class;
 
 static VALUE mOCI8BindType;
 static VALUE cOCI8BindTypeBase;
-
-static VALUE oci8_handle_initialize(VALUE self)
-{
-    rb_raise(rb_eNameError, "private method `new' called for %s:Class", rb_class2name(CLASS_OF(self)));
-}
 
 void oci8_base_free(oci8_base_t *base)
 {
@@ -49,55 +38,6 @@ void oci8_base_free(oci8_base_t *base)
     base->hp.ptr = NULL;
 }
 
-static VALUE oci8_handle_free(VALUE self)
-{
-    oci8_base_t *base = DATA_PTR(self);
-
-    oci8_base_free(base);
-    return self;
-}
-
-static void oci8_handle_mark(oci8_base_t *base)
-{
-    if (base->klass->mark != NULL)
-        base->klass->mark(base);
-}
-
-static void oci8_handle_cleanup(oci8_base_t *base)
-{
-    oci8_base_free(base);
-    xfree(base);
-}
-
-static VALUE oci8_s_allocate(VALUE klass)
-{
-    oci8_base_t *base;
-    const oci8_base_class_t *base_class;
-    VALUE superklass;
-    VALUE obj;
-
-    superklass = klass;
-    while (!RTEST(rb_ivar_defined(superklass, id_oci8_class))) {
-        superklass = RCLASS_SUPER(superklass);
-        if (superklass == rb_cObject)
-            rb_raise(rb_eRuntimeError, "private method `new' called for %s:Class", rb_class2name(klass));
-    }
-    obj = rb_ivar_get(superklass, id_oci8_class);
-    base_class = DATA_PTR(obj);
-
-    base = xmalloc(base_class->size);
-    memset(base, 0, base_class->size);
-
-    obj = Data_Wrap_Struct(klass, oci8_handle_mark, oci8_handle_cleanup, base);
-    base->self = obj;
-    base->klass = base_class;
-    base->parent = NULL;
-    base->next = base;
-    base->prev = base;
-    base->children = NULL;
-    return obj;
-}
-
 static void at_exit_func(VALUE val)
 {
     oci8_in_finalizer = 1;
@@ -107,7 +47,6 @@ void
 Init_oci8lib()
 {
     VALUE cOCI8;
-    VALUE obj;
     OCIEnv *envhp;
     OCIError *errhp;
     sword rv;
@@ -121,23 +60,18 @@ Init_oci8lib()
     }
 #endif
 
-    id_oci8_class = rb_intern("__oci8_class__");
     oci8_id_new = rb_intern("new");
     oci8_id_get = rb_intern("get");
     oci8_id_set = rb_intern("set");
     oci8_id_keys = rb_intern("keys");
+    oci8_id_oci8_class = rb_intern("__oci8_class__");
     rb_set_end_proc(at_exit_func, Qnil);
 
     Init_oci8_error();
     Init_oci8_env();
 
     /* OCIHandle class */
-    oci8_cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
-    rb_define_alloc_func(oci8_cOCIHandle, oci8_s_allocate);
-    rb_define_method(oci8_cOCIHandle, "initialize", oci8_handle_initialize, 0);
-    rb_define_method(oci8_cOCIHandle, "free", oci8_handle_free, 0);
-    obj = Data_Wrap_Struct(rb_cObject, 0, 0, &oci8_base_class);
-    rb_ivar_set(oci8_cOCIHandle, id_oci8_class, obj);
+    Init_oci8_handle();
 
     /* OCI8 class */
     cOCI8 = Init_oci8();
@@ -207,7 +141,7 @@ VALUE oci8_define_class(const char *name, oci8_base_class_t *base_class)
 {
     VALUE klass = rb_define_class(name, oci8_cOCIHandle);
     VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, base_class);
-    rb_ivar_set(klass, id_oci8_class, obj);
+    rb_ivar_set(klass, oci8_id_oci8_class, obj);
     return klass;
 }
 
@@ -215,7 +149,7 @@ VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_class_t *
 {
     VALUE klass = rb_define_class_under(outer, name, oci8_cOCIHandle);
     VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, base_class);
-    rb_ivar_set(klass, id_oci8_class, obj);
+    rb_ivar_set(klass, oci8_id_oci8_class, obj);
     return klass;
 }
 
@@ -223,7 +157,7 @@ VALUE oci8_define_bind_class(const char *name, const oci8_bind_class_t *bind_cla
 {
     VALUE klass = rb_define_class_under(mOCI8BindType, name, cOCI8BindTypeBase);
     VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, (void*)bind_class);
-    rb_ivar_set(klass, id_oci8_class, obj);
+    rb_ivar_set(klass, oci8_id_oci8_class, obj);
     return klass;
 }
 

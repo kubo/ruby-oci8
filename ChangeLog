@@ -1,3 +1,8 @@
+2009-10-23  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, ext/oci8/oci8.h, ext/oci8/oci8lib.c,
+	  ext/oci8/ocihandle.c: add ocihandle.c and move OCIHandle
+	    definitions from oci8lib.c to the file.
+
 2009-10-21  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 2.0.2 and 2.0.3.
 	* VERSION, Makefile: change the version to 2.0.3.

@@ -389,6 +389,7 @@ extern ID oci8_id_new;
 extern ID oci8_id_get;
 extern ID oci8_id_set;
 extern ID oci8_id_keys;
+extern ID oci8_id_oci8_class;
 extern int oci8_in_finalizer;
 extern VALUE oci8_cOCIHandle;
 void oci8_base_free(oci8_base_t *base);
@@ -411,6 +412,9 @@ NORETURN(void oci8_do_raise(OCIError *, sword status, OCIStmt *, const char *fil
 NORETURN(void oci8_do_env_raise(OCIEnv *, sword status, const char *file, int line));
 NORETURN(void oci8_do_raise_init_error(const char *file, int line));
 sb4 oci8_get_error_code(OCIError *errhp);
+
+/* ocihandle.c */
+void Init_oci8_handle(void);
 
 /* oci8.c */
 VALUE Init_oci8(void);

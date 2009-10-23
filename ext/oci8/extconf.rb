@@ -82,7 +82,7 @@ if with_config('runtime-check')
   $libs = saved_libs
 end
 
-$objs = ["oci8lib.o", "env.o", "error.o", "oci8.o",
+$objs = ["oci8lib.o", "env.o", "error.o", "oci8.o", "ocihandle.o",
          "stmt.o", "bind.o", "metadata.o", "attr.o",
          "lob.o", "oradate.o",
          "ocinumber.o", "ocidatetime.o", "object.o", "apiwrap.o",
