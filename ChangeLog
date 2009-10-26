@@ -1,3 +1,9 @@
+2009-10-26  KUBO Takehiro  <kubo@jiubao.org>
+	* NEW: fix typo.
+	* dist-files, ext/oci8/.document: add ocihandle.c.
+	* ext/oci8/ocihandle.c: add private methods OCIHandle#attr_get_*,
+	    OCIHandle#attr_set_* and their rdoc comments.
+
 2009-10-23  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, ext/oci8/oci8.h, ext/oci8/oci8lib.c,
 	  ext/oci8/ocihandle.c: add ocihandle.c and move OCIHandle

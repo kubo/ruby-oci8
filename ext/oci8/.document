@@ -3,6 +3,7 @@
 #env.c
 
 oci8.c
+ocihandle.c
 bind.c
 stmt.c
 encoding.c
