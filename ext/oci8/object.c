@@ -300,11 +300,11 @@ static VALUE oci8_named_coll_set_coll_element(VALUE self, VALUE datatype, VALUE 
     switch (FIX2INT(datatype)) {
     case ATTR_STRING:
         oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_VARCHAR2, NULL, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr));
-        oci_lc(OCIObjectGetInd(oci8_envhp, oci8_errhp, cb_data.data.ptr, (dvoid**)&cb_data.indp));
+        cb_data.indp = &cb_data.ind;
         break;
     case ATTR_RAW:
         oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_RAW, NULL, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr));
-        oci_lc(OCIObjectGetInd(oci8_envhp, oci8_errhp, cb_data.data.ptr, (dvoid**)&cb_data.indp));
+        cb_data.indp = &cb_data.ind;
         break;
     case ATTR_OCINUMBER:
     case ATTR_FLOAT:

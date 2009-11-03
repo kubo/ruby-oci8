@@ -1,3 +1,7 @@
+2009-11-03  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/object.c: fix segv when binding a collection of string.
+	    (reported by Raimonds Simanovskis)
+
 2009-10-26  KUBO Takehiro  <kubo@jiubao.org>
 	* NEW: fix typo.
 	* dist-files, ext/oci8/.document: add ocihandle.c.
