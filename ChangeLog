@@ -1,3 +1,9 @@
+2009-12-06  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/object.c: 1. fix segv when GC starts while initializing
+	    a bind object for object type. (reported by Remi Gagnon)
+	    2. fix memory leak about 30 bytes per one bind object for object
+	    type.
+
 2009-11-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/object.c: fix segv when binding a collection of string.
 	    (reported by Raimonds Simanovskis)

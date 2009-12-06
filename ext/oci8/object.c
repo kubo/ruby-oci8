@@ -498,11 +498,14 @@ static void bind_named_type_mark(oci8_base_t *base)
 {
     oci8_bind_t *obind = (oci8_bind_t *)base;
     oci8_hp_obj_t *oho = (oci8_hp_obj_t *)obind->valuep;
-    ub4 idx = 0;
 
-    do {
-        rb_gc_mark(oho[idx].obj);
-    } while (++idx < obind->maxar_sz);
+    if (oho != NULL) {
+        ub4 idx = 0;
+
+        do {
+            rb_gc_mark(oho[idx].obj);
+        } while (++idx < obind->maxar_sz);
+    }
     rb_gc_mark(obind->tdo);
 }
 
@@ -510,14 +513,18 @@ static void bind_named_type_free(oci8_base_t *base)
 {
     oci8_bind_t *obind = (oci8_bind_t *)base;
     oci8_hp_obj_t *oho = (oci8_hp_obj_t *)obind->valuep;
-    ub4 idx = 0;
 
-    do {
-        if (oho[idx].hp != NULL) {
-            OCIObjectFree(oci8_envhp, oci8_errhp, oho[idx].hp, OCI_DEFAULT);
-            oho[idx].hp = NULL;
-        }
-    } while (++idx < obind->maxar_sz);
+    if (oho != NULL) {
+        ub4 idx = 0;
+
+        do {
+            if (oho[idx].hp != NULL) {
+                OCIObjectFree(oci8_envhp, oci8_errhp, oho[idx].hp, OCI_DEFAULT);
+                oho[idx].hp = NULL;
+            }
+        } while (++idx < obind->maxar_sz);
+    }
+    oci8_bind_free(base);
 }
 
 static VALUE bind_named_type_get(oci8_bind_t *obind, void *data, void *null_struct)
