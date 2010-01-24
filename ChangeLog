@@ -1,3 +1,8 @@
+2010-01-24  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/error.c: Use OCIErrorGet() to retrieve the error message
+	    when the OCI return code is OCI_NO_DATA.
+	    (reported by Raimonds Simanovskis)
+
 2009-12-06  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/object.c: 1. fix segv when GC starts while initializing
 	    a bind object for object type. (reported by Remi Gagnon)

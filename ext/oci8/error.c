@@ -2,7 +2,7 @@
 /*
   error.c - part of ruby-oci8
 
-  Copyright (C) 2002-2007 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002-2010 KUBO Takehiro <kubo@jiubao.org>
 
 =begin
 == OCIError
@@ -28,8 +28,51 @@ static ID oci8_id_sql;
 static ID oci8_id_caller;
 static ID oci8_id_set_backtrace;
 
+#define ERRBUF_EXPAND_LEN 256
+static char *errbuf;
+static ub4 errbufsiz;
+
 NORETURN(static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line));
 NORETURN(static void set_backtrace_and_raise(VALUE exc, const char *file, int line));
+
+static VALUE get_error_msg(dvoid *errhp, ub4 type, const char *default_msg, sb4 *errcode_p)
+{
+    sword rv;
+    size_t len;
+
+retry:
+    errbuf[0] = '\0';
+    rv = OCIErrorGet(errhp, 1, NULL, errcode_p, TO_ORATEXT(errbuf), errbufsiz, type);
+    /* OCI manual says:
+     *   If type is set to OCI_HTYPE_ERROR, then the return
+     *   code during truncation for OCIErrorGet() is
+     *   OCI_ERROR. The client can then specify a bigger
+     *   buffer and call OCIErrorGet() again.
+     *
+     * But as far as I tested on Oracle XE 10.2.0.1, the return
+     * code is OCI_SUCCESS when the message is truncated.
+     */
+    len = strlen(errbuf);
+    if (errbufsiz - len <= 7) {
+        /* The error message may be truncated.
+         * The magic number 7 means the maximum length of one utf-8
+         * character plus the length of a nul terminator.
+         */
+        errbufsiz += ERRBUF_EXPAND_LEN;
+        errbuf = xrealloc(errbuf, errbufsiz);
+        goto retry;
+    }
+    if (rv != OCI_SUCCESS) {
+        /* No message is found. Use the default message. */
+        return rb_usascii_str_new_cstr(default_msg);
+    }
+
+    /* truncate trailing CR and LF */
+    while (len > 0 && (errbuf[len - 1] == '\n' || errbuf[len - 1] == '\r')) {
+        len--;
+    }
+    return rb_external_str_new_with_enc(errbuf, len, oci8_encoding);
+}
 
 static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line)
 {
@@ -103,7 +146,7 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, c
         break;
     case OCI_NO_DATA:
         exc = eOCINoData;
-        msg = rb_usascii_str_new_cstr("No Data");
+        msg = get_error_msg(errhp, type, "No Data", &errcode);
         break;
     case OCI_INVALID_HANDLE:
         exc = eOCIInvalidHandle;
@@ -252,6 +295,9 @@ sb4 oci8_get_error_code(OCIError *errhp)
 
 void Init_oci8_error(void)
 {
+    errbufsiz = ERRBUF_EXPAND_LEN;
+    errbuf = xmalloc(errbufsiz);
+
     oci8_id_code = rb_intern("code");
     oci8_id_message = rb_intern("message");
     oci8_id_parse_error_offset = rb_intern("parse_error_offset");
