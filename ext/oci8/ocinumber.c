@@ -109,6 +109,7 @@ static int rboci8_type(VALUE obj)
 static VALUE onum_to_f(VALUE self);
 static VALUE onum_to_r(VALUE self);
 static VALUE onum_to_d(VALUE self);
+static VALUE onum_to_d_real(OCINumber *num, OCIError *errhp);
 
 static VALUE onum_s_alloc(VALUE klass)
 {
@@ -136,13 +137,23 @@ VALUE oci8_make_integer(OCINumber *s, OCIError *errhp)
     signed long sl;
     char buf[512];
     ub4 buf_size = sizeof(buf);
+    sword rv;
 
     if (OCINumberToInt(errhp, s, sizeof(sl), OCI_NUMBER_SIGNED, &sl) == OCI_SUCCESS) {
         return LONG2NUM(sl);
     }
-    oci_lc(OCINumberToText(errhp, s, NUMBER_FORMAT2, NUMBER_FORMAT2_LEN,
-                           NULL, 0, &buf_size, TO_ORATEXT(buf)));
-    return rb_cstr2inum(buf, 10);
+    /* convert to Integer via String */
+    rv = OCINumberToText(errhp, s, NUMBER_FORMAT2, NUMBER_FORMAT2_LEN,
+                         NULL, 0, &buf_size, TO_ORATEXT(buf));
+    if (rv == OCI_SUCCESS) {
+        return rb_cstr2inum(buf, 10);
+    }
+    if (rv == OCI_ERROR && oci8_get_error_code(errhp) == 22065) {
+        /* convert to Integer via BigDecimal as a last resort */
+        VALUE d = onum_to_d_real(s, errhp);
+        return rb_funcall(d, rb_intern("to_i"), 0);
+    }
+    oci8_raise(errhp, rv, NULL);
 }
 
 VALUE oci8_make_float(OCINumber *s, OCIError *errhp)
@@ -1195,11 +1206,23 @@ static VALUE onum_to_r(VALUE self)
  */
 static VALUE onum_to_d(VALUE self)
 {
+    return onum_to_d_real(_NUMBER(self), oci8_errhp);
+}
+
+/* Converts to BigDecimal via number in scientific notation */
+static VALUE onum_to_d_real(OCINumber *num, OCIError *errhp)
+{
+    char buf[64];
+    ub4 buf_size = sizeof(buf);
+    const const char *fmt = "FM9.99999999999999999999999999999999999999EEEE";
+
     if (!cBigDecimal) {
         rb_require("bigdecimal");
         cBigDecimal = rb_const_get(rb_cObject, id_BigDecimal);
     }
-    return rb_funcall(rb_cObject, id_BigDecimal, 1, onum_to_s(self));
+    oci_lc(OCINumberToText(errhp, num, (const oratext *)fmt, strlen(fmt),
+                           NULL, 0, &buf_size, TO_ORATEXT(buf)));
+    return rb_funcall(rb_cObject, id_BigDecimal, 1, rb_usascii_str_new(buf, buf_size));
 }
 
 /*

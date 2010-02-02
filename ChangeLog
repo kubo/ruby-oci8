@@ -1,3 +1,9 @@
+2010-02-02  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/ocinumber.c: fix to support NNUMBERS with scale larger
+	    than 38 by using scientific number notation to convert OraNumber
+	    to BigDecimal. OraNumber#to_i is also fixed.
+	    (reported by Raimonds Simanovskis)
+
 2010-01-24  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/error.c: Use OCIErrorGet() to retrieve the error message
 	    when the OCI return code is OCI_NO_DATA.
