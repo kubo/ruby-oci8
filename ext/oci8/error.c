@@ -32,6 +32,8 @@ static ID oci8_id_set_backtrace;
 static char *errbuf;
 static ub4 errbufsiz;
 
+static OCIMsg *msghp;
+
 NORETURN(static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line));
 NORETURN(static void set_backtrace_and_raise(VALUE exc, const char *file, int line));
 
@@ -341,6 +343,33 @@ void oci8_do_env_raise(OCIEnv *envhp, sword status, const char *file, int line)
 void oci8_do_raise_init_error(const char *file, int line)
 {
     VALUE msg = rb_usascii_str_new_cstr("OCI Library Initialization Error");
+    VALUE exc = rb_funcall(eOCIError, oci8_id_new, 1, msg);
+
+    rb_ivar_set(exc, oci8_id_code, rb_ary_new3(1, INT2FIX(-1)));
+    rb_ivar_set(exc, oci8_id_message, rb_ary_new3(1, msg));
+    set_backtrace_and_raise(exc, file, line);
+}
+
+static VALUE get_error_msg_by_msgno(ub4 msgno)
+{
+    char buf[256];
+    int sz;
+
+    if (msghp == NULL) {
+        OCIMessageOpen(oci8_envhp, oci8_errhp, &msghp, TO_ORATEXT("rdbms"), TO_ORATEXT("ora"), OCI_DURATION_PROCESS);
+    }
+
+    sz = snprintf(buf, sizeof(buf), "ORA-%05u: ", msgno);
+    if (msghp == NULL || OCIMessageGet(msghp, msgno, TO_ORATEXT(buf + sz), sizeof(buf) - sz) == NULL) {
+        strcpy(buf + sz, "could not get the error message");
+    }
+    return rb_external_str_new_with_enc(buf, strlen(buf), oci8_encoding);
+
+}
+
+void oci8_do_raise_by_msgno(ub4 msgno, const char *file, int line)
+{
+    VALUE msg = get_error_msg_by_msgno(msgno);
     VALUE exc = rb_funcall(eOCIError, oci8_id_new, 1, msg);
 
     rb_ivar_set(exc, oci8_id_code, rb_ary_new3(1, INT2FIX(-1)));

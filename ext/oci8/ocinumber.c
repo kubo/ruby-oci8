@@ -8,6 +8,7 @@
 #include "oci8.h"
 #include <orl.h>
 #include <errno.h>
+#include "oranumber_util.h"
 
 #ifndef RUBY_VM
 /* ruby 1.8 */
@@ -35,26 +36,6 @@ static OCINumber const_p10;  /* +10 */
 static OCINumber const_m1;   /*  -1 */
 static OCINumber const_PI2;  /* +PI/2 */
 static OCINumber const_mPI2; /* -PI/2 */
-
-#define SHRESHOLD_FMT_STR "00000000000000000000000000"
-#define SHRESHOLD_FMT (OraText*)SHRESHOLD_FMT_STR
-#define SHRESHOLD_FMT_LEN (sizeof(SHRESHOLD_FMT_STR) - 1)
-#define SHRESHOLD_VAL_STR "10000000000000000000000000"
-#define SHRESHOLD_VAL (OraText*)SHRESHOLD_VAL_STR
-#define SHRESHOLD_VAL_LEN (sizeof(SHRESHOLD_VAL_STR) - 1)
-static OCINumber const_shreshold;
-
-/* TODO: scale: -84 - 127 */
-#define NUMBER_FORMAT1_STR "FM9999999999999999999999990.9999999999999999999999999999999999999"
-#define NUMBER_FORMAT1 (OraText*)NUMBER_FORMAT1_STR
-#define NUMBER_FORMAT1_LEN (sizeof(NUMBER_FORMAT1_STR) - 1)
-#define NUMBER_FORMAT2_STR "FM99999999999999999999999999999999999990.999999999999999999999999"
-#define NUMBER_FORMAT2 (OraText*)NUMBER_FORMAT2_STR
-#define NUMBER_FORMAT2_LEN (sizeof(NUMBER_FORMAT2_STR) - 1)
-#define NUMBER_FORMAT2_DECIMAL                              (sizeof("999999999999999999999999") - 1)
-#define NUMBER_FORMAT_INT_STR "FM99999999999999999999999999999999999990"
-#define NUMBER_FORMAT_INT (OraText*)NUMBER_FORMAT_INT_STR
-#define NUMBER_FORMAT_INT_LEN (sizeof(NUMBER_FORMAT_INT_STR) - 1)
 
 #define _NUMBER(val) ((OCINumber *)DATA_PTR(val)) /* dangerous macro */
 
@@ -136,24 +117,18 @@ VALUE oci8_make_integer(OCINumber *s, OCIError *errhp)
 {
     signed long sl;
     char buf[512];
-    ub4 buf_size = sizeof(buf);
     sword rv;
 
     if (OCINumberToInt(errhp, s, sizeof(sl), OCI_NUMBER_SIGNED, &sl) == OCI_SUCCESS) {
         return LONG2NUM(sl);
     }
     /* convert to Integer via String */
-    rv = OCINumberToText(errhp, s, NUMBER_FORMAT2, NUMBER_FORMAT2_LEN,
-                         NULL, 0, &buf_size, TO_ORATEXT(buf));
-    if (rv == OCI_SUCCESS) {
+    rv = oranumber_to_str(s, buf);
+    if (rv > 0) {
         return rb_cstr2inum(buf, 10);
     }
-    if (rv == OCI_ERROR && oci8_get_error_code(errhp) == 22065) {
-        /* convert to Integer via BigDecimal as a last resort */
-        VALUE d = onum_to_d_real(s, errhp);
-        return rb_funcall(d, rb_intern("to_i"), 0);
-    }
-    oci8_raise(errhp, rv, NULL);
+    oranumber_dump(s, buf);
+    rb_raise(eOCIException, "Could not convert OraNumber(%s) to string", buf);
 }
 
 VALUE oci8_make_float(OCINumber *s, OCIError *errhp)
@@ -175,29 +150,16 @@ static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VAL
     StringValue(str);
     /* set from string. */
     if (NIL_P(fmt)) {
-        int i, cnt = 0;
-        for (i = RSTRING_LEN(str) - 1; i >= 0; i--) {
-            if (RSTRING_PTR(str)[i] != ' ')
-                cnt++;
-            if (RSTRING_PTR(str)[i] == '.') {
-                i = RSTRING_LEN(str) - i;
-                break;
-            }
-        }
-        if (i == -1)
-            cnt = 0;
-        if (cnt <= NUMBER_FORMAT2_DECIMAL) {
-            fmt_ptr = NUMBER_FORMAT2;
-            fmt_len = NUMBER_FORMAT2_LEN;
+        int rv = oranumber_from_str(result, RSTRING_PTR(str), RSTRING_LEN(str));
+        if (rv == ORANUMBER_SUCCESS) {
+            return; /* success */
         } else {
-            fmt_ptr = NUMBER_FORMAT1;
-            fmt_len = NUMBER_FORMAT1_LEN;
+            oci8_raise_by_msgno(rv);
         }
-    } else {
-        StringValue(fmt);
-        fmt_ptr = RSTRING_ORATEXT(fmt);
-        fmt_len = RSTRING_LEN(fmt);
     }
+    StringValue(fmt);
+    fmt_ptr = RSTRING_ORATEXT(fmt);
+    fmt_len = RSTRING_LEN(fmt);
     if (NIL_P(nls_params)) {
         nls_params_ptr = NULL;
         nls_params_len = 0;
@@ -1064,30 +1026,14 @@ static VALUE onum_to_char(int argc, VALUE *argv, VALUE self)
 
     rb_scan_args(argc, argv, "02", &fmt /* nil */, &nls_params /* nil */);
     if (NIL_P(fmt)) {
-        OCINumber absval;
-        sword sign;
-        boolean is_int;
-
-        oci_lc(OCINumberIsInt(errhp, _NUMBER(self), &is_int));
-        if (is_int) {
-            fmt_ptr = NUMBER_FORMAT_INT;
-            fmt_len = NUMBER_FORMAT_INT_LEN;
-        } else {
-            oci_lc(OCINumberAbs(errhp, _NUMBER(self), &absval));
-            oci_lc(OCINumberCmp(errhp, &absval, &const_shreshold, &sign));
-            if (sign >= 0) {
-                fmt_ptr = NUMBER_FORMAT2;
-                fmt_len = NUMBER_FORMAT2_LEN;
-            } else {
-                fmt_ptr = NUMBER_FORMAT1;
-                fmt_len = NUMBER_FORMAT1_LEN;
-            }
+        rv = oranumber_to_str(_NUMBER(self), buf);
+        if (rv > 0) {
+            return rb_usascii_str_new(buf, rv);
         }
-    } else {
-        StringValue(fmt);
-        fmt_ptr = RSTRING_ORATEXT(fmt);
-        fmt_len = RSTRING_LEN(fmt);
     }
+    StringValue(fmt);
+    fmt_ptr = RSTRING_ORATEXT(fmt);
+    fmt_len = RSTRING_LEN(fmt);
     if (NIL_P(nls_params)) {
         nls_params_ptr = NULL;
         nls_params_len = 0;
@@ -1285,6 +1231,24 @@ static VALUE onum_shift(VALUE self, VALUE exp)
     return oci8_make_ocinumber(&result, errhp);
 }
 
+/*
+ *  call-seq:
+ *     onum.dump    -> string
+ *
+ *  Returns internal representation whose format is same with
+ *  the return value of Oracle SQL function DUMP().
+ *
+ *   OraNumber.new(100).dump  #=> "Typ=2 Len=2: 194,2"
+ *   OraNumber.new(123).dump  #=> "Typ=2 Len=3: 194,2,24"
+ *   OraNumber.new(0.1).dump  #=> "Typ=2 Len=2: 192,11"
+ */
+static VALUE onum_dump(VALUE self)
+{
+    char buf[ORANUMBER_DUMP_BUF_SIZ];
+    int rv = oranumber_dump(_NUMBER(self), buf);
+    return rb_usascii_str_new(buf, rv);
+}
+
 static VALUE onum_hash(VALUE self)
 {
     char *c  = DATA_PTR(self);
@@ -1320,7 +1284,7 @@ static VALUE onum_inspect(VALUE self)
  *
  *  Dump <i>onum</i> for marshaling.
  */
-static VALUE onum_dump(int argc, VALUE *argv, VALUE self)
+static VALUE onum__dump(int argc, VALUE *argv, VALUE self)
 {
     char *c  = DATA_PTR(self);
     int size = c[0] + 1;
@@ -1466,9 +1430,6 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
     OCINumberDiv(errhp, &num1 /* PI */, &num2 /* 2 */, &const_PI2);
     /* set const_mPI2 */
     OCINumberNeg(errhp, &const_PI2 /* PI/2 */, &const_mPI2);
-    /* set const_shreshold */
-    OCINumberFromText(errhp, SHRESHOLD_VAL, SHRESHOLD_VAL_LEN, SHRESHOLD_FMT, SHRESHOLD_FMT_LEN,
-                      NULL, 0, &const_shreshold);
 
     /* PI */
     OCINumberSetPi(errhp, &num1);
@@ -1539,12 +1500,13 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
     if (have_OCINumberShift) {
         rb_define_method(cOCINumber, "shift", onum_shift, 1);
     }
+    rb_define_method(cOCINumber, "dump", onum_dump, 0);
 
     rb_define_method_nodoc(cOCINumber, "hash", onum_hash, 0);
     rb_define_method_nodoc(cOCINumber, "inspect", onum_inspect, 0);
 
     /* methods for marshaling */
-    rb_define_method(cOCINumber, "_dump", onum_dump, -1);
+    rb_define_method(cOCINumber, "_dump", onum__dump, -1);
     rb_define_singleton_method(cOCINumber, "_load", onum_s_load, 1);
 
     oci8_define_bind_class("OraNumber", &bind_ocinumber_class);
