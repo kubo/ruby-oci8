@@ -3,7 +3,7 @@
 #include <string.h>
 #include "oranumber_util.h"
 
-int oranumber_to_str(const OCINumber *on, char *buf)
+int oranumber_to_str(const OCINumber *on, char *buf, int buflen)
 {
     signed char exponent;
     signed char mantissa[21]; /* terminated by a negative number */
@@ -11,6 +11,20 @@ int oranumber_to_str(const OCINumber *on, char *buf)
     int len = 0;
     int idx;
     int n;
+#define PUTC(chr) do { \
+    if (len < buflen) { \
+        buf[len++] = (chr); \
+    } else { \
+        return ORANUMBER_TOO_SHORT_BUFFER; \
+    } \
+} while(0)
+#define PUTEND() do { \
+    if (len < buflen) { \
+        buf[len] = '\0'; \
+    } else { \
+        return ORANUMBER_TOO_SHORT_BUFFER; \
+    } \
+} while(0)
 
     if (datalen == 0) {
         /* too short */
@@ -19,8 +33,8 @@ int oranumber_to_str(const OCINumber *on, char *buf)
     if (datalen == 1) {
         if (on->OCINumberPart[1] == 0x80) {
             /* zero */
-            buf[0] = '0';
-            buf[1] = '\0';
+            PUTC('0');
+            PUTEND();
             return 1;
         }
         /* unexpected format */
@@ -45,7 +59,7 @@ int oranumber_to_str(const OCINumber *on, char *buf)
             mantissa[idx] = 101 - on->OCINumberPart[idx + 2];
         }
         mantissa[idx] = -1;
-        buf[len++] = '-';
+        PUTC('-');
     }
     /* convert exponent and mantissa to human readable number */
     idx = 0;
@@ -53,43 +67,43 @@ int oranumber_to_str(const OCINumber *on, char *buf)
         /* integer part */
         n = mantissa[idx++];
         if (n / 10 != 0) {
-            buf[len++] = n / 10 + '0';
+            PUTC(n / 10 + '0');
         }
-        buf[len++] = n % 10 + '0';
+        PUTC(n % 10 + '0');
         while (exponent-- >= 0) {
             n = mantissa[idx++];
             if (n < 0) {
                 do {
-                    buf[len++] = '0';
-                    buf[len++] = '0';
+                    PUTC('0');
+                    PUTC('0');
                 } while (exponent-- >= 0);
-                buf[len] = '\0';
+                PUTEND();
                 return len;
             }
-            buf[len++] = n / 10 + '0';
-            buf[len++] = n % 10 + '0';
+            PUTC(n / 10 + '0');
+            PUTC(n % 10 + '0');
         }
         if (mantissa[idx] < 0) {
-            buf[len] = '\0';
+            PUTEND();
             return len;
         }
     } else {
-        buf[len++] = '0';
+        PUTC('0');
     }
-    buf[len++] = '.';
+    PUTC('.');
     /* fractional number part */
     while (++exponent < -1) {
-        buf[len++] = '0';
-        buf[len++] = '0';
+        PUTC('0');
+        PUTC('0');
     }
     while ((n = mantissa[idx++]) >= 0) {
-        buf[len++] = n / 10 + '0';
-        buf[len++] = n % 10 + '0';
+        PUTC(n / 10 + '0');
+        PUTC(n % 10 + '0');
     }
     if (buf[len - 1] == '0') {
         len--;
     }
-    buf[len] = '\0';
+    PUTEND();
     return len;
 }
 

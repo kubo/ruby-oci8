@@ -123,12 +123,12 @@ VALUE oci8_make_integer(OCINumber *s, OCIError *errhp)
         return LONG2NUM(sl);
     }
     /* convert to Integer via String */
-    rv = oranumber_to_str(s, buf);
+    rv = oranumber_to_str(s, buf, sizeof(buf));
     if (rv > 0) {
         return rb_cstr2inum(buf, 10);
     }
     oranumber_dump(s, buf);
-    rb_raise(eOCIException, "Could not convert OraNumber(%s) to string", buf);
+    rb_raise(eOCIException, "Invalid internal number format: %s", buf);
 }
 
 VALUE oci8_make_float(OCINumber *s, OCIError *errhp)
@@ -1026,10 +1026,12 @@ static VALUE onum_to_char(int argc, VALUE *argv, VALUE self)
 
     rb_scan_args(argc, argv, "02", &fmt /* nil */, &nls_params /* nil */);
     if (NIL_P(fmt)) {
-        rv = oranumber_to_str(_NUMBER(self), buf);
+        rv = oranumber_to_str(_NUMBER(self), buf, sizeof(buf));
         if (rv > 0) {
             return rb_usascii_str_new(buf, rv);
         }
+        oranumber_dump(_NUMBER(self), buf);
+        rb_raise(eOCIException, "Invalid internal number format: %s", buf);
     }
     StringValue(fmt);
     fmt_ptr = RSTRING_ORATEXT(fmt);

@@ -8,11 +8,14 @@
 #define ORANUMBER_UTIL_H 1
 #include <orl.h>
 
+#define ORANUMBER_INVALID_INTERNAL_FORMAT -1
+#define ORANUMBER_TOO_SHORT_BUFFER -2
+
 #define ORANUMBER_SUCCESS 0
 #define ORANUMBER_INVALID_NUMBER 1722
 #define ORANUMBER_NUMERIC_OVERFLOW 1426
 
-int oranumber_to_str(const OCINumber *on, char *buf);
+int oranumber_to_str(const OCINumber *on, char *buf, int buflen);
 int oranumber_from_str(OCINumber *on, const char *buf, int buflen);
 
 #define ORANUMBER_DUMP_BUF_SIZ 99

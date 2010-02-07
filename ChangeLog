@@ -1,4 +1,10 @@
 2010-02-07  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/ocinumber.c, ext/oci8/oranumber_util.c,
+	  ext/oci8/oranumber_util.h: change the declaration of
+	    oranumber_to_str() to prevent buffer overflow by
+	    unexpected invalid Oracle number internal data.
+
+2010-02-07  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/error.c, ext/oci8/oci8.h: add oci8_raise_by_msgno()
 	    to retrieve a Oracle error message which depends on NLS_LANGUAGE.
 	* ext/oci8/oranumber_util.c, ext/oci8/oranumber_util.h,
