@@ -35,6 +35,8 @@ ext/oci8/ocihandle.c
 ext/oci8/ocinumber.c
 ext/oci8/oraconf.rb
 ext/oci8/oradate.c
+ext/oci8/oranumber_util.c
+ext/oci8/oranumber_util.h
 ext/oci8/post-config.rb
 ext/oci8/stmt.c
 ext/oci8/object.c
