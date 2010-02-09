@@ -1,3 +1,8 @@
+2010-02-09  KUBO Takehiro  <kubo@jiubao.org>
+	* dist-files: add ext/oci8/oranumber_util.c and
+	    ext/oci8/oranumber_util.h.
+	    (reported by Raimonds Simanovskis)
+
 2010-02-07  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocinumber.c, ext/oci8/oranumber_util.c,
 	  ext/oci8/oranumber_util.h: change the declaration of
