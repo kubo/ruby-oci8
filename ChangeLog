@@ -1,4 +1,10 @@
 2010-02-27  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/error.c, ext/oci8/extconf.rb, ext/oci8/oci8.h: fix for
+	    old Oracle versions, which lack declarations of OCIMsg, oraub8,
+	    orasb8 and OCI_DURATION_PROCESS.
+	* ext/oci8/ocihandle.c: fix for mingw compiler.
+
+2010-02-27  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.yml, ext/oci8/error.c, ext/oci8/oci8.h,
 	  ext/oci8/ocinumber.c: fix for Oracle 8.0 client, which doesn't
 	    have OCIMessageOpen() and OCIMessageGet().

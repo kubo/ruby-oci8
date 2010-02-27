@@ -9,7 +9,7 @@
  */
 #include "oci8.h"
 
-#ifdef WIN32
+#ifdef _MSC_VER
 #define MAGIC_NUMBER 0xDEAFBEAFDEAFBEAFui64;
 #else
 #define MAGIC_NUMBER 0xDEAFBEAFDEAFBEAFull;

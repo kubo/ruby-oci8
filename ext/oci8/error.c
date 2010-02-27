@@ -34,6 +34,10 @@ static ub4 errbufsiz;
 
 static OCIMsg *msghp;
 
+#ifndef OCI_DURATION_PROCESS
+#define OCI_DURATION_PROCESS ((OCIDuration)5)
+#endif
+
 NORETURN(static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line));
 NORETURN(static void set_backtrace_and_raise(VALUE exc, const char *file, int line));
 

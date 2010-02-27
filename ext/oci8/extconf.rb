@@ -69,6 +69,7 @@ have_type('OCIInterval*', 'ociap.h')
 have_type('OCICallbackLobRead2', 'ociap.h')
 have_type('OCICallbackLobWrite2', 'ociap.h')
 have_type('OCIAdmin*', 'ociap.h')
+have_type('OCIMsg*', 'ociap.h')
 
 if with_config('oracle-version')
   oci_client_version = OCI8::OracleVersion.new(with_config('oracle-version')).to_i

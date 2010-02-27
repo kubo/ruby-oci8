@@ -67,6 +67,8 @@ typedef   signed long long orasb8;
 typedef unsigned __int64 oraub8;
 typedef   signed __int64 orasb8;
 #endif
+typedef oraub8 ub8;
+typedef orasb8 sb8;
 #endif /* ORAXB8_DEFINED */
 
 #ifndef HAVE_TYPE_ORATEXT
@@ -90,6 +92,9 @@ typedef sb4 (*OCICallbackLobWrite2)(dvoid *ctxp, dvoid *bufp, oraub8 *lenp,
 #endif
 #ifndef HAVE_TYPE_OCIADMIN_
 typedef struct OCIAdmin OCIAdmin;
+#endif
+#ifndef HAVE_TYPE_OCIMSG_
+typedef struct OCIMsg  OCIMsg;
 #endif
 
 /* new macros in ruby 1.8.6.
