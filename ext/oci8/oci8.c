@@ -64,6 +64,28 @@ static VALUE oci8_s_oracle_client_vernum(VALUE klass)
     return oracle_client_vernum;
 }
 
+/*
+ * call-seq:
+ *   OCI8.error_message(message_no) -> string
+ *
+ * Get the Oracle error message specified by message_no.
+ * Its language depends on NLS_LANGUAGE.
+ *
+ * Note: This method is unavailable if the Oracle client version is 8.0.
+ *
+ * example:
+ *   # When NLS_LANG is american_america.AL32UTF8
+ *   OCI8.error_message(1) # => "ORA-00001: unique constraint (%s.%s) violated"
+ *   
+ *   # When NLS_LANG is french_japan.AL32UTF8
+ *   OCI8.error_message(1) # => "ORA-00001: violation de contrainte unique (%s.%s)"
+ *
+ */
+static VALUE oci8_s_error_message(VALUE klass, VALUE msgid)
+{
+    return oci8_get_error_message(NUM2UINT(msgid), NULL);
+}
+
 #define CONN_STR_REGEX "/^([^(\\s|\\@)]*)\\/([^(\\s|\\@)]*)(?:\\@(\\S+))?(?:\\s+as\\s+(\\S*)\\s*)?$/i"
 static void oci8_do_parse_connect_string(VALUE conn_str, VALUE *user, VALUE *pass, VALUE *dbname, VALUE *mode)
 {
@@ -942,6 +964,9 @@ VALUE Init_oci8(void)
     id_set_prefetch_rows = rb_intern("prefetch_rows=");
 
     rb_define_singleton_method_nodoc(cOCI8, "oracle_client_vernum", oci8_s_oracle_client_vernum, 0);
+    if (have_OCIMessageOpen && have_OCIMessageGet) {
+        rb_define_singleton_method(cOCI8, "error_message", oci8_s_error_message, 1);
+    }
     rb_define_private_method(cOCI8, "parse_connect_string", oci8_parse_connect_string, 1);
     rb_define_method(cOCI8, "initialize", oci8_svcctx_initialize, -1);
     rb_define_method(cOCI8, "logoff", oci8_svcctx_logoff, 0);

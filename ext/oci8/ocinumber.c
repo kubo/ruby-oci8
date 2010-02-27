@@ -154,7 +154,16 @@ static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VAL
         if (rv == ORANUMBER_SUCCESS) {
             return; /* success */
         } else {
-            oci8_raise_by_msgno(rv);
+            const char *default_msg = NULL;
+            switch (rv) {
+            case ORANUMBER_INVALID_NUMBER:
+                default_msg = "invalid number";
+                break;
+            case ORANUMBER_NUMERIC_OVERFLOW:
+                default_msg = "numeric overflow";
+                break;
+            }
+            oci8_raise_by_msgno(rv, default_msg);
         }
     }
     StringValue(fmt);

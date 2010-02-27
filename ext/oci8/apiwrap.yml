@@ -947,6 +947,23 @@ OCILobOpen_nb:
             - OCILobLocator *locp
             - ub1 mode
 
+OCIMessageOpen:
+  :version: 810
+  :args:    - dvoid *envhp
+            - OCIError *errhp
+            - OCIMsg **msghp
+            - CONST OraText *product
+            - CONST OraText *facility
+            - OCIDuration dur
+
+OCIMessageGet:
+  :version: 810
+  :ret:     OraText *
+  :args:    - OCIMsg *msgh
+            - ub4 msgno
+            - OraText *msgbuf
+            - size_t buflen
+
 # round trip: 0
 OCINumberIsInt:
   :version: 810

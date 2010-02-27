@@ -350,26 +350,36 @@ void oci8_do_raise_init_error(const char *file, int line)
     set_backtrace_and_raise(exc, file, line);
 }
 
-static VALUE get_error_msg_by_msgno(ub4 msgno)
+VALUE oci8_get_error_message(ub4 msgno, const char *default_msg)
 {
-    char buf[256];
-    int sz;
+    char head[32];
+    size_t headsz;
+    const char *errmsg = NULL;
+    char msgbuf[64];
 
-    if (msghp == NULL) {
-        OCIMessageOpen(oci8_envhp, oci8_errhp, &msghp, TO_ORATEXT("rdbms"), TO_ORATEXT("ora"), OCI_DURATION_PROCESS);
+    if (have_OCIMessageGet) {
+        if (msghp == NULL) {
+            oci_lc(OCIMessageOpen(oci8_envhp, oci8_errhp, &msghp, TO_ORATEXT("rdbms"), TO_ORATEXT("ora"), OCI_DURATION_PROCESS));
+        }
+        errmsg = TO_CHARPTR(OCIMessageGet(msghp, msgno, NULL, 0));
     }
-
-    sz = snprintf(buf, sizeof(buf), "ORA-%05u: ", msgno);
-    if (msghp == NULL || OCIMessageGet(msghp, msgno, TO_ORATEXT(buf + sz), sizeof(buf) - sz) == NULL) {
-        strcpy(buf + sz, "could not get the error message");
+    if (errmsg == NULL) {
+        if (default_msg != NULL) {
+            errmsg = default_msg;
+        } else {
+            /* last resort */
+            snprintf(msgbuf, sizeof(msgbuf), "Message %u not found;  product=rdbms; facility=ora", msgno);
+            errmsg = msgbuf;
+        }
     }
-    return rb_external_str_new_with_enc(buf, strlen(buf), oci8_encoding);
-
+    headsz = snprintf(head, sizeof(head), "ORA-%05u: ", msgno);
+    return rb_str_append(rb_usascii_str_new(head, headsz),
+                         rb_external_str_new_with_enc(errmsg, strlen(errmsg), oci8_encoding));
 }
 
-void oci8_do_raise_by_msgno(ub4 msgno, const char *file, int line)
+void oci8_do_raise_by_msgno(ub4 msgno, const char *default_msg, const char *file, int line)
 {
-    VALUE msg = get_error_msg_by_msgno(msgno);
+    VALUE msg = oci8_get_error_message(msgno, default_msg);
     VALUE exc = rb_funcall(eOCIError, oci8_id_new, 1, msg);
 
     rb_ivar_set(exc, oci8_id_code, rb_ary_new3(1, INT2FIX(-1)));

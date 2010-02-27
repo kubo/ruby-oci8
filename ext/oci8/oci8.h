@@ -336,7 +336,7 @@ typedef struct {
 #define oci8_raise(err, status, stmt) oci8_do_raise(err, status, stmt, __FILE__, __LINE__)
 #define oci8_env_raise(err, status) oci8_do_env_raise(err, status, __FILE__, __LINE__)
 #define oci8_raise_init_error() oci8_do_raise_init_error(__FILE__, __LINE__)
-#define oci8_raise_by_msgno(msgno) oci8_do_raise_by_msgno(msgno, __FILE__, __LINE__)
+#define oci8_raise_by_msgno(msgno, default_msg) oci8_do_raise_by_msgno(msgno, default_msg, __FILE__, __LINE__)
 
 /* raise on error */
 #define oci_lc(rv) do { \
@@ -413,7 +413,8 @@ NORETURN(void oci8_do_raise(OCIError *, sword status, OCIStmt *, const char *fil
 NORETURN(void oci8_do_env_raise(OCIEnv *, sword status, const char *file, int line));
 NORETURN(void oci8_do_raise_init_error(const char *file, int line));
 sb4 oci8_get_error_code(OCIError *errhp);
-NORETURN(void oci8_do_raise_by_msgno(ub4 msgno, const char *file, int line));
+VALUE oci8_get_error_message(ub4 msgno, const char *default_msg);
+NORETURN(void oci8_do_raise_by_msgno(ub4 msgno, const char *default_msg, const char *file, int line));
 
 /* ocihandle.c */
 void Init_oci8_handle(void);

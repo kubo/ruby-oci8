@@ -1,3 +1,10 @@
+2010-02-27  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml, ext/oci8/error.c, ext/oci8/oci8.h,
+	  ext/oci8/ocinumber.c: fix for Oracle 8.0 client, which doesn't
+	    have OCIMessageOpen() and OCIMessageGet().
+	* ext/oci8/oci8.c: add a new method OCI8.error_message to get
+	    a error message which depends on NLS_LANGUAGE.
+
 2010-02-09  KUBO Takehiro  <kubo@jiubao.org>
 	* dist-files: add ext/oci8/oranumber_util.c and
 	    ext/oci8/oranumber_util.h.
