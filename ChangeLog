@@ -1,4 +1,9 @@
 2010-02-27  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/datetime.rb: fix a problem that fractional seconds are lost
+	    when Time value is bound to TIMESTAMP.
+	    (reported by Raimonds Simanovskis)
+
+2010-02-27  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/error.c, ext/oci8/extconf.rb, ext/oci8/oci8.h: fix for
 	    old Oracle versions, which lack declarations of OCIMsg, oraub8,
 	    orasb8 and OCI_DURATION_PROCESS.

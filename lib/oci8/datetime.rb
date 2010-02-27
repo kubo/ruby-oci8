@@ -92,9 +92,13 @@ class OCI8
         end
         return [year, month, day, hour, minute, sec] unless full
 
-        # sec_fraction
+        # fractional second
         if val.respond_to? :sec_fraction
           fsec = (val.sec_fraction * @@datetime_fsec_base).to_i
+        elsif val.respond_to? :nsec
+          fsec = val.nsec
+        elsif val.respond_to? :usec
+          fsec = val.usec * 1000
         else
           fsec = 0
         end
