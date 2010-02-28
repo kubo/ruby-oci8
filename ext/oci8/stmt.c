@@ -342,16 +342,18 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
     oci8_bind_t *obind;
     const oci8_bind_class_t *bind_class;
 
-    obind = (oci8_bind_t *)stmt->base.children;
-    do {
-        if (obind->base.type == OCI_HTYPE_DEFINE) {
-            bind_class = (const oci8_bind_class_t *)obind->base.klass;
-            if (bind_class->pre_fetch_hook != NULL) {
-                bind_class->pre_fetch_hook(obind, stmt->svc);
+    if (stmt->base.children != NULL) {
+        obind = (oci8_bind_t *)stmt->base.children;
+        do {
+            if (obind->base.type == OCI_HTYPE_DEFINE) {
+                bind_class = (const oci8_bind_class_t *)obind->base.klass;
+                if (bind_class->pre_fetch_hook != NULL) {
+                    bind_class->pre_fetch_hook(obind, stmt->svc);
+                }
             }
-        }
-        obind = (oci8_bind_t *)obind->base.next;
-    } while (obind != (oci8_bind_t*)stmt->base.children);
+            obind = (oci8_bind_t *)obind->base.next;
+        } while (obind != (oci8_bind_t*)stmt->base.children);
+    }
     rv = OCIStmtFetch_nb(svcctx, stmt->base.hp.stmt, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT);
 #ifdef USE_DYNAMIC_FETCH
     while (rv == OCI_NEED_DATA) {

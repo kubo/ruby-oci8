@@ -1,3 +1,58 @@
+2.0.4:
+
+* New Features
+
+  - OCI8.error_message(message_no) -> string
+
+    Gets the Oracle error message specified by message id.
+    Its language depends on NLS_LANGUAGE.
+
+    Note: This method is unavailable if the Oracle client
+          version is 8.0.
+
+      # When NLS_LANG is AMERICAN_AMERICA.AL32UTF8
+      OCI8.error_message(1)
+      # => "ORA-00001: unique constraint (%s.%s) violated"
+
+      # When NLS_LANG is FRENCH_FRANCE.AL32UTF8
+      OCI8.error_message(1)
+      # => "ORA-00001: violation de contrainte unique (%s.%s)"
+
+  - OraNumber#dump -> string
+
+    Returns OraNumber's internal representation whose format
+    is same with the return value of Oracle SQL function DUMP().
+  
+      OraNumber.new(100).dump #=> "Typ=2 Len=2: 194,2"
+      OraNumber.new(123).dump #=> "Typ=2 Len=3: 194,2,24"
+      OraNumber.new(0.1).dump #=> "Typ=2 Len=2: 192,11"
+
+* Fixed issues
+
+  - Fractional second part is lost when ruby's Time instance is bound
+    to Oracle datatype TIMESTAMP.
+    (reported by Raimonds Simanovskis)
+
+  - OraNumber#to_i and OraNumber#to_s fail when its scale is larger
+    than 38.
+    (reported by Raimonds Simanovskis)
+
+  - Memory leak about 30 bytes per one place holder for object type.
+ 
+  - Segmentation fault when a collection of string is bound.
+    (reported by Raimonds Simanovskis)
+
+  - Segmentation fault when GC starts while initializing a bind
+    object for object type.
+    (reported by Remi Gagnon)
+
+  - Segmentation fault when OCI8::Cursor#fetch is called prior to
+    OCI8::Cursor#exec.
+
+  - Detailed error message is not reported when PL/SQL NO_DATA_FOUND
+    exception is raised.
+    (reported by Raimonds Simanovskis)
+
 2.0.3:
 
 * Incompatible Changes

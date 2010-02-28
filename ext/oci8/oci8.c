@@ -74,10 +74,10 @@ static VALUE oci8_s_oracle_client_vernum(VALUE klass)
  * Note: This method is unavailable if the Oracle client version is 8.0.
  *
  * example:
- *   # When NLS_LANG is american_america.AL32UTF8
+ *   # When NLS_LANG is AMERICAN_AMERICA.AL32UTF8
  *   OCI8.error_message(1) # => "ORA-00001: unique constraint (%s.%s) violated"
  *   
- *   # When NLS_LANG is french_japan.AL32UTF8
+ *   # When NLS_LANG is FRENCH_FRANCE.AL32UTF8
  *   OCI8.error_message(1) # => "ORA-00001: violation de contrainte unique (%s.%s)"
  *
  */

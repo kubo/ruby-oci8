@@ -1,3 +1,10 @@
+2010-02-28  KUBO Takehiro  <kubo@jiubao.org>
+	* NEWS: add changes between 2.0.3 and 2.0.4.
+	* VERSION: change the version to 2.0.3.
+	* ext/oci8/stmt.c: fix segmentation fault when OCI8::Cursor#fetch
+	    is called prior to OCI8::Cursor#exec.
+	* ext/oci8/oci8.c: minor fix in rdoc comment.
+
 2010-02-27  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/datetime.rb: fix a problem that fractional seconds are lost
 	    when Time value is bound to TIMESTAMP.
@@ -40,7 +47,7 @@
 	    OraNumber to string and vice varse.
 
 2010-02-02  KUBO Takehiro  <kubo@jiubao.org>
-	* ext/oci8/ocinumber.c: fix to support NNUMBERS with scale larger
+	* ext/oci8/ocinumber.c: fix to support NUMBERS with scale larger
 	    than 38 by using scientific number notation to convert OraNumber
 	    to BigDecimal. OraNumber#to_i is also fixed.
 	    (reported by Raimonds Simanovskis)
