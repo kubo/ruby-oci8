@@ -1171,7 +1171,7 @@ static VALUE onum_to_d_real(OCINumber *num, OCIError *errhp)
 {
     char buf[64];
     ub4 buf_size = sizeof(buf);
-    const const char *fmt = "FM9.99999999999999999999999999999999999999EEEE";
+    const char *fmt = "FM9.99999999999999999999999999999999999999EEEE";
 
     if (!cBigDecimal) {
         rb_require("bigdecimal");

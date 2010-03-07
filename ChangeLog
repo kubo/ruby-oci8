@@ -1,3 +1,8 @@
+2010-03-07  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/ocinumber.c: fix to compile on HP-UX.
+	    Duplicate const qualifiers prevented HP-UX cc from compiling.
+	    (reported by Sebastian YEPES)
+
 2010-02-28  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 2.0.3 and 2.0.4.
 	* VERSION: change the version to 2.0.3.
