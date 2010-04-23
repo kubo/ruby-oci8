@@ -1,4 +1,10 @@
 2010-04-23  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oranumber_util.c, test/test_oranumber.rb:
+	    add limitted support for OraNumber's positive and negative
+	    infinity. They are converted to '~' and '-~' respectively
+	    as described in <URL:http://www.ixora.com.au/notes/infinity.htm>.
+
+2010-04-23  KUBO Takehiro  <kubo@jiubao.org>
 	* Makefile: fix wrong dependencies in Makefile when running
 	    'make -jNNN (where NNN >= 2)'
 	    (contributed by Alyano Alyanos. See bug #28129 on rubyforge.)

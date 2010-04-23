@@ -37,8 +37,23 @@ int oranumber_to_str(const OCINumber *on, char *buf, int buflen)
             PUTEND();
             return 1;
         }
+        if (on->OCINumberPart[1] == 0) {
+            /* negative infinity */
+            PUTC('-');
+            PUTC('~');
+            PUTEND();
+            return 2;
+        }
         /* unexpected format */
         return -1;
+    }
+    if (datalen == 2) {
+        if (on->OCINumberPart[1] == 255 && on->OCINumberPart[2] == 101) {
+            /* positive infinity */
+            PUTC('~');
+            PUTEND();
+            return 1;
+        }
     }
     if (datalen > 21) {
         /* too long */
@@ -137,6 +152,28 @@ int oranumber_from_str(OCINumber *on, const char *buf, int buflen)
         buf++;
         is_positive = 0;
     }
+    if (*buf == '~') {
+        buf ++;
+        /* skip trailing spaces */
+        while (buf < end && *buf == ' ') {
+            buf++;
+        }
+        if (buf != end) {
+            return ORANUMBER_INVALID_NUMBER;
+        }
+        if (is_positive) {
+            /* positive infinity */
+            on->OCINumberPart[0] = 2;
+            on->OCINumberPart[1] = 255;
+            on->OCINumberPart[2] = 101;
+        } else {
+            /* negative infinity */
+            on->OCINumberPart[0] = 1;
+            on->OCINumberPart[1] = 0;
+        }
+        return ORANUMBER_SUCCESS;
+    }
+
     /* next should be number or a dot */
     if ((*buf < '0' || '9' < *buf) && *buf != '.') {
         return ORANUMBER_INVALID_NUMBER;

@@ -125,6 +125,33 @@ class TestOraNumber < Test::Unit::TestCase
         val = $1+'.'+$2 if /(-?)0\.(.*)/ =~ val
         assert_equal(val, cursor[:out])
       end
+      # Infinity and -Infinity
+      ['~', '-~'].each do |val|
+        cursor[:in] = OraNumber.new(val)
+        cursor.exec
+        assert_equal(val, cursor[:out])
+      end
+      if OCI8::oracle_client_version >= OCI8::ORAVER_10_1
+        cursor = conn.parse(<<EOS)
+BEGIN
+  IF (:in_oranum = CAST(:in_binary_double AS NUMBER)) THEN
+    :result := 'match';
+  ELSE
+    :result := 'unmatch';
+  END IF;
+END;
+EOS
+        cursor.bind_param(:in_oranum, nil, OraNumber)
+        cursor.bind_param(:in_binary_double, nil, :binary_double)
+        cursor.bind_param(:result, nil, String, 7)
+        [['~', 1.0/0.0], ['-~', -1.0/0.0]].each do |val|
+          cursor[:in_oranum] = OraNumber.new(val[0])
+          cursor[:in_binary_double] = val[1]
+          cursor.exec
+          assert_equal(cursor[:result], 'match')
+        end
+      end
+
     ensure
       conn.logoff
     end
@@ -142,13 +169,24 @@ class TestOraNumber < Test::Unit::TestCase
         cursor.exec
         assert_equal(OraNumber.new(val), cursor[:out])
       end
+      # Infinity and -Infinity
+      if OCI8::oracle_client_version >= OCI8::ORAVER_10_1
+        cursor = conn.parse("BEGIN :out := CAST(:in AS NUMBER); END;")
+        cursor.bind_param(:out, OraNumber)
+        cursor.bind_param(:in, nil, :binary_double)
+        [['~', 1.0/0.0], ['-~', -1.0/0.0]].each do |val|
+          cursor[:in] = val[1]
+          cursor.exec
+          assert_equal(OraNumber.new(val[0]), cursor[:out])
+        end
+      end
     ensure
       conn.logoff
     end
   end
 
   def test_dup
-    LARGE_RANGE_VALUES.each do |x|
+    (LARGE_RANGE_VALUES + ['~', '-~']).each do |x|
       n = OraNumber.new(x)
       assert_equal(n, n.dup)
       assert_equal(n, n.clone)
@@ -156,14 +194,14 @@ class TestOraNumber < Test::Unit::TestCase
   end
 
   def test_marshal
-    LARGE_RANGE_VALUES.each do |x|
+    (LARGE_RANGE_VALUES + ['~', '-~']).each do |x|
       n = OraNumber.new(x)
       assert_equal(n, Marshal.load(Marshal.dump(n)))
     end
   end
 
   def test_yaml
-    LARGE_RANGE_VALUES.each do |x|
+    (LARGE_RANGE_VALUES + ['~', '-~']).each do |x|
       n = OraNumber.new(x)
       assert_equal(n, YAML.load(YAML.dump(n)))
     end
