@@ -1,3 +1,8 @@
+2010-04-23  KUBO Takehiro  <kubo@jiubao.org>
+	* Makefile: fix wrong dependencies in Makefile when running
+	    'make -jNNN (where NNN >= 2)'
+	    (contributed by Alyano Alyanos. See bug #28129 on rubyforge.)
+
 2010-03-07  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocinumber.c: fix to compile on HP-UX.
 	    Duplicate const qualifiers prevented HP-UX cc from compiling.

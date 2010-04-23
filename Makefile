@@ -4,12 +4,10 @@ RDOC = rdoc
 
 all: build
 
-build: config.save setup
-
 config.save: lib/oci8.rb.in
 	$(RUBY) setup.rb config
 
-setup:
+build: config.save
 	$(RUBY) setup.rb setup
 
 check: build
