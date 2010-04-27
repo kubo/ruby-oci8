@@ -2,7 +2,7 @@
 /*
  * encoding.c - part of ruby-oci8
  *
- * Copyright (C) 2008 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2008-2010 KUBO Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
@@ -21,6 +21,9 @@ typedef struct {
     } u;
 } cb_arg_t;
 
+/* NLS ratio, maximum number of bytes per one chracter */
+int oci8_nls_ratio = 1;
+
 /* Oracle charset id -> Oracle charset name */
 static VALUE csid2name;
 
@@ -32,6 +35,30 @@ static VALUE oci8_charset_name2id(VALUE svc, VALUE name);
 rb_encoding *oci8_encoding;
 #endif
 
+
+/*
+ * call-seq:
+ *   charset_id2name(charset_id) -> charset_name
+ *
+ * <b>(new in 2.0.0)</b>
+ *
+ * Returns the Oracle character set name from the specified
+ * character set ID if it is valid. Otherwise, +nil+ is returned.
+ *
+ * === Oracle 9iR2 client or upper
+ *
+ * It is done by using the mapping table stored in the client side.
+ *
+ * === Oracle 9iR1 client or lower
+ *
+ * It executes the following PL/SQL block internally to use
+ * the mapping table stored in the server side.
+ *
+ *   BEGIN
+ *     :name := nls_charset_name(:csid);
+ *   END;
+ *
+ */
 VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
 {
     VALUE name = rb_hash_aref(csid2name, csid);
@@ -83,6 +110,29 @@ VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
     return name;
 }
 
+/*
+ * call-seq:
+ *   charset_name2id(charset_name) -> charset_id
+ *
+ * <b>(new in 2.0.0)</b>
+ *
+ * Returns the Oracle character set ID for the specified Oracle
+ * character set name if it is valid. Othewise, +nil+ is returned.
+ *
+ * === Oracle 9iR2 client or upper
+ *
+ * It is done by using the mapping table stored in the client side.
+ *
+ * === Oracle 9iR1 client or lower
+ *
+ * It executes the following PL/SQL block internally to use
+ * the mapping table stored in the server side.
+ *
+ *   BEGIN
+ *     :csid := nls_charset_id(:name);
+ *   END;
+ *
+ */
 static VALUE oci8_charset_name2id(VALUE svc, VALUE name)
 {
     VALUE csid;
@@ -132,27 +182,72 @@ static VALUE oci8_charset_name2id(VALUE svc, VALUE name)
     return csid;
 }
 
+/*
+ * call-seq:
+ *   OCI8.nls_ratio -> integer
+ *
+ * <b>(new in 2.0.5)</b>
+ *
+ * Gets NLS ratio, maximum number of bytes per one character of the
+ * current NLS chracter set. It is a factor to calculate the
+ * internal buffer size of a string bind variable whose nls length
+ * semantics is char.
+ */
+static VALUE oci8_get_nls_ratio(VALUE klass)
+{
+    return INT2NUM(oci8_nls_ratio);
+}
+
+/*
+ * call-seq:
+ *   OCI8.nls_ratio = integer
+ *
+ * <b>(new in 2.0.5)</b>
+ *
+ * Sets NLS ratio, maximum number of bytes per one character of the
+ * current NLS chracter set. It is initialized in 'oci8/encoding-init.rb'
+ * when oci8 is required. You have no need to set it explicitly.
+ */
+static VALUE oci8_set_nls_ratio(VALUE klass, VALUE val)
+{
+    int v = NUM2INT(val);
+    if (v <= 0) {
+        rb_raise(rb_eRangeError, "expected a positive integer but %d", v);
+    }
+    oci8_nls_ratio = v;
+    return val;
+}
+
 #ifdef HAVE_TYPE_RB_ENCODING
 
 /*
  * call-seq:
- *   OCI8.encoding -> enc
+ *    OCI8.encoding -> enc
  *
- * (new in ruby 1.9)
+ * <b>(new in 2.0.0 and ruby 1.9)</b>
  *
- * Returns Oracle client encoding.
+ * Returns the Oracle client encoding.
  *
- * String values passed to Oracle, such as SQL statements,
- * bind values etc., are converted from their encoding to
- * the Oracle client encoding.
+ * When string data, such as SQL statements and bind variables,
+ * are passed to Oracle, they are converted to +OCI8.encoding+
+ * in advance.
  *
- * If <code>Encoding.default_internal</code> is nil,
- * string values got from Oracle are tagged by
- * <code>OCI8.encoding</code>. If not nil, they are
- * converted from <code>OCI8.encoding</code> to
- * <code>Encoding.default_internal</code> by default.
+ *   # When OCI8.encoding is ISO-8859-1,
+ *   conn.exec('insert into country_code values(:1, :2, :3)',
+ *             'AT', 'Austria', "\u00d6sterreichs")
+ *   # "\u00d6sterreichs" is 'Österreichs' encoded by UTF-8.
+ *   # It is converted to ISO-8859-1 before it is passed to
+ *   # the Oracle C API.
  *
- * If it is 'ASCII-8BIT', no encoding conversions are done.
+ *
+ * When string data, such as fetched values and bind variable
+ * for output, are retrieved from Oracle, they are encoded
+ * by +OCI8.encoding+ if +Encoding.default_internal+ is +nil+.
+ * If it isn't +nil+, they are converted from +OCI8.encoding+
+ * to +Encoding.default_internal+.
+ *
+ * If +OCI8.encoding+ is ASCII-8BIT, no encoding conversions
+ * are done.
  */
 static VALUE oci8_get_encoding(VALUE klass)
 {
@@ -163,9 +258,11 @@ static VALUE oci8_get_encoding(VALUE klass)
  * call-seq:
  *   OCI8.encoding = enc or nil
  *
- * (new in ruby 1.9)
+ * <b>(new in 2.0.0 and ruby 1.9)</b>
  *
- * Sets Oracle client encoding.
+ * Sets Oracle client encoding. You must not use this method.
+ * You should set the environment variable NLS_LANG properly to
+ * change +OCI8.encoding+.
  */
 static VALUE oci8_set_encoding(VALUE klass, VALUE encoding)
 {
@@ -180,6 +277,10 @@ static VALUE oci8_set_encoding(VALUE klass, VALUE encoding)
 
 void Init_oci8_encoding(VALUE cOCI8)
 {
+#if 0
+    oci8_cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
+    cOCI8 = rb_define_class("OCI8", oci8_cOCIHandle);
+#endif
     csid2name = rb_hash_new();
     rb_global_variable(&csid2name);
 
@@ -189,6 +290,8 @@ void Init_oci8_encoding(VALUE cOCI8)
 
     rb_define_method(cOCI8, "charset_name2id", oci8_charset_name2id, 1);
     rb_define_method(cOCI8, "charset_id2name", oci8_charset_id2name, 1);
+    rb_define_singleton_method(cOCI8, "nls_ratio", oci8_get_nls_ratio, 0);
+    rb_define_singleton_method(cOCI8, "nls_ratio=", oci8_set_nls_ratio, 1);
 #ifdef HAVE_TYPE_RB_ENCODING
     rb_define_singleton_method(cOCI8, "encoding", oci8_get_encoding, 0);
     rb_define_singleton_method(cOCI8, "encoding=", oci8_set_encoding, 1);

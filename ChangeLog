@@ -1,3 +1,11 @@
+2010-04-27  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/encoding.c: add new methods OCI8.nls_ratio
+	    and OCI8.nls_ratio=. Comments for rdoc are added and
+	    revised for OCI8#charset_name2id, OCI8#charset_name2id=,
+	    OCI8.encoding and OCI8.encoding=.
+	* lib/oci8.rb.in, lib/oci8/encoding-init.rb: set
+	    OCI8.nls_ratio on initialization.
+
 2010-04-23  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oranumber_util.c, test/test_oranumber.rb:
 	    add limitted support for OraNumber's positive and negative
@@ -16,7 +24,7 @@
 
 2010-02-28  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 2.0.3 and 2.0.4.
-	* VERSION: change the version to 2.0.3.
+	* VERSION: change the version to 2.0.4.
 	* ext/oci8/stmt.c: fix segmentation fault when OCI8::Cursor#fetch
 	    is called prior to OCI8::Cursor#exec.
 	* ext/oci8/oci8.c: minor fix in rdoc comment.
