@@ -1,4 +1,9 @@
 2010-04-27  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c, ext/oci8/object.c, ext/oci8/oci8.h,
+	  ext/oci8/stmt.c: refactor code to prepare character length
+	    semantics support.
+
+2010-04-27  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/encoding.c: add new methods OCI8.nls_ratio
 	    and OCI8.nls_ratio=. Comments for rdoc are added and
 	    revised for OCI8#charset_name2id, OCI8#charset_name2id=,

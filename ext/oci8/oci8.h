@@ -261,7 +261,7 @@ struct oci8_bind_class {
     void (*out)(oci8_bind_t *obind, ub4 idx, ub1 piece, void **valuepp, ub4 **alenpp, void **indpp);
     void (*pre_fetch_hook)(oci8_bind_t *obind, VALUE svc);
     ub2 dty;
-    ub1 csfrm;
+    void (*post_bind_hook)(oci8_bind_t *obind);
 };
 
 struct oci8_base {

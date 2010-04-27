@@ -581,6 +581,21 @@ static void bind_named_type_init_elem(oci8_bind_t *obind, VALUE svc)
     } while (++idx < obind->maxar_sz);
 }
 
+static void bind_name_type_post_bind_hook(oci8_bind_t *obind)
+{
+    oci8_base_t *tdo = DATA_PTR(obind->tdo);
+    switch (obind->base.type) {
+    case OCI_HTYPE_DEFINE:
+        oci_lc(OCIDefineObject(obind->base.hp.dfn, oci8_errhp, tdo->hp.tdo,
+                               obind->valuep, 0, obind->u.null_structs, 0));
+        break;
+    case OCI_HTYPE_BIND:
+        oci_lc(OCIBindObject(obind->base.hp.bnd, oci8_errhp, tdo->hp.tdo,
+                             obind->valuep, 0, obind->u.null_structs, 0));
+        break;
+    }
+}
+
 static const oci8_bind_class_t bind_named_type_class = {
     {
         bind_named_type_mark,
@@ -594,7 +609,8 @@ static const oci8_bind_class_t bind_named_type_class = {
     NULL,
     NULL,
     NULL,
-    SQLT_NTY
+    SQLT_NTY,
+    bind_name_type_post_bind_hook,
 };
 
 void Init_oci_object(VALUE cOCI8)

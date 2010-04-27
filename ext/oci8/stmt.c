@@ -120,19 +120,14 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
     if (NIL_P(obind->tdo) && obind->maxar_sz > 0) {
         oci_lc(OCIDefineArrayOfStruct(obind->base.hp.dfn, oci8_errhp, obind->alloc_sz, sizeof(sb2), 0, 0));
     }
-    if (RTEST(obind->tdo)) {
-        oci8_base_t *tdo = DATA_PTR(obind->tdo);
-        oci_lc(OCIDefineObject(obind->base.hp.dfn, oci8_errhp, tdo->hp.tdo,
-                               obind->valuep, 0, obind->u.null_structs, 0));
-    }
     if (position - 1 < RARRAY_LEN(stmt->defns)) {
         VALUE old_value = RARRAY_PTR(stmt->defns)[position - 1];
         if (!NIL_P(old_value)) {
             oci8_base_free((oci8_base_t*)oci8_get_bind(old_value));
         }
     }
-    if (bind_class->csfrm != 0) {
-        oci_lc(OCIAttrSet(obind->base.hp.ptr, OCI_HTYPE_DEFINE, (void*)&bind_class->csfrm, 0, OCI_ATTR_CHARSET_FORM, oci8_errhp));
+    if (bind_class->post_bind_hook != NULL) {
+        bind_class->post_bind_hook(obind);
     }
     rb_ary_store(stmt->defns, position - 1, obind->base.self);
     oci8_unlink_from_parent((oci8_base_t*)obind);
@@ -200,13 +195,8 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     if (NIL_P(obind->tdo) && obind->maxar_sz > 0) {
         oci_lc(OCIBindArrayOfStruct(obind->base.hp.bnd, oci8_errhp, obind->alloc_sz, sizeof(sb2), 0, 0));
     }
-    if (!NIL_P(obind->tdo)) {
-        oci8_base_t *tdo = DATA_PTR(obind->tdo);
-        oci_lc(OCIBindObject(obind->base.hp.bnd, oci8_errhp, tdo->hp.tdo,
-                             obind->valuep, 0, obind->u.null_structs, 0));
-    }
-    if (bind_class->csfrm != 0) {
-        oci_lc(OCIAttrSet(obind->base.hp.ptr, OCI_HTYPE_BIND, (void*)&bind_class->csfrm, 0, OCI_ATTR_CHARSET_FORM, oci8_errhp));
+    if (bind_class->post_bind_hook != NULL) {
+        bind_class->post_bind_hook(obind);
     }
     old_value = rb_hash_aref(stmt->binds, vplaceholder);
     if (!NIL_P(old_value)) {

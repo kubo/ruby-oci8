@@ -634,6 +634,13 @@ static void bind_lob_init_elem(oci8_bind_t *obind, VALUE svc)
     } while (++idx < obind->maxar_sz);
 }
 
+static void bind_lob_post_bind_hook_for_nclob(oci8_bind_t *obind)
+{
+    ub1 csfrm = SQLCS_NCHAR;
+
+    oci_lc(OCIAttrSet(obind->base.hp.ptr, obind->base.type, (void*)&csfrm, 0, OCI_ATTR_CHARSET_FORM, oci8_errhp));
+}
+
 static const oci8_bind_lob_class_t bind_clob_class = {
     {
         {
@@ -668,7 +675,7 @@ static const oci8_bind_lob_class_t bind_nclob_class = {
         NULL,
         NULL,
         SQLT_CLOB,
-        SQLCS_NCHAR,
+        bind_lob_post_bind_hook_for_nclob,
     },
     &cOCI8NCLOB
 };
