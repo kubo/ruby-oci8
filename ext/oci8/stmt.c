@@ -3,7 +3,7 @@
  * stmt.c - part of ruby-oci8
  *         implement the methods of OCIStmt.
  *
- * Copyright (C) 2002-2007 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2010 KUBO Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
@@ -117,8 +117,15 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
         oci8_raise(oci8_errhp, status, stmt->base.hp.ptr);
     }
     obind->base.type = OCI_HTYPE_DEFINE;
+    /* link to the parent as soon as possible to preserve deallocation order. */
+    oci8_unlink_from_parent((oci8_base_t*)obind);
+    oci8_link_to_parent((oci8_base_t*)obind, (oci8_base_t*)stmt);
+
     if (NIL_P(obind->tdo) && obind->maxar_sz > 0) {
         oci_lc(OCIDefineArrayOfStruct(obind->base.hp.dfn, oci8_errhp, obind->alloc_sz, sizeof(sb2), 0, 0));
+    }
+    if (bind_class->post_bind_hook != NULL) {
+        bind_class->post_bind_hook(obind);
     }
     if (position - 1 < RARRAY_LEN(stmt->defns)) {
         VALUE old_value = RARRAY_PTR(stmt->defns)[position - 1];
@@ -126,12 +133,7 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
             oci8_base_free((oci8_base_t*)oci8_get_bind(old_value));
         }
     }
-    if (bind_class->post_bind_hook != NULL) {
-        bind_class->post_bind_hook(obind);
-    }
     rb_ary_store(stmt->defns, position - 1, obind->base.self);
-    oci8_unlink_from_parent((oci8_base_t*)obind);
-    oci8_link_to_parent((oci8_base_t*)obind, (oci8_base_t*)stmt);
     return obind->base.self;
 }
 
@@ -192,6 +194,10 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
         oci8_raise(oci8_errhp, status, stmt->base.hp.stmt);
     }
     obind->base.type = OCI_HTYPE_BIND;
+    /* link to the parent as soon as possible to preserve deallocation order. */
+    oci8_unlink_from_parent((oci8_base_t*)obind);
+    oci8_link_to_parent((oci8_base_t*)obind, (oci8_base_t*)stmt);
+
     if (NIL_P(obind->tdo) && obind->maxar_sz > 0) {
         oci_lc(OCIBindArrayOfStruct(obind->base.hp.bnd, oci8_errhp, obind->alloc_sz, sizeof(sb2), 0, 0));
     }
@@ -203,8 +209,6 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
         oci8_base_free((oci8_base_t*)oci8_get_bind(old_value));
     }
     rb_hash_aset(stmt->binds, vplaceholder, obind->base.self);
-    oci8_unlink_from_parent((oci8_base_t*)obind);
-    oci8_link_to_parent((oci8_base_t*)obind, (oci8_base_t*)stmt);
     return obind->base.self;
 }
 

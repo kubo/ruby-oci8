@@ -1,3 +1,9 @@
+2010-05-02  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/encoding-init.rb: fix for zero-length NLS_LANG.
+	    fix AL32UTF8's nls_ratio.
+	* ext/oci8/stmt.c: fix SEGV when an exception is raised in
+	    post_bind_hook().
+
 2010-04-27  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c, ext/oci8/object.c, ext/oci8/oci8.h,
 	  ext/oci8/stmt.c: refactor code to prepare character length

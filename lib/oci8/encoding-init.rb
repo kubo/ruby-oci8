@@ -5,6 +5,10 @@
 # get the environment variable NLS_LANG.
 nls_lang = ENV['NLS_LANG']
 
+if nls_lang.is_a? String and nls_lang.length == 0
+  nls_lang = nil
+end
+
 # if NLS_LANG is not set, get it from the Windows registry.
 if nls_lang.nil? and defined? OCI8::Win32Util
   dll_path = OCI8::Win32Util.dll_path.upcase
@@ -37,7 +41,7 @@ when 'UTF8'
   OCI8.nls_ratio = 3
 when 'AL16UTF16'
   OCI8.nls_ratio = 4
-when /^\w+(\d+)/
+when /^[[:alpha:]]+(\d+)/
   # convert maximum number of bits per one chracter to NLS ratio.
   #   charset name  max bits  max bytes
   #   ------------  --------  ---------
