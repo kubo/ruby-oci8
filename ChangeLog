@@ -1,3 +1,8 @@
+2010-05-03  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/bind.c, ext/oci8/oci8.h, lib/oci8/bindtype.rb:
+	    change the length semantics from byte to char for string
+	    bind variables when the Oracle client is 9i or upper.
+
 2010-05-02  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/encoding-init.rb: fix for zero-length NLS_LANG.
 	    fix AL32UTF8's nls_ratio.

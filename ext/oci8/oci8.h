@@ -2,7 +2,7 @@
 /*
  * oci8.h - part of ruby-oci8
  *
- * Copyright (C) 2002-2009 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2010 KUBO Takehiro <kubo@jiubao.org>
  */
 #ifndef _RUBY_OCI_H_
 #define _RUBY_OCI_H_ 1
@@ -508,6 +508,7 @@ VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype);
 /* encoding.c */
 void Init_oci8_encoding(VALUE cOCI8);
 VALUE oci8_charset_id2name(VALUE svc, VALUE charset_id);
+extern int oci8_nls_ratio;
 
 /* win32.c */
 void Init_oci8_win32(VALUE cOCI8);

@@ -5,13 +5,25 @@
  * $Author$
  * $Date$
  *
- * Copyright (C) 2002-2008 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2010 KUBO Takehiro <kubo@jiubao.org>
  */
 #include "oci8.h"
 
+#ifndef OCI_ATTR_MAXCHAR_SIZE
+#define OCI_ATTR_MAXCHAR_SIZE 164
+#endif
+
 static ID id_bind_type;
+static VALUE sym_length;
+static VALUE sym_char_semantics;
 
 static VALUE cOCI8BindTypeBase;
+
+typedef struct {
+    oci8_bind_t obind;
+    sb4 bytelen;
+    sb4 charlen;
+} oci8_bind_string_t;
 
 /*
  * bind_string
@@ -24,41 +36,67 @@ static VALUE bind_string_get(oci8_bind_t *obind, void *data, void *null_struct)
 
 static void bind_string_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
+    oci8_bind_string_t *obs = (oci8_bind_string_t *)obind;
     oci8_vstr_t *vstr = (oci8_vstr_t *)data;
 
     OCI8StringValue(val);
-    if (RSTRING_LEN(val) > obind->value_sz - sizeof(vstr->size)) {
-        rb_raise(rb_eArgError, "too long String to set. (%ld for %d)", RSTRING_LEN(val), obind->value_sz - (sb4)sizeof(vstr->size));
+    if (RSTRING_LEN(val) > obs->bytelen) {
+        rb_raise(rb_eArgError, "too long String to set. (%ld for %d)", RSTRING_LEN(val), obs->bytelen);
     }
     memcpy(vstr->buf, RSTRING_PTR(val), RSTRING_LEN(val));
     vstr->size = RSTRING_LEN(val);
 }
 
-static void bind_string_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
+static void bind_string_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE param)
 {
+    oci8_bind_string_t *obs = (oci8_bind_string_t *)obind;
+    VALUE length;
+    VALUE char_semantics;
     sb4 sz;
-    if (NIL_P(length)) {
-        if (NIL_P(val)) {
-            rb_raise(rb_eArgError, "value and length are both null.");
-        }
-        StringValue(val);
-        sz = RSTRING_LEN(val);
-    } else {
-        sz = NUM2INT(length);
-    }
+
+    Check_Type(param, T_HASH);
+    length = rb_hash_aref(param, sym_length);
+    char_semantics = rb_hash_aref(param, sym_char_semantics);
+
+    sz = NUM2INT(length);
     if (sz < 0) {
         rb_raise(rb_eArgError, "invalid bind length %d", sz);
+    }
+    if (RTEST(char_semantics)) {
+        obs->charlen = sz;
+        obs->bytelen = sz = sz * oci8_nls_ratio;
+        if (oci8_nls_ratio == 1) {
+            /* sz must be bigger than charlen to suppress ORA-06502.
+             * I don't know the reason...
+             */
+            sz *= 2;
+        }
+    } else {
+        obs->bytelen = sz;
+        obs->charlen = 0;
+    }
+    if (sz == 0) {
+        sz = 1; /* to avoid ORA-01459. */
     }
     sz += sizeof(sb4);
     obind->value_sz = sz;
     obind->alloc_sz = (sz + (sizeof(sb4) - 1)) & ~(sizeof(sb4) - 1);
 }
 
+static void bind_string_post_bind_hook(oci8_bind_t *obind)
+{
+    oci8_bind_string_t *obs = (oci8_bind_string_t *)obind;
+
+    if (oracle_client_version >= ORAVER_9_0 && obs->charlen != 0) {
+        oci_lc(OCIAttrSet(obind->base.hp.ptr, obind->base.type, (void*)&obs->charlen, 0, OCI_ATTR_MAXCHAR_SIZE, oci8_errhp));
+    }
+}
+
 static const oci8_bind_class_t bind_string_class = {
     {
         NULL,
         oci8_bind_free,
-        sizeof(oci8_bind_t)
+        sizeof(oci8_bind_string_t)
     },
     bind_string_get,
     bind_string_set,
@@ -67,7 +105,8 @@ static const oci8_bind_class_t bind_string_class = {
     NULL,
     NULL,
     NULL,
-    SQLT_LVC
+    SQLT_LVC,
+    bind_string_post_bind_hook,
 };
 
 /*
@@ -83,7 +122,7 @@ static const oci8_bind_class_t bind_raw_class = {
     {
         NULL,
         oci8_bind_free,
-        sizeof(oci8_bind_t)
+        sizeof(oci8_bind_string_t)
     },
     bind_raw_get,
     bind_string_set,
@@ -445,6 +484,8 @@ void Init_oci8_bind(VALUE klass)
 {
     cOCI8BindTypeBase = klass;
     id_bind_type = rb_intern("bind_type");
+    sym_length = ID2SYM(rb_intern("length"));
+    sym_char_semantics = ID2SYM(rb_intern("char_semantics"));
 
     rb_define_method(cOCI8BindTypeBase, "initialize", oci8_bind_initialize, 4);
     rb_define_method(cOCI8BindTypeBase, "get", oci8_bind_get, 0);

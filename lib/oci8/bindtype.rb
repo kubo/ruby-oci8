@@ -1,7 +1,7 @@
 #--
 # bindtype.rb -- OCI8::BindType
 #
-# Copyright (C) 2009 KUBO Takehiro <kubo@jiubao.org>
+# Copyright (C) 2009-2010 KUBO Takehiro <kubo@jiubao.org>
 #++
 
 class OCI8
@@ -99,38 +99,46 @@ class OCI8
       def self.create(con, val, param, max_array_size)
         case param
         when Hash
-          if param[:length]
-            # If length is passed explicitly, use it.
-            length = param[:length]
-          elsif val.is_a? String or (val.respond_to? :to_str and val = val.to_str)
-            if OCI8.respond_to? :encoding and OCI8.encoding != val.encoding
-              # If the string encoding is different with NLS_LANG character set,
-              # convert it to get the length.
-              val = val.encode(OCI8.encoding)
-            end
-            if val.respond_to? :bytesize
-              # ruby 1.8.7 or upper
-              length = val.bytesize
+          param[:char_semantics] = true unless param.has_key? :char_semantics
+          unless param[:length]
+            if val.respond_to? :to_str
+              val = val.to_str
+              if param[:char_semantics]
+                param[:length] = val.size
+              else
+                if OCI8.respond_to? :encoding and OCI8.encoding != val.encoding
+                  # If the string encoding is different with NLS_LANG character set,
+                  # convert it to get the length.
+                  val = val.encode(OCI8.encoding)
+                end
+                if val.respond_to? :bytesize
+                  # ruby 1.8.7 or upper
+                  param[:length] = val.bytesize
+                else
+                  # ruby 1.8.6 or lower
+                  param[:length] = val.size
+                end
+              end
             else
-              # ruby 1.8.6 or lower
-              length = val.size
+              param[:length] = @@minimum_bind_length
             end
           end
         when OCI8::Metadata::Base
           case param.data_type
           when :char, :varchar2
-            length = param.data_size
-            # character size may become large on character set conversion.
-            # The length of a Japanese half-width kana is one in Shift_JIS,
-            # two in EUC-JP, three in UTF-8.
-            length *= 3 unless param.char_used?
+            if param.charset_form == :nchar or param.char_used?
+              param = {:length => param.char_size, :char_semantics => true}
+            else
+              param = {:length => param.data_size}
+            end
           when :raw
             # HEX needs twice space.
-            length = param.data_size * 2
+            param = {:length => param.data_size * 2}
+          else
+            param = {:length => @@minimum_bind_length}
           end
         end
-        length = @@minimum_bind_length if length.nil? or length < @@minimum_bind_length
-        self.new(con, val, length, max_array_size)
+        self.new(con, val, param, max_array_size)
       end
     end
 
@@ -138,28 +146,36 @@ class OCI8
       def self.create(con, val, param, max_array_size)
         case param
         when Hash
-          length = 400 # default length
-          if param[:length]
-            length = param[:length]
-          elsif val.respond_to? :to_str and val.to_str.size > length
-            length = val.to_str.size
+          unless param[:length]
+            if val.respond_to? :to_str
+              val = val.to_str
+              if val.respond_to? :bytesize
+                param[:length] = val.bytesize
+              else
+                param[:length] = val.size
+              end
+            else
+              param[:length] = 400
+            end
           end
         when OCI8::Metadata::Base
-          length = param.data_size
+          param = {:length => param.data_size}
         end
-        self.new(con, val, length, max_array_size)
+        self.new(con, val, param, max_array_size)
       end
     end
 
     class Long < OCI8::BindType::String
       def self.create(con, val, param, max_array_size)
-        self.new(con, val, con.long_read_len, max_array_size)
+        param = {:length => con.long_read_len, :char_semantics => true}
+        self.new(con, val, param, max_array_size)
       end
     end
 
     class LongRaw < OCI8::BindType::RAW
       def self.create(con, val, param, max_array_size)
-        self.new(con, val, con.long_read_len, max_array_size)
+        param = {:length => con.long_read_len, :char_semantics => false}
+        self.new(con, val, param, max_array_size)
       end
     end
 
