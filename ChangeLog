@@ -1,3 +1,13 @@
+2010-05-04  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/bind.c: fix a bug that a string is bound to RAW,
+	    its encoding was convertd to OCI.encoding.
+	* ext/oci8/encoding.c: delete an unused strcuture.
+	* ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/ocihandle.c,
+	    lib/oci8/oci8.rb: do refactering to make it easy to
+	    implement new authentication features.
+	* lib/oci8.rb.in, lib/oci8/metadata.rb, lib/oci8/ocihandle.rb:
+	    move constant definitions from metadata.rb to ocihandle.rb.
+
 2010-05-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c, ext/oci8/oci8.h, lib/oci8/bindtype.rb:
 	    change the length semantics from byte to char for string

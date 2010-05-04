@@ -249,6 +249,7 @@ struct oci8_base_class {
     void (*mark)(oci8_base_t *base);
     void (*free)(oci8_base_t *base);
     size_t size;
+    void (*init)(oci8_base_t *base);
 };
 
 struct oci8_bind_class {
@@ -269,6 +270,8 @@ struct oci8_base {
     union {
         dvoid *ptr;
         OCISvcCtx *svc;
+        OCIServer *srvhp;
+        OCISession *authhp;
         OCIStmt *stmt;
         OCIDefine *dfn;
         OCIBind *bnd;
@@ -300,15 +303,15 @@ struct oci8_bind {
     } u;
 };
 
-enum logon_type_t {T_NOT_LOGIN = 0, T_IMPLICIT, T_EXPLICIT};
 
-typedef struct  {
+typedef struct oci8_svcctx {
     oci8_base_t base;
     volatile VALUE executing_thread;
-    enum logon_type_t logon_type;
-    OCISession *authhp;
-    OCIServer *srvhp;
+    void (*logoff_method)(struct oci8_svcctx *svcctx);
+    oci8_base_t *session;
+    oci8_base_t *server;
     rb_pid_t pid;
+    unsigned char state;
     char is_autocommit;
 #ifdef RUBY_VM
     char non_blocking;

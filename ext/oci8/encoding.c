@@ -11,16 +11,6 @@
 #define OCI_NLS_MAXBUFSZ 100
 #endif
 
-/* type of callback function's argument */
-typedef struct {
-    oci8_svcctx_t *svcctx;
-    OCIStmt *stmtp;
-    union {
-        VALUE name;
-        int csid;
-    } u;
-} cb_arg_t;
-
 /* NLS ratio, maximum number of bytes per one chracter */
 int oci8_nls_ratio = 1;
 

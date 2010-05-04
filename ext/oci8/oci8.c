@@ -2,7 +2,7 @@
 /*
  * oci8.c - part of ruby-oci8
  *
- * Copyright (C) 2002-2009 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2010 KUBO Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
@@ -30,33 +30,63 @@ extern rb_pid_t rb_w32_getpid(void);
 #define OCI_ATTR_CLIENT_INFO 368
 #endif
 
+#define OCI8_STATE_SESSION_BEGIN_WAS_CALLED 0x01
+#define OCI8_STATE_SERVER_ATTACH_WAS_CALLED 0x02
+
 static VALUE cOCI8;
+
+static void oci8_svcctx_mark(oci8_base_t *base)
+{
+    oci8_svcctx_t *svcctx = (oci8_svcctx_t *)base;
+
+    if (svcctx->session) {
+        rb_gc_mark(svcctx->session->self);
+    }
+    if (svcctx->server) {
+        rb_gc_mark(svcctx->server->self);
+    }
+}
 
 static void oci8_svcctx_free(oci8_base_t *base)
 {
     oci8_svcctx_t *svcctx = (oci8_svcctx_t *)base;
 
-    if (svcctx->authhp) {
-        OCIHandleFree(svcctx->authhp, OCI_HTYPE_SESSION);
-        svcctx->authhp = NULL;
+    if (svcctx->session) {
+        oci8_base_free(svcctx->session);
+        svcctx->session = NULL;
     }
-    if (svcctx->srvhp) {
-        OCIHandleFree(svcctx->srvhp, OCI_HTYPE_SERVER);
-        svcctx->srvhp = NULL;
+    if (svcctx->server) {
+        oci8_base_free(svcctx->server);
+        svcctx->server = NULL;
     }
 }
 
+static void oci8_svcctx_init(oci8_base_t *base)
+{
+    oci8_svcctx_t *svcctx = (oci8_svcctx_t *)base;
+
+    svcctx->executing_thread = Qnil;
+    svcctx->session = DATA_PTR(rb_obj_alloc(oci8_cOCIHandle));
+    svcctx->server = DATA_PTR(rb_obj_alloc(oci8_cOCIHandle));
+    svcctx->pid = getpid();
+    svcctx->is_autocommit = 0;
+#ifdef RUBY_VM
+    svcctx->non_blocking = 1;
+#endif
+    svcctx->long_read_len = INT2FIX(65535);
+}
+
 static oci8_base_class_t oci8_svcctx_class = {
-    NULL,
+    oci8_svcctx_mark,
     oci8_svcctx_free,
-    sizeof(oci8_svcctx_t)
+    sizeof(oci8_svcctx_t),
+    oci8_svcctx_init,
 };
 
 static VALUE oracle_client_vernum; /* Oracle client version number */
 static VALUE sym_SYSDBA;
 static VALUE sym_SYSOPER;
 static ID id_at_prefetch_rows;
-static ID id_at_username;
 static ID id_set_prefetch_rows;
 
 static VALUE oci8_s_oracle_client_vernum(VALUE klass)
@@ -143,183 +173,205 @@ static VALUE oci8_parse_connect_string(VALUE self, VALUE conn_str)
     return rb_ary_new3(4, user, pass, dbname, mode);
 }
 
+static void call_oci_logoff(oci8_svcctx_t *svcctx)
+{
+    svcctx->logoff_method = NULL;
+    svcctx->session->type = 0;
+    svcctx->server->type = 0;
+    oci_lc(OCILogoff_nb(svcctx, svcctx->base.hp.svc, oci8_errhp));
+    svcctx->base.type = 0;
+}
+
+static void call_session_end(oci8_svcctx_t *svcctx)
+{
+    sword rv = OCI_SUCCESS;
+
+    if (svcctx->state & OCI8_STATE_SESSION_BEGIN_WAS_CALLED) {
+        rv = OCISessionEnd_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, svcctx->session->hp.authhp, OCI_DEFAULT);
+        svcctx->state &= ~OCI8_STATE_SESSION_BEGIN_WAS_CALLED;
+    }
+    if (svcctx->state & OCI8_STATE_SERVER_ATTACH_WAS_CALLED) {
+        rv = OCIServerDetach_nb(svcctx, svcctx->server->hp.srvhp, oci8_errhp, OCI_DEFAULT);
+        svcctx->state &= ~OCI8_STATE_SERVER_ATTACH_WAS_CALLED;
+    }
+    svcctx->logoff_method = NULL;
+    if (rv != OCI_SUCCESS) {
+        oci8_raise(oci8_errhp, rv, NULL);
+    }
+}
+
 /*
  * call-seq:
- *   new(username, password, dbname = nil, privilege = nil)
+ *   logon(username, password, dbname) -> connection
  *
- * Connects to an Oracle database server by +username+ and +password+
- * at +dbname+ as +privilege+.
+ * <b>internal use only</b>
  *
- * === connecting to the local server
- *
- * Set +username+ and +password+ or pass "username/password" as a
- * single argument.
- *
- *   OCI8.new('scott', 'tiger')
- * or
- *   OCI8.new('scott/tiger')
- *
- * === connecting to a remote server
- *
- * Set +username+, +password+ and +dbname+ or pass
- * "username/password@dbname" as a single argument.
- *
- *   OCI8.new('scott', 'tiger', 'orcl.world')
- * or
- *   OCI8.new('scott/tiger@orcl.world')
- *
- * The +dbname+ is a net service name or an easy connectection
- * identifier. The former is a name listed in the file tnsnames.ora.
- * Ask to your DBA if you don't know what it is. The latter has the
- * syntax as "//host:port/service_name".
- *
- *   OCI8.new('scott', 'tiger', '//remote-host:1521/XE')
- * or
- *   OCI8.new('scott/tiger@//remote-host:1521/XE')
- *
- * === connecting as a privileged user
- *
- * Set :SYSDBA or :SYSOPER to +privilege+, otherwise
- * "username/password as sysdba" or "username/password as sysoper"
- * as a single argument.
- *
- *   OCI8.new('sys', 'change_on_install', nil, :SYSDBA)
- * or
- *   OCI8.new('sys/change_on_install as sysdba')
- *
- * === external OS authentication
- *
- * Set nil to +username+ and +password+, or "/" as a single argument.
- *
- *   OCI8.new(nil, nil)
- * or
- *   OCI8.new('/')
- *
- * To connect to a remote host:
- *
- *   OCI8.new(nil, nil, 'dbname')
- * or
- *   OCI8.new('/@dbname')
- *
- * === proxy authentication
- *
- * Enclose end user's username with square brackets and add it at the
- * end of proxy user's username.
- *
- *   OCI8.new('proxy_user_name[end_user_name]', 'proxy_password')
- * or
- *   OCI8.new('proxy_user_name[end_user_name]/proxy_password')
- *
+ * Creates a simple logon session by the OCI function OCILogon().
  */
-static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
+static VALUE oci8_logon(VALUE self, VALUE username, VALUE password, VALUE dbname)
 {
-    VALUE vusername;
-    VALUE vpassword;
-    VALUE vdbname;
-    VALUE vmode;
     oci8_svcctx_t *svcctx = DATA_PTR(self);
-    sword rv;
-    enum logon_type_t logon_type = T_IMPLICIT;
-    ub4 cred = OCI_CRED_RDBMS;
-    ub4 mode = OCI_DEFAULT;
-    OCISvcCtx *svchp = NULL;
 
-    svcctx->executing_thread = Qnil;
-    if (argc == 1) {
-        oci8_do_parse_connect_string(argv[0], &vusername, &vpassword, &vdbname, &vmode);
-    } else {
-        rb_scan_args(argc, argv, "22", &vusername, &vpassword, &vdbname, &vmode);
+    if (svcctx->logoff_method != NULL) {
+        rb_raise(rb_eRuntimeError, "Could not reuse the session.");
     }
 
-    rb_ivar_set(self, id_at_prefetch_rows, Qnil);
-    rb_ivar_set(self, id_at_username, Qnil);
-    if (NIL_P(vusername) && NIL_P(vpassword)) {
-        /* external credential */
-        logon_type = T_EXPLICIT;
-        cred = OCI_CRED_EXT;
-    } else {
-        /* RDBMS credential */
-        OCI8SafeStringValue(vusername); /* 1 */
-        OCI8SafeStringValue(vpassword); /* 2 */
+    /* check arugmnets */
+    OCI8SafeStringValue(username);
+    OCI8SafeStringValue(password);
+    if (!NIL_P(dbname)) {
+        OCI8SafeStringValue(dbname);
     }
-    if (!NIL_P(vdbname)) {
-        OCI8SafeStringValue(vdbname); /* 3 */
-    }
-    if (!NIL_P(vmode)) { /* 4 */
-        logon_type = T_EXPLICIT;
-        Check_Type(vmode, T_SYMBOL);
-        if (vmode == sym_SYSDBA) {
-            mode = OCI_SYSDBA;
-        } else if (vmode == sym_SYSOPER) {
-            mode = OCI_SYSOPER;
-        } else {
-            rb_raise(rb_eArgError, "invalid privilege name %s (expect :SYSDBA or :SYSOPER)", rb_id2name(SYM2ID(vmode)));
-        }
-    }
-    switch (logon_type) {
-    case T_IMPLICIT:
-        rv = OCILogon_nb(svcctx, oci8_envhp, oci8_errhp, &svchp,
-                         RSTRING_ORATEXT(vusername), RSTRING_LEN(vusername),
-                         RSTRING_ORATEXT(vpassword), RSTRING_LEN(vpassword),
-                         NIL_P(vdbname) ? NULL : RSTRING_ORATEXT(vdbname),
-                         NIL_P(vdbname) ? 0 : RSTRING_LEN(vdbname));
-        svcctx->base.hp.svc = svchp;
-        svcctx->base.type = OCI_HTYPE_SVCCTX;
-        svcctx->logon_type = T_IMPLICIT;
-        if (rv != OCI_SUCCESS) {
-            oci8_raise(oci8_errhp, rv, NULL);
-        }
-        break;
-    case T_EXPLICIT:
-        /* allocate OCI handles. */
-        rv = OCIHandleAlloc(oci8_envhp, &svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, 0, 0);
-        if (rv != OCI_SUCCESS)
-            oci8_env_raise(oci8_envhp, rv);
-        svcctx->base.type = OCI_HTYPE_SVCCTX;
-        rv = OCIHandleAlloc(oci8_envhp, (void*)&svcctx->authhp, OCI_HTYPE_SESSION, 0, 0);
-        if (rv != OCI_SUCCESS)
-            oci8_env_raise(oci8_envhp, rv);
-        rv = OCIHandleAlloc(oci8_envhp, (void*)&svcctx->srvhp, OCI_HTYPE_SERVER, 0, 0);
-        if (rv != OCI_SUCCESS)
-            oci8_env_raise(oci8_envhp, rv);
 
-        /* set username and password to OCISession. */
-        if (cred == OCI_CRED_RDBMS) {
-            oci_lc(OCIAttrSet(svcctx->authhp, OCI_HTYPE_SESSION,
-                              RSTRING_PTR(vusername), RSTRING_LEN(vusername),
-                              OCI_ATTR_USERNAME, oci8_errhp));
-            oci_lc(OCIAttrSet(svcctx->authhp, OCI_HTYPE_SESSION,
-                              RSTRING_PTR(vpassword), RSTRING_LEN(vpassword),
-                              OCI_ATTR_PASSWORD, oci8_errhp));
-        }
-
-        /* attach to server and set to OCISvcCtx. */
-        rv = OCIServerAttach_nb(svcctx, svcctx->srvhp, oci8_errhp,
-                                NIL_P(vdbname) ? NULL : RSTRING_ORATEXT(vdbname),
-                                NIL_P(vdbname) ? 0 : RSTRING_LEN(vdbname), OCI_DEFAULT);
-        if (rv != OCI_SUCCESS)
-            oci8_raise(oci8_errhp, rv, NULL);
-        oci_lc(OCIAttrSet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp));
-
-        /* begin session. */
-        rv = OCISessionBegin_nb(svcctx, svcctx->base.hp.ptr, oci8_errhp, svcctx->authhp, cred, mode);
-        if (rv != OCI_SUCCESS)
-            oci8_raise(oci8_errhp, rv, NULL);
-        oci_lc(OCIAttrSet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, svcctx->authhp, 0, OCI_ATTR_SESSION, oci8_errhp));
-        svcctx->logon_type = T_EXPLICIT;
-        break;
-    default:
-        break;
-    }
-    svcctx->pid = getpid();
-    svcctx->is_autocommit = 0;
-#ifdef RUBY_VM
-    svcctx->non_blocking = 1;
-#endif
-    svcctx->long_read_len = INT2FIX(65535);
+    /* logon */
+    oci_lc(OCILogon_nb(svcctx, oci8_envhp, oci8_errhp, &svcctx->base.hp.svc,
+                       RSTRING_ORATEXT(username), RSTRING_LEN(username),
+                       RSTRING_ORATEXT(password), RSTRING_LEN(password),
+                       NIL_P(dbname) ? NULL : RSTRING_ORATEXT(dbname),
+                       NIL_P(dbname) ? 0 : RSTRING_LEN(dbname)));
+    svcctx->base.type = OCI_HTYPE_SVCCTX;
+    svcctx->logoff_method = call_oci_logoff;
     return Qnil;
 }
 
+/*
+ * call-seq:
+ *   allocate_handles()
+ *
+ * <b>internal use only</b>
+ *
+ * Allocates a service context handle, a session handle and a
+ * server handle to use explicit attach and begin-session calls.
+ */
+static VALUE oci8_allocate_handles(VALUE self)
+{
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    sword rv;
+
+    if (svcctx->logoff_method != NULL) {
+        rb_raise(rb_eRuntimeError, "Could not reuse the session.");
+    }
+    svcctx->logoff_method = call_session_end;
+    svcctx->state = 0;
+
+    /* allocate a service context handle */
+    rv = OCIHandleAlloc(oci8_envhp, &svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, 0, 0);
+    if (rv != OCI_SUCCESS)
+        oci8_env_raise(oci8_envhp, rv);
+    svcctx->base.type = OCI_HTYPE_SVCCTX;
+
+    /* alocalte a session handle */
+    rv = OCIHandleAlloc(oci8_envhp, (void*)&svcctx->session->hp.ptr, OCI_HTYPE_SESSION, 0, 0);
+    if (rv != OCI_SUCCESS)
+        oci8_env_raise(oci8_envhp, rv);
+    svcctx->session->type = OCI_HTYPE_SESSION;
+
+    /* alocalte a server handle */
+    rv = OCIHandleAlloc(oci8_envhp, (void*)&svcctx->server->hp.ptr, OCI_HTYPE_SERVER, 0, 0);
+    if (rv != OCI_SUCCESS)
+        oci8_env_raise(oci8_envhp, rv);
+    svcctx->server->type = OCI_HTYPE_SERVER;
+    return self;
+}
+
+/*
+ * call-seq:
+ *   session_handle -> a session handle
+ *
+ * <b>internal use only</b>
+ *
+ * Returns a session handle associated with the service context handle.
+ */
+static VALUE oci8_get_session_handle(VALUE self)
+{
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
+    return svcctx->session->self;
+}
+
+/*
+ * call-seq:
+ *   server_handle -> a server handle
+ *
+ * <b>internal use only</b>
+ *
+ * Returns a server handle associated with the service context handle.
+ */
+static VALUE oci8_get_server_handle(VALUE self)
+{
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
+    return svcctx->server->self;
+}
+
+/*
+ * call-seq:
+ *   server_attach(dbname, mode)
+ *
+ * <b>internal use only</b>
+ *
+ * Attachs to the server by the OCI function OCIServerAttach().
+ */
+static VALUE oci8_server_attach(VALUE self, VALUE dbname, VALUE mode)
+{
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
+
+    if (svcctx->logoff_method != call_session_end) {
+        rb_raise(rb_eRuntimeError, "Use this method only for the service context handle created by OCI8#server_handle().");
+    }
+    if (svcctx->state & OCI8_STATE_SERVER_ATTACH_WAS_CALLED) {
+        rb_raise(rb_eRuntimeError, "Could not use this method twice.");
+    }
+
+    /* check arguments */
+    if (!NIL_P(dbname)) {
+        OCI8SafeStringValue(dbname);
+    }
+    Check_Type(mode, T_FIXNUM);
+
+    /* attach to the server */
+    oci_lc(OCIServerAttach_nb(svcctx, svcctx->server->hp.srvhp, oci8_errhp,
+                              NIL_P(dbname) ? NULL : RSTRING_ORATEXT(dbname),
+                              NIL_P(dbname) ? 0 : RSTRING_LEN(dbname),
+                              FIX2UINT(mode)));
+    oci_lc(OCIAttrSet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX,
+                      svcctx->server->hp.srvhp, 0, OCI_ATTR_SERVER,
+                      oci8_errhp));
+    svcctx->state |= OCI8_STATE_SERVER_ATTACH_WAS_CALLED;
+    return self;
+}
+
+/*
+ * call-seq:
+ *   session_begin(cred, mode)
+ *
+ * <b>internal use only</b>
+ *
+ * Begins the session by the OCI function OCISessionBegin().
+ */
+static VALUE oci8_session_begin(VALUE self, VALUE cred, VALUE mode)
+{
+    oci8_svcctx_t *svcctx = DATA_PTR(self);
+
+    if (svcctx->logoff_method != call_session_end) {
+        rb_raise(rb_eRuntimeError, "Use this method only for the service context handle created by OCI8#server_handle().");
+    }
+    if (svcctx->state & OCI8_STATE_SESSION_BEGIN_WAS_CALLED) {
+        rb_raise(rb_eRuntimeError, "Could not use this method twice.");
+    }
+
+    /* check arguments */
+    Check_Type(cred, T_FIXNUM);
+    Check_Type(mode, T_FIXNUM);
+
+    /* begin session */
+    oci_lc(OCISessionBegin_nb(svcctx, svcctx->base.hp.ptr, oci8_errhp,
+                              svcctx->session->hp.authhp, FIX2UINT(cred),
+                              FIX2UINT(mode)));
+    oci_lc(OCIAttrSet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX,
+                      svcctx->session->hp.authhp, 0, OCI_ATTR_SESSION,
+                      oci8_errhp));
+    svcctx->state |= OCI8_STATE_SESSION_BEGIN_WAS_CALLED;
+    return Qnil;
+}
 
 /*
  * call-seq:
@@ -331,34 +383,13 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
 static VALUE oci8_svcctx_logoff(VALUE self)
 {
     oci8_svcctx_t *svcctx = (oci8_svcctx_t *)DATA_PTR(self);
-    sword rv;
 
     while (svcctx->base.children != NULL) {
         oci8_base_free(svcctx->base.children);
     }
-    switch (svcctx->logon_type) {
-    case T_IMPLICIT:
+    if (svcctx->logoff_method != NULL) {
         oci_lc(OCITransRollback_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT));
-        rv = OCILogoff_nb(svcctx, svcctx->base.hp.svc, oci8_errhp);
-        svcctx->base.type = 0;
-        svcctx->logon_type = T_NOT_LOGIN;
-        if (rv != OCI_SUCCESS)
-            oci8_raise(oci8_errhp, rv, NULL);
-        svcctx->authhp = NULL;
-        svcctx->srvhp = NULL;
-        break;
-    case T_EXPLICIT:
-        oci_lc(OCITransRollback_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT));
-        rv = OCISessionEnd_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, svcctx->authhp, OCI_DEFAULT);
-        if (rv == OCI_SUCCESS) {
-            rv = OCIServerDetach_nb(svcctx, svcctx->srvhp, oci8_errhp, OCI_DEFAULT);
-        }
-        svcctx->logon_type = T_NOT_LOGIN;
-        if (rv != OCI_SUCCESS)
-            oci8_raise(oci8_errhp, rv, NULL);
-        break;
-    case T_NOT_LOGIN:
-        break;
+        svcctx->logoff_method(svcctx);
     }
     return Qtrue;
 }
@@ -941,10 +972,6 @@ static VALUE oci8_set_client_info(VALUE self, VALUE val)
 VALUE Init_oci8(void)
 {
 #if 0
-    /*
-     * OCIHandle is the abstract base class for all OCI handles and
-     * descriptors which are opaque data types of Oracle Call Interface.
-     */
     oci8_cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
     cOCI8 = rb_define_class("OCI8", oci8_cOCIHandle);
 #endif
@@ -960,7 +987,6 @@ VALUE Init_oci8(void)
     sym_SYSDBA = ID2SYM(rb_intern("SYSDBA"));
     sym_SYSOPER = ID2SYM(rb_intern("SYSOPER"));
     id_at_prefetch_rows = rb_intern("@prefetch_rows");
-    id_at_username = rb_intern("@username");
     id_set_prefetch_rows = rb_intern("prefetch_rows=");
 
     rb_define_singleton_method_nodoc(cOCI8, "oracle_client_vernum", oci8_s_oracle_client_vernum, 0);
@@ -968,7 +994,12 @@ VALUE Init_oci8(void)
         rb_define_singleton_method(cOCI8, "error_message", oci8_s_error_message, 1);
     }
     rb_define_private_method(cOCI8, "parse_connect_string", oci8_parse_connect_string, 1);
-    rb_define_method(cOCI8, "initialize", oci8_svcctx_initialize, -1);
+    rb_define_private_method(cOCI8, "logon", oci8_logon, 3);
+    rb_define_private_method(cOCI8, "allocate_handles", oci8_allocate_handles, 0);
+    rb_define_private_method(cOCI8, "session_handle", oci8_get_session_handle, 0);
+    rb_define_private_method(cOCI8, "server_handle", oci8_get_server_handle, 0);
+    rb_define_private_method(cOCI8, "server_attach", oci8_server_attach, 2);
+    rb_define_private_method(cOCI8, "session_begin", oci8_session_begin, 2);
     rb_define_method(cOCI8, "logoff", oci8_svcctx_logoff, 0);
     rb_define_method(cOCI8, "parse", oci8_svcctx_parse, 1);
     rb_define_method(cOCI8, "commit", oci8_commit, 0);
@@ -1010,10 +1041,10 @@ OCISession *oci8_get_oci_session(VALUE obj)
 {
     oci8_svcctx_t *svcctx = oci8_get_svcctx(obj);
 
-    if (svcctx->authhp == NULL) {
-        oci_lc(OCIAttrGet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, &svcctx->authhp, 0, OCI_ATTR_SESSION, oci8_errhp));
+    if (svcctx->session->hp.authhp == NULL) {
+        oci_lc(OCIAttrGet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, &svcctx->session->hp.authhp, 0, OCI_ATTR_SESSION, oci8_errhp));
     }
-    return svcctx->authhp;
+    return svcctx->session->hp.authhp;
 }
 
 void oci8_check_pid_consistency(oci8_svcctx_t *svcctx)

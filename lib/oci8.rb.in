@@ -62,6 +62,7 @@ class OCI8
   end
 end
 
+require 'oci8/ocihandle.rb'
 require 'oci8/datetime.rb'
 require 'oci8/oci8.rb'
 require 'oci8/bindtype.rb'

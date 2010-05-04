@@ -1,6 +1,6 @@
 # oci8.rb -- implements OCI8 and OCI8::Cursor
 #
-# Copyright (C) 2002-2009 KUBO Takehiro <kubo@jiubao.org>
+# Copyright (C) 2002-2010 KUBO Takehiro <kubo@jiubao.org>
 #
 # Original Copyright is:
 #   Oracle module for Ruby
@@ -24,6 +24,110 @@ require 'date'
 #              value_for_the_first_parameter,
 #              value_for_the_second_parameter)
 class OCI8
+
+  # call-seq:
+  #   new(username, password, dbname = nil, privilege = nil)
+  #
+  # Connects to an Oracle database server by +username+ and +password+
+  # at +dbname+ as +privilege+.
+  #
+  # === connecting to the local server
+  #
+  # Set +username+ and +password+ or pass "username/password" as a
+  # single argument.
+  #
+  #   OCI8.new('scott', 'tiger')
+  # or
+  #   OCI8.new('scott/tiger')
+  #
+  # === connecting to a remote server
+  #
+  # Set +username+, +password+ and +dbname+ or pass
+  # "username/password@dbname" as a single argument.
+  #
+  #   OCI8.new('scott', 'tiger', 'orcl.world')
+  # or
+  #   OCI8.new('scott/tiger@orcl.world')
+  #
+  # The +dbname+ is a net service name or an easy connectection
+  # identifier. The former is a name listed in the file tnsnames.ora.
+  # Ask to your DBA if you don't know what it is. The latter has the
+  # syntax as "//host:port/service_name".
+  #
+  #   OCI8.new('scott', 'tiger', '//remote-host:1521/XE')
+  # or
+  #   OCI8.new('scott/tiger@//remote-host:1521/XE')
+  #
+  # === connecting as a privileged user
+  #
+  # Set :SYSDBA or :SYSOPER to +privilege+, otherwise
+  # "username/password as sysdba" or "username/password as sysoper"
+  # as a single argument.
+  #
+  #   OCI8.new('sys', 'change_on_install', nil, :SYSDBA)
+  # or
+  #   OCI8.new('sys/change_on_install as sysdba')
+  #
+  # === external OS authentication
+  #
+  # Set nil to +username+ and +password+, or "/" as a single argument.
+  #
+  #   OCI8.new(nil, nil)
+  # or
+  #   OCI8.new('/')
+  #
+  # To connect to a remote host:
+  #
+  #   OCI8.new(nil, nil, 'dbname')
+  # or
+  #   OCI8.new('/@dbname')
+  #
+  # === proxy authentication
+  #
+  # Enclose end user's username with square brackets and add it at the
+  # end of proxy user's username.
+  #
+  #   OCI8.new('proxy_user_name[end_user_name]', 'proxy_password')
+  # or
+  #   OCI8.new('proxy_user_name[end_user_name]/proxy_password')
+  #
+  def initialize(*args)
+    if args.length == 1
+      username, password, dbname, mode = parse_connect_string(args[0])
+    else
+      username, password, dbname, mode = args
+    end
+
+    if username.nil? and password.nil?
+      cred = OCI_CRED_EXT
+    end
+    case mode
+    when :SYSDBA
+      mode = OCI_SYSDBA
+    when :SYSOPER
+      mode = OCI_SYSOPER
+    when nil
+      # do nothing
+    else
+      raise "unknown privilege type #{mode}"
+    end
+
+    if mode.nil? and cred.nil?
+      # logon by the OCI function OCILogon().
+      logon(username, password, dbname)
+    else
+      # logon by the OCI function OCISessionBegin().
+      allocate_handles()
+      session_handle.send(:attr_set_string, OCI_ATTR_USERNAME, username) if username
+      session_handle.send(:attr_set_string, OCI_ATTR_PASSWORD, password) if password
+      server_attach(dbname, OCI_DEFAULT);
+      session_begin(cred ? cred : OCI_CRED_RDBMS, mode ? mode : OCI_DEFAULT)
+    end
+
+    @prefetch_rows = nil
+    @username = nil
+  end
+
   # Executes the sql statement. The type of return value depends on
   # the type of sql statement: select; insert, update and delete;
   # create, alter and drop; and PL/SQL.

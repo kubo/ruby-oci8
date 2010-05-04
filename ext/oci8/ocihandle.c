@@ -2,7 +2,7 @@
 /*
  * ocihandle.c
  *
- * Copyright (C) 2009 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2009-2010 KUBO Takehiro <kubo@jiubao.org>
  *
  * implement OCIHandle
  *
@@ -91,6 +91,9 @@ static VALUE oci8_s_allocate(VALUE klass)
     base->next = base;
     base->prev = base;
     base->children = NULL;
+    if (base_class->init != NULL) {
+        base_class->init(base);
+    }
     return obj;
 }
 
@@ -664,6 +667,7 @@ void Init_oci8_handle(void)
      *
      * OCIHandle is the abstract base class of OCI handles and
      * OCI descriptors; opaque data types of Oracle Call Interface.
+     * Don't use constants and methods defined in the class.
      */
     oci8_cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
     rb_define_alloc_func(oci8_cOCIHandle, oci8_s_allocate);
