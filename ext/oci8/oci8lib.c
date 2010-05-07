@@ -75,6 +75,10 @@ Init_oci8lib()
 
     /* OCI8 class */
     cOCI8 = Init_oci8();
+
+    /* OCI8::ConnectionPool class */
+    Init_oci8_connection_pool(cOCI8);
+
     /* OCI8::BindType module */
     mOCI8BindType = rb_define_module_under(cOCI8, "BindType");
     /* OCI8::BindType::Base class */

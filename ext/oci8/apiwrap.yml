@@ -1056,6 +1056,30 @@ OCIReset:
 # Oracle 9.0
 #
 
+OCIConnectionPoolCreate:
+  :version: 900
+  :args:    - OCIEnv *envhp
+            - OCIError *errhp
+            - OCICPool *poolhp
+            - OraText **poolName
+            - sb4 *poolNameLen
+            - const OraText *dblink
+            - sb4 dblinkLen
+            - ub4 connMin
+            - ub4 connMax
+            - ub4 connIncr
+            - const OraText *poolUserName
+            - sb4 poolUserLen
+            - const OraText *poolPassword
+            - sb4 poolPassLen
+            - ub4 mode
+
+OCIConnectionPoolDestroy:
+  :version: 900
+  :args:    - OCICPool *poolhp
+            - OCIError *errhp
+            - ub4 mode
+
 # round trip: 0 (not docmented. I guess.)
 OCIDateTimeConstruct:
   :version: 900

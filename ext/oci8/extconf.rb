@@ -70,6 +70,7 @@ have_type('OCICallbackLobRead2', 'ociap.h')
 have_type('OCICallbackLobWrite2', 'ociap.h')
 have_type('OCIAdmin*', 'ociap.h')
 have_type('OCIMsg*', 'ociap.h')
+have_type('OCICPool*', 'ociap.h')
 
 if with_config('oracle-version')
   oci_client_version = OCI8::OracleVersion.new(with_config('oracle-version')).to_i
@@ -84,6 +85,7 @@ if with_config('runtime-check')
 end
 
 $objs = ["oci8lib.o", "env.o", "error.o", "oci8.o", "ocihandle.o",
+         "connection_pool.o",
          "stmt.o", "bind.o", "metadata.o", "attr.o",
          "lob.o", "oradate.o",
          "ocinumber.o", "ocidatetime.o", "object.o", "apiwrap.o",

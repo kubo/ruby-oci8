@@ -117,7 +117,7 @@ static VALUE oci8_s_error_message(VALUE klass, VALUE msgid)
 }
 
 #define CONN_STR_REGEX "/^([^(\\s|\\@)]*)\\/([^(\\s|\\@)]*)(?:\\@(\\S+))?(?:\\s+as\\s+(\\S*)\\s*)?$/i"
-static void oci8_do_parse_connect_string(VALUE conn_str, VALUE *user, VALUE *pass, VALUE *dbname, VALUE *mode)
+void oci8_do_parse_connect_string(VALUE conn_str, VALUE *user, VALUE *pass, VALUE *dbname, VALUE *mode)
 {
     static VALUE re = Qnil;
     if (NIL_P(re)) {

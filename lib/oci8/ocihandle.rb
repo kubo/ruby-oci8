@@ -303,6 +303,15 @@ class OCIHandle
 
   #################################
   #
+  # Attach Modes
+  #
+  #################################
+
+  # Attach using server handle from pool
+  OCI_CPOOL                   = 0x0200
+
+  #################################
+  #
   # OCI Parameter Types
   #
   #################################

@@ -96,6 +96,9 @@ typedef struct OCIAdmin OCIAdmin;
 #ifndef HAVE_TYPE_OCIMSG_
 typedef struct OCIMsg  OCIMsg;
 #endif
+#ifndef HAVE_TYPE_OCICPOOL_
+typedef struct OCICPool OCICPool;
+#endif
 
 /* new macros in ruby 1.8.6.
  * define compatible macros for ruby 1.8.5 or lower.
@@ -270,6 +273,7 @@ struct oci8_base {
     union {
         dvoid *ptr;
         OCISvcCtx *svc;
+        OCICPool *poolhp;
         OCIServer *srvhp;
         OCISession *authhp;
         OCIStmt *stmt;
@@ -429,12 +433,16 @@ void Init_oci8_handle(void);
 
 /* oci8.c */
 VALUE Init_oci8(void);
+void oci8_do_parse_connect_string(VALUE conn_str, VALUE *user, VALUE *pass, VALUE *dbname, VALUE *mode);
 oci8_svcctx_t *oci8_get_svcctx(VALUE obj);
 OCISvcCtx *oci8_get_oci_svcctx(VALUE obj);
 OCISession *oci8_get_oci_session(VALUE obj);
 void oci8_check_pid_consistency(oci8_svcctx_t *svcctx);
 #define TO_SVCCTX oci8_get_oci_svcctx
 #define TO_SESSION oci8_get_oci_session
+
+/* connection_pool.c */
+void Init_oci8_connection_pool(VALUE cOCI8);
 
 /* stmt.c */
 extern VALUE cOCIStmt;

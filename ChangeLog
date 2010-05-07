@@ -1,3 +1,10 @@
+2010-05-07  KUBO Takehiro  <kubo@jiubao.org>
+	* dist-files, ext/oci8/.document, ext/oci8/apiwrap.yml,
+	  ext/oci8/connection_pool.c, ext/oci8/extconf.rb,ext/oci8/oci8.c,
+	  ext/oci8/oci8.h, ext/oci8/oci8lib.c, lib/oci8.rb.in,
+	  lib/oci8/.document, lib/oci8/connection_pool.rb, lib/oci8/oci8.rb,
+	  lib/oci8/ocihandle.rb: add a new feature OCI8::ConnectionPool.
+
 2010-05-04  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c: fix a bug that a string is bound to RAW,
 	    its encoding was convertd to OCI.encoding.
