@@ -53,28 +53,28 @@ class OCI8
 
       # don't use this. The number of parameters
       def num_params
-        __ub2(OCI_ATTR_NUM_PARAMS)
+        attr_get_ub2(OCI_ATTR_NUM_PARAMS)
       end
       private :num_params
 
       # object or schema ID
       def obj_id
-        __ub4(OCI_ATTR_OBJ_ID)
+        attr_get_ub4(OCI_ATTR_OBJ_ID)
       end
 
       # database name or object name in a schema
       def obj_name
-        __text(OCI_ATTR_OBJ_NAME)
+        attr_get_string(OCI_ATTR_OBJ_NAME)
       end
 
       # schema name where the object is located
       def obj_schema
-        __text(OCI_ATTR_OBJ_SCHEMA)
+        attr_get_string(OCI_ATTR_OBJ_SCHEMA)
       end
 
       # The timestamp of the object
       def timestamp
-        __oradate(OCI_ATTR_TIMESTAMP)
+        attr_get_oradate(OCI_ATTR_TIMESTAMP)
       end
 
       def inspect # :nodoc:
@@ -83,9 +83,9 @@ class OCI8
       private
 
       def __boolean(idx)
-        __ub1(idx) == 0 ? false : true
+        attr_get_ub1(idx) == 0 ? false : true
       end
-      alias __word __sb4
+      alias __word attr_get_sb4
       def __anydata(idx); raise NotImplementedError; end
 
       # SQLT values to name
@@ -237,14 +237,14 @@ class OCI8
 
       def __data_type
         return @data_type if defined? @data_type
-        entry = DATA_TYPE_MAP[__ub2(OCI_ATTR_DATA_TYPE)]
-        type = entry.nil? ? __ub2(OCI_ATTR_DATA_TYPE) : entry[0]
+        entry = DATA_TYPE_MAP[attr_get_ub2(OCI_ATTR_DATA_TYPE)]
+        type = entry.nil? ? attr_get_ub2(OCI_ATTR_DATA_TYPE) : entry[0]
         type = type.call(self) if type.is_a? Proc
         @data_type = type
       end
 
       def __duration
-        case __ub2(OCI_ATTR_DURATION)
+        case attr_get_ub2(OCI_ATTR_DURATION)
         when OCI_DURATION_SESSION
           :session
         when OCI_DURATION_TRANS
@@ -255,7 +255,7 @@ class OCI8
       end
 
       def __charset_form
-        case __ub1(OCI_ATTR_CHARSET_FORM)
+        case attr_get_ub1(OCI_ATTR_CHARSET_FORM)
         when 1; :implicit # for CHAR, VARCHAR2, CLOB w/o a specified set
         when 2; :nchar    # for NCHAR, NCHAR VARYING, NCLOB
         when 3; :explicit # for CHAR, etc, with "CHARACTER SET ..." syntax
@@ -265,8 +265,8 @@ class OCI8
       end
 
       def __type_string
-        entry = DATA_TYPE_MAP[__ub2(OCI_ATTR_DATA_TYPE)]
-        type = entry.nil? ? "unknown(#{__ub2(OCI_ATTR_DATA_TYPE)})" : entry[1]
+        entry = DATA_TYPE_MAP[attr_get_ub2(OCI_ATTR_DATA_TYPE)]
+        type = entry.nil? ? "unknown(#{attr_get_ub2(OCI_ATTR_DATA_TYPE)})" : entry[1]
         type = type.call(self) if type.is_a? Proc
         if respond_to?(:nullable?) && !nullable?
           type + " NOT NULL"
@@ -276,7 +276,7 @@ class OCI8
       end
 
       def __typecode(idx)
-        case __ub2(idx)
+        case attr_get_ub2(idx)
         when 110; :ref         # OCI_TYPECODE_REF
         when  12; :date        # OCI_TYPECODE_DATE
         when  27; :signed8     # OCI_TYPECODE_SIGNED8
@@ -354,7 +354,7 @@ class OCI8
 
       # number of columns
       def num_cols
-        __ub2(OCI_ATTR_NUM_COLS)
+        attr_get_ub2(OCI_ATTR_NUM_COLS)
       end
 
       # column list
@@ -388,7 +388,7 @@ class OCI8
 
       # data block address of the segment header. (How to use this?)
       def dba
-        __ub4(OCI_ATTR_RDBA)
+        attr_get_ub4(OCI_ATTR_RDBA)
       end
 
       # tablespace the table resides in. (How to use this?)
@@ -436,7 +436,7 @@ class OCI8
 
       # number of columns
       def num_cols
-        __ub2(OCI_ATTR_NUM_COLS)
+        attr_get_ub2(OCI_ATTR_NUM_COLS)
       end
 
       # column list
@@ -497,7 +497,7 @@ class OCI8
       #
       # available only for a Package subprogram.
       def name
-        __text(OCI_ATTR_NAME)
+        attr_get_string(OCI_ATTR_NAME)
       end
 
       # overloading ID number (relevant in case the procedure or
@@ -507,7 +507,7 @@ class OCI8
       #
       # available only for a Package subprogram.
       def overload_id
-        __ub2(OCI_ATTR_OVERLOAD_ID)
+        attr_get_ub2(OCI_ATTR_OVERLOAD_ID)
       end
 
       # array of Argument objects.
@@ -653,7 +653,7 @@ class OCI8
 
       # number of type attributes
       def num_type_attrs
-        __ub2(OCI_ATTR_NUM_TYPE_ATTRS)
+        attr_get_ub2(OCI_ATTR_NUM_TYPE_ATTRS)
       end
 
       # list of type attributes
@@ -664,7 +664,7 @@ class OCI8
 
       # number of type methods
       def num_type_methods
-        __ub2(OCI_ATTR_NUM_TYPE_METHODS)
+        attr_get_ub2(OCI_ATTR_NUM_TYPE_METHODS)
       end
 
       # list of type methods
@@ -690,12 +690,12 @@ class OCI8
 
       # type name
       def name
-        __text(OCI_ATTR_NAME)
+        attr_get_string(OCI_ATTR_NAME)
       end
 
       # schema name where the type has been created
       def schema_name
-        __text(OCI_ATTR_SCHEMA_NAME)
+        attr_get_string(OCI_ATTR_SCHEMA_NAME)
       end
 
       # indicates this is a final type
@@ -715,12 +715,12 @@ class OCI8
 
       # supertype's schema name
       def supertype_schema_name
-        __text(OCI_ATTR_SUPERTYPE_SCHEMA_NAME) if is_subtype?
+        attr_get_string(OCI_ATTR_SUPERTYPE_SCHEMA_NAME) if is_subtype?
       end
 
       # supertype's name
       def supertype_name
-        __text(OCI_ATTR_SUPERTYPE_NAME) if is_subtype?
+        attr_get_string(OCI_ATTR_SUPERTYPE_NAME) if is_subtype?
       end
 
       # array of TypeAttr objects.
@@ -751,7 +751,7 @@ class OCI8
       # returned in bytes and not characters for strings and raws. It
       # returns 22 for NUMBERs.
       def data_size
-        __ub2_nc(OCI_ATTR_DATA_SIZE)
+        attr_get_ub2(OCI_ATTR_DATA_SIZE)
       end
 
       # typecode
@@ -766,7 +766,7 @@ class OCI8
 
       # the type attribute name
       def name
-        __text(OCI_ATTR_NAME)
+        attr_get_string(OCI_ATTR_NAME)
       end
 
       # The precision of numeric type attributes. If the precision is
@@ -774,7 +774,7 @@ class OCI8
       # NUMBER(precision, scale). For the case when precision is 0,
       # NUMBER(precision, scale) can be represented simply as NUMBER.
       def precision
-        __is_implicit? ? __sb2(OCI_ATTR_PRECISION) : __ub1(OCI_ATTR_PRECISION)
+        __is_implicit? ? attr_get_sb2(OCI_ATTR_PRECISION) : attr_get_ub1(OCI_ATTR_PRECISION)
       end
 
       # The scale of numeric type attributes. If the precision is
@@ -782,7 +782,7 @@ class OCI8
       # NUMBER(precision, scale). For the case when precision is 0,
       # NUMBER(precision, scale) can be represented simply as NUMBER.
       def scale
-        __sb1(OCI_ATTR_SCALE)
+        attr_get_sb1(OCI_ATTR_SCALE)
       end
 
       # A string which is the type name. The returned value will
@@ -792,12 +792,12 @@ class OCI8
       # is <tt>:ref</tt>, the type name of the named datatype pointed
       # to by the REF is returned.
       def type_name
-        __text(OCI_ATTR_TYPE_NAME)
+        attr_get_string(OCI_ATTR_TYPE_NAME)
       end
 
       # schema name where the type has been created.
       def schema_name
-        __text(OCI_ATTR_SCHEMA_NAME)
+        attr_get_string(OCI_ATTR_SCHEMA_NAME)
       end
 
       # to type metadata if possible
@@ -807,7 +807,7 @@ class OCI8
 
       # character set id if the type attribute is of a string/character type.
       def charset_id
-        __ub2(OCI_ATTR_CHARSET_ID)
+        attr_get_ub2(OCI_ATTR_CHARSET_ID)
       end
 
       # character set form, if the type attribute is of a string/character type.
@@ -820,14 +820,14 @@ class OCI8
         #
         # (unavailable on Oracle 8.1 or lower)
         def fsprecision
-          __ub1(OCI_ATTR_FSPRECISION)
+          attr_get_ub1(OCI_ATTR_FSPRECISION)
         end
 
         # The leading field precision of an interval
         #
         # (unavailable on Oracle 8.1 or lower)
         def lfprecision
-          __ub1(OCI_ATTR_LFPRECISION)
+          attr_get_ub1(OCI_ATTR_LFPRECISION)
         end
       end
 
@@ -858,13 +858,13 @@ class OCI8
 
       # Name of method (procedure or function)
       def name
-        __text(OCI_ATTR_NAME)
+        attr_get_string(OCI_ATTR_NAME)
       end
 
       # encapsulation level of the method. Values are <tt>:public</tt>
       # or <tt>:private</tt>.
       def encapsulation
-        case __ub4(OCI_ATTR_ENCAPSULATION)
+        case attr_get_ub4(OCI_ATTR_ENCAPSULATION)
         when 0; :private
         when 1; :public
         end
@@ -971,7 +971,7 @@ class OCI8
       # returned in bytes and not characters for strings and raws. It
       # returns 22 for NUMBERs.
       def data_size
-        __ub2_nc(OCI_ATTR_DATA_SIZE)
+        attr_get_ub2(OCI_ATTR_DATA_SIZE)
       end
 
       # typecode
@@ -987,7 +987,7 @@ class OCI8
       # the number of elements in an array. It is only valid for
       # collections that are arrays.
       def num_elems
-        __ub4(OCI_ATTR_NUM_ELEMS)
+        attr_get_ub4(OCI_ATTR_NUM_ELEMS)
       end
 
       # The precision of numeric type attributes. If the precision is
@@ -995,7 +995,7 @@ class OCI8
       # NUMBER(precision, scale). For the case when precision is 0,
       # NUMBER(precision, scale) can be represented simply as NUMBER.
       def precision
-        __is_implicit? ? __sb2(OCI_ATTR_PRECISION) : __ub1(OCI_ATTR_PRECISION)
+        __is_implicit? ? attr_get_sb2(OCI_ATTR_PRECISION) : attr_get_ub1(OCI_ATTR_PRECISION)
       end
 
       # The scale of numeric type attributes. If the precision is
@@ -1003,7 +1003,7 @@ class OCI8
       # NUMBER(precision, scale). For the case when precision is 0,
       # NUMBER(precision, scale) can be represented simply as NUMBER.
       def scale
-        __sb1(OCI_ATTR_SCALE)
+        attr_get_sb1(OCI_ATTR_SCALE)
       end
 
       # A string which is the type name. The returned value will
@@ -1012,12 +1012,12 @@ class OCI8
       # type is returned. If the datatype is <tt>:ref</tt>, the type name
       # of the named datatype pointed to by the REF is returned.
       def type_name
-        __text(OCI_ATTR_TYPE_NAME)
+        attr_get_string(OCI_ATTR_TYPE_NAME)
       end
 
       # schema name where the type has been created.
       def schema_name
-        __text(OCI_ATTR_SCHEMA_NAME)
+        attr_get_string(OCI_ATTR_SCHEMA_NAME)
       end
 
       # to type metadata if possible
@@ -1027,7 +1027,7 @@ class OCI8
 
       # character set id if the type attribute is of a string/character type.
       def charset_id
-        __ub2(OCI_ATTR_CHARSET_ID)
+        attr_get_ub2(OCI_ATTR_CHARSET_ID)
       end
 
       # character set form, if the type attribute is of a string/character type.
@@ -1059,22 +1059,22 @@ class OCI8
 
       # object id
       def objid
-        @objid ||= __ub4(OCI_ATTR_OBJID)
+        @objid ||= attr_get_ub4(OCI_ATTR_OBJID)
       end
 
       # schema name of the synonym translation
       def schema_name
-        @schema_name ||= __text(OCI_ATTR_SCHEMA_NAME)
+        @schema_name ||= attr_get_string(OCI_ATTR_SCHEMA_NAME)
       end
 
       # object name of the synonym translation
       def name
-        @name ||= __text(OCI_ATTR_NAME)
+        @name ||= attr_get_string(OCI_ATTR_NAME)
       end
 
       # database link name of the synonym translation or nil
       def link
-        @link ||= __text(OCI_ATTR_LINK)
+        @link ||= attr_get_string(OCI_ATTR_LINK)
         @link.size == 0 ? nil : @link
       end
 
@@ -1106,7 +1106,7 @@ class OCI8
 
       # object id
       def objid
-        __ub4(OCI_ATTR_OBJID)
+        attr_get_ub4(OCI_ATTR_OBJID)
       end
 
       # minimum value
@@ -1156,14 +1156,14 @@ class OCI8
         #
         # (unavailable on Oracle 8.1 or lower)
         def char_used?
-          __ub4(OCI_ATTR_CHAR_USED) != 0
+          attr_get_ub1(OCI_ATTR_CHAR_USED) != 0
         end
 
         # returns the column character length which is the number of
         # characters allowed in the column. It is the counterpart of
         # OCI8::Metadata::Column#data_size which gets the byte length.
         def char_size
-          __ub2(OCI_ATTR_CHAR_SIZE)
+          attr_get_ub2(OCI_ATTR_CHAR_SIZE)
         end
       else
         def char_used?
@@ -1181,7 +1181,7 @@ class OCI8
       # character-length semantics columns when using Oracle 9i
       # or upper.
       def data_size
-        __ub2_nc(OCI_ATTR_DATA_SIZE)
+        attr_get_ub2(OCI_ATTR_DATA_SIZE)
       end
 
       # the datatype of the column.
@@ -1191,7 +1191,7 @@ class OCI8
 
       # column name
       def name
-        __text(OCI_ATTR_NAME)
+        attr_get_string(OCI_ATTR_NAME)
       end
 
       # The precision of numeric columns. If the precision is nonzero
@@ -1199,7 +1199,7 @@ class OCI8
       # NUMBER(precision, scale). For the case when precision is 0,
       # NUMBER(precision, scale) can be represented simply as NUMBER.
       def precision
-        __is_implicit? ? __sb2(OCI_ATTR_PRECISION) : __ub1(OCI_ATTR_PRECISION)
+        __is_implicit? ? attr_get_sb2(OCI_ATTR_PRECISION) : attr_get_ub1(OCI_ATTR_PRECISION)
       end
 
       # The scale of numeric columns. If the precision is nonzero and
@@ -1207,7 +1207,7 @@ class OCI8
       # NUMBER(precision, scale). For the case when precision is 0,
       # NUMBER(precision, scale) can be represented simply as NUMBER.
       def scale
-        __sb1(OCI_ATTR_SCALE)
+        attr_get_sb1(OCI_ATTR_SCALE)
       end
 
       # Returns 0 if null values are not permitted for the column
@@ -1222,19 +1222,19 @@ class OCI8
       # type name of the named datatype pointed to by the REF is
       # returned
       def type_name
-        rv = __text(OCI_ATTR_TYPE_NAME)
+        rv = attr_get_string(OCI_ATTR_TYPE_NAME)
         rv.length == 0 ? nil : rv
       end
 
       # Returns a string with the schema name under which the type has been created
       def schema_name
-        rv = __text(OCI_ATTR_SCHEMA_NAME)
+        rv = attr_get_string(OCI_ATTR_SCHEMA_NAME)
         rv.length == 0 ? nil : rv
       end
 
       # to type metadata if possible
       def type_metadata
-        case __ub2(OCI_ATTR_DATA_TYPE)
+        case attr_get_ub2(OCI_ATTR_DATA_TYPE)
         when 108, 110 # named_type or ref
           __type_metadata(OCI8::Metadata::Type)
         else
@@ -1244,7 +1244,7 @@ class OCI8
 
       # The character set id, if the column is of a string/character type
       def charset_id
-        __ub2(OCI_ATTR_CHARSET_ID)
+        attr_get_ub2(OCI_ATTR_CHARSET_ID)
       end
 
       # The character set form, if the column is of a string/character type
@@ -1260,14 +1260,14 @@ class OCI8
         #
         # (unavailable on Oracle 8.1 or lower)
         def fsprecision
-          __ub1(OCI_ATTR_FSPRECISION)
+          attr_get_ub1(OCI_ATTR_FSPRECISION)
         end
 
         # The leading field precision of an interval
         #
         # (unavailable on Oracle 8.1 or lower)
         def lfprecision
-          __ub1(OCI_ATTR_LFPRECISION)
+          attr_get_ub1(OCI_ATTR_LFPRECISION)
         end
       end
 
@@ -1295,12 +1295,12 @@ class OCI8
 
       # the argument name
       def name
-        __text(OCI_ATTR_NAME)
+        attr_get_string(OCI_ATTR_NAME)
       end
 
       # the position of the argument in the argument list.
       def position
-        __ub2(OCI_ATTR_POSITION)
+        attr_get_ub2(OCI_ATTR_POSITION)
       end
 
       # typecode
@@ -1317,7 +1317,7 @@ class OCI8
       # returned in bytes and not characters for strings and raws. It
       # returns 22 for NUMBERs.
       def data_size
-        __ub2_nc(OCI_ATTR_DATA_SIZE)
+        attr_get_ub2(OCI_ATTR_DATA_SIZE)
       end
 
       # The precision of numeric arguments. If the precision is
@@ -1325,7 +1325,7 @@ class OCI8
       # NUMBER(precision, scale). For the case when precision is 0,
       # NUMBER(precision, scale) can be represented simply as NUMBER.
       def precision
-        __is_implicit? ? __sb2(OCI_ATTR_PRECISION) : __ub1(OCI_ATTR_PRECISION)
+        __is_implicit? ? attr_get_sb2(OCI_ATTR_PRECISION) : attr_get_ub1(OCI_ATTR_PRECISION)
       end
 
       # The scale of numeric arguments. If the precision is nonzero
@@ -1333,17 +1333,17 @@ class OCI8
       # NUMBER(precision, scale). For the case when precision is 0,
       # NUMBER(precision, scale) can be represented simply as NUMBER.
       def scale
-        __sb1(OCI_ATTR_SCALE)
+        attr_get_sb1(OCI_ATTR_SCALE)
       end
 
       # The datatype levels. This attribute always returns zero.
       def level
-        __ub2(OCI_ATTR_LEVEL)
+        attr_get_ub2(OCI_ATTR_LEVEL)
       end
 
       # Indicates whether an argument has a default
       def has_default
-        __ub1(OCI_ATTR_HAS_DEFAULT)
+        attr_get_ub1(OCI_ATTR_HAS_DEFAULT)
       end
 
       # The list of arguments at the next level (when the argument is
@@ -1356,7 +1356,7 @@ class OCI8
       # Indicates the argument mode. Values are <tt>:in</tt>,
       # <tt>:out</tt> or <tt>:inout</tt>
       def iomode
-        case __ub4(OCI_ATTR_IOMODE)
+        case attr_get_ub4(OCI_ATTR_IOMODE)
         when 0; :in
         when 1; :out
         when 2; :inout
@@ -1365,7 +1365,7 @@ class OCI8
 
       # Returns a radix (if number type)
       def radix
-        __ub1(OCI_ATTR_RADIX)
+        attr_get_ub1(OCI_ATTR_RADIX)
       end
 
       # doesn't work.
@@ -1380,20 +1380,20 @@ class OCI8
       # datatype's type is returned. If the datatype is <tt>:ref</tt>, the type
       # name of the named datatype pointed to by the REF is returned.
       def type_name
-        __text(OCI_ATTR_TYPE_NAME)
+        attr_get_string(OCI_ATTR_TYPE_NAME)
       end
 
       # For <tt>:named_type</tt> or <tt>:ref</tt>, returns a string with the schema name
       # under which the type was created, or under which the package
       # was created in the case of package local types
       def schema_name
-        __text(OCI_ATTR_SCHEMA_NAME)
+        attr_get_string(OCI_ATTR_SCHEMA_NAME)
       end
 
       # For <tt>:named_type</tt> or <tt>:ref</tt>, returns a string with the type name,
       # in the case of package local types
       def sub_name
-        __text(OCI_ATTR_SUB_NAME)
+        attr_get_string(OCI_ATTR_SUB_NAME)
       end
 
       # For <tt>:named_type</tt> or <tt>:ref</tt>, returns a string with the database
@@ -1401,7 +1401,7 @@ class OCI8
       # happen only in the case of package local types, when the
       # package is remote.
       def link
-        __text(OCI_ATTR_LINK)
+        attr_get_string(OCI_ATTR_LINK)
       end
 
       # to type metadata if possible
@@ -1412,7 +1412,7 @@ class OCI8
       # Returns the character set ID if the argument is of a
       # string/character type
       def charset_id
-        __ub2(OCI_ATTR_CHARSET_ID)
+        attr_get_ub2(OCI_ATTR_CHARSET_ID)
       end
 
       # Returns the character set form if the argument is of a
@@ -1481,7 +1481,7 @@ class OCI8
         end
       else
         def ltype
-          __ub2(OCI_ATTR_LTYPE)
+          attr_get_ub2(OCI_ATTR_LTYPE)
         end
       end
 
@@ -1585,17 +1585,17 @@ class OCI8
 
       # database version
       def version
-        __text(OCI_ATTR_VERSION)
+        attr_get_string(OCI_ATTR_VERSION)
       end
 
       # database character set Id
       def charset_id
-        __ub2(OCI_ATTR_CHARSET_ID)
+        attr_get_ub2(OCI_ATTR_CHARSET_ID)
       end
 
       # database national language support character set Id
       def ncharset_id
-        __ub2(OCI_ATTR_NCHARSET_ID)
+        attr_get_ub2(OCI_ATTR_NCHARSET_ID)
       end
 
       # List of schemas in the database
@@ -1606,12 +1606,12 @@ class OCI8
 
       # Maximum length of a procedure name
       def max_proc_len
-        __ub4(OCI_ATTR_MAX_PROC_LEN)
+        attr_get_ub4(OCI_ATTR_MAX_PROC_LEN)
       end
 
       # Maximum length of a column name
       def max_column_len
-        __ub4(OCI_ATTR_MAX_COLUMN_LEN)
+        attr_get_ub4(OCI_ATTR_MAX_COLUMN_LEN)
       end
 
       # How a COMMIT operation affects cursors and prepared statements in
@@ -1622,7 +1622,7 @@ class OCI8
       #                           application can still re-execute the
       #                           statement without re-preparing it
       def cursor_commit_behavior
-        case __ub1(OCI_ATTR_CURSOR_COMMIT_BEHAVIOR)
+        case attr_get_ub1(OCI_ATTR_CURSOR_COMMIT_BEHAVIOR)
         when 0; :cusror_open
         when 1; :cursor_closed
         end
@@ -1630,13 +1630,13 @@ class OCI8
 
       # Maximum length of a catalog (database) name
       def max_catalog_namelen
-        __ub1(OCI_ATTR_MAX_CATALOG_NAMELEN)
+        attr_get_ub1(OCI_ATTR_MAX_CATALOG_NAMELEN)
       end
 
       # Position of the catalog in a qualified table. Values are
       # <tt>:cl_start</tt> and <tt>:cl_end</tt>
       def catalog_location
-        case __ub1(OCI_ATTR_CATALOG_LOCATION)
+        case attr_get_ub1(OCI_ATTR_CATALOG_LOCATION)
         when 0; :cl_start
         when 1; :cl_end
         end
@@ -1645,7 +1645,7 @@ class OCI8
       # Does database support savepoints? Values are
       # <tt>:sp_supported</tt> and <tt>:sp_unsupported</tt>
       def savepoint_support
-        case __ub1(OCI_ATTR_SAVEPOINT_SUPPORT)
+        case attr_get_ub1(OCI_ATTR_SAVEPOINT_SUPPORT)
         when 0; :sp_supported
         when 1; :sp_unsupported
         end
@@ -1654,7 +1654,7 @@ class OCI8
       # Does database support the nowait clause? Values are
       # <tt>:nw_supported</tt> and <tt>:nw_unsupported</tt>
       def nowait_support
-        case __ub1(OCI_ATTR_NOWAIT_SUPPORT)
+        case attr_get_ub1(OCI_ATTR_NOWAIT_SUPPORT)
         when 0; :nw_supported
         when 1; :nw_unsupported
         end
@@ -1663,7 +1663,7 @@ class OCI8
       # Is autocommit mode required for DDL statements? Values are
       # <tt>:ac_ddl</tt> and <tt>:no_ac_ddl</tt>
       def autocommit_ddl
-        case __ub1(OCI_ATTR_AUTOCOMMIT_DDL)
+        case attr_get_ub1(OCI_ATTR_AUTOCOMMIT_DDL)
         when 0; :ac_ddl
         when 1; :no_ac_ddl
         end
@@ -1672,7 +1672,7 @@ class OCI8
       # Locking mode for the database. Values are <tt>:lock_immediate</tt> and
       # <tt>:lock_delayed</tt>
       def locking_mode
-        case __ub1(OCI_ATTR_LOCKING_MODE)
+        case attr_get_ub1(OCI_ATTR_LOCKING_MODE)
         when 0; :lock_immediate
         when 1; :lock_delayed
         end
@@ -1705,19 +1705,19 @@ class OCI8
       # Table 6-18 Attributes Specific to Rules
 
       def condition
-        __text(OCI_ATTR_CONDITION)
+        attr_get_string(OCI_ATTR_CONDITION)
       end
 
       def eval_context_owner
-        __text(OCI_ATTR_EVAL_CONTEXT_OWNER)
+        attr_get_string(OCI_ATTR_EVAL_CONTEXT_OWNER)
       end
 
       def eval_context_name
-        __text(OCI_ATTR_EVAL_CONTEXT_NAME)
+        attr_get_string(OCI_ATTR_EVAL_CONTEXT_NAME)
       end
 
       def comment
-        __text(OCI_ATTR_COMMENT)
+        attr_get_string(OCI_ATTR_COMMENT)
       end
 
       # def list_action_context
@@ -1731,15 +1731,15 @@ class OCI8
       # Table 6-19 Attributes Specific to Rule Sets
 
       def eval_context_owner
-        __text(OCI_ATTR_EVAL_CONTEXT_OWNER)
+        attr_get_string(OCI_ATTR_EVAL_CONTEXT_OWNER)
       end
 
       def eval_context_name
-        __text(OCI_ATTR_EVAL_CONTEXT_NAME)
+        attr_get_string(OCI_ATTR_EVAL_CONTEXT_NAME)
       end
 
       def comment
-        __text(OCI_ATTR_COMMENT)
+        attr_get_string(OCI_ATTR_COMMENT)
       end
 
       # def list_rules
@@ -1753,11 +1753,11 @@ class OCI8
       # Table 6-20 Attributes Specific to Evaluation Contexts
 
       def evaluation_function
-        __text(OCI_ATTR_EVALUATION_FUNCTION)
+        attr_get_string(OCI_ATTR_EVALUATION_FUNCTION)
       end
 
       def comment
-        __text(OCI_ATTR_COMMENT)
+        attr_get_string(OCI_ATTR_COMMENT)
       end
 
       def list_table_aliases
@@ -1775,11 +1775,11 @@ class OCI8
       # Table 6-21 Attributes Specific to Table Aliases
 
       def name
-        __text(OCI_ATTR_NAME)
+        attr_get_string(OCI_ATTR_NAME)
       end
 
       def table_name
-        __text(OCI_ATTR_TABLE_NAME)
+        attr_get_string(OCI_ATTR_TABLE_NAME)
       end
     end
 
@@ -1789,19 +1789,19 @@ class OCI8
       # Table 6-22 Attributes Specific to Variable Types
 
       def name
-        __text(OCI_ATTR_NAME)
+        attr_get_string(OCI_ATTR_NAME)
       end
 
       def var_type
-        __text(OCI_ATTR_VAR_TYPE)
+        attr_get_string(OCI_ATTR_VAR_TYPE)
       end
 
       def var_value_function
-        __text(OCI_ATTR_VAR_VALUE_FUNCTION)
+        attr_get_string(OCI_ATTR_VAR_VALUE_FUNCTION)
       end
 
       def var_method_function
-        __text(OCI_ATTR_VAR_METHOD_FUNCTION)
+        attr_get_string(OCI_ATTR_VAR_METHOD_FUNCTION)
       end
     end
 
@@ -1811,7 +1811,7 @@ class OCI8
       # Table 6-23 Attributes Specific to Name Value Pair
 
       def name
-        __text(OCI_ATTR_NAME)
+        attr_get_string(OCI_ATTR_NAME)
       end
 
       # not implemented

@@ -1,3 +1,10 @@
+2010-05-17  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/metadata.c: delete OCI8::Metadata::Base's methods which
+	    get and set OCI handle attributes.
+	* ext/oci8/ocihandle.c: add OCIHandle#attr_get_oradate.
+	* lib/oci8/metadata.rb: use OCIHandle#attr_get_* instead of
+	    obsolete OCI8::Metadata::Base#__*.
+
 2010-05-07  KUBO Takehiro  <kubo@jiubao.org>
 	* dist-files, ext/oci8/.document, ext/oci8/apiwrap.yml,
 	  ext/oci8/connection_pool.c, ext/oci8/extconf.rb,ext/oci8/oci8.c,

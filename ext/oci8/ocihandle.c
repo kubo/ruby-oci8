@@ -379,6 +379,42 @@ static VALUE attr_get_integer(VALUE self, VALUE attr_type)
 
 /*
  * call-seq:
+ *   attr_get_oradate(attr_type) -> an OraDate
+ *
+ * <b>(new in 2.0.5)</b>
+ *
+ * Gets the value of an attribute as `ub1 *' datatype.
+ * The return value is converted to OraDate.
+ *
+ * <b>Caution:</b> If the specified attr_type's datatype is not a
+ * pointer type, it causes a segmentation fault.
+ */
+static VALUE attr_get_oradate(VALUE self, VALUE attr_type)
+{
+    oci8_base_t *base = DATA_PTR(self);
+    union {
+        ub1 *value;
+        ub8 dummy; /* padding for incorrect attrtype to protect the stack */
+    } v;
+    ub4 size = 0;
+    static VALUE cOraDate = Qnil;
+
+    v.dummy = 0;
+    Check_Type(attr_type, T_FIXNUM);
+    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &v.value, &size, FIX2INT(attr_type), oci8_errhp));
+    if (NIL_P(cOraDate))
+        cOraDate = rb_eval_string("OraDate");
+    return rb_funcall(cOraDate, oci8_id_new, 6,
+                      INT2FIX((v.value[0] - 100) * 100 + (v.value[1] - 100)),
+                      INT2FIX(v.value[2]),
+                      INT2FIX(v.value[3]),
+                      INT2FIX(v.value[4] - 1),
+                      INT2FIX(v.value[5] - 1),
+                      INT2FIX(v.value[6] - 1));
+}
+
+/*
+ * call-seq:
  *   attr_set_ub1(attr_type, attr_value)
  *
  * <b>(new in 2.0.4)</b>
@@ -689,6 +725,7 @@ void Init_oci8_handle(void)
     rb_define_private_method(oci8_cOCIHandle, "attr_get_string", attr_get_string, 1);
     rb_define_private_method(oci8_cOCIHandle, "attr_get_binary", attr_get_binary, 1);
     rb_define_private_method(oci8_cOCIHandle, "attr_get_integer", attr_get_integer, 1);
+    rb_define_private_method(oci8_cOCIHandle, "attr_get_oradate", attr_get_oradate, 1);
 
     /* methods to set attributes */
     rb_define_private_method(oci8_cOCIHandle, "attr_set_ub1", attr_set_ub1, 2);
