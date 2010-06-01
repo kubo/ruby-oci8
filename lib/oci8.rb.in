@@ -18,13 +18,21 @@ if RUBY_PLATFORM =~ /cygwin/
   end
 end
 
+so_basename = nil
 case RUBY_VERSION
 when /^1\.9/
-  require 'oci8lib_191'
+  so_basename = 'oci8lib_191'
 when /^1\.8/
-  require 'oci8lib_18'
+  so_basename = 'oci8lib_18'
 else
   raise 'unsupported ruby version: ' + RUBY_VERSION
+end
+require so_basename
+
+if OCI8::VERSION != '@@OCI8_MODULE_VERSION@@'
+  require 'rbconfig'
+  so_name = so_basename + "." + Config::CONFIG['DLEXT']
+  raise "VERSION MISMATCH! #{so_name} version is #{OCI8::VERSION}, but oci8.rb version is @@OCI8_MODULE_VERSION@@."
 end
 
 require 'oci8/encoding-init.rb'
@@ -60,6 +68,11 @@ class OCI8
   def self.oracle_client_version
     @@oracle_client_version
   end
+
+  # defined for backward compatibility.
+  CLIENT_VERSION = @@oracle_client_version.major.to_s +
+    @@oracle_client_version.minor.to_s +
+    @@oracle_client_version.update.to_s
 end
 
 require 'oci8/ocihandle.rb'
@@ -70,8 +83,3 @@ require 'oci8/metadata.rb'
 require 'oci8/compat.rb'
 require 'oci8/object.rb'
 require 'oci8/connection_pool.rb'
-
-class OCI8
-  VERSION = '@@OCI8_MODULE_VERSION@@'
-  CLIENT_VERSION = '@@OCI8_CLIENT_VERSION@@'
-end

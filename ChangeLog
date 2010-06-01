@@ -1,3 +1,13 @@
+2010-06-01  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, ext/oci8/oci8.c, lib/oci8.rb.in: move
+	    the location where OCI8::VERSION is defined from oci8.rb to
+	    oci8lib_*.so. Add code to check the version of oci8.rb and
+	    oci8lib_*.so.
+	* test/test_clob.rb: create test_clob table while executing
+	    tests.
+	* README: delete the instruction to create test_clob before
+	    executing tests.
+
 2010-05-17  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/metadata.c: delete OCI8::Metadata::Base's methods which
 	    get and set OCI handle attributes.

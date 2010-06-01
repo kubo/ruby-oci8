@@ -130,6 +130,7 @@ so_basename = "oci8lib_" + Config::CONFIG["ruby_version"].gsub(/\W/, '')
 
 $defs << "-DInit_oci8lib=Init_#{so_basename}"
 $defs << "-Doci8lib=#{so_basename}"
+$defs << "-DOCI8LIB_VERSION=\\\"#{RUBY_OCI8_VERSION}\\\""
 
 create_header()
 

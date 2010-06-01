@@ -989,6 +989,7 @@ VALUE Init_oci8(void)
     id_at_prefetch_rows = rb_intern("@prefetch_rows");
     id_set_prefetch_rows = rb_intern("prefetch_rows=");
 
+    rb_define_const(cOCI8, "VERSION", rb_obj_freeze(rb_usascii_str_new_cstr(OCI8LIB_VERSION)));
     rb_define_singleton_method_nodoc(cOCI8, "oracle_client_vernum", oci8_s_oracle_client_vernum, 0);
     if (have_OCIMessageOpen && have_OCIMessageGet) {
         rb_define_singleton_method(cOCI8, "error_message", oci8_s_error_message, 1);

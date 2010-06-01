@@ -7,6 +7,8 @@ class TestCLob < Test::Unit::TestCase
 
   def setup
     @conn = get_oci8_connection
+    drop_table('test_clob')
+    @conn.exec('CREATE TABLE test_clob (filename VARCHAR2(40), content CLOB)')
   end
 
   def test_insert
@@ -74,6 +76,7 @@ class TestCLob < Test::Unit::TestCase
   end
 
   def teardown
+    drop_table('test_clob')
     @conn.logoff
   end
 end

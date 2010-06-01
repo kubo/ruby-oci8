@@ -60,27 +60,17 @@ before runing unit test,
 
     SQL> GRANT connect, resource TO ruby;
 
-4. If the Oracle version is 8i or later:
-
-    SQL> CREATE TABLE ruby.test_clob (filename VARCHAR2(40), content CLOB);
-
-5. connect to Oracle as sys
+4. connect to Oracle as sys
 
     $ sqlplus 'sys/<password_of_sys> as sysdba'
 
-6. grant the privilege for the unittest of blocking-mode.
+5. grant the privilege for the unittest of blocking-mode.
 
     SQL> GRANT EXECUTE ON dbms_lock TO ruby;
 
-7. change test/config.rb as you like
+6. change test/config.rb as you like
 
 Then you can run:
   $ make check
 or
   $ nmake check   (If your compiler is MS Visual C++.)
-
-= TODO
-
-* more proper handling of OCI_SUCCESS_WITH_INFO.
-* more proper handling of NUMBER without its scale values.
-* support Timestamp.
