@@ -8,74 +8,91 @@
 #
 class OCI8
 
-  # = OCI8 can describe database object's metadata.
-  # [user objects]
-  #     OCI8#describe_any(object_name)
-  # [table or view]
-  #     OCI8#describe_table(table_name, table_only = false)
-  # [view]
-  #     OCI8#describe_view(view_name)
-  # [procedure]
-  #     OCI8#describe_procedure(procedure_name)
-  # [function]
-  #     OCI8#describe_function(function_name)
-  # [package]
-  #     OCI8#describe_package(package_name)
-  # [type]
-  #     OCI8#describe_type(type_name)
-  # [synonym]
-  #     OCI8#describe_synonym(synonym_name, check_public_also = false)
-  # [sequence]
-  #     OCI8#describe_sequence(sequence_name)
-  # [schema]
-  #     OCI8#describe_schema(schema_name)
-  # [database]
-  #     OCI8#describe_database(database_name)
+  # OCI8 has methods to obtain information about database objects such
+  # as tables, views, procedures, functions ans so on. The obtained
+  # data are called metadata and retrived as an instance of
+  # OCI8::Metadata::Base's subclass.
   #
-  # The name can be supplied as 'OBJECT_NAME' or 'SCHEMA_NAME.OBJECT_NAME'.
-  # For example: 'emp', 'scott.emp'.
+  # List of methots which return OCI8::Metadata::Base.
+  # * OCI8::describe_any(object_name)
+  # * OCI8::describe_table(table_name, table_only = false)
+  # * OCI8::describe_view(view_name)
+  # * OCI8::describe_procedure(procedure_name)
+  # * OCI8::describe_function(function_name)
+  # * OCI8::describe_package(package_name)
+  # * OCI8::describe_type(type_name)
+  # * OCI8::describe_synonym(synonym_name, check_public_also = true)
+  # * OCI8::describe_sequence(sequence_name)
+  # * OCI8::describe_schema(schema_name)
+  # * OCI8::describe_database(database_name)
+  # * OCI8::Metadata::Type#map_method
+  # * OCI8::Metadata::Type#order_method
+  # * OCI8::Metadata::Type#collection_element
   #
-  # = Retrieving Column Datatypes for a Table
+  # List of methots which return an array of OCI8::Metadata::Base.
+  # * OCI8::Cusror#column_metadata
+  # * OCI8::Metadata::Database#schemas
+  # * OCI8::Metadata::Schema#all_objects
+  # * OCI8::Metadata::Schema#objects
+  # * OCI8::Metadata::Table#columns
+  # * OCI8::Metadata::Package#subprograms
+  # * OCI8::Metadata::Procedure#arguments
+  # * OCI8::Metadata::Function#arguments
+  # * OCI8::Metadata::Type#type_attrs
+  # * OCI8::Metadata::Type#type_methods
+  # * OCI8::Metadata::TypeMethod#arguments
   #
-  #  conn = OCI8.new('ruby', 'oci8')
-  #  table = conn.describe_table('EMPLOYEES')
-  #  table.columns.each do |col|
-  #    if col.char_used
-  #      col_width = col.char_size
-  #    else
-  #      col_width = col.data_size
-  #    end
-  #  end
+  # Example:
+  #   conn = OCI8.new('username/passord')
+  #   table = conn.describe_table('scott.emp')
+  #   table.columns.each do |col|
+  #     puts "#{col.name} #{col.type_string}"
+  #   end
   module Metadata
-    # Abstract super class for Metadata classes.
+    # Abstract super class of Metadata classes.
     class Base
       # Table 6-1 Attributes Belonging to All Parameters
 
-      # don't use this. The number of parameters
-      def num_params
+      # Returns the number of parameters.
+      def num_params # :nodoc:
         attr_get_ub2(OCI_ATTR_NUM_PARAMS)
       end
       private :num_params
 
-      # object or schema ID
+      # call-seq:
+      #   obj_id -> <i>integer</i> or <i>nil</i>
+      #
+      # Returns an object ID, which is the same as the value of the
+      # OBJECT_ID column from ALL_OBJECTS. It returns <i>nil</i>
+      # if the database object doesn't have ID.
       def obj_id
         attr_get_ub4(OCI_ATTR_OBJ_ID)
       end
 
-      # database name or object name in a schema
+      # call-seq:
+      #   obj_name -> <i>string</i>
+      #
+      # Retruns object name; table name, view name, procedure name, etc.
       def obj_name
         attr_get_string(OCI_ATTR_OBJ_NAME)
       end
 
-      # schema name where the object is located
+      # call-seq:
+      #   obj_schema -> <i>string</i>
+      #
+      # Retruns a schema name. It returns <i>nil</i>
+      # if the database object is not defined just under a schema.
       def obj_schema
         attr_get_string(OCI_ATTR_OBJ_SCHEMA)
       end
 
       # The timestamp of the object
-      def timestamp
-        attr_get_oradate(OCI_ATTR_TIMESTAMP)
-      end
+      #-
+      # As far as I checked, it is current timestamp, not the object's timestamp. Why?
+      #+
+      #def timestamp
+      #  attr_get_oradate(OCI_ATTR_TIMESTAMP)
+      #end
 
       def inspect # :nodoc:
         "#<#{self.class.name}:(#{obj_id}) #{obj_schema}.#{obj_name}>"
@@ -235,7 +252,7 @@ class OCI8
                               end
                             end]
 
-      def __data_type
+      def __data_type # :nodoc:
         return @data_type if defined? @data_type
         entry = DATA_TYPE_MAP[attr_get_ub2(OCI_ATTR_DATA_TYPE)]
         type = entry.nil? ? attr_get_ub2(OCI_ATTR_DATA_TYPE) : entry[0]
@@ -243,7 +260,7 @@ class OCI8
         @data_type = type
       end
 
-      def __duration
+      def __duration # :nodoc:
         case attr_get_ub2(OCI_ATTR_DURATION)
         when OCI_DURATION_SESSION
           :session
@@ -254,7 +271,7 @@ class OCI8
         end
       end
 
-      def __charset_form
+      def __charset_form # :nodoc:
         case attr_get_ub1(OCI_ATTR_CHARSET_FORM)
         when 1; :implicit # for CHAR, VARCHAR2, CLOB w/o a specified set
         when 2; :nchar    # for NCHAR, NCHAR VARYING, NCLOB
@@ -264,7 +281,7 @@ class OCI8
         end
       end
 
-      def __type_string
+      def __type_string # :nodoc:
         entry = DATA_TYPE_MAP[attr_get_ub2(OCI_ATTR_DATA_TYPE)]
         type = entry.nil? ? "unknown(#{attr_get_ub2(OCI_ATTR_DATA_TYPE)})" : entry[1]
         type = type.call(self) if type.is_a? Proc
@@ -275,7 +292,7 @@ class OCI8
         end
       end
 
-      def __typecode(idx)
+      def __typecode(idx) # :nodoc:
         case attr_get_ub2(idx)
         when 110; :ref         # OCI_TYPECODE_REF
         when  12; :date        # OCI_TYPECODE_DATE
@@ -327,18 +344,18 @@ class OCI8
       end
     end
 
-    # metadata for a object which cannot be classified into other
-    # metadata classes.
+    # Information about database objects which cannot be classified
+    # into other metadata classes.
     #
-    # This is returned by:
+    # An instance of this class is returned by:
     # * OCI8::Metadata::Schema#all_objects
     class Unknown < Base
       register_ptype OCI_PTYPE_UNK
     end
 
-    # Metadata for a table.
+    # Information about tables
     #
-    # This is returned by:
+    # An instance of this class is returned by:
     # * OCI8#describe_any(name)
     # * OCI8#describe_table(name)
     # * OCI8::Metadata::Schema#all_objects
@@ -352,76 +369,127 @@ class OCI8
 
       ## Table 6-2 Attributes Belonging to Tables or Views
 
-      # number of columns
+      # call-seq:
+      #   num_cols -> integer
+      #
+      # Returns number of columns
       def num_cols
         attr_get_ub2(OCI_ATTR_NUM_COLS)
       end
 
       # column list
-      def list_columns
+      def list_columns # :nodoc:
         __param(OCI_ATTR_LIST_COLUMNS)
       end
       private :list_columns
 
-      # to type metadata if possible
+      # call-seq:
+      #   type_methods -> an OCI8::Metadata::Type or <i>nil</i>
+      #
+      # Retruns an instance of OCI8::Metadata::Type if the table is an
+      # {object table}[http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28371/adobjint.htm#sthref48].
+      # Otherwise, <i>nil</i>.
       def type_metadata
-        __type_metadata(OCI8::Metadata::Type)
+        __type_metadata(OCI8::Metadata::Type) if is_typed?
       end
 
-      # indicates the table is temporary.
+      # call-seq:
+      #   is_temporary? -> <i>true</i> or <i>false</i>
+      #
+      # Returns <i>true</i> if the table is a
+      # {temporary table}[http://download.oracle.com/docs/cd/B28359_01/server.111/b28318/schema.htm#i16096].
+      # Otherwise, <i>false</i>.
       def is_temporary?
-        __boolean(OCI_ATTR_IS_TEMPORARY)
+        attr_get_ub1(OCI_ATTR_IS_TEMPORARY) != 0
       end
 
-      # indicates the table is typed.
+      # call-seq:
+      #   is_typed? -> <i>true</i> or <i>false</i>
+      #
+      # Returns <i>true</i> if the table is a object table. Otherwise, <i>false</i>.
       def is_typed?
-        __boolean(OCI_ATTR_IS_TYPED)
+        attr_get_ub1(OCI_ATTR_IS_TYPED) != 0
       end
 
-      # Duration of a temporary table. Values can be <tt>:session</tt> or
-      # <tt>:transaction</tt>. nil if not a temporary table.
+      # call-seq:
+      #   duration -> <i>:transaction</i>, <i>:session</i> or <i>nil</i>
+      #
+      # Retruns <i>:transaction</i> if the table is a
+      # {transaction-specific temporary table}[http://download.oracle.com/docs/cd/B28359_01/server.111/b28286/statements_7002.htm#i2189569].
+      # <i>:session</i> if it is a
+      # {session-specific temporary table}[http://download.oracle.com/docs/cd/B28359_01/server.111/b28286/statements_7002.htm#i2189569].
+      # Otherwise, <i>nil</i>.
       def duration
         __duration
       end
 
       ## Table 6-3 Attributes Specific to Tables
 
-      # data block address of the segment header. (How to use this?)
+      # call-seq:
+      #   dba -> integer
+      #
+      # Returns a Data Block Address(DBA) of the segment header.
+      #
+      # The dba is converted to the file number and the block number
+      # by DBMS_UTILITY.DATA_BLOCK_ADDRESS_FILE and
+      # DBMS_UTILITY.DATA_BLOCK_ADDRESS_BLOCK respectively.
       def dba
         attr_get_ub4(OCI_ATTR_RDBA)
       end
 
-      # tablespace the table resides in. (How to use this?)
+      # call-seq:
+      #   tablespace -> integer
+      #
+      # Returns a tablespace number the table resides in.
       def tablespace
         __word(OCI_ATTR_TABLESPACE)
       end
 
-      # indicates the table is clustered.
+      # call-seq:
+      #   clustered? -> <i>true</i> or <i>false</i>
+      #
+      # Returns <i>true</i> if the table is part of a 
+      # cluster[http://download.oracle.com/docs/cd/B28359_01/server.111/b28318/schema.htm#CNCPT608].
+      # Otherwise, <i>false</i>.
       def clustered?
-        __boolean(OCI_ATTR_CLUSTERED)
+        attr_get_ub1(OCI_ATTR_CLUSTERED) != 0
       end
 
-      # indicates the table is partitioned.
+      # call-seq:
+      #   partitioned? -> <i>true</i> or <i>false</i>
+      #
+      # Returns <i>true</i> if the table is a
+      # {partitioned table}[http://download.oracle.com/docs/cd/B28359_01/server.111/b28318/partconc.htm#i449863].
+      # Otherwise, <i>false</i>.
       def partitioned?
-        __boolean(OCI_ATTR_PARTITIONED)
+        attr_get_ub1(OCI_ATTR_PARTITIONED) != 0
       end
 
-      # indicates the table is index-only.
+      # call-seq:
+      #   index_only? -> <i>true</i> or <i>false</i>
+      #
+      # Returns <i>true</i> if the table is an
+      # {index-organized table}[http://download.oracle.com/docs/cd/B28359_01/server.111/b28318/schema.htm#i23877]
+      # Otherwise, <i>false</i>.
       def index_only?
-        __boolean(OCI_ATTR_INDEX_ONLY)
+        attr_get_ub1(OCI_ATTR_INDEX_ONLY) != 0
       end
 
-      # array of Column objects in a table.
+      # call-seq:
+      #   columns -> an array of OCI8::Metadata::Column
+      #
+      # Returns an array of {column information}[link:OCI8/Metadata/Column.html]
+      # of the table.
       def columns
         @columns ||= list_columns.to_a
       end
     end
 
-    # Metadata for a view.
+    # Information about views
     #
-    # This is returned by:
+    # Related methods:
     # * OCI8#describe_any(name)
-    # * OCI8#describe_table(name, true)
+    # * OCI8#describe_table(name, false)
     # * OCI8#describe_view(name)
     # * OCI8::Metadata::Schema#all_objects
     # * OCI8::Metadata::Schema#objects
@@ -434,39 +502,45 @@ class OCI8
 
       ## Table 6-2 Attributes Belonging to Tables or Views
 
-      # number of columns
+      # call-seq:
+      #   num_cols -> integer
+      #
+      # Returns number of columns
       def num_cols
         attr_get_ub2(OCI_ATTR_NUM_COLS)
       end
 
       # column list
-      def list_columns
+      def list_columns # :nodoc:
         __param(OCI_ATTR_LIST_COLUMNS)
       end
       private :list_columns
 
-      # to type metadata if possible
-      def type_metadata
-        __type_metadata(OCI8::Metadata::Type)
-      end
+      # This does't work for view.
+      #def type_metadata
+      #  __type_metadata(OCI8::Metadata::Type)
+      #end
 
-      # indicates the table is temporary.
-      def is_temporary?
-        __boolean(OCI_ATTR_IS_TEMPORARY)
-      end
+      # This does't work for view.
+      #def is_temporary?
+      #  attr_get_ub1(OCI_ATTR_IS_TEMPORARY) != 0
+      #end
 
-      # indicates the table is typed.
-      def is_typed?
-        __boolean(OCI_ATTR_IS_TYPED)
-      end
+      # This does't work for view.
+      #def is_typed?
+      #  attr_get_ub1(OCI_ATTR_IS_TYPED) != 0
+      #end
 
-      # Duration of a temporary table. Values can be <tt>:session</tt> or
-      # <tt>:transaction</tt>. nil if not a temporary table.
-      def duration
-        __duration
-      end
+      # This does't work for view.
+      #def duration
+      #  __duration
+      #end
 
-      # array of Column objects in a table.
+      # call-seq:
+      #   columns -> an array of OCI8::Metadata::Column
+      #
+      # Returns an array of {column information}[link:OCI8/Metadata/Column.html]
+      # of the table.
       def columns
         @columns ||= list_columns.to_a
       end
@@ -1532,41 +1606,46 @@ class OCI8
       # array of objects in the schema.
       # This includes unusable objects.
       def all_objects
-        unless @all_objects
+        @all_objects ||=
           begin
-            objs = list_objects
-          rescue OCIError => exc
-            if exc.code != -1
-              raise
+            begin
+              objs = list_objects
+            rescue OCIError => exc
+              if exc.code != -1
+                raise
+              end
+              # describe again.
+              objs = __con.describe_schema(obj_schema).list_objects
             end
-            # describe again.
-            objs = __con.describe_schema(obj_schema).list_objects
+            objs.to_a.collect! do |elem|
+              case elem
+              when OCI8::Metadata::Type
+                # to avoid a segmentation fault
+                __con.describe_type(elem.obj_schema + '.' + elem.obj_name)
+              else
+                elem
+              end
+            end
           end
-          @all_objects = objs.to_a
-        end
-        @all_objects
       end
 
       # array of objects in the schema.
       def objects
-        unless @objects
-          @objects = all_objects.dup.reject! do |obj|
-            case obj
-            when Unknown
-              true
-            when Synonym
-              begin
-                obj.objid
-                false
-              rescue OCIError
-                true
-              end
-            else
+        @objects ||= all_objects.reject do |obj|
+          case obj
+          when Unknown
+            true
+          when Synonym
+            begin
+              obj.objid
               false
+            rescue OCIError
+              true
             end
+          else
+            false
           end
         end
-        @objects
       end
 
       def inspect # :nodoc:

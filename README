@@ -58,7 +58,7 @@ before runing unit test,
 
 3. grant the privilege to connect and execute.
 
-    SQL> GRANT connect, resource TO ruby;
+    SQL> GRANT connect, resource, create view TO ruby;
 
 4. connect to Oracle as sys
 

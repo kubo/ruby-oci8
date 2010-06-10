@@ -1,3 +1,12 @@
+2010-06-10  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/metadata.rb: revice rdoc comments of OCI8::Metadata::Table
+	    and OCI8::Metadata::View and delete some unavailable methods
+	    of OCI8::Metadata::View.
+	* test/test_metadata.rb: add tests for OCI8::Metadata::Table and
+	    OCI8::Metadata::View.
+	* README: change the description about the privilege to run tests.
+	    'create view' privilege is needed to test OCI8::Metadata::View.
+
 2010-06-01  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, ext/oci8/oci8.c, lib/oci8.rb.in: move
 	    the location where OCI8::VERSION is defined from oci8.rb to

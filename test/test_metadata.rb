@@ -254,4 +254,190 @@ EOS
     end
   end
 
+  def assert_object_id(object_name, object_id, owner_name = nil)
+    owner_name ||= @conn.username
+    expected_val = @conn.select_one('select object_id from all_objects where owner = :1 and object_name = :2', owner_name, object_name)[0]
+    assert_equal(expected_val, object_id, "ID of #{object_name}")
+  end
+
+  def test_table_metadata
+    drop_table('test_table')
+
+    # Relational table
+    @conn.exec(<<-EOS)
+CREATE TABLE test_table (col1 number(38,0), col2 varchar2(60))
+STORAGE (
+   INITIAL 100k
+   NEXT 100k
+   MINEXTENTS 1
+   MAXEXTENTS UNLIMITED
+   PCTINCREASE 0)
+EOS
+    [
+     @conn.describe_any('test_table'),
+     @conn.describe_table('test_table'),
+     @conn.describe_schema(@conn.username).objects.detect do |obj|
+       obj.obj_name == 'TEST_TABLE'
+     end
+    ].each do |desc|
+      assert_object_id('TEST_TABLE', desc.obj_id)
+      assert_equal('TEST_TABLE', desc.obj_name)
+      assert_equal(@conn.username, desc.obj_schema)
+      assert_equal(2, desc.num_cols)
+      assert_nil(desc.type_metadata)
+      assert_equal(false, desc.is_temporary?)
+      assert_equal(false, desc.is_typed?)
+      assert_nil(desc.duration)
+      assert_not_nil(desc.dba)
+      assert_not_nil(desc.tablespace)
+      assert_equal(false, desc.clustered?)
+      assert_equal(false, desc.partitioned?)
+      assert_equal(false, desc.index_only?)
+      assert_equal(Array, desc.columns.class)
+      assert_equal(OCI8::Metadata::Column, desc.columns[0].class)
+    end
+    drop_table('test_table')
+
+    # Transaction-specific temporary table
+    @conn.exec(<<-EOS)
+CREATE GLOBAL TEMPORARY TABLE test_table (col1 number(38,0), col2 varchar2(60))
+EOS
+    [
+     @conn.describe_any('test_table'),
+     @conn.describe_table('test_table'),
+     @conn.describe_schema(@conn.username).objects.detect do |obj|
+       obj.obj_name == 'TEST_TABLE'
+     end
+    ].each do |desc|
+      assert_object_id('TEST_TABLE', desc.obj_id)
+      assert_equal('TEST_TABLE', desc.obj_name)
+      assert_equal(@conn.username, desc.obj_schema)
+      assert_equal(2, desc.num_cols)
+      assert_nil(desc.type_metadata)
+      assert_equal(true, desc.is_temporary?)
+      assert_equal(false, desc.is_typed?)
+      assert_equal(:transaction, desc.duration)
+      assert_not_nil(desc.dba)
+      assert_not_nil(desc.tablespace)
+      assert_equal(false, desc.clustered?)
+      assert_equal(false, desc.partitioned?)
+      assert_equal(false, desc.index_only?)
+      assert_equal(Array, desc.columns.class)
+      assert_equal(OCI8::Metadata::Column, desc.columns[0].class)
+    end
+    drop_table('test_table')
+
+    # Session-specific temporary table
+    @conn.exec(<<-EOS)
+CREATE GLOBAL TEMPORARY TABLE test_table (col1 number(38,0), col2 varchar2(60))
+ON COMMIT PRESERVE ROWS
+EOS
+    [
+     @conn.describe_any('test_table'),
+     @conn.describe_table('test_table'),
+     @conn.describe_schema(@conn.username).objects.detect do |obj|
+       obj.obj_name == 'TEST_TABLE'
+     end
+    ].each do |desc|
+      assert_object_id('TEST_TABLE', desc.obj_id)
+      assert_equal('TEST_TABLE', desc.obj_name)
+      assert_equal(@conn.username, desc.obj_schema)
+      assert_equal(2, desc.num_cols)
+      assert_nil(desc.type_metadata)
+      assert_equal(true, desc.is_temporary?)
+      assert_equal(false, desc.is_typed?)
+      assert_equal(:session, desc.duration)
+      assert_not_nil(desc.dba)
+      assert_not_nil(desc.tablespace)
+      assert_equal(false, desc.clustered?)
+      assert_equal(false, desc.partitioned?)
+      assert_equal(false, desc.index_only?)
+      assert_equal(Array, desc.columns.class)
+      assert_equal(OCI8::Metadata::Column, desc.columns[0].class)
+    end
+    drop_table('test_table')
+
+    # Object table
+    @conn.exec(<<-EOS)
+CREATE OR REPLACE TYPE test_type AS OBJECT (col1 number(38,0), col2 varchar2(60))
+EOS
+    @conn.exec(<<-EOS)
+CREATE TABLE test_table OF test_type
+EOS
+    [
+     @conn.describe_any('test_table'),
+     @conn.describe_table('test_table'),
+     @conn.describe_schema(@conn.username).objects.detect do |obj|
+       obj.obj_name == 'TEST_TABLE'
+     end
+    ].each do |desc|
+      assert_object_id('TEST_TABLE', desc.obj_id)
+      assert_equal('TEST_TABLE', desc.obj_name)
+      assert_equal(@conn.username, desc.obj_schema)
+      assert_equal(2, desc.num_cols)
+      assert_equal(OCI8::Metadata::Type, desc.type_metadata.class)
+      assert_equal(false, desc.is_temporary?)
+      assert_equal(true, desc.is_typed?)
+      assert_equal(nil, desc.duration)
+      assert_not_nil(desc.dba)
+      assert_not_nil(desc.tablespace)
+      assert_equal(false, desc.clustered?)
+      assert_equal(false, desc.partitioned?)
+      assert_equal(false, desc.index_only?)
+      assert_equal(Array, desc.columns.class)
+      assert_equal(OCI8::Metadata::Column, desc.columns[0].class)
+    end
+    drop_table('test_table')
+    @conn.exec('DROP TYPE TEST_TYPE')
+
+    # Index-organized table
+    @conn.exec(<<-EOS)
+CREATE TABLE test_table (col1 number(38,0) PRIMARY KEY, col2 varchar2(60))
+ORGANIZATION INDEX 
+EOS
+    [
+     @conn.describe_any('test_table'),
+     @conn.describe_table('test_table'),
+     @conn.describe_schema(@conn.username).objects.detect do |obj|
+       obj.obj_name == 'TEST_TABLE'
+     end
+    ].each do |desc|
+      assert_object_id('TEST_TABLE', desc.obj_id)
+      assert_equal('TEST_TABLE', desc.obj_name)
+      assert_equal(@conn.username, desc.obj_schema)
+      assert_equal(2, desc.num_cols)
+      assert_nil(desc.type_metadata)
+      assert_equal(false, desc.is_temporary?)
+      assert_equal(false, desc.is_typed?)
+      assert_equal(nil, desc.duration)
+      assert_not_nil(desc.dba)
+      assert_not_nil(desc.tablespace)
+      assert_equal(false, desc.clustered?)
+      assert_equal(false, desc.partitioned?)
+      assert_equal(true, desc.index_only?)
+      assert_equal(Array, desc.columns.class)
+      assert_equal(OCI8::Metadata::Column, desc.columns[0].class)
+    end
+    drop_table('test_table')
+  end # test_table_metadata
+
+  def test_view_metadata
+    @conn.exec('CREATE OR REPLACE VIEW test_view as SELECT * FROM tab')
+    [
+     @conn.describe_any('test_view'),
+     @conn.describe_view('test_view'),
+     @conn.describe_table('test_view'),
+     @conn.describe_schema(@conn.username).objects.detect do |obj|
+       obj.obj_name == 'TEST_VIEW'
+     end
+    ].each do |desc|
+      assert_object_id('TEST_VIEW', desc.obj_id)
+      assert_equal('TEST_VIEW', desc.obj_name)
+      assert_equal(@conn.username, desc.obj_schema)
+      assert_equal(3, desc.num_cols)
+      assert_equal(Array, desc.columns.class)
+      assert_equal(OCI8::Metadata::Column, desc.columns[0].class)
+    end
+    @conn.exec('DROP VIEW test_view')
+  end # test_view_metadata
 end # TestMetadata
