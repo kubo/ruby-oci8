@@ -1,3 +1,11 @@
+2010-06-11  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/metadata.rb: rename OCI8::Metabase::ProcBase to
+	    OCI8::Metabase::Subprogram, add #is_standalone? and change
+	    #obj_id, #obj_name and #obj_schema to work for packaged
+	    subprograms. Fix rdoc comments.
+	* test/test_metadata.rb: add tests for OCI8::Metadata::Function,
+	    OCI8::Metadata::Procedure and OCI8::Metadata::Package.
+
 2010-06-10  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/metadata.rb: revice rdoc comments of OCI8::Metadata::Table
 	    and OCI8::Metadata::View and delete some unavailable methods

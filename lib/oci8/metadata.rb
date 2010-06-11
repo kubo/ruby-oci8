@@ -14,23 +14,23 @@ class OCI8
   # OCI8::Metadata::Base's subclass.
   #
   # List of methots which return OCI8::Metadata::Base.
-  # * OCI8::describe_any(object_name)
-  # * OCI8::describe_table(table_name, table_only = false)
-  # * OCI8::describe_view(view_name)
-  # * OCI8::describe_procedure(procedure_name)
-  # * OCI8::describe_function(function_name)
-  # * OCI8::describe_package(package_name)
-  # * OCI8::describe_type(type_name)
-  # * OCI8::describe_synonym(synonym_name, check_public_also = true)
-  # * OCI8::describe_sequence(sequence_name)
-  # * OCI8::describe_schema(schema_name)
-  # * OCI8::describe_database(database_name)
+  # * OCI8#describe_any(object_name)
+  # * OCI8#describe_table(table_name, table_only = false)
+  # * OCI8#describe_view(view_name)
+  # * OCI8#describe_procedure(procedure_name)
+  # * OCI8#describe_function(function_name)
+  # * OCI8#describe_package(package_name)
+  # * OCI8#describe_type(type_name)
+  # * OCI8#describe_synonym(synonym_name, check_public_also = true)
+  # * OCI8#describe_sequence(sequence_name)
+  # * OCI8#describe_schema(schema_name)
+  # * OCI8#describe_database(database_name)
   # * OCI8::Metadata::Type#map_method
   # * OCI8::Metadata::Type#order_method
   # * OCI8::Metadata::Type#collection_element
   #
   # List of methots which return an array of OCI8::Metadata::Base.
-  # * OCI8::Cusror#column_metadata
+  # * OCI8::Cursor#column_metadata
   # * OCI8::Metadata::Database#schemas
   # * OCI8::Metadata::Schema#all_objects
   # * OCI8::Metadata::Schema#objects
@@ -60,17 +60,17 @@ class OCI8
       private :num_params
 
       # call-seq:
-      #   obj_id -> <i>integer</i> or <i>nil</i>
+      #   obj_id -> integer or nil
       #
       # Returns an object ID, which is the same as the value of the
-      # OBJECT_ID column from ALL_OBJECTS. It returns <i>nil</i>
+      # OBJECT_ID column from ALL_OBJECTS. It returns +nil+
       # if the database object doesn't have ID.
       def obj_id
         attr_get_ub4(OCI_ATTR_OBJ_ID)
       end
 
       # call-seq:
-      #   obj_name -> <i>string</i>
+      #   obj_name -> string
       #
       # Retruns object name; table name, view name, procedure name, etc.
       def obj_name
@@ -78,9 +78,9 @@ class OCI8
       end
 
       # call-seq:
-      #   obj_schema -> <i>string</i>
+      #   obj_schema -> string
       #
-      # Retruns a schema name. It returns <i>nil</i>
+      # Retruns a schema name. It returns +nil+
       # if the database object is not defined just under a schema.
       def obj_schema
         attr_get_string(OCI_ATTR_OBJ_SCHEMA)
@@ -384,41 +384,41 @@ class OCI8
       private :list_columns
 
       # call-seq:
-      #   type_methods -> an OCI8::Metadata::Type or <i>nil</i>
+      #   type_methods -> an OCI8::Metadata::Type or nil
       #
       # Retruns an instance of OCI8::Metadata::Type if the table is an
       # {object table}[http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28371/adobjint.htm#sthref48].
-      # Otherwise, <i>nil</i>.
+      # Otherwise, +nil+.
       def type_metadata
         __type_metadata(OCI8::Metadata::Type) if is_typed?
       end
 
       # call-seq:
-      #   is_temporary? -> <i>true</i> or <i>false</i>
+      #   is_temporary? -> true or false
       #
-      # Returns <i>true</i> if the table is a
+      # Returns +true+ if the table is a
       # {temporary table}[http://download.oracle.com/docs/cd/B28359_01/server.111/b28318/schema.htm#i16096].
-      # Otherwise, <i>false</i>.
+      # Otherwise, +false+.
       def is_temporary?
         attr_get_ub1(OCI_ATTR_IS_TEMPORARY) != 0
       end
 
       # call-seq:
-      #   is_typed? -> <i>true</i> or <i>false</i>
+      #   is_typed? -> true or false
       #
-      # Returns <i>true</i> if the table is a object table. Otherwise, <i>false</i>.
+      # Returns +true+ if the table is a object table. Otherwise, +false+.
       def is_typed?
         attr_get_ub1(OCI_ATTR_IS_TYPED) != 0
       end
 
       # call-seq:
-      #   duration -> <i>:transaction</i>, <i>:session</i> or <i>nil</i>
+      #   duration -> :transaction, :session or nil
       #
-      # Retruns <i>:transaction</i> if the table is a
+      # Retruns +:transaction+ if the table is a
       # {transaction-specific temporary table}[http://download.oracle.com/docs/cd/B28359_01/server.111/b28286/statements_7002.htm#i2189569].
-      # <i>:session</i> if it is a
+      # +:session+ if it is a
       # {session-specific temporary table}[http://download.oracle.com/docs/cd/B28359_01/server.111/b28286/statements_7002.htm#i2189569].
-      # Otherwise, <i>nil</i>.
+      # Otherwise, +nil+.
       def duration
         __duration
       end
@@ -446,31 +446,31 @@ class OCI8
       end
 
       # call-seq:
-      #   clustered? -> <i>true</i> or <i>false</i>
+      #   clustered? -> true or false
       #
-      # Returns <i>true</i> if the table is part of a 
+      # Returns +true+ if the table is part of a 
       # cluster[http://download.oracle.com/docs/cd/B28359_01/server.111/b28318/schema.htm#CNCPT608].
-      # Otherwise, <i>false</i>.
+      # Otherwise, +false+.
       def clustered?
         attr_get_ub1(OCI_ATTR_CLUSTERED) != 0
       end
 
       # call-seq:
-      #   partitioned? -> <i>true</i> or <i>false</i>
+      #   partitioned? -> true or false
       #
-      # Returns <i>true</i> if the table is a
+      # Returns +true+ if the table is a
       # {partitioned table}[http://download.oracle.com/docs/cd/B28359_01/server.111/b28318/partconc.htm#i449863].
-      # Otherwise, <i>false</i>.
+      # Otherwise, +false+.
       def partitioned?
         attr_get_ub1(OCI_ATTR_PARTITIONED) != 0
       end
 
       # call-seq:
-      #   index_only? -> <i>true</i> or <i>false</i>
+      #   index_only? -> true or false
       #
-      # Returns <i>true</i> if the table is an
+      # Returns +true+ if the table is an
       # {index-organized table}[http://download.oracle.com/docs/cd/B28359_01/server.111/b28318/schema.htm#i23877]
-      # Otherwise, <i>false</i>.
+      # Otherwise, +false+.
       def index_only?
         attr_get_ub1(OCI_ATTR_INDEX_ONLY) != 0
       end
@@ -487,7 +487,7 @@ class OCI8
 
     # Information about views
     #
-    # Related methods:
+    # An instance of this class is returned by:
     # * OCI8#describe_any(name)
     # * OCI8#describe_table(name, false)
     # * OCI8#describe_view(name)
@@ -546,49 +546,83 @@ class OCI8
       end
     end
 
-    # Abstract super class of Procedure and Function.
+    # Information about PL/SQL subprograms
     #
-    #--
-    # How can I know whether FUNCTION or PROCEDURE?
-    #++
-    class ProcBase < Base
+    # A PL/SQL subprogram is a named PL/SQL block that can be invoked
+    # with a set of parameters. A subprogram can be either a procedure
+    # or a function.
+    #
+    # This is the abstract base class of OCI8::Metadata::Procedure and
+    # OCI8::Metadata::Function.
+    class Subprogram < Base
       ## Table 6-4 Attribute Belonging to Procedures or Functions
 
       # Argument list
-      def list_arguments
+      def list_arguments # :nodoc:
         __param(OCI_ATTR_LIST_ARGUMENTS)
       end
       private :list_arguments
 
-      # indicates the procedure or function has invoker's rights
+      def obj_id # :nodoc:
+        super if is_standalone?
+      end
+
+      def obj_name # :nodoc:
+        is_standalone? ? super : attr_get_string(OCI_ATTR_NAME)
+      end
+
+      def obj_schema # :nodoc:
+        super if is_standalone?
+      end
+
+      # call-seq:
+      #   is_invoker_rights? -> true or false
+      #
+      # Returns +true+ if the subprogram has
+      # {invoker's rights}[http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28370/subprograms.htm#i18574].
+      # Otherwise, +false+.
       def is_invoker_rights?
-        __boolean(OCI_ATTR_IS_INVOKER_RIGHTS)
+        attr_get_ub1(OCI_ATTR_IS_INVOKER_RIGHTS) != 0
       end
 
       ## Table 6-5 Attributes Specific to Package Subprograms
 
-      # name of the procedure or function.
+      # name of the subprogram
       #
-      # available only for a Package subprogram.
-      def name
-        attr_get_string(OCI_ATTR_NAME)
-      end
+      #def name
+      #  attr_get_string(OCI_ATTR_NAME)
+      #end
+      alias name obj_name # :nodoc: for backward compatibility
 
-      # overloading ID number (relevant in case the procedure or
-      # function is part of a package and is overloaded). Values
-      # returned may be different from direct query of a PL/SQL
-      # function or procedure. (What this means?)
+      # call-seq:
+      #   overload_id -> integer or nil
       #
-      # available only for a Package subprogram.
+      # Returns +nil+ for a standalone stored subprogram,
+      # positive integer for a
+      # {overloaded packaged subprogram}[http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28370/subprograms.htm#i12352].
+      # , otherwise zero.
       def overload_id
-        attr_get_ub2(OCI_ATTR_OVERLOAD_ID)
+        attr_get_ub2(OCI_ATTR_OVERLOAD_ID) unless is_standalone?
       end
 
-      # array of Argument objects.
+      # call-seq:
+      #   arguments -> an array of OCI8::Metadata::Argument
       #
-      # The first element is the return type in case of Function.
+      # Returns an array of {argument information}[link:OCI8/Metadata/Argument.html]
+      # of the subprogram.
+      # If it is a function, the first array element is information of its return type.
       def arguments
         @arguments ||= list_arguments.to_a
+      end
+
+      # call-seq:
+      #   is_standalone? -> true or false
+      #
+      # Returns +true+ if the subprogram is standalone, +false+
+      # if packaged.
+      def is_standalone?
+        @is_standalone = true unless defined? @is_standalone
+        @is_standalone
       end
 
       def inspect # :nodoc:
@@ -596,37 +630,37 @@ class OCI8
       end
     end
 
-    # Metadata for a procedure.
+    # Information about procedures
     #
-    # This is returned by:
+    # An instance of this class is returned by:
     # * OCI8#describe_any(name)
     # * OCI8#describe_procedure(name)
     # * OCI8::Metadata::Schema#all_objects
     # * OCI8::Metadata::Schema#objects
     # * OCI8::Metadata::Package#subprograms
     #
-    # See ProcBase's methods.
-    class Procedure < ProcBase
+    # See OCI8::Metadata::Subprogram.
+    class Procedure < Subprogram
       register_ptype OCI_PTYPE_PROC
     end
 
-    # Metadata for a function.
+    # Information about functions
     #
-    # This is returned by:
+    # An instance of this class is returned by:
     # * OCI8#describe_any(name)
     # * OCI8#describe_function(name)
     # * OCI8::Metadata::Schema#all_objects
     # * OCI8::Metadata::Schema#objects
     # * OCI8::Metadata::Package#subprograms
     #
-    # See ProcBase's methods.
-    class Function < ProcBase
+    # See OCI8::Metadata::Subprogram.
+    class Function < Subprogram
       register_ptype OCI_PTYPE_FUNC
     end
 
-    # Metadata for a package.
+    # Information about packages.
     #
-    # This is returned by:
+    # An instance of this class is returned by:
     # * OCI8#describe_any(name)
     # * OCI8#describe_package(name)
     # * OCI8::Metadata::Schema#all_objects
@@ -637,19 +671,26 @@ class OCI8
       ## Table 6-6 Attributes Belonging to Packages
 
       # subprogram list
-      def list_subprograms
+      def list_subprograms # :nodoc:
         __param(OCI_ATTR_LIST_SUBPROGRAMS)
       end
       private :list_subprograms
 
-      # is the package invoker's rights?
+      # call-seq:
+      #   is_invoker_rights? -> <i>true</i> or <i>false</i>
+      #
+      # Returns <i>true</i> if the package subprograms have
+      # [invoker's rights][http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28370/subprograms.htm#i18574].
+      # Otherwise, <i>false</i>.
       def is_invoker_rights?
-        __boolean(OCI_ATTR_IS_INVOKER_RIGHTS)
+        attr_get_ub1(OCI_ATTR_IS_INVOKER_RIGHTS) != 0
       end
 
       # array of Procedure or Function objects.
       def subprograms
-        @subprograms ||= list_subprograms.to_a
+        @subprograms ||= list_subprograms.to_a.each do |prog|
+          prog.instance_variable_set(:@is_standalone, false)
+        end
       end
     end
 

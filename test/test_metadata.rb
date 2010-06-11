@@ -440,4 +440,250 @@ EOS
     end
     @conn.exec('DROP VIEW test_view')
   end # test_view_metadata
+
+  def test_procedure_metadata
+    @conn.exec(<<-EOS)
+CREATE OR REPLACE PROCEDURE test_proc(arg1 IN INTEGER, arg2 OUT varchar2) IS
+BEGIN
+  NULL;
+END;
+EOS
+    [
+     @conn.describe_any('test_proc'),
+     @conn.describe_procedure('test_proc'),
+     @conn.describe_schema(@conn.username).objects.detect do |obj|
+       obj.obj_name == 'TEST_PROC'
+     end
+    ].each do |desc|
+      assert_equal(OCI8::Metadata::Procedure, desc.class)
+      assert_object_id('TEST_PROC', desc.obj_id)
+      assert_equal('TEST_PROC', desc.obj_name)
+      assert_equal('TEST_PROC', desc.name)
+      assert_equal(@conn.username, desc.obj_schema)
+      assert_equal(false, desc.is_invoker_rights?)
+      assert_equal(nil, desc.overload_id)
+      assert_equal(Array, desc.arguments.class)
+      assert_equal(2, desc.arguments.length)
+      assert_equal(OCI8::Metadata::Argument, desc.arguments[0].class)
+    end
+
+    @conn.exec(<<-EOS)
+CREATE OR REPLACE PROCEDURE test_proc(arg1 IN INTEGER, arg2 OUT varchar2)
+  AUTHID CURRENT_USER
+IS
+BEGIN
+  NULL;
+END;
+EOS
+    [
+     @conn.describe_any('test_proc'),
+     @conn.describe_procedure('test_proc'),
+     @conn.describe_schema(@conn.username).objects.detect do |obj|
+       obj.obj_name == 'TEST_PROC'
+     end
+    ].each do |desc|
+      assert_equal(OCI8::Metadata::Procedure, desc.class)
+      assert_object_id('TEST_PROC', desc.obj_id)
+      assert_equal('TEST_PROC', desc.obj_name)
+      assert_equal(@conn.username, desc.obj_schema)
+      assert_equal(true, desc.is_invoker_rights?)
+      assert_equal(nil, desc.overload_id)
+      assert_equal(Array, desc.arguments.class)
+      assert_equal(2, desc.arguments.length)
+      assert_equal(OCI8::Metadata::Argument, desc.arguments[0].class)
+    end
+
+    @conn.exec('DROP PROCEDURE test_proc');
+
+    @conn.exec(<<-EOS)
+CREATE OR REPLACE PACKAGE TEST_PKG IS
+  PROCEDURE test_proc(arg1 IN INTEGER, arg2 OUT varchar2);
+END;
+EOS
+    desc = @conn.describe_package('test_pkg').subprograms[0]
+    assert_equal(OCI8::Metadata::Procedure, desc.class)
+    assert_equal(nil, desc.obj_id)
+    assert_equal('TEST_PROC', desc.obj_name)
+    assert_equal(nil, desc.obj_schema)
+    assert_equal(false, desc.is_invoker_rights?)
+    assert_equal(0, desc.overload_id)
+    assert_equal(Array, desc.arguments.class)
+    assert_equal(2, desc.arguments.length)
+    assert_equal(OCI8::Metadata::Argument, desc.arguments[0].class)
+
+    @conn.exec(<<-EOS)
+CREATE OR REPLACE PACKAGE TEST_PKG AUTHID CURRENT_USER
+IS
+  PROCEDURE test_proc(arg1 IN INTEGER, arg2 OUT varchar2);
+  PROCEDURE test_proc(arg1 IN INTEGER);
+END;
+EOS
+    desc = @conn.describe_package('test_pkg').subprograms
+    assert_equal(OCI8::Metadata::Procedure, desc[0].class)
+    assert_equal(nil, desc[0].obj_id)
+    assert_equal('TEST_PROC', desc[0].obj_name)
+    assert_equal(nil, desc[0].obj_schema)
+    assert_equal(true, desc[0].is_invoker_rights?)
+    assert_equal(2, desc[0].overload_id)
+    assert_equal(Array, desc[0].arguments.class)
+    assert_equal(2, desc[0].arguments.length)
+    assert_equal(OCI8::Metadata::Argument, desc[0].arguments[0].class)
+
+    descs = @conn.describe_package('test_pkg').subprograms
+    assert_equal(OCI8::Metadata::Procedure, desc[1].class)
+    assert_equal(nil, desc[1].obj_id)
+    assert_equal('TEST_PROC', desc[1].obj_name)
+    assert_equal(nil, desc[1].obj_schema)
+    assert_equal(true, desc[1].is_invoker_rights?)
+    assert_equal(1, desc[1].overload_id)
+    assert_equal(Array, desc[1].arguments.class)
+    assert_equal(1, desc[1].arguments.length)
+    assert_equal(OCI8::Metadata::Argument, desc[1].arguments[0].class)
+  end # test_procedure_metadata
+
+  def test_function_metadata
+    @conn.exec(<<-EOS)
+CREATE OR REPLACE FUNCTION test_func(arg1 IN INTEGER, arg2 OUT varchar2) RETURN NUMBER IS
+BEGIN
+  RETURN arg1;
+END;
+EOS
+    [
+     @conn.describe_any('test_func'),
+     @conn.describe_function('test_func'),
+     @conn.describe_schema(@conn.username).objects.detect do |obj|
+       obj.obj_name == 'TEST_FUNC'
+     end
+    ].each do |desc|
+      assert_equal(OCI8::Metadata::Function, desc.class)
+      assert_object_id('TEST_FUNC', desc.obj_id)
+      assert_equal('TEST_FUNC', desc.obj_name)
+      assert_equal('TEST_FUNC', desc.name)
+      assert_equal(@conn.username, desc.obj_schema)
+      assert_equal(false, desc.is_invoker_rights?)
+      assert_equal(nil, desc.overload_id)
+      assert_equal(Array, desc.arguments.class)
+      assert_equal(3, desc.arguments.length)
+      assert_equal(OCI8::Metadata::Argument, desc.arguments[0].class)
+    end
+
+    @conn.exec(<<-EOS)
+CREATE OR REPLACE FUNCTION test_func(arg1 IN INTEGER, arg2 OUT varchar2) RETURN NUMBER
+  AUTHID CURRENT_USER
+IS
+BEGIN
+  RETURN arg1;
+END;
+EOS
+    [
+     @conn.describe_any('test_func'),
+     @conn.describe_function('test_func'),
+     @conn.describe_schema(@conn.username).objects.detect do |obj|
+       obj.obj_name == 'TEST_FUNC'
+     end
+    ].each do |desc|
+      assert_equal(OCI8::Metadata::Function, desc.class)
+      assert_object_id('TEST_FUNC', desc.obj_id)
+      assert_equal('TEST_FUNC', desc.obj_name)
+      assert_equal(@conn.username, desc.obj_schema)
+      assert_equal(true, desc.is_invoker_rights?)
+      assert_equal(nil, desc.overload_id)
+      assert_equal(Array, desc.arguments.class)
+      assert_equal(3, desc.arguments.length)
+      assert_equal(OCI8::Metadata::Argument, desc.arguments[0].class)
+    end
+
+    @conn.exec('DROP FUNCTION test_func');
+
+    @conn.exec(<<-EOS)
+CREATE OR REPLACE PACKAGE TEST_PKG IS
+  FUNCTION test_func(arg1 IN INTEGER, arg2 OUT varchar2) RETURN NUMBER;
+END;
+EOS
+    desc = @conn.describe_package('test_pkg').subprograms[0]
+    assert_equal(OCI8::Metadata::Function, desc.class)
+    assert_equal(nil, desc.obj_id)
+    assert_equal('TEST_FUNC', desc.obj_name)
+    assert_equal(nil, desc.obj_schema)
+    assert_equal(false, desc.is_invoker_rights?)
+    assert_equal(0, desc.overload_id)
+    assert_equal(Array, desc.arguments.class)
+    assert_equal(3, desc.arguments.length)
+    assert_equal(OCI8::Metadata::Argument, desc.arguments[0].class)
+
+    @conn.exec(<<-EOS)
+CREATE OR REPLACE PACKAGE TEST_PKG AUTHID CURRENT_USER
+IS
+  FUNCTION test_func(arg1 IN INTEGER, arg2 OUT varchar2) RETURN NUMBER;
+  FUNCTION test_func(arg1 IN INTEGER) RETURN NUMBER;
+END;
+EOS
+    desc = @conn.describe_package('test_pkg').subprograms
+    assert_equal(OCI8::Metadata::Function, desc[0].class)
+    assert_equal(nil, desc[0].obj_id)
+    assert_equal('TEST_FUNC', desc[0].obj_name)
+    assert_equal(nil, desc[0].obj_schema)
+    assert_equal(true, desc[0].is_invoker_rights?)
+    assert_equal(2, desc[0].overload_id)
+    assert_equal(Array, desc[0].arguments.class)
+    assert_equal(3, desc[0].arguments.length)
+    assert_equal(OCI8::Metadata::Argument, desc[0].arguments[0].class)
+
+    descs = @conn.describe_package('test_pkg').subprograms
+    assert_equal(OCI8::Metadata::Function, desc[1].class)
+    assert_equal(nil, desc[1].obj_id)
+    assert_equal('TEST_FUNC', desc[1].obj_name)
+    assert_equal(nil, desc[1].obj_schema)
+    assert_equal(true, desc[1].is_invoker_rights?)
+    assert_equal(1, desc[1].overload_id)
+    assert_equal(Array, desc[1].arguments.class)
+    assert_equal(2, desc[1].arguments.length)
+    assert_equal(OCI8::Metadata::Argument, desc[1].arguments[0].class)
+  end # test_function_metadata
+
+  def test_package_metadata
+    @conn.exec(<<-EOS)
+CREATE OR REPLACE PACKAGE TEST_PKG IS
+  FUNCTION test_func(arg1 IN INTEGER, arg2 OUT varchar2) RETURN NUMBER;
+END;
+EOS
+    [
+     @conn.describe_any('test_pkg'),
+     @conn.describe_package('test_pkg'),
+     @conn.describe_schema(@conn.username).objects.detect do |obj|
+       obj.obj_name == 'TEST_PKG'
+     end
+    ].each do |desc|
+      assert_equal(OCI8::Metadata::Package, desc.class)
+      assert_object_id('TEST_PKG', desc.obj_id)
+      assert_equal('TEST_PKG', desc.obj_name)
+      assert_equal(@conn.username, desc.obj_schema)
+      assert_equal(false, desc.is_invoker_rights?)
+      assert_equal(Array, desc.subprograms.class)
+      assert_equal(1, desc.subprograms.length)
+      assert_equal(OCI8::Metadata::Function, desc.subprograms[0].class)
+    end
+
+    @conn.exec(<<-EOS)
+CREATE OR REPLACE PACKAGE TEST_PKG AUTHID CURRENT_USER IS
+  PROCEDURE test_proc(arg1 IN INTEGER, arg2 OUT varchar2);
+END;
+EOS
+    [
+     @conn.describe_any('test_pkg'),
+     @conn.describe_package('test_pkg'),
+     @conn.describe_schema(@conn.username).objects.detect do |obj|
+       obj.obj_name == 'TEST_PKG'
+     end
+    ].each do |desc|
+      assert_equal(OCI8::Metadata::Package, desc.class)
+      assert_object_id('TEST_PKG', desc.obj_id)
+      assert_equal('TEST_PKG', desc.obj_name)
+      assert_equal(@conn.username, desc.obj_schema)
+      assert_equal(true, desc.is_invoker_rights?)
+      assert_equal(Array, desc.subprograms.class)
+      assert_equal(1, desc.subprograms.length)
+      assert_equal(OCI8::Metadata::Procedure, desc.subprograms[0].class)
+    end
+  end # test_package_metadata
 end # TestMetadata
