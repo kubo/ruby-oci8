@@ -12,6 +12,21 @@ class TestMetadata < Test::Unit::TestCase
     @conn.logoff
   end
 
+  def drop_type(name, drop_body = false)
+    if drop_body
+      begin
+        @conn.exec("DROP TYPE BODY #{name}")
+      rescue OCIError
+        raise if $!.code != 4043
+      end
+    end
+    begin
+      @conn.exec("DROP TYPE #{name}")
+    rescue OCIError
+      raise if $!.code != 4043
+    end
+  end
+
   def test_metadata
     if $oracle_version < OCI8::ORAVER_8_1
       begin
@@ -686,4 +701,308 @@ EOS
       assert_equal(OCI8::Metadata::Procedure, desc.subprograms[0].class)
     end
   end # test_package_metadata
+
+  def test_type_metadata
+    drop_type('TEST_TYPE_ORDER_METHOD')
+    drop_type('TEST_TYPE_MAP_METHOD')
+    drop_type('TEST_TYPE_HAS_BFILE')
+    drop_type('TEST_TYPE_HAS_BLOB')
+    drop_type('TEST_TYPE_HAS_NCLOB')
+    drop_type('TEST_TYPE_HAS_CLOB')
+    drop_type('TEST_TYPE_INCOMPLETE')
+    drop_type('TEST_TYPE_GRANDCHILD')
+    drop_type('TEST_TYPE_VARRAY')
+    drop_type('TEST_TYPE_NESTEAD_TABLE')
+    drop_type('TEST_TYPE_CHILD')
+    drop_type('TEST_TYPE_PARENT')
+    expected_values = []
+
+    @conn.exec(<<-EOS)
+CREATE TYPE test_type_parent AS OBJECT (
+  col1 number(38,0),
+  col2 varchar2(60)
+)
+NOT INSTANTIABLE
+NOT FINAL
+EOS
+    expected_values << {
+      :obj_name => 'TEST_TYPE_PARENT',
+      :typecode => :named_type,
+      :collection_typecode => nil,
+      :is_incomplete_type? => false,
+      :is_system_type? => false,
+      :is_predefined_type? => false,
+      :is_transient_type? => false,
+      :is_system_generated_type? => false,
+      :has_nested_table? => false,
+      :has_lob? => false,
+      :has_file? => false,
+      :collection_element => nil,
+      :num_type_attrs => 2,
+      :num_type_methods => 0,
+      :map_method => nil,
+      :order_method => nil,
+      :is_invoker_rights? => false,
+      :is_final_type? => false,
+      :is_instantiable_type? => false,
+      :is_subtype? => false,
+      :supertype_schema_name => nil,
+      :supertype_name => nil,
+      :type_attrs => [:array, 2, OCI8::Metadata::TypeAttr],
+      :type_methods => [:array, 0],
+    }
+    @conn.exec(<<-EOS)
+CREATE TYPE test_type_child UNDER test_type_parent (
+  lob BLOB
+)
+NOT FINAL
+EOS
+    expected_values << {
+      :obj_name => 'TEST_TYPE_CHILD',
+      :typecode => :named_type,
+      :collection_typecode => nil,
+      :is_incomplete_type? => false,
+      :is_system_type? => false,
+      :is_predefined_type? => false,
+      :is_transient_type? => false,
+      :is_system_generated_type? => false,
+      :has_nested_table? => false,
+      :has_lob? => true,
+      :has_file? => false,
+      :collection_element => nil,
+      :num_type_attrs => 3,
+      :num_type_methods => 0,
+      :map_method => nil,
+      :order_method => nil,
+      :is_invoker_rights? => false,
+      :is_final_type? => false,
+      :is_instantiable_type? => true,
+      :is_subtype? => true,
+      :supertype_schema_name => @conn.username,
+      :supertype_name => 'TEST_TYPE_PARENT',
+      :type_attrs => [:array, 3, OCI8::Metadata::TypeAttr],
+      :type_methods => [:array, 0],
+    }
+    @conn.exec(<<-EOS)
+CREATE TYPE test_type_nestead_table AS TABLE OF test_type_child
+EOS
+    expected_values << {
+      :obj_name => 'TEST_TYPE_NESTEAD_TABLE',
+      :typecode => :named_collection,
+      :collection_typecode => :table,
+      :is_incomplete_type? => false,
+      :is_system_type? => false,
+      :is_predefined_type? => false,
+      :is_transient_type? => false,
+      :is_system_generated_type? => false,
+      :has_nested_table? => true,
+      :has_lob? => true,
+      :has_file? => false,
+      :collection_element => [:type, OCI8::Metadata::Collection],
+      :num_type_attrs => 0,
+      :num_type_methods => 0,
+      :map_method => nil,
+      :order_method => nil,
+      :is_invoker_rights? => false,
+      :is_final_type? => true,
+      :is_instantiable_type? => true,
+      :is_subtype? => false,
+      :supertype_schema_name => nil,
+      :supertype_name => nil,
+      :type_attrs => [:array, 0],
+      :type_methods => [:array, 0],
+    }
+    @conn.exec(<<-EOS)
+CREATE TYPE test_type_varray AS VARRAY(10) OF test_type_child
+EOS
+    expected_values << {
+      :obj_name => 'TEST_TYPE_VARRAY',
+      :typecode => :named_collection,
+      :collection_typecode => :varray,
+      :is_incomplete_type? => false,
+      :is_system_type? => false,
+      :is_predefined_type? => false,
+      :is_transient_type? => false,
+      :is_system_generated_type? => false,
+      :has_nested_table? => false,
+      :has_lob? => true,
+      :has_file? => false,
+      :collection_element => [:type, OCI8::Metadata::Collection],
+      :num_type_attrs => 0,
+      :num_type_methods => 0,
+      :map_method => nil,
+      :order_method => nil,
+      :is_invoker_rights? => false,
+      :is_final_type? => true,
+      :is_instantiable_type? => true,
+      :is_subtype? => false,
+      :supertype_schema_name => nil,
+      :supertype_name => nil,
+      :type_attrs => [:array, 0],
+      :type_methods => [:array, 0],
+    }
+    @conn.exec(<<-EOS)
+CREATE TYPE test_type_grandchild UNDER test_type_child (
+  table_column test_type_nestead_table,
+  file_column BFILE
+)
+EOS
+    expected_values << {
+      :obj_name => 'TEST_TYPE_GRANDCHILD',
+      :typecode => :named_type,
+      :collection_typecode => nil,
+      :is_incomplete_type? => false,
+      :is_system_type? => false,
+      :is_predefined_type? => false,
+      :is_transient_type? => false,
+      :is_system_generated_type? => false,
+      :has_nested_table? => true,
+      :has_lob? => true,
+      :has_file? => true,
+      :collection_element => nil,
+      :num_type_attrs => 5,
+      :num_type_methods => 0,
+      :map_method => nil,
+      :order_method => nil,
+      :is_invoker_rights? => false,
+      :is_final_type? => true,
+      :is_instantiable_type? => true,
+      :is_subtype? => true,
+      :supertype_schema_name => @conn.username,
+      :supertype_name => 'TEST_TYPE_CHILD',
+      :type_attrs => [:array, 5, OCI8::Metadata::TypeAttr],
+      :type_methods => [:array, 0],
+    }
+    @conn.exec(<<-EOS)
+CREATE TYPE test_type_incomplete
+EOS
+    expected_values << {
+      :obj_name => 'TEST_TYPE_INCOMPLETE',
+      :typecode => :named_type,
+      :collection_typecode => nil,
+      :is_incomplete_type? => true,
+      :is_system_type? => false,
+      :is_predefined_type? => false,
+      :is_transient_type? => false,
+      :is_system_generated_type? => false,
+      :has_nested_table? => false,
+      :has_lob? => false,
+      :has_file? => false,
+      :collection_element => nil,
+      :num_type_attrs => 0,
+      :num_type_methods => 0,
+      :map_method => nil,
+      :order_method => nil,
+      :is_invoker_rights? => false,
+      :is_final_type? => true,
+      :is_instantiable_type? => true,
+      :is_subtype? => false,
+      :supertype_schema_name => nil,
+      :supertype_name => nil,
+      :type_attrs => [:array, 0],
+      :type_methods => [:array, 0],
+    }
+
+    @conn.exec(<<-EOS)
+CREATE TYPE test_type_has_clob AS OBJECT (lob CLOB)
+EOS
+    expected_values << {
+      :obj_name => 'TEST_TYPE_HAS_CLOB',
+      :has_lob? => true,
+      :has_file? => false,
+    }
+    @conn.exec(<<-EOS)
+CREATE TYPE test_type_has_nclob AS OBJECT (lob NCLOB)
+EOS
+    expected_values << {
+      :obj_name => 'TEST_TYPE_HAS_NCLOB',
+      :has_lob? => true,
+      :has_file? => false,
+    }
+    @conn.exec(<<-EOS)
+CREATE TYPE test_type_has_blob AS OBJECT (lob BLOB)
+EOS
+    expected_values << {
+      :obj_name => 'TEST_TYPE_HAS_BLOB',
+      :has_lob? => true,
+      :has_file? => false,
+    }
+    @conn.exec(<<-EOS)
+CREATE TYPE test_type_has_bfile AS OBJECT (lob BFILE)
+EOS
+    expected_values << {
+      :obj_name => 'TEST_TYPE_HAS_BFILE',
+      :has_lob? => false,
+      :has_file? => true,
+    }
+    @conn.exec(<<-EOS)
+CREATE TYPE test_type_map_method AS OBJECT (
+  x integer,
+  y integer,
+  MAP MEMBER FUNCTION area RETURN NUMBER
+)
+EOS
+    expected_values << {
+      :obj_name => 'TEST_TYPE_MAP_METHOD',
+      :map_method => [:type, OCI8::Metadata::TypeMethod],
+      :order_method => nil,
+    }
+    @conn.exec(<<-EOS)
+CREATE TYPE test_type_order_method AS OBJECT (
+  x integer,
+  y integer,
+  ORDER MEMBER FUNCTION match(l test_type_order_method) RETURN INTEGER
+)
+EOS
+    expected_values << {
+      :obj_name => 'TEST_TYPE_ORDER_METHOD',
+      :map_method => nil,
+      :order_method => [:type, OCI8::Metadata::TypeMethod],
+    }
+
+    expected_values.each do |elem|
+      [
+       @conn.describe_any(elem[:obj_name]),
+       @conn.describe_type(elem[:obj_name]),
+       @conn.describe_schema(@conn.username).objects.detect do |obj|
+         obj.obj_name == elem[:obj_name]
+       end,
+      ].each do |desc|
+        assert_object_id(elem[:obj_name], desc.obj_id)
+        assert_equal(@conn.username, desc.obj_schema)
+        assert_equal(elem[:obj_name], desc.name)
+        assert_equal(@conn.username, desc.schema_name)
+
+        elem.each do |key, val|
+          if val.is_a? Array
+            case val[0]
+            when :array
+              assert_equal(Array, desc.send(key).class, elem[:obj_name] + '.' + key)
+              assert_equal(val[1], desc.send(key).length)
+              assert_equal(val[2], desc.send(key)[0].class) if val[1] > 0
+            when :type
+              assert_equal(val[1], desc.send(key).class, elem[:obj_name] + '.' + key)
+            else
+              raise "Invalid test case: #{elem[:obj_name]}.#{key} : #{val[0]}"
+            end
+          else
+            assert_equal(val, desc.send(key), elem[:obj_name] + '.' + key)
+          end
+        end
+      end
+    end
+
+    drop_type('TEST_TYPE_ORDER_METHOD')
+    drop_type('TEST_TYPE_MAP_METHOD')
+    drop_type('TEST_TYPE_HAS_BFILE')
+    drop_type('TEST_TYPE_HAS_BLOB')
+    drop_type('TEST_TYPE_HAS_NCLOB')
+    drop_type('TEST_TYPE_HAS_CLOB')
+    drop_type('TEST_TYPE_INCOMPLETE')
+    drop_type('TEST_TYPE_GRANDCHILD')
+    drop_type('TEST_TYPE_VARRAY')
+    drop_type('TEST_TYPE_NESTEAD_TABLE')
+    drop_type('TEST_TYPE_CHILD')
+    drop_type('TEST_TYPE_PARENT')
+  end # test_type_metadata
 end # TestMetadata

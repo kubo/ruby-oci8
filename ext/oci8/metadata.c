@@ -69,6 +69,16 @@ static VALUE metadata_s_register_ptype(VALUE klass, VALUE ptype)
     return Qnil;
 }
 
+/*
+ * call-seq:
+ *   __param(attr_type) -> metadata information or nil
+ *
+ * Gets the value of the attribute specified by +attr_type+
+ * as an instance of an OCI8::Metadata::Base's subclass.
+ *
+ * <b>Caution:</b> If the specified attr_type's datatype is not a
+ * metadata, it causes a segmentation fault.
+ */
 static VALUE metadata_get_param(VALUE self, VALUE idx)
 {
     oci8_metadata_t *md = DATA_PTR(self);
@@ -76,10 +86,14 @@ static VALUE metadata_get_param(VALUE self, VALUE idx)
     OCIParam *value;
     ub4 size = sizeof(value);
 
-    /* remote call? */
+    Check_Type(idx, T_FIXNUM);
+    /* Is it remote call? */
     oci_lc(OCIAttrGet_nb(svcctx, md->base.hp.ptr, md->base.type, &value, &size, FIX2INT(idx), oci8_errhp));
     if (size != sizeof(OCIParam *)) {
         rb_raise(rb_eRuntimeError, "Invalid attribute size. expect %d, but %d", (sb4)sizeof(OCIParam *), size);
+    }
+    if (value == NULL) {
+        return Qnil;
     }
     return oci8_metadata_create(value, md->svc, self);
 }

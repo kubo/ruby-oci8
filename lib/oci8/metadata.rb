@@ -13,7 +13,7 @@ class OCI8
   # data are called metadata and retrived as an instance of
   # OCI8::Metadata::Base's subclass.
   #
-  # List of methots which return OCI8::Metadata::Base.
+  # List of methods which return OCI8::Metadata::Base.
   # * OCI8#describe_any(object_name)
   # * OCI8#describe_table(table_name, table_only = false)
   # * OCI8#describe_view(view_name)
@@ -29,7 +29,7 @@ class OCI8
   # * OCI8::Metadata::Type#order_method
   # * OCI8::Metadata::Type#collection_element
   #
-  # List of methots which return an array of OCI8::Metadata::Base.
+  # List of methods which return an array of OCI8::Metadata::Base.
   # * OCI8::Cursor#column_metadata
   # * OCI8::Metadata::Database#schemas
   # * OCI8::Metadata::Schema#all_objects
@@ -62,7 +62,7 @@ class OCI8
       # call-seq:
       #   obj_id -> integer or nil
       #
-      # Returns an object ID, which is the same as the value of the
+      # Returns the object ID, which is the same as the value of the
       # OBJECT_ID column from ALL_OBJECTS. It returns +nil+
       # if the database object doesn't have ID.
       def obj_id
@@ -72,7 +72,8 @@ class OCI8
       # call-seq:
       #   obj_name -> string
       #
-      # Retruns object name; table name, view name, procedure name, etc.
+      # Retruns the object name such as table name, view name,
+      # procedure name, and so on.
       def obj_name
         attr_get_string(OCI_ATTR_OBJ_NAME)
       end
@@ -80,7 +81,7 @@ class OCI8
       # call-seq:
       #   obj_schema -> string
       #
-      # Retruns a schema name. It returns +nil+
+      # Retruns the schema name. It returns +nil+
       # if the database object is not defined just under a schema.
       def obj_schema
         attr_get_string(OCI_ATTR_OBJ_SCHEMA)
@@ -384,10 +385,10 @@ class OCI8
       private :list_columns
 
       # call-seq:
-      #   type_methods -> an OCI8::Metadata::Type or nil
+      #   type_metadata -> an OCI8::Metadata::Type or nil
       #
       # Retruns an instance of OCI8::Metadata::Type if the table is an
-      # {object table}[http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28371/adobjint.htm#sthref48].
+      # {object table}[http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28371/adobjint.htm#sthref61].
       # Otherwise, +nil+.
       def type_metadata
         __type_metadata(OCI8::Metadata::Type) if is_typed?
@@ -476,10 +477,9 @@ class OCI8
       end
 
       # call-seq:
-      #   columns -> an array of OCI8::Metadata::Column
+      #   columns -> list of column information
       #
-      # Returns an array of {column information}[link:OCI8/Metadata/Column.html]
-      # of the table.
+      # Returns an array of OCI8::Metadata::Column of the table.
       def columns
         @columns ||= list_columns.to_a
       end
@@ -537,10 +537,9 @@ class OCI8
       #end
 
       # call-seq:
-      #   columns -> an array of OCI8::Metadata::Column
+      #   columns -> list of column information
       #
-      # Returns an array of {column information}[link:OCI8/Metadata/Column.html]
-      # of the table.
+      # Returns an array of OCI8::Metadata::Column of the table.
       def columns
         @columns ||= list_columns.to_a
       end
@@ -606,10 +605,9 @@ class OCI8
       end
 
       # call-seq:
-      #   arguments -> an array of OCI8::Metadata::Argument
+      #   arguments -> list of argument information
       #
-      # Returns an array of {argument information}[link:OCI8/Metadata/Argument.html]
-      # of the subprogram.
+      # Returns an array of OCI8::Metadata::Argument of the subprogram.
       # If it is a function, the first array element is information of its return type.
       def arguments
         @arguments ||= list_arguments.to_a
@@ -677,16 +675,19 @@ class OCI8
       private :list_subprograms
 
       # call-seq:
-      #   is_invoker_rights? -> <i>true</i> or <i>false</i>
+      #   is_invoker_rights? -> true or false
       #
-      # Returns <i>true</i> if the package subprograms have
-      # [invoker's rights][http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28370/subprograms.htm#i18574].
-      # Otherwise, <i>false</i>.
+      # Returns +true+ if the package subprograms have
+      # {invoker's rights}[http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28370/subprograms.htm#i18574].
+      # Otherwise, +false+.
       def is_invoker_rights?
         attr_get_ub1(OCI_ATTR_IS_INVOKER_RIGHTS) != 0
       end
 
-      # array of Procedure or Function objects.
+      # call-seq:
+      #   subprograms -> array
+      #
+      # Returns an array of Function and Procedure defined within the Package.
       def subprograms
         @subprograms ||= list_subprograms.to_a.each do |prog|
           prog.instance_variable_set(:@is_standalone, false)
@@ -694,9 +695,9 @@ class OCI8
       end
     end
 
-    # Metadata for a type.
+    # Information about types
     #
-    # This is returned by:
+    # An instance of this class is returned by:
     # * OCI8#describe_any(name)
     # * OCI8#describe_type(name)
     # * OCI8::Metadata::Schema#all_objects
@@ -711,139 +712,250 @@ class OCI8
         self
       end
 
-      # typecode. :object or :named_collection
+      # call-seq:
+      #   typecode -> :named_type or :named_collection
+      #
+      # Returns +:named_type+ if the type is an object type,
+      # +:named_collection+ if it is a nested table or a varray.
       def typecode
         __typecode(OCI_ATTR_TYPECODE)
       end
 
-      # typecode of collection if type is collection. nil if otherwise.
+      # call-seq:
+      #   collection_typecode -> :table, :varray or nil
+      #
+      # Returns +:table+ if the type is a nested table,
+      # +:varray+ if it is a varray. Otherwise, +nil+.
       def collection_typecode
         __typecode(OCI_ATTR_COLLECTION_TYPECODE) if typecode == :named_collection
       end
 
-      # indicates this is an incomplete type
+      # call-seq:
+      #   is_incomplete_type? -> boolean
+      #
+      # Returns +true+ if the type is an
+      # {incomplete type}[http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28371/adobjmng.htm#i1003083],
+      # which is used for {forward declaration}[http://en.wikipedia.org/wiki/Forward_declaration].
+      # Otherwise, +false+.
       def is_incomplete_type?
-        __boolean(OCI_ATTR_IS_INCOMPLETE_TYPE)
+        attr_get_ub1(OCI_ATTR_IS_INCOMPLETE_TYPE) != 0
       end
 
-      # indicates this is a system type
-      def is_system_type?
-        __boolean(OCI_ATTR_IS_SYSTEM_TYPE)
+      # call-seq:
+      #   is_system_type? -> boolean
+      #
+      # Always returns +false+ because there is no way to create
+      # a type metadata object for a system type such as +NUMBER+,
+      # +CHAR+ and +VARCHAR+.
+      def is_system_type? # :nodoc:
+        attr_get_ub1(OCI_ATTR_IS_SYSTEM_TYPE) != 0
       end
 
-      # indicates this is a predefined type
-      def is_predefined_type?
-        __boolean(OCI_ATTR_IS_PREDEFINED_TYPE)
+      # call-seq:
+      #   is_predefined_type? -> boolean
+      #
+      # Always returns +false+.
+      #--
+      # I don't know the definition of predefined type...
+      def is_predefined_type? # :nodoc:
+        attr_get_ub1(OCI_ATTR_IS_PREDEFINED_TYPE) != 0
       end
 
-      # indicates this is a transient type
-      def is_transient_type?
-        __boolean(OCI_ATTR_IS_TRANSIENT_TYPE)
+      # call-seq:
+      #   is_transient_type? -> boolean
+      #
+      # Always returns +false+ because there is no way to create
+      # a type metadata object for a transient type, which is a type
+      # dynamically created by C API.
+      def is_transient_type? # :nodoc:
+        attr_get_ub1(OCI_ATTR_IS_TRANSIENT_TYPE) != 0
       end
 
-      # indicates this is a system-generated type
-      def is_system_generated_type?
-        __boolean(OCI_ATTR_IS_SYSTEM_GENERATED_TYPE)
+      # call-seq:
+      #   is_predefined_type? -> boolean
+      #
+      # Always returns +false+.
+      #--
+      # I don't know the definition of system generated type.
+      # What is different with system type and predefined type.
+      def is_system_generated_type? # :nodoc:
+        attr_get_ub1(OCI_ATTR_IS_SYSTEM_GENERATED_TYPE) != 0
       end
 
-      # indicates this type contains a nested table attribute.
+      # call-seq:
+      #   has_nested_table? -> boolean
+      #
+      # Returns +true+ if the type is a nested table or
+      # has a nested table attribute.
+      # Otherwise, +false+.
       def has_nested_table?
-        __boolean(OCI_ATTR_HAS_NESTED_TABLE)
+        attr_get_ub1(OCI_ATTR_HAS_NESTED_TABLE) != 0
       end
 
-      # indicates this type contains a LOB attribute
+      # call-seq:
+      #   has_lob? -> boolean
+      #
+      # Returns +true+ if the type has a CLOB, NCLOB or BLOB
+      # attribute.
+      # Otherwise, +false+.
       def has_lob?
-        __boolean(OCI_ATTR_HAS_LOB)
+        attr_get_ub1(OCI_ATTR_HAS_LOB) != 0
       end
 
-      # indicates this type contains a BFILE attribute
+      # call-seq:
+      #   has_file? -> boolean
+      #
+      # Returns +true+ if the type has a BFILE attribute.
+      # Otherwise, +false+.
       def has_file?
-        __boolean(OCI_ATTR_HAS_FILE)
+        attr_get_ub1(OCI_ATTR_HAS_FILE) != 0
       end
 
-      # returns OCI8::Metadata::Collection if type is collection. nil if otherwise.
+      # call-seq:
+      #   collection_element -> element information of the collection type
+      #
+      # Returns an OCI8::Metadata::Collection if the type is a nested
+      # table or a varray.
+      # Otherwise, +nil+.
       def collection_element
         __param(OCI_ATTR_COLLECTION_ELEMENT) if typecode == :named_collection
       end
 
-      # number of type attributes
+      # call-seq:
+      #   num_type_attrs -> integer
+      #
+      # Returns number of type attributes.
       def num_type_attrs
         attr_get_ub2(OCI_ATTR_NUM_TYPE_ATTRS)
       end
 
       # list of type attributes
-      def list_type_attrs
+      def list_type_attrs # :nodoc:
         __param(OCI_ATTR_LIST_TYPE_ATTRS)
       end
       private :list_type_attrs
 
-      # number of type methods
+      # call-seq:
+      #   num_type_methods -> integer
+      #
+      # Returns number of type methods.
       def num_type_methods
         attr_get_ub2(OCI_ATTR_NUM_TYPE_METHODS)
       end
 
       # list of type methods
-      def list_type_methods
+      def list_type_methods # :nodoc:
         __param(OCI_ATTR_LIST_TYPE_METHODS)
       end
       private :list_type_methods
 
-      # map method of type
+      # call-seq:
+      #   map_method -> map method information
+      #
+      # Returns an instance of OCI8::Metadata::TypeMethod of a
+      # {map method}[http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28371/adobjbas.htm#sthref180]
+      # if it is defined in the type. Otherwise, +nil+.
       def map_method
         __param(OCI_ATTR_MAP_METHOD)
       end
 
-      # order method of type
+      # call-seq:
+      #   order_method -> order method information
+      #
+      # Returns an instance of OCI8::Metadata::TypeMethod of a
+      # {order method}[http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28371/adobjbas.htm#sthref185]
+      # if it is defined in the type. Otherwise, +nil+.
       def order_method
         __param(OCI_ATTR_ORDER_METHOD)
       end
 
-      # indicates the type has invoker's rights
+      # call-seq:
+      #   is_invoker_rights? -> boolean
+      #
+      # Returns +true+ if the type has
+      # {invoker's rights}[http://download.oracle.com/docs/cd/B28359_01/appdev.111/appdev.111/b28371/adobjdes.htm#ADOBJ00810].
+      # Otherwise, +false+.
       def is_invoker_rights?
-        __boolean(OCI_ATTR_IS_INVOKER_RIGHTS)
+        attr_get_ub1(OCI_ATTR_IS_INVOKER_RIGHTS) != 0
       end
 
-      # type name
+      # call-seq:
+      #   name -> string
+      #
+      # Returns the type name.
       def name
         attr_get_string(OCI_ATTR_NAME)
       end
 
-      # schema name where the type has been created
+      # call-seq:
+      #   schema_name -> string
+      #
+      # Returns the schema name where the type has been created.
       def schema_name
         attr_get_string(OCI_ATTR_SCHEMA_NAME)
       end
 
-      # indicates this is a final type
+      # call-seq:
+      #   is_final_type? -> boolean
+      #
+      # Returns +true+ if the type is a
+      # {final type}[http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28371/adobjbas.htm#CIHFBHFC];
+      # in other words, subtypes cannot be derived from the type.
+      # Otherwise, +false+.
       def is_final_type?
-        __boolean(OCI_ATTR_IS_FINAL_TYPE)
+        attr_get_ub1(OCI_ATTR_IS_FINAL_TYPE) != 0
       end
 
-      # indicates this is an instantiable type
+      # call-seq:
+      #   is_instantiable_type? -> boolean
+      #
+      # Returns +true+ if the type is not declared without
+      # {<tt>NOT INSTANTIABLE</tt>}[http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28371/adobjbas.htm#i456586].
+      # Otherwise, +false+.
       def is_instantiable_type?
-        __boolean(OCI_ATTR_IS_INSTANTIABLE_TYPE)
+        attr_get_ub1(OCI_ATTR_IS_INSTANTIABLE_TYPE) != 0
       end
 
-      # indicates this is a subtype
+      # call-seq:
+      #   is_subtype? -> boolean
+      #
+      # Returns +true+ if the type is a
+      # {subtype}[http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28371/adobjbas.htm#BCFJJADG].
+      # Otherwise, +false+.
       def is_subtype?
-        __boolean(OCI_ATTR_IS_SUBTYPE)
+        attr_get_ub1(OCI_ATTR_IS_SUBTYPE) != 0
       end
 
-      # supertype's schema name
+      # call-seq:
+      #   supertype_schema_name -> string or nil
+      #
+      # Returns the supertype's schema name if the type is a subtype.
+      # Otherwise, +nil+.
       def supertype_schema_name
         attr_get_string(OCI_ATTR_SUPERTYPE_SCHEMA_NAME) if is_subtype?
       end
 
-      # supertype's name
+      # call-seq:
+      #   supertype_name -> string or nil
+      #
+      # Returns the supertype's name if the type is a subtype.
+      # Otherwise, +nil+.
       def supertype_name
         attr_get_string(OCI_ATTR_SUPERTYPE_NAME) if is_subtype?
       end
 
-      # array of TypeAttr objects.
+      # call-seq:
+      #   type_attrs -> list of attribute information
+      #
+      # Returns an array of OCI8::Metadata::TypeAttr which the type has.
       def type_attrs
         @type_attrs ||= list_type_attrs.to_a
       end
 
-      # array of TypeMethod objects.
+      # call-seq:
+      #   type_methods -> list of method information
+      #
+      # Returns an array of OCI8::Metadata::TypeMethod which the type has.
       def type_methods
         @type_methods ||= list_type_methods.to_a
       end
@@ -1662,11 +1774,16 @@ class OCI8
               case elem
               when OCI8::Metadata::Type
                 # to avoid a segmentation fault
-                __con.describe_type(elem.obj_schema + '.' + elem.obj_name)
+                begin
+                  __con.describe_type(elem.obj_schema + '.' + elem.obj_name)
+                rescue OCIError
+                  # ignore ORA-24372: invalid object for describe
+                  raise if $!.code != 24372
+                end
               else
                 elem
               end
-            end
+            end.compact
           end
       end
 
