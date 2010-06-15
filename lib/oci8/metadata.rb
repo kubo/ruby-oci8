@@ -46,7 +46,7 @@ class OCI8
   #   conn = OCI8.new('username/passord')
   #   table = conn.describe_table('scott.emp')
   #   table.columns.each do |col|
-  #     puts "#{col.name} #{col.type_string}"
+  #     puts "#{col.name} #{col.data_type_string}"
   #   end
   module Metadata
     # Abstract super class of Metadata classes.
@@ -184,7 +184,7 @@ class OCI8
       # SQLT_REF
       DATA_TYPE_MAP[110] = [:ref,
                             Proc.new do |p|
-                              "#{p.schema_name}.#{p.type_name}"
+                              "REF #{p.schema_name}.#{p.type_name}"
                             end]
       # SQLT_CLOB
       DATA_TYPE_MAP[112] = [:clob,
@@ -282,7 +282,7 @@ class OCI8
         end
       end
 
-      def __type_string # :nodoc:
+      def __data_type_string # :nodoc:
         entry = DATA_TYPE_MAP[attr_get_ub2(OCI_ATTR_DATA_TYPE)]
         type = entry.nil? ? "unknown(#{attr_get_ub2(OCI_ATTR_DATA_TYPE)})" : entry[1]
         type = type.call(self) if type.is_a? Proc
@@ -1064,7 +1064,7 @@ class OCI8
       end
 
       def inspect # :nodoc:
-        "#<#{self.class.name}: #{name} #{__type_string}>"
+        "#<#{self.class.name}: #{name} #{__data_type_string}>"
       end
     end
 
@@ -1268,7 +1268,7 @@ class OCI8
       end
 
       def inspect # :nodoc:
-        "#<#{self.class.name}: #{__type_string}>"
+        "#<#{self.class.name}: #{__data_type_string}>"
       end
     end
 
@@ -1503,16 +1503,17 @@ class OCI8
         __charset_name(charset_id)
       end
 
-      def type_string
-        __type_string
+      def data_type_string
+        __data_type_string
       end
+      alias :type_string :data_type_string # :nodoc: old name of data_type_string
 
       def to_s
-        %Q{"#{name}" #{__type_string}}
+        %Q{"#{name}" #{__data_type_string}}
       end
 
       def inspect # :nodoc:
-        "#<#{self.class.name}: #{name} #{__type_string}>"
+        "#<#{self.class.name}: #{name} #{__data_type_string}>"
       end
     end
 
@@ -1661,7 +1662,7 @@ class OCI8
       end
 
       def inspect # :nodoc:
-        "#<#{self.class.name}: #{name} #{__type_string}>"
+        "#<#{self.class.name}: #{name} #{__data_type_string}>"
       end
     end
 

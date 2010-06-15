@@ -1,3 +1,12 @@
+2010-06-15  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/metadata.rb: rename OCI8::Metadata::Column#type_string
+	    to #data_type_string and add an alias from the former to the
+	    latter. fix a return value of OCI8::Metadata::Column#data_type_string
+	    of REF datatype.
+	* test/test_metadata.rb: rename a test method test_metadata to
+	    test_column_metadata and do refactoring to make test data
+	    reusable for other metadata classes in future.
+
 2010-06-13  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/metadata.c: fix a private method
 	    OCI8::Metadata::Base#__param to return nil when the specified
