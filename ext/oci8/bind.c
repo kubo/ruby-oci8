@@ -79,6 +79,18 @@ static VALUE bind_raw_get(oci8_bind_t *obind, void *data, void *null_struct)
     return rb_str_new(vstr->buf, vstr->size);
 }
 
+static void bind_raw_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
+{
+    oci8_vstr_t *vstr = (oci8_vstr_t *)data;
+
+    StringValue(val);
+    if (RSTRING_LEN(val) > obind->value_sz - sizeof(vstr->size)) {
+        rb_raise(rb_eArgError, "too long String to set. (%ld for %d)", RSTRING_LEN(val), obind->value_sz - (sb4)sizeof(vstr->size));
+    }
+    memcpy(vstr->buf, RSTRING_PTR(val), RSTRING_LEN(val));
+    vstr->size = RSTRING_LEN(val);
+}
+
 static const oci8_bind_class_t bind_raw_class = {
     {
         NULL,
@@ -86,7 +98,7 @@ static const oci8_bind_class_t bind_raw_class = {
         sizeof(oci8_bind_t)
     },
     bind_raw_get,
-    bind_string_set,
+    bind_raw_set,
     bind_string_init,
     NULL,
     NULL,
