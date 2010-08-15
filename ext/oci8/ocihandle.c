@@ -61,6 +61,14 @@ static void oci8_handle_mark(oci8_base_t *base)
 
 static void oci8_handle_cleanup(oci8_base_t *base)
 {
+    if (oci8_in_finalizer) {
+        /* Do nothing when the program exits.
+         * The first two words of memory addressed by VALUE datatype is
+         * changed in finalizer. If a ruby function which access it such
+         * as rb_obj_is_kind_of is called, it may cause SEGV.
+         */
+        return;
+    }
     oci8_base_free(base);
     xfree(base);
 }

@@ -457,6 +457,16 @@ EOS
         #[ATTR_NAMED_COLLECTION, [datatype, typeinfo], SIZE_OF_POINTER, 2, ALIGNMENT_OF_POINTER]
         tdo = con.get_tdo_by_metadata(metadata.type_metadata)
         [ATTR_NAMED_COLLECTION, tdo, tdo.val_size, tdo.ind_size, tdo.alignment]
+      when :clob
+        if metadata.charset_form != :nchar
+          [ATTR_CLOB, con, SIZE_OF_POINTER, 2, ALIGNMENT_OF_POINTER]
+        else
+          [ATTR_NCLOB, con, SIZE_OF_POINTER, 2, ALIGNMENT_OF_POINTER]
+        end
+      when :blob
+        [ATTR_BLOB, con, SIZE_OF_POINTER, 2, ALIGNMENT_OF_POINTER]
+      when :bfile
+        [ATTR_BFILE, con, SIZE_OF_POINTER, 2, ALIGNMENT_OF_POINTER]
       else
         raise "unsupported typecode #{metadata.typecode}"
       end

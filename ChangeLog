@@ -1,4 +1,10 @@
 2010-08-15  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c, ext/oci8/object.c, ext/oci8/oci8.h,
+	  lib/oci8/object.rb: support LOB datatypes in Oracle objects.
+	* ext/oci8/ocihandle.c: fix SEGV in finalizer when temporary LOBs
+	    are used. This bug was introduced by the previous commit.
+
+2010-08-15  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.yml, ext/oci8/lob.c: fix memory leak when temporary
 	    lobs are used.
 

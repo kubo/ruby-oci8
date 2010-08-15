@@ -42,6 +42,10 @@ enum {
     ATTR_BINARY_FLOAT,
     ATTR_NAMED_TYPE,
     ATTR_NAMED_COLLECTION,
+    ATTR_CLOB,
+    ATTR_NCLOB,
+    ATTR_BLOB,
+    ATTR_BFILE,
 };
 
 static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data, OCIInd *ind);
@@ -198,6 +202,14 @@ static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *dat
         rv = rb_funcall(tmp_obj, id_to_value, 0);
         oci8_unlink_from_parent(&obj->base);
         return rv;
+    case ATTR_CLOB:
+        return oci8_make_clob(oci8_get_svcctx(typeinfo), *(OCILobLocator**)data);
+    case ATTR_NCLOB:
+        return oci8_make_nclob(oci8_get_svcctx(typeinfo), *(OCILobLocator**)data);
+    case ATTR_BLOB:
+        return oci8_make_blob(oci8_get_svcctx(typeinfo), *(OCILobLocator**)data);
+    case ATTR_BFILE:
+        return oci8_make_bfile(oci8_get_svcctx(typeinfo), *(OCILobLocator**)data);
     default:
         rb_raise(rb_eRuntimeError, "not supported datatype");
     }
@@ -335,6 +347,11 @@ static VALUE oci8_named_coll_set_coll_element(VALUE self, VALUE datatype, VALUE 
         oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_NAMEDCOLLECTION, tdo->hp.tdo, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr));
         oci_lc(OCIObjectGetInd(oci8_envhp, oci8_errhp, cb_data.data.ptr, (dvoid**)&cb_data.indp));
         break;
+    case ATTR_CLOB:
+    case ATTR_NCLOB:
+    case ATTR_BLOB:
+    case ATTR_BFILE:
+        rb_raise(rb_eRuntimeError, "Could not set LOB objects to collection types yet.");
     default:
         rb_raise(rb_eRuntimeError, "not supported datatype");
     }
@@ -481,6 +498,18 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
         oci8_link_to_parent(&obj->base, DATA_PTR(self));
         rb_funcall(tmp_obj, id_set_attributes, 1, val);
         oci8_unlink_from_parent(&obj->base);
+        break;
+    case ATTR_CLOB:
+        oci8_assign_clob(oci8_get_svcctx(typeinfo), val, (OCILobLocator **)data);
+        break;
+    case ATTR_NCLOB:
+        oci8_assign_nclob(oci8_get_svcctx(typeinfo), val, (OCILobLocator **)data);
+        break;
+    case ATTR_BLOB:
+        oci8_assign_blob(oci8_get_svcctx(typeinfo), val, (OCILobLocator **)data);
+        break;
+    case ATTR_BFILE:
+        oci8_assign_bfile(oci8_get_svcctx(typeinfo), val, (OCILobLocator **)data);
         break;
     default:
         rb_raise(rb_eRuntimeError, "not supported datatype");
@@ -631,6 +660,10 @@ void Init_oci_object(VALUE cOCI8)
     rb_define_const(cOCI8TDO, "ATTR_BINARY_FLOAT", INT2FIX(ATTR_BINARY_FLOAT));
     rb_define_const(cOCI8TDO, "ATTR_NAMED_TYPE", INT2FIX(ATTR_NAMED_TYPE));
     rb_define_const(cOCI8TDO, "ATTR_NAMED_COLLECTION", INT2FIX(ATTR_NAMED_COLLECTION));
+    rb_define_const(cOCI8TDO, "ATTR_CLOB", INT2FIX(ATTR_CLOB));
+    rb_define_const(cOCI8TDO, "ATTR_NCLOB", INT2FIX(ATTR_NCLOB));
+    rb_define_const(cOCI8TDO, "ATTR_BLOB", INT2FIX(ATTR_BLOB));
+    rb_define_const(cOCI8TDO, "ATTR_BFILE", INT2FIX(ATTR_BFILE));
 #define ALIGNMENT_OF(type) (size_t)&(((struct {char c; type t;}*)0)->t)
     rb_define_const(cOCI8TDO, "SIZE_OF_POINTER", INT2FIX(sizeof(void *)));
     rb_define_const(cOCI8TDO, "ALIGNMENT_OF_POINTER", INT2FIX(ALIGNMENT_OF(void *)));
