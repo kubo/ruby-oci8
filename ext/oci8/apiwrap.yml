@@ -916,6 +916,13 @@ OCILobCreateTemporary_nb:
             - OCIDuration duration
 
 # round trip: 1
+OCILobFreeTemporary_nb:
+  :version: 810
+  :args:    - OCISvcCtx *svchp
+            - OCIError *errhp
+            - OCILobLocator *locp
+
+# round trip: 1
 OCILobGetChunkSize_nb:
   :version: 810
   :args:    - OCISvcCtx *svchp

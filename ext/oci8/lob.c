@@ -70,9 +70,27 @@ static void oci8_lob_mark(oci8_base_t *base)
     rb_gc_mark(lob->svc);
 }
 
+static VALUE free_temp_lob(oci8_lob_t *lob)
+{
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+
+    OCILobFreeTemporary_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob);
+    return Qnil;
+}
+
 static void oci8_lob_free(oci8_base_t *base)
 {
     oci8_lob_t *lob = (oci8_lob_t *)base;
+    boolean is_temporary;
+
+    if (have_OCILobIsTemporary
+        && OCILobIsTemporary(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_temporary) == OCI_SUCCESS
+        && is_temporary) {
+        /* Exceptions in free_temp_lob() are ignored.
+         * oci8_lob_free() is called in GC. It must not raise an exception.
+         */
+        rb_rescue(free_temp_lob, (VALUE)base, NULL, 0);
+    }
     lob->svc = Qnil;
 }
 
