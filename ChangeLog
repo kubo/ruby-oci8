@@ -1,3 +1,7 @@
+2010-08-15  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml, ext/oci8/lob.c: fix memory leak when temporary
+	    lobs are used.
+
 2010-08-14  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c: fix a bug that a string is bound to RAW.
 	    Its encoding had been convertd to OCI.encoding incorrectly.
