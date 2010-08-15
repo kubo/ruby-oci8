@@ -64,6 +64,33 @@ VALUE oci8_make_bfile(oci8_svcctx_t *svcctx, OCILobLocator *s)
     return oci8_make_lob(cOCI8BFILE, svcctx, s);
 }
 
+static void oci8_assign_lob(VALUE klass, oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
+{
+    oci8_base_t *base;
+    Check_Handle(lob, klass, base);
+    oci_lc(OCILobLocatorAssign_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, base->hp.lob, dest));
+}
+
+void oci8_assign_clob(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
+{
+    oci8_assign_lob(cOCI8CLOB, svcctx, lob, dest);
+}
+
+void oci8_assign_nclob(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
+{
+    oci8_assign_lob(cOCI8NCLOB, svcctx, lob, dest);
+}
+
+void oci8_assign_blob(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
+{
+    oci8_assign_lob(cOCI8BLOB, svcctx, lob, dest);
+}
+
+void oci8_assign_bfile(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
+{
+    oci8_assign_lob(cOCI8BFILE, svcctx, lob, dest);
+}
+
 static void oci8_lob_mark(oci8_base_t *base)
 {
     oci8_lob_t *lob = (oci8_lob_t *)base;

@@ -460,6 +460,10 @@ VALUE oci8_make_clob(oci8_svcctx_t *svcctx, OCILobLocator *s);
 VALUE oci8_make_nclob(oci8_svcctx_t *svcctx, OCILobLocator *s);
 VALUE oci8_make_blob(oci8_svcctx_t *svcctx, OCILobLocator *s);
 VALUE oci8_make_bfile(oci8_svcctx_t *svcctx, OCILobLocator *s);
+void oci8_assign_clob(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest);
+void oci8_assign_nclob(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest);
+void oci8_assign_blob(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest);
+void oci8_assign_bfile(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest);
 
 /* oradate.c */
 void Init_ora_date(void);
