@@ -648,8 +648,8 @@ EOS
       assert_equal(false, desc.clustered?)
       assert_equal(false, desc.partitioned?)
       assert_equal(false, desc.index_only?)
-      assert_equal(Array, desc.columns.class)
-      assert_equal(OCI8::Metadata::Column, desc.columns[0].class)
+      assert_instance_of(Array, desc.columns)
+      assert_instance_of(OCI8::Metadata::Column, desc.columns[0])
     end
     drop_table('test_table')
 
@@ -677,8 +677,8 @@ EOS
       assert_equal(false, desc.clustered?)
       assert_equal(false, desc.partitioned?)
       assert_equal(false, desc.index_only?)
-      assert_equal(Array, desc.columns.class)
-      assert_equal(OCI8::Metadata::Column, desc.columns[0].class)
+      assert_instance_of(Array, desc.columns)
+      assert_instance_of(OCI8::Metadata::Column, desc.columns[0])
     end
     drop_table('test_table')
 
@@ -707,8 +707,8 @@ EOS
       assert_equal(false, desc.clustered?)
       assert_equal(false, desc.partitioned?)
       assert_equal(false, desc.index_only?)
-      assert_equal(Array, desc.columns.class)
-      assert_equal(OCI8::Metadata::Column, desc.columns[0].class)
+      assert_instance_of(Array, desc.columns)
+      assert_instance_of(OCI8::Metadata::Column, desc.columns[0])
     end
     drop_table('test_table')
 
@@ -730,7 +730,7 @@ EOS
       assert_equal('TEST_TABLE', desc.obj_name)
       assert_equal(@conn.username, desc.obj_schema)
       assert_equal(2, desc.num_cols)
-      assert_equal(OCI8::Metadata::Type, desc.type_metadata.class)
+      assert_instance_of(OCI8::Metadata::Type, desc.type_metadata)
       assert_equal(false, desc.is_temporary?)
       assert_equal(true, desc.is_typed?)
       assert_equal(nil, desc.duration)
@@ -739,8 +739,8 @@ EOS
       assert_equal(false, desc.clustered?)
       assert_equal(false, desc.partitioned?)
       assert_equal(false, desc.index_only?)
-      assert_equal(Array, desc.columns.class)
-      assert_equal(OCI8::Metadata::Column, desc.columns[0].class)
+      assert_instance_of(Array, desc.columns)
+      assert_instance_of(OCI8::Metadata::Column, desc.columns[0])
     end
     drop_table('test_table')
     @conn.exec('DROP TYPE TEST_TYPE')
@@ -770,8 +770,8 @@ EOS
       assert_equal(false, desc.clustered?)
       assert_equal(false, desc.partitioned?)
       assert_equal(true, desc.index_only?)
-      assert_equal(Array, desc.columns.class)
-      assert_equal(OCI8::Metadata::Column, desc.columns[0].class)
+      assert_instance_of(Array, desc.columns)
+      assert_instance_of(OCI8::Metadata::Column, desc.columns[0])
     end
     drop_table('test_table')
   end # test_table_metadata
@@ -790,8 +790,8 @@ EOS
       assert_equal('TEST_VIEW', desc.obj_name)
       assert_equal(@conn.username, desc.obj_schema)
       assert_equal(3, desc.num_cols)
-      assert_equal(Array, desc.columns.class)
-      assert_equal(OCI8::Metadata::Column, desc.columns[0].class)
+      assert_instance_of(Array, desc.columns)
+      assert_instance_of(OCI8::Metadata::Column, desc.columns[0])
     end
     @conn.exec('DROP VIEW test_view')
   end # test_view_metadata
@@ -810,16 +810,16 @@ EOS
        obj.obj_name == 'TEST_PROC'
      end
     ].each do |desc|
-      assert_equal(OCI8::Metadata::Procedure, desc.class)
+      assert_instance_of(OCI8::Metadata::Procedure, desc)
       assert_object_id('TEST_PROC', desc.obj_id)
       assert_equal('TEST_PROC', desc.obj_name)
       assert_equal('TEST_PROC', desc.name)
       assert_equal(@conn.username, desc.obj_schema)
       assert_equal(false, desc.is_invoker_rights?)
       assert_equal(nil, desc.overload_id)
-      assert_equal(Array, desc.arguments.class)
+      assert_instance_of(Array, desc.arguments)
       assert_equal(2, desc.arguments.length)
-      assert_equal(OCI8::Metadata::Argument, desc.arguments[0].class)
+      assert_instance_of(OCI8::Metadata::Argument, desc.arguments[0])
     end
 
     @conn.exec(<<-EOS)
@@ -837,15 +837,15 @@ EOS
        obj.obj_name == 'TEST_PROC'
      end
     ].each do |desc|
-      assert_equal(OCI8::Metadata::Procedure, desc.class)
+      assert_instance_of(OCI8::Metadata::Procedure, desc)
       assert_object_id('TEST_PROC', desc.obj_id)
       assert_equal('TEST_PROC', desc.obj_name)
       assert_equal(@conn.username, desc.obj_schema)
       assert_equal(true, desc.is_invoker_rights?)
       assert_equal(nil, desc.overload_id)
-      assert_equal(Array, desc.arguments.class)
+      assert_instance_of(Array, desc.arguments)
       assert_equal(2, desc.arguments.length)
-      assert_equal(OCI8::Metadata::Argument, desc.arguments[0].class)
+      assert_instance_of(OCI8::Metadata::Argument, desc.arguments[0])
     end
 
     @conn.exec('DROP PROCEDURE test_proc');
@@ -856,15 +856,15 @@ CREATE OR REPLACE PACKAGE TEST_PKG IS
 END;
 EOS
     desc = @conn.describe_package('test_pkg').subprograms[0]
-    assert_equal(OCI8::Metadata::Procedure, desc.class)
+    assert_instance_of(OCI8::Metadata::Procedure, desc)
     assert_equal(nil, desc.obj_id)
     assert_equal('TEST_PROC', desc.obj_name)
     assert_equal(nil, desc.obj_schema)
     assert_equal(false, desc.is_invoker_rights?)
     assert_equal(0, desc.overload_id)
-    assert_equal(Array, desc.arguments.class)
+    assert_instance_of(Array, desc.arguments)
     assert_equal(2, desc.arguments.length)
-    assert_equal(OCI8::Metadata::Argument, desc.arguments[0].class)
+    assert_instance_of(OCI8::Metadata::Argument, desc.arguments[0])
 
     @conn.exec(<<-EOS)
 CREATE OR REPLACE PACKAGE TEST_PKG AUTHID CURRENT_USER
@@ -874,26 +874,26 @@ IS
 END;
 EOS
     desc = @conn.describe_package('test_pkg').subprograms
-    assert_equal(OCI8::Metadata::Procedure, desc[0].class)
+    assert_instance_of(OCI8::Metadata::Procedure, desc[0])
     assert_equal(nil, desc[0].obj_id)
     assert_equal('TEST_PROC', desc[0].obj_name)
     assert_equal(nil, desc[0].obj_schema)
     assert_equal(true, desc[0].is_invoker_rights?)
     assert_equal(2, desc[0].overload_id)
-    assert_equal(Array, desc[0].arguments.class)
+    assert_instance_of(Array, desc[0].arguments)
     assert_equal(2, desc[0].arguments.length)
-    assert_equal(OCI8::Metadata::Argument, desc[0].arguments[0].class)
+    assert_instance_of(OCI8::Metadata::Argument, desc[0].arguments[0])
 
     descs = @conn.describe_package('test_pkg').subprograms
-    assert_equal(OCI8::Metadata::Procedure, desc[1].class)
+    assert_instance_of(OCI8::Metadata::Procedure, desc[1])
     assert_equal(nil, desc[1].obj_id)
     assert_equal('TEST_PROC', desc[1].obj_name)
     assert_equal(nil, desc[1].obj_schema)
     assert_equal(true, desc[1].is_invoker_rights?)
     assert_equal(1, desc[1].overload_id)
-    assert_equal(Array, desc[1].arguments.class)
+    assert_instance_of(Array, desc[1].arguments)
     assert_equal(1, desc[1].arguments.length)
-    assert_equal(OCI8::Metadata::Argument, desc[1].arguments[0].class)
+    assert_instance_of(OCI8::Metadata::Argument, desc[1].arguments[0])
   end # test_procedure_metadata
 
   def test_function_metadata
@@ -910,16 +910,16 @@ EOS
        obj.obj_name == 'TEST_FUNC'
      end
     ].each do |desc|
-      assert_equal(OCI8::Metadata::Function, desc.class)
+      assert_instance_of(OCI8::Metadata::Function, desc)
       assert_object_id('TEST_FUNC', desc.obj_id)
       assert_equal('TEST_FUNC', desc.obj_name)
       assert_equal('TEST_FUNC', desc.name)
       assert_equal(@conn.username, desc.obj_schema)
       assert_equal(false, desc.is_invoker_rights?)
       assert_equal(nil, desc.overload_id)
-      assert_equal(Array, desc.arguments.class)
+      assert_instance_of(Array, desc.arguments)
       assert_equal(3, desc.arguments.length)
-      assert_equal(OCI8::Metadata::Argument, desc.arguments[0].class)
+      assert_instance_of(OCI8::Metadata::Argument, desc.arguments[0])
     end
 
     @conn.exec(<<-EOS)
@@ -937,15 +937,15 @@ EOS
        obj.obj_name == 'TEST_FUNC'
      end
     ].each do |desc|
-      assert_equal(OCI8::Metadata::Function, desc.class)
+      assert_instance_of(OCI8::Metadata::Function, desc)
       assert_object_id('TEST_FUNC', desc.obj_id)
       assert_equal('TEST_FUNC', desc.obj_name)
       assert_equal(@conn.username, desc.obj_schema)
       assert_equal(true, desc.is_invoker_rights?)
       assert_equal(nil, desc.overload_id)
-      assert_equal(Array, desc.arguments.class)
+      assert_instance_of(Array, desc.arguments)
       assert_equal(3, desc.arguments.length)
-      assert_equal(OCI8::Metadata::Argument, desc.arguments[0].class)
+      assert_instance_of(OCI8::Metadata::Argument, desc.arguments[0])
     end
 
     @conn.exec('DROP FUNCTION test_func');
@@ -956,15 +956,15 @@ CREATE OR REPLACE PACKAGE TEST_PKG IS
 END;
 EOS
     desc = @conn.describe_package('test_pkg').subprograms[0]
-    assert_equal(OCI8::Metadata::Function, desc.class)
+    assert_instance_of(OCI8::Metadata::Function, desc)
     assert_equal(nil, desc.obj_id)
     assert_equal('TEST_FUNC', desc.obj_name)
     assert_equal(nil, desc.obj_schema)
     assert_equal(false, desc.is_invoker_rights?)
     assert_equal(0, desc.overload_id)
-    assert_equal(Array, desc.arguments.class)
+    assert_instance_of(Array, desc.arguments)
     assert_equal(3, desc.arguments.length)
-    assert_equal(OCI8::Metadata::Argument, desc.arguments[0].class)
+    assert_instance_of(OCI8::Metadata::Argument, desc.arguments[0])
 
     @conn.exec(<<-EOS)
 CREATE OR REPLACE PACKAGE TEST_PKG AUTHID CURRENT_USER
@@ -974,26 +974,26 @@ IS
 END;
 EOS
     desc = @conn.describe_package('test_pkg').subprograms
-    assert_equal(OCI8::Metadata::Function, desc[0].class)
+    assert_instance_of(OCI8::Metadata::Function, desc[0])
     assert_equal(nil, desc[0].obj_id)
     assert_equal('TEST_FUNC', desc[0].obj_name)
     assert_equal(nil, desc[0].obj_schema)
     assert_equal(true, desc[0].is_invoker_rights?)
     assert_equal(2, desc[0].overload_id)
-    assert_equal(Array, desc[0].arguments.class)
+    assert_instance_of(Array, desc[0].arguments)
     assert_equal(3, desc[0].arguments.length)
-    assert_equal(OCI8::Metadata::Argument, desc[0].arguments[0].class)
+    assert_instance_of(OCI8::Metadata::Argument, desc[0].arguments[0])
 
     descs = @conn.describe_package('test_pkg').subprograms
-    assert_equal(OCI8::Metadata::Function, desc[1].class)
+    assert_instance_of(OCI8::Metadata::Function, desc[1])
     assert_equal(nil, desc[1].obj_id)
     assert_equal('TEST_FUNC', desc[1].obj_name)
     assert_equal(nil, desc[1].obj_schema)
     assert_equal(true, desc[1].is_invoker_rights?)
     assert_equal(1, desc[1].overload_id)
-    assert_equal(Array, desc[1].arguments.class)
+    assert_instance_of(Array, desc[1].arguments)
     assert_equal(2, desc[1].arguments.length)
-    assert_equal(OCI8::Metadata::Argument, desc[1].arguments[0].class)
+    assert_instance_of(OCI8::Metadata::Argument, desc[1].arguments[0])
   end # test_function_metadata
 
   def test_package_metadata
@@ -1009,14 +1009,14 @@ EOS
        obj.obj_name == 'TEST_PKG'
      end
     ].each do |desc|
-      assert_equal(OCI8::Metadata::Package, desc.class)
+      assert_instance_of(OCI8::Metadata::Package, desc)
       assert_object_id('TEST_PKG', desc.obj_id)
       assert_equal('TEST_PKG', desc.obj_name)
       assert_equal(@conn.username, desc.obj_schema)
       assert_equal(false, desc.is_invoker_rights?)
-      assert_equal(Array, desc.subprograms.class)
+      assert_instance_of(Array, desc.subprograms)
       assert_equal(1, desc.subprograms.length)
-      assert_equal(OCI8::Metadata::Function, desc.subprograms[0].class)
+      assert_instance_of(OCI8::Metadata::Function, desc.subprograms[0])
     end
 
     @conn.exec(<<-EOS)
@@ -1031,14 +1031,14 @@ EOS
        obj.obj_name == 'TEST_PKG'
      end
     ].each do |desc|
-      assert_equal(OCI8::Metadata::Package, desc.class)
+      assert_instance_of(OCI8::Metadata::Package, desc)
       assert_object_id('TEST_PKG', desc.obj_id)
       assert_equal('TEST_PKG', desc.obj_name)
       assert_equal(@conn.username, desc.obj_schema)
       assert_equal(true, desc.is_invoker_rights?)
-      assert_equal(Array, desc.subprograms.class)
+      assert_instance_of(Array, desc.subprograms)
       assert_equal(1, desc.subprograms.length)
-      assert_equal(OCI8::Metadata::Procedure, desc.subprograms[0].class)
+      assert_instance_of(OCI8::Metadata::Procedure, desc.subprograms[0])
     end
   end # test_package_metadata
 
@@ -1314,19 +1314,20 @@ EOS
         assert_equal(@conn.username, desc.schema_name)
 
         elem.each do |key, val|
+          msg = elem[:obj_name] + '.' + key.to_s
           if val.is_a? Array
             case val[0]
             when :array
-              assert_equal(Array, desc.send(key).class, elem[:obj_name] + '.' + key)
+              assert_instance_of(Array, desc.send(key), msg)
               assert_equal(val[1], desc.send(key).length)
-              assert_equal(val[2], desc.send(key)[0].class) if val[1] > 0
+              assert_instance_of(val[2], desc.send(key)[0]) if val[1] > 0
             when :type
-              assert_equal(val[1], desc.send(key).class, elem[:obj_name] + '.' + key)
+              assert_instance_of(val[1], desc.send(key), msg)
             else
               raise "Invalid test case: #{elem[:obj_name]}.#{key} : #{val[0]}"
             end
           else
-            assert_equal(val, desc.send(key), elem[:obj_name] + '.' + key)
+            assert_equal(val, desc.send(key), msg)
           end
         end
       end

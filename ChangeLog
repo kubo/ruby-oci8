@@ -1,3 +1,13 @@
+2010-08-23  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/object.rb: fix an error when SDO_GEOMETRY is used
+	    and $VERBOSE is set.
+	* test/test_metadata.rb: (1) fix errors caused by String + Symbol.
+	    They worked on ruby 1.9.2 but not on 1.8.7 and 1.9.2.
+	    (2) replace "assert_equal(class, object.class)" with
+	    "assert_instance_of(class, object)."
+	* test/test_oranumber.rb: change a testcase for ruby 1.9.2.
+	    Math::atan2(0, 0) behaviour was changed in 1.9.2.
+
 2010-08-15  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c, ext/oci8/object.c, ext/oci8/oci8.h,
 	  lib/oci8/object.rb: support LOB datatypes in Oracle objects.
