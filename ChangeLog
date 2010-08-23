@@ -1,7 +1,7 @@
-2010-08-24  KUBO Takehiro  <kubo@jiubao.org>
-	* ruby-oci8/lib/oci8/object.rb: fix an error when SDO_GEOMETRY is used
+2010-08-23  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/object.rb: fix an error when SDO_GEOMETRY is used
 	    and $VERBOSE is set.
-	* ruby-oci8/test/test_oranumber.rb: change a testcase for ruby 1.9.2.
+	* test/test_oranumber.rb: change a testcase for ruby 1.9.2.
 	    Math::atan2(0, 0) behaviour was changed in 1.9.2.
 
 2010-08-15  KUBO Takehiro  <kubo@jiubao.org>
