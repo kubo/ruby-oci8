@@ -238,11 +238,28 @@ EOS
 
   # OCI8::Math.atan2(y, x) -> ocinumber
   def test_math_atan2
+    # Prior to ruby 1.9.2:
+    #   Following method calls' return values depend on the underneath C library
+    #   implementation.
+    #
+    #     Math::atan2(+0.0, +0.0)
+    #     Math::atan2(-0.0, +0.0)
+    #     Math::atan2(+0.0, -0.0)
+    #     Math::atan2(-0.0, -0.0)
+    #
+    #   They are +0.0, -0.0, +PI and -PI respectively as far as I checked them on
+    #   Windows and Linux.
+    #
+    # After ruby 1.9.2:
+    #   They all raise a Math::DomainError exception.
+    #
+    # In contrast to Math::atan2, OCI8::Math::atan2(0, 0) allways returns 0 because
+    # OraNumber doesn't have the difference between +0 and -0.
     compare_with_float2(SMALL_RANGE_VALUES, SMALL_RANGE_VALUES,
-                        Proc.new {|x, y| Math::atan2(x, y.to_f)},
+                        Proc.new {|x, y| (x.to_f == 0 && y.to_f == 0) ? 0 : Math::atan2(x, y.to_f)},
                         Proc.new {|x, y| OCI8::Math::atan2(x, y.to_f)})
     compare_with_float2(SMALL_RANGE_VALUES, SMALL_RANGE_VALUES,
-                        Proc.new {|x, y| Math::atan2(y.to_f, x)},
+                        Proc.new {|x, y| (x.to_f == 0 && y.to_f == 0) ? 0 : Math::atan2(y.to_f, x)},
                         Proc.new {|x, y| OCI8::Math::atan2(y.to_f, x)})
   end
 

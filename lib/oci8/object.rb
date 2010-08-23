@@ -394,7 +394,7 @@ EOS
             @class_methods[type_method.name.downcase.intern] = result_type
           end
         else
-          warn "unsupported return type (#{schema_name}.#{name}.#{type_method.name})" if $VERBOSE
+          warn "unsupported return type (#{metadata.schema_name}.#{metadata.name}.#{type_method.name})" if $VERBOSE
         end
       end
     end
