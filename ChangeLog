@@ -1,4 +1,7 @@
 2010-08-28  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/env.c: fix for rubinius.
+
+2010-08-28  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/env.c, ext/oci8/error.c, ext/oci8/extconf.rb, ext/oci8/oci8.c,
 	  ext/oci8/oci8.h, oci8/oci8lib.c, ext/oci8/ocinumber.c: fix for rubinius.
 	    Note that this is not enough to compile ruby-oci8 on it.

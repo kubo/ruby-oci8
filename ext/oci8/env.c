@@ -23,7 +23,7 @@
 #include <ruby/util.h>
 #endif
 
-#ifdef RUBY_VM
+#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
 ub4 oci8_env_mode = OCI_OBJECT | OCI_THREADED;
 #else
 ub4 oci8_env_mode = OCI_OBJECT;
@@ -42,7 +42,7 @@ OCIEnv *oci8_make_envhp(void)
     return oci8_global_envhp;
 }
 
-#ifdef RUBY_VM
+#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
 /*
  * oci8_errhp is a thread local object in ruby 1.9.
  */
@@ -97,11 +97,11 @@ OCIError *oci8_make_errhp(void)
 
 void Init_oci8_env(void)
 {
-#ifdef RUBY_VM
+#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
     int error;
 #endif
 
-#if !defined(RUBY_VM) && !defined(_WIN32)
+#if !defined(HAVE_TYPE_RB_BLOCKING_FUNCTION_T) && !defined(_WIN32)
     /* workaround code.
      *
      * Some instant clients set the environment variables
@@ -147,7 +147,7 @@ void Init_oci8_env(void)
         }
     }
 
-#ifdef RUBY_VM
+#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
     id_thread_key = rb_intern("__oci8_errhp__");
     error = oci8_tls_key_init(&oci8_tls_key);
     if (error != 0) {
