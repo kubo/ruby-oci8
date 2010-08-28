@@ -70,7 +70,7 @@ static void oci8_svcctx_init(oci8_base_t *base)
     svcctx->server = DATA_PTR(rb_obj_alloc(oci8_cOCIHandle));
     svcctx->pid = getpid();
     svcctx->is_autocommit = 0;
-#ifdef RUBY_VM
+#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
     svcctx->non_blocking = 1;
 #endif
     svcctx->long_read_len = INT2FIX(65535);
@@ -448,7 +448,7 @@ static VALUE oci8_rollback(VALUE self)
 static VALUE oci8_non_blocking_p(VALUE self)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
-#ifdef RUBY_VM
+#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
     return svcctx->non_blocking ? Qtrue : Qfalse;
 #else
     sb1 non_blocking;
@@ -501,7 +501,7 @@ static VALUE oci8_non_blocking_p(VALUE self)
 static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
-#ifdef RUBY_VM
+#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
     svcctx->non_blocking = RTEST(val);
 #else
     sb1 non_blocking;
@@ -591,14 +591,14 @@ static VALUE oci8_set_long_read_len(VALUE self, VALUE val)
 static VALUE oci8_break(VALUE self)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
-#ifndef RUBY_VM
+#ifndef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
     sword rv;
 #endif
 
     if (NIL_P(svcctx->executing_thread)) {
         return Qfalse;
     }
-#ifndef RUBY_VM
+#ifndef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
     rv = OCIBreak(svcctx->base.hp.ptr, oci8_errhp);
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);

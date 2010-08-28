@@ -10,6 +10,10 @@
 */
 #include "oci8.h"
 
+#ifndef DLEXT
+#define DLEXT ".so"
+#endif
+
 /* Exception */
 VALUE eOCIException;
 VALUE eOCIBreak;
