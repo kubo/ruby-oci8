@@ -135,7 +135,7 @@ typedef struct OCIMsg  OCIMsg;
 #if !defined(HAVE_RB_ERRINFO) && defined(HAVE_RUBY_ERRINFO)
 #define rb_errinfo() ruby_errinfo
 #endif
-#ifndef RUBY_VM
+#ifndef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
 typedef VALUE rb_blocking_function_t(void *);
 #endif
 
@@ -185,7 +185,7 @@ typedef VALUE rb_blocking_function_t(void *);
  *    set a value to the key.
  *
  */
-#ifdef RUBY_VM
+#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
 /* ruby 1.9 */
 #if defined(_WIN32)
 #include <windows.h>
@@ -195,16 +195,14 @@ typedef VALUE rb_blocking_function_t(void *);
     (*(key_p) == 0xFFFFFFFF) ? GetLastError() : 0)
 #define oci8_tls_get(key)        TlsGetValue(key)
 #define oci8_tls_set(key, val)   TlsSetValue((key), (val))
-#elif defined(HAVE_PTHREAD_H)
+#else
 #include <pthread.h>
 #define oci8_tls_key_t           pthread_key_t
 #define oci8_tls_key_init(key_p) pthread_key_create((key_p), NULL)
 #define oci8_tls_get(key)        pthread_getspecific(key)
 #define oci8_tls_set(key, val)   pthread_setspecific((key), (val))
-#else
-#error unsupported thread API
 #endif
-#endif /* RUBY_VM */
+#endif /* HAVE_TYPE_RB_BLOCKING_FUNCTION_T */
 
 /* utility macros
  */
@@ -310,7 +308,7 @@ typedef struct  {
     OCIServer *srvhp;
     rb_pid_t pid;
     char is_autocommit;
-#ifdef RUBY_VM
+#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
     char non_blocking;
 #endif
     VALUE long_read_len;
@@ -364,7 +362,7 @@ typedef struct {
  *   extern OCIError *oci8_errhp;
  */
 #define oci8_envhp (LIKELY(oci8_global_envhp != NULL) ? oci8_global_envhp : oci8_make_envhp())
-#ifdef RUBY_VM
+#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
 #define oci8_errhp oci8_get_errhp()
 #else
 #define oci8_errhp (LIKELY(oci8_global_errhp != NULL) ? oci8_global_errhp : oci8_make_errhp())
@@ -374,7 +372,7 @@ typedef struct {
 extern ub4 oci8_env_mode;
 extern OCIEnv *oci8_global_envhp;
 OCIEnv *oci8_make_envhp(void);
-#ifdef RUBY_VM
+#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
 extern oci8_tls_key_t oci8_tls_key; /* native thread key */
 OCIError *oci8_make_errhp(void);
 

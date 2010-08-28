@@ -196,7 +196,7 @@ void oci8_unlink_from_parent(oci8_base_t *base)
     base->parent = NULL;
 }
 
-#ifdef RUBY_VM
+#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
 
 #if 0
 typedef struct {
@@ -251,7 +251,7 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
         return (sword)func(data);
     }
 }
-#else /* RUBY_VM */
+#else /* HAVE_TYPE_RB_BLOCKING_FUNCTION_T */
 
 /* ruby 1.8 */
 sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data)
@@ -281,7 +281,7 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
     svcctx->executing_thread = Qnil;
     return rv;
 }
-#endif /* RUBY_VM */
+#endif /* HAVE_TYPE_RB_BLOCKING_FUNCTION_T */
 
 typedef struct {
     oci8_svcctx_t *svcctx;

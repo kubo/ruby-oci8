@@ -10,7 +10,7 @@
 #include <errno.h>
 #include "oranumber_util.h"
 
-#ifndef RUBY_VM
+#ifndef RB_NUM_COERCE_FUNCS_NEED_OPID
 /* ruby 1.8 */
 #define rb_num_coerce_cmp(x, y, id) rb_num_coerce_cmp((x), (y))
 #define rb_num_coerce_bin(x, y, id) rb_num_coerce_bin((x), (y))
@@ -39,6 +39,9 @@ static OCINumber const_mPI2; /* -PI/2 */
 
 #define _NUMBER(val) ((OCINumber *)DATA_PTR(val)) /* dangerous macro */
 
+#ifndef T_MASK
+#define T_MASK 0x100 /* TODO: rboci8_type() should be changed to be more portable. */
+#endif
 #define RBOCI8_T_ORANUMBER (T_MASK + 1)
 #define RBOCI8_T_BIGDECIMAL (T_MASK + 2)
 #ifdef T_RATIONAL

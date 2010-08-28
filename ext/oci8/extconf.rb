@@ -111,6 +111,8 @@ have_type('rb_encoding', ['ruby/ruby.h', 'ruby/encoding.h'])
 have_var("ruby_errinfo", "ruby.h") # ruby 1.8
 have_func("rb_errinfo", "ruby.h")  # ruby 1.9
 
+have_type("rb_blocking_function_t", "ruby.h")
+
 # replace files
 replace = {
   'OCI8_CLIENT_VERSION' => oraconf.version,
