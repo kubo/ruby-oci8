@@ -15,6 +15,12 @@ ID oci8_id_get;
 ID oci8_id_set;
 ID oci8_id_keys;
 ID oci8_id_oci8_class;
+#ifdef CHAR_IS_NOT_A_SHORTCUT_TO_ID
+ID oci8_id_add_op;
+ID oci8_id_sub_op;
+ID oci8_id_mul_op;
+ID oci8_id_div_op;
+#endif
 int oci8_in_finalizer = 0;
 VALUE oci8_cOCIHandle;
 
@@ -65,6 +71,12 @@ Init_oci8lib()
     oci8_id_set = rb_intern("set");
     oci8_id_keys = rb_intern("keys");
     oci8_id_oci8_class = rb_intern("__oci8_class__");
+#ifdef CHAR_IS_NOT_A_SHORTCUT_TO_ID
+    oci8_id_add_op = rb_intern("+");
+    oci8_id_sub_op = rb_intern("-");
+    oci8_id_mul_op = rb_intern("*");
+    oci8_id_div_op = rb_intern("/");
+#endif
     rb_set_end_proc(at_exit_func, Qnil);
 
     Init_oci8_error();

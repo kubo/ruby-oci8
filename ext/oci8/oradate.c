@@ -146,7 +146,7 @@ static VALUE ora_date_initialize_copy(VALUE lhs, VALUE rhs)
 {
     ora_date_t *l, *r;
 
-    rb_obj_init_copy(lhs, rhs);
+    rb_call_super(1, &rhs);
     Data_Get_Struct(lhs, ora_date_t, l);
     Data_Get_Struct(rhs, ora_date_t, r);
     memcpy(l, r, sizeof(ora_date_t));
