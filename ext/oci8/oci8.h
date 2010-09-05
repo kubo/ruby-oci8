@@ -401,6 +401,17 @@ extern ID oci8_id_get;
 extern ID oci8_id_set;
 extern ID oci8_id_keys;
 extern ID oci8_id_oci8_class;
+#ifdef CHAR_IS_NOT_A_SHORTCUT_TO_ID
+extern ID oci8_id_add_op; /* ID of the addition operator '+' */
+extern ID oci8_id_sub_op; /* ID of the subtraction operator '-' */
+extern ID oci8_id_mul_op; /* ID of the multiplication operator '*' */
+extern ID oci8_id_div_op; /* ID of the division operator '/' */
+#else
+#define oci8_id_add_op '+'
+#define oci8_id_sub_op '-'
+#define oci8_id_mul_op '*'
+#define oci8_id_div_op '/'
+#endif
 extern int oci8_in_finalizer;
 extern VALUE oci8_cOCIHandle;
 void oci8_base_free(oci8_base_t *base);

@@ -1,3 +1,10 @@
+2010-09-05  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, ext/oci8/oci8.h, ext/oci8/oci8lib.c,
+	  ext/oci8/ocinumber.c: use rb_intern() to retrieve IDs of '+', '-',
+	    '*' and '/' on rubinus.
+	* ext/oci8/oradate.c: use rb_call_super() instead of
+	    rb_obj_init_copy(), which is not declared in rubinus.
+
 2010-08-28  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/env.c: fix for rubinius.
 

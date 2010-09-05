@@ -724,13 +724,13 @@ static VALUE onum_add(VALUE lhs, VALUE rhs)
         oci_lc(OCINumberAdd(errhp, _NUMBER(lhs), _NUMBER(rhs), &r));
         return oci8_make_ocinumber(&r, errhp);
     case T_FLOAT:
-        return rb_funcall(onum_to_f(lhs), '+', 1, rhs);
+        return rb_funcall(onum_to_f(lhs), oci8_id_add_op, 1, rhs);
     case RBOCI8_T_RATIONAL:
-        return rb_funcall(onum_to_r(lhs), '+', 1, rhs);
+        return rb_funcall(onum_to_r(lhs), oci8_id_add_op, 1, rhs);
     case RBOCI8_T_BIGDECIMAL:
-        return rb_funcall(onum_to_d(lhs), '+', 1, rhs);
+        return rb_funcall(onum_to_d(lhs), oci8_id_add_op, 1, rhs);
     }
-    return rb_num_coerce_bin(lhs, rhs, '+');
+    return rb_num_coerce_bin(lhs, rhs, oci8_id_add_op);
 }
 
 /*
@@ -758,13 +758,13 @@ static VALUE onum_sub(VALUE lhs, VALUE rhs)
         oci_lc(OCINumberSub(errhp, _NUMBER(lhs), _NUMBER(rhs), &r));
         return oci8_make_ocinumber(&r, errhp);
     case T_FLOAT:
-        return rb_funcall(onum_to_f(lhs), '-', 1, rhs);
+        return rb_funcall(onum_to_f(lhs), oci8_id_sub_op, 1, rhs);
     case RBOCI8_T_RATIONAL:
-        return rb_funcall(onum_to_r(lhs), '-', 1, rhs);
+        return rb_funcall(onum_to_r(lhs), oci8_id_sub_op, 1, rhs);
     case RBOCI8_T_BIGDECIMAL:
-        return rb_funcall(onum_to_d(lhs), '-', 1, rhs);
+        return rb_funcall(onum_to_d(lhs), oci8_id_sub_op, 1, rhs);
     }
-    return rb_num_coerce_bin(lhs, rhs, '-');
+    return rb_num_coerce_bin(lhs, rhs, oci8_id_sub_op);
 }
 
 /*
@@ -791,13 +791,13 @@ static VALUE onum_mul(VALUE lhs, VALUE rhs)
         oci_lc(OCINumberMul(errhp, _NUMBER(lhs), _NUMBER(rhs), &r));
         return oci8_make_ocinumber(&r, errhp);
     case T_FLOAT:
-        return rb_funcall(onum_to_f(lhs), '*', 1, rhs);
+        return rb_funcall(onum_to_f(lhs), oci8_id_mul_op, 1, rhs);
     case RBOCI8_T_RATIONAL:
-        return rb_funcall(onum_to_r(lhs), '*', 1, rhs);
+        return rb_funcall(onum_to_r(lhs), oci8_id_mul_op, 1, rhs);
     case RBOCI8_T_BIGDECIMAL:
-        return rb_funcall(onum_to_d(lhs), '*', 1, rhs);
+        return rb_funcall(onum_to_d(lhs), oci8_id_mul_op, 1, rhs);
     }
-    return rb_num_coerce_bin(lhs, rhs, '*');
+    return rb_num_coerce_bin(lhs, rhs, oci8_id_mul_op);
 }
 
 /*
@@ -833,13 +833,13 @@ static VALUE onum_div(VALUE lhs, VALUE rhs)
         oci_lc(OCINumberDiv(errhp, _NUMBER(lhs), _NUMBER(rhs), &r));
         return oci8_make_ocinumber(&r, errhp);
     case T_FLOAT:
-        return rb_funcall(onum_to_f(lhs), '/', 1, rhs);
+        return rb_funcall(onum_to_f(lhs), oci8_id_div_op, 1, rhs);
     case RBOCI8_T_RATIONAL:
-        return rb_funcall(onum_to_r(lhs), '/', 1, rhs);
+        return rb_funcall(onum_to_r(lhs), oci8_id_div_op, 1, rhs);
     case RBOCI8_T_BIGDECIMAL:
-        return rb_funcall(onum_to_d(lhs), '/', 1, rhs);
+        return rb_funcall(onum_to_d(lhs), oci8_id_div_op, 1, rhs);
     }
-    return rb_num_coerce_bin(lhs, rhs, '/');
+    return rb_num_coerce_bin(lhs, rhs, oci8_id_div_op);
 }
 
 /*

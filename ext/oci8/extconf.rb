@@ -133,6 +133,9 @@ so_basename = "oci8lib_" + Config::CONFIG["ruby_version"].gsub(/\W/, '')
 $defs << "-DInit_oci8lib=Init_#{so_basename}"
 $defs << "-Doci8lib=#{so_basename}"
 $defs << "-DOCI8LIB_VERSION=\\\"#{RUBY_OCI8_VERSION}\\\""
+if defined? RUBY_ENGINE and RUBY_ENGINE == 'rbx'
+  $defs << "-DCHAR_IS_NOT_A_SHORTCUT_TO_ID"
+end
 
 create_header()
 
