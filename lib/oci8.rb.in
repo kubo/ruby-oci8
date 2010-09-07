@@ -18,14 +18,24 @@ if RUBY_PLATFORM =~ /cygwin/
   end
 end
 
+so_basename = 'oci8lib_'
+if defined? RUBY_ENGINE and RUBY_ENGINE != 'ruby'
+  so_basename += RUBY_ENGINE
+end
+
+# The suffix number indicates the ruby API version.
+#  18  - ruby 1.8.x
+#  191 - ruby 1.9.1 and 1.9.2
+#  19x - ruby 1.9.x future version which will break the API compatibility
 case RUBY_VERSION
 when /^1\.9/
-  require 'oci8lib_191'
+  so_basename += '191'
 when /^1\.8/
-  require 'oci8lib_18'
+  so_basename += '18'
 else
   raise 'unsupported ruby version: ' + RUBY_VERSION
 end
+require so_basename
 
 if OCI8.respond_to? :encoding
   if defined? DEFAULT_OCI8_ENCODING

@@ -44,10 +44,12 @@ void oci8_base_free(oci8_base_t *base)
     base->hp.ptr = NULL;
 }
 
+#ifdef HAVE_RB_SET_END_PROC
 static void at_exit_func(VALUE val)
 {
     oci8_in_finalizer = 1;
 }
+#endif
 
 void
 Init_oci8lib()
@@ -77,7 +79,9 @@ Init_oci8lib()
     oci8_id_mul_op = rb_intern("*");
     oci8_id_div_op = rb_intern("/");
 #endif
+#ifdef HAVE_RB_SET_END_PROC
     rb_set_end_proc(at_exit_func, Qnil);
+#endif
 
     Init_oci8_error();
     Init_oci8_env();
