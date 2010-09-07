@@ -3,6 +3,8 @@
 	    rb_set_end_proc() when it isn't available.
 	* ext/oci8/extconf.rb, lib/oci8.rb.in: add RUBY_ENGINE to
 	    the C extension library name when RUBY_ENGINE is not "ruby."
+	* test/test_array_dml.rb: skip test_array_insert1 on rubinius.
+	    This will be enabled after the rubinius issue #445 is fixed.
 
 2010-09-05  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, ext/oci8/oci8.h, ext/oci8/oci8lib.c,
