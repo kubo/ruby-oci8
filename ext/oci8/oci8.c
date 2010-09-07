@@ -453,10 +453,10 @@ static VALUE oci8_non_blocking_p(VALUE self)
 #else
     sb1 non_blocking;
 
-    if (svcctx->srvhp == NULL) {
-        oci_lc(OCIAttrGet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, &svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp));
+    if (svcctx->server->hp.srvhp == NULL) {
+        oci_lc(OCIAttrGet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, &svcctx->server->hp.srvhp, 0, OCI_ATTR_SERVER, oci8_errhp));
     }
-    oci_lc(OCIAttrGet(svcctx->srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp));
+    oci_lc(OCIAttrGet(svcctx->server->hp.srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp));
     return non_blocking ? Qtrue : Qfalse;
 #endif
 }
@@ -506,13 +506,13 @@ static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
 #else
     sb1 non_blocking;
 
-    if (svcctx->srvhp == NULL) {
-        oci_lc(OCIAttrGet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, &svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp));
+    if (svcctx->server->hp.srvhp == NULL) {
+        oci_lc(OCIAttrGet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, &svcctx->server->hp.srvhp, 0, OCI_ATTR_SERVER, oci8_errhp));
     }
-    oci_lc(OCIAttrGet(svcctx->srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp));
+    oci_lc(OCIAttrGet(svcctx->server->hp.srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp));
     if ((RTEST(val) && !non_blocking) || (!RTEST(val) && non_blocking)) {
         /* toggle blocking / non-blocking. */
-        oci_lc(OCIAttrSet(svcctx->srvhp, OCI_HTYPE_SERVER, 0, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp));
+        oci_lc(OCIAttrSet(svcctx->server->hp.srvhp, OCI_HTYPE_SERVER, 0, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp));
     }
 #endif
     return val;

@@ -103,6 +103,19 @@ module Test
           end
         end
       end # drop_table
+
+      def drop_type(type_name)
+        begin
+          @conn.exec("DROP TYPE BODY #{type_name}")
+        rescue OCIError
+          raise if $!.code != 4043
+        end
+        begin
+          @conn.exec("DROP TYPE #{type_name}")
+        rescue OCIError
+          raise if $!.code != 4043
+        end
+      end # drop_type
     end
   end
 end

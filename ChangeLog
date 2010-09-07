@@ -1,3 +1,9 @@
+2010-09-07  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, ext/oci8/oci8lib.c: Don't use
+	    rb_set_end_proc() when it isn't available.
+	* ext/oci8/extconf.rb, lib/oci8.rb.in: add RUBY_ENGINE to
+	    the C extension library name when RUBY_ENGINE is not "ruby."
+
 2010-09-05  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, ext/oci8/oci8.h, ext/oci8/oci8lib.c,
 	  ext/oci8/ocinumber.c: use rb_intern() to retrieve IDs of '+', '-',

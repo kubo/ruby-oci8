@@ -13,7 +13,7 @@ class TestArrayDML < Test::Unit::TestCase
 
   # test inserting arrays with different data types
   #   including char, varchar2, number, date and so on
-  def test_array_insert1
+  def _test_array_insert1
     drop_table('test_table')
     sql = <<-EOS
 CREATE TABLE test_table

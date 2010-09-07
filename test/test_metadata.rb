@@ -101,7 +101,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 0,
                       :scale => 0,
                       :fsprecision => 0,
-                      :lfprecision => 0,
+                      :lfprecision => 0
                       ),
      DatatypeData.new(:data_type_string => "CHAR(10 CHAR)",
                       :oraver => ora90,
@@ -114,7 +114,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 0,
                       :scale => 0,
                       :fsprecision => 0,
-                      :lfprecision => 0,
+                      :lfprecision => 0
                       ),
      DatatypeData.new(:data_type_string => "NCHAR(10)",
                       :oraver => ora80,
@@ -127,7 +127,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 0,
                       :scale => 0,
                       :fsprecision => 0,
-                      :lfprecision => 0,
+                      :lfprecision => 0
                       ),
      DatatypeData.new(:data_type_string => "VARCHAR2(10)",
                       :oraver => ora80,
@@ -140,7 +140,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 0,
                       :scale => 0,
                       :fsprecision => 0,
-                      :lfprecision => 0,
+                      :lfprecision => 0
                       ),
      DatatypeData.new(:data_type_string => "VARCHAR2(10 CHAR)",
                       :oraver => ora90,
@@ -153,7 +153,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 0,
                       :scale => 0,
                       :fsprecision => 0,
-                      :lfprecision => 0,
+                      :lfprecision => 0
                       ),
      DatatypeData.new(:data_type_string => "NVARCHAR2(10)",
                       :oraver => ora80,
@@ -166,7 +166,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 0,
                       :scale => 0,
                       :fsprecision => 0,
-                      :lfprecision => 0,
+                      :lfprecision => 0
                       ),
      DatatypeData.new(:data_type_string => "RAW(10)",
                       :oraver => ora80,
@@ -179,7 +179,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 0,
                       :scale => 0,
                       :fsprecision => 0,
-                      :lfprecision => 0,
+                      :lfprecision => 0
                       ),
 
      # Skip tests for data_size of CLOB, NCLOB and BLOB
@@ -206,7 +206,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 0,
                       :scale => 0,
                       :fsprecision => 0,
-                      :lfprecision => 0,
+                      :lfprecision => 0
                       ),
      DatatypeData.new(:data_type_string => "NCLOB",
                       :oraver => ora81,
@@ -219,7 +219,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 0,
                       :scale => 0,
                       :fsprecision => 0,
-                      :lfprecision => 0,
+                      :lfprecision => 0
                       ),
      DatatypeData.new(:data_type_string => "BLOB",
                       :oraver => ora80,
@@ -232,7 +232,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 0,
                       :scale => 0,
                       :fsprecision => 0,
-                      :lfprecision => 0,
+                      :lfprecision => 0
                       ),
      DatatypeData.new(:data_type_string => "BFILE",
                       :oraver => ora80,
@@ -245,7 +245,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 0,
                       :scale => 0,
                       :fsprecision => 0,
-                      :lfprecision => 0,
+                      :lfprecision => 0
                       ),
 
      # Skip tests for fsprecision and lfprecision for NUMBER and FLOAT
@@ -281,7 +281,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 0,
                       :scale => $oracle_version > ora90 ? -127 : 0,
                       :fsprecision => :skip,
-                      :lfprecision => :skip,
+                      :lfprecision => :skip
                       ),
      DatatypeData.new(:data_type_string => "NUMBER(10)",
                       :oraver => ora80,
@@ -294,7 +294,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 10,
                       :scale => 0,
                       :fsprecision => :skip,
-                      :lfprecision => :skip,
+                      :lfprecision => :skip
                       ),
      DatatypeData.new(:data_type_string => "NUMBER(10,2)",
                       :oraver => ora80,
@@ -307,7 +307,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 10,
                       :scale => 2,
                       :fsprecision => :skip,
-                      :lfprecision => :skip,
+                      :lfprecision => :skip
                       ),
      DatatypeData.new(:data_type_string => "FLOAT",
                       :oraver => ora80,
@@ -320,7 +320,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 126,
                       :scale => -127,
                       :fsprecision => :skip,
-                      :lfprecision => :skip,
+                      :lfprecision => :skip
                       ),
      DatatypeData.new(:data_type_string => "FLOAT(10)",
                       :oraver => ora80,
@@ -333,7 +333,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 10,
                       :scale => -127,
                       :fsprecision => :skip,
-                      :lfprecision => :skip,
+                      :lfprecision => :skip
                       ),
      DatatypeData.new(:data_type_string => "BINARY_FLOAT",
                       :oraver => ora101,
@@ -346,7 +346,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 0,
                       :scale => 0,
                       :fsprecision => 0,
-                      :lfprecision => 0,
+                      :lfprecision => 0
                       ),
      DatatypeData.new(:data_type_string => "BINARY_DOUBLE",
                       :oraver => ora101,
@@ -359,7 +359,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 0,
                       :scale => 0,
                       :fsprecision => 0,
-                      :lfprecision => 0,
+                      :lfprecision => 0
                       ),
      DatatypeData.new(:data_type_string => "DATE",
                       :oraver => ora80,
@@ -372,7 +372,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 0,
                       :scale => 0,
                       :fsprecision => 0,
-                      :lfprecision => 0,
+                      :lfprecision => 0
                       ),
 
      # Skip tests for precision and lfprecision for TIMESTAMP
@@ -411,7 +411,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => :skip,
                       :scale => 6,
                       :fsprecision => 6,
-                      :lfprecision => :skip,
+                      :lfprecision => :skip
                       ),
      DatatypeData.new(:data_type_string => "TIMESTAMP(9)",
                       :oraver => ora90,
@@ -424,7 +424,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => :skip,
                       :scale => 9,
                       :fsprecision => 9,
-                      :lfprecision => :skip,
+                      :lfprecision => :skip
                       ),
      DatatypeData.new(:data_type_string => "TIMESTAMP WITH TIME ZONE",
                       :oraver => ora90,
@@ -437,7 +437,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => :skip,
                       :scale => 6,
                       :fsprecision => 6,
-                      :lfprecision => :skip,
+                      :lfprecision => :skip
                       ),
      DatatypeData.new(:data_type_string => "TIMESTAMP(9) WITH TIME ZONE",
                       :oraver => ora90,
@@ -450,7 +450,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => :skip,
                       :scale => 9,
                       :fsprecision => 9,
-                      :lfprecision => :skip,
+                      :lfprecision => :skip
                       ),
      DatatypeData.new(:data_type_string => "TIMESTAMP WITH LOCAL TIME ZONE",
                       :oraver => ora90,
@@ -463,7 +463,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => :skip,
                       :scale => 6,
                       :fsprecision => 6,
-                      :lfprecision => :skip,
+                      :lfprecision => :skip
                       ),
      DatatypeData.new(:data_type_string => "TIMESTAMP(9) WITH LOCAL TIME ZONE",
                       :oraver => ora90,
@@ -476,7 +476,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => :skip,
                       :scale => 9,
                       :fsprecision => 9,
-                      :lfprecision => :skip,
+                      :lfprecision => :skip
                       ),
 
      # Skip tsets for scale and fsprecision for INTERVAL YEAR TO MONTH
@@ -503,7 +503,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 2,
                       :scale => :skip,
                       :fsprecision => :skip,
-                      :lfprecision => 2,
+                      :lfprecision => 2
                       ),
      DatatypeData.new(:data_type_string => "INTERVAL YEAR(4) TO MONTH",
                       :oraver => ora90,
@@ -516,7 +516,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 4,
                       :scale => :skip,
                       :fsprecision => :skip,
-                      :lfprecision => 4,
+                      :lfprecision => 4
                       ),
      # Skip tests for precision and scale for INTERVAL DAY TO SECOND
      # because their values depend on how they are described.
@@ -542,7 +542,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => :skip,
                       :scale => :skip,
                       :fsprecision => 6,
-                      :lfprecision => 2,
+                      :lfprecision => 2
                       ),
      DatatypeData.new(:data_type_string => "INTERVAL DAY(4) TO SECOND(9)",
                       :oraver => ora90,
@@ -555,7 +555,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => :skip,
                       :scale => :skip,
                       :fsprecision => 9,
-                      :lfprecision => 4,
+                      :lfprecision => 4
                       ),
      # Object Types
      DatatypeData.new(:data_type_string => "MDSYS.SDO_GEOMETRY",
@@ -569,7 +569,7 @@ class TestMetadata < Test::Unit::TestCase
                       :precision => 0,
                       :scale => 0,
                       :fsprecision => 0,
-                      :lfprecision => 0,
+                      :lfprecision => 0
                       ),
 =begin # uncomment after ref is supported.
      DatatypeData.new(:data_type_string => "REF MDSYS.SDO_GEOMETRY",

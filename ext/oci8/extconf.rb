@@ -114,6 +114,7 @@ have_var("ruby_errinfo", "ruby.h") # ruby 1.8
 have_func("rb_errinfo", "ruby.h")  # ruby 1.9
 
 have_type("rb_blocking_function_t", "ruby.h")
+have_func("rb_set_end_proc", "ruby.h")
 
 # replace files
 replace = {
@@ -124,11 +125,16 @@ replace = {
 # make ruby script before running create_makefile.
 replace_keyword(File.dirname(__FILE__) + '/../../lib/oci8.rb.in', '../../lib/oci8.rb', replace)
 
+so_basename = 'oci8lib_'
+if defined? RUBY_ENGINE and RUBY_ENGINE != 'ruby'
+  so_basename += RUBY_ENGINE
+end
+
 # Config::CONFIG["ruby_version"] indicates the ruby API version.
 #  1.8   - ruby 1.8.x
 #  1.9.1 - ruby 1.9.1 and 1.9.2
 #  1.9.x - ruby 1.9.x future version which will break the API compatibility
-so_basename = "oci8lib_" + Config::CONFIG["ruby_version"].gsub(/\W/, '')
+so_basename += Config::CONFIG["ruby_version"].gsub(/\W/, '')
 
 $defs << "-DInit_oci8lib=Init_#{so_basename}"
 $defs << "-Doci8lib=#{so_basename}"
