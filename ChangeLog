@@ -1,3 +1,7 @@
+2010-09-10  KUBO Takehiro  <kubo@jiubao.org>
+	* test/test_array_dml.rb: delete workaround code. It now works
+	    fine on rubinius head.
+
 2010-09-07  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, ext/oci8/oci8lib.c: Don't use
 	    rb_set_end_proc() when it isn't available.
