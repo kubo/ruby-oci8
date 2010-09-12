@@ -1,3 +1,8 @@
+2010-09-12  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/env.c, ext/oci8/extconf.rb: suppress warning
+	    'use "ruby/util.h" instead of bare "util.h".'
+	* test/test_break.rb: make tests insensitive to execution timing.
+
 2010-09-10  KUBO Takehiro  <kubo@jiubao.org>
 	* test/test_array_dml.rb: delete workaround code. It now works
 	    fine on rubinius head.
