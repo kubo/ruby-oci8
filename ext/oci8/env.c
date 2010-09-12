@@ -6,21 +6,10 @@
  */
 #include "oci8.h"
 
-#if defined(HAVE_UTIL_H)
-/* ruby_setenv for workaround ruby 1.8.4 */
-#include <util.h>
-#endif
-
-#ifdef _WIN32
-#ifdef HAVE_RUBY_WIN32_H
-#include <ruby/win32.h> /* for rb_w32_getenv() */
-#else
-#include <win32/win32.h> /* for rb_w32_getenv() */
-#endif
-#endif
-
-#ifdef HAVE_RUBY_UTIL_H
+#if defined(HAVE_RUBY_UTIL_H)
 #include <ruby/util.h>
+#elif defined(HAVE_UTIL_H)
+#include <util.h>
 #endif
 
 #ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
