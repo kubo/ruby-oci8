@@ -5,7 +5,8 @@
 # try to get NLS_LANG.
 nls_lang = ENV['NLS_LANG']
 
-if defined? OCI8::Win32Util
+# if NLS_LANG is not set, get it from the Windows registry.
+if nls_lang.nil? and defined? OCI8::Win32Util
   dll_path = OCI8::Win32Util.dll_path.upcase
   if dll_path =~ %r{\\BIN\\OCI.DLL}
     oracle_home = $`
@@ -32,6 +33,10 @@ if nls_lang
   enc = YAML::load_file(File.dirname(__FILE__) + '/encoding.yml')[charset]
   if enc.nil?
     raise "Ruby encoding name is not found in encoding.yml for NLS_LANG #{nls_lang}."
+  end
+  if enc.is_a? Array
+    # Use the first available encoding in the array.
+    enc = enc.find do |e| Encoding.find(e) rescue false; end
   end
 else
   warn "Warning: NLS_LANG is not set. fallback to US-ASCII."

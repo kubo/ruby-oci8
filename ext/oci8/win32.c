@@ -2,9 +2,15 @@
 /*
   win32.c - part of ruby-oci8
 
-  Copyright (C) 2009 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2009-2010 KUBO Takehiro <kubo@jiubao.org>
 */
 #include "oci8.h"
+#ifdef __CYGWIN__
+/* boolean is defined as a macro in oratypes.h.
+ * It conflicts with the definition in windows.h.
+ */
+#undef boolean
+#endif
 #include <windows.h>
 
 NORETURN(static void raise_error(void));
@@ -84,14 +90,14 @@ static VALUE enum_homes_real(enum_homes_arg_t *arg)
         }
         /* Get ORACLE_HOME */
         name_len = sizeof(name);
-        rv = RegQueryValueEx(arg->hSubKey, "ORACLE_HOME", NULL, &type, name, &name_len);
+        rv = RegQueryValueEx(arg->hSubKey, "ORACLE_HOME", NULL, &type, TO_ORATEXT(name), &name_len);
         if (rv != ERROR_SUCCESS || type != REG_SZ) {
             continue;
         }
         oracle_home = rb_locale_str_new_cstr(name);
         /* Get NLS_LANG */
         name_len = sizeof(name);
-        rv = RegQueryValueEx(arg->hSubKey, "NLS_LANG", NULL, &type, name, &name_len);
+        rv = RegQueryValueEx(arg->hSubKey, "NLS_LANG", NULL, &type, TO_ORATEXT(name), &name_len);
         if (rv != ERROR_SUCCESS || type != REG_SZ) {
             continue;
         }
