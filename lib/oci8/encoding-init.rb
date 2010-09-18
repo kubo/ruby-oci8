@@ -65,6 +65,10 @@ if OCI8.respond_to? :encoding
     if enc.nil?
       raise "Ruby encoding name is not found in encoding.yml for NLS_LANG #{nls_lang}."
     end
+    if enc.is_a? Array
+      # Use the first available encoding in the array.
+      enc = enc.find do |e| Encoding.find(e) rescue false; end
+    end
   end
   OCI8.encoding = enc
 end

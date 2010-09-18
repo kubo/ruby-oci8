@@ -1,3 +1,10 @@
+2010-09-18  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/win32.c: undefine boolean to pass compilation on
+	    Cygwin. (reported by Don Hill).
+	* lib/oci8/encoding-init.rb, lib/oci8/encoding.yml: add a
+	    mapping from ZHT16HKSCS to Big5-HKSCS when the latter
+	    is available in ruby.
+
 2010-09-12  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/env.c, ext/oci8/extconf.rb: suppress warning
 	    'use "ruby/util.h" instead of bare "util.h".'
