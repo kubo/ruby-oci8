@@ -1,3 +1,7 @@
+2010-12-04  KUBO Takehiro  <kubo@jiubao.org>
+	* VERSION, ext/oci8/encoding.c, ext/oci8/ocihandle.c: change
+	    the version number to 2.1.
+
 2010-09-18  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/win32.c: undefine boolean to pass compilation on
 	    Cygwin. (reported by Don Hill).

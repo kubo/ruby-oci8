@@ -389,7 +389,7 @@ static VALUE attr_get_integer(VALUE self, VALUE attr_type)
  * call-seq:
  *   attr_get_oradate(attr_type) -> an OraDate
  *
- * <b>(new in 2.0.5)</b>
+ * <b>(new in 2.1.0)</b>
  *
  * Gets the value of an attribute as `ub1 *' datatype.
  * The return value is converted to OraDate.

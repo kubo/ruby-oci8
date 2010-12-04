@@ -176,7 +176,7 @@ static VALUE oci8_charset_name2id(VALUE svc, VALUE name)
  * call-seq:
  *   OCI8.nls_ratio -> integer
  *
- * <b>(new in 2.0.5)</b>
+ * <b>(new in 2.1.0)</b>
  *
  * Gets NLS ratio, maximum number of bytes per one character of the
  * current NLS chracter set. It is a factor to calculate the
@@ -192,7 +192,7 @@ static VALUE oci8_get_nls_ratio(VALUE klass)
  * call-seq:
  *   OCI8.nls_ratio = integer
  *
- * <b>(new in 2.0.5)</b>
+ * <b>(new in 2.1.0)</b>
  *
  * Sets NLS ratio, maximum number of bytes per one character of the
  * current NLS chracter set. It is initialized in 'oci8/encoding-init.rb'
