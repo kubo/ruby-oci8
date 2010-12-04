@@ -345,7 +345,7 @@ int oranumber_dump(const OCINumber *on, char *buf)
         len = 21;
     }
     for (idx = 1; idx <= len; idx++) {
-        offset += sprintf(buf + offset, "%hhu,", on->OCINumberPart[idx]);
+        offset += sprintf(buf + offset, "%u,", (ub4)on->OCINumberPart[idx]);
     }
     buf[--offset] = '\0';
     return offset;

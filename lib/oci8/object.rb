@@ -497,6 +497,7 @@ EOS
 
   class NamedType
     def to_value
+      return nil if self.null?
       obj = tdo.ruby_class.new
       obj.instance_variable_set(:@attributes, self.attributes)
       obj
@@ -513,20 +514,28 @@ EOS
     end
 
     def attributes=(obj)
-      obj = obj.instance_variable_get(:@attributes) unless obj.is_a? Hash
-      tdo.attributes.each do |attr|
-        attr_val = obj[attr.name]
-        attr_val = attr.set_proc.call(attr_val) if attr.set_proc
-        set_attribute(attr.datatype, attr.typeinfo, attr.val_offset, attr.ind_offset, attr_val)
+      if obj.nil?
+        self.null = true
+      else
+        obj = obj.instance_variable_get(:@attributes) unless obj.is_a? Hash
+        tdo.attributes.each do |attr|
+          attr_val = obj[attr.name]
+          attr_val = attr.set_proc.call(attr_val) if attr.set_proc
+          set_attribute(attr.datatype, attr.typeinfo, attr.val_offset, attr.ind_offset, attr_val)
+        end
+        self.null = false
       end
     end
   end
 
   class NamedCollection
     def to_value
-      obj = tdo.ruby_class.new
-      obj.instance_variable_set(:@attributes, self.attributes)
-      obj
+      attr = self.attributes
+      if attr
+        obj = tdo.ruby_class.new
+        obj.instance_variable_set(:@attributes, attr)
+        obj
+      end
     end
 
     def attributes
