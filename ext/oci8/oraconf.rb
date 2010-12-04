@@ -418,9 +418,13 @@ EOS
         end
       end
     when /x86_64-linux/
+      # RUBY_PLATFORM depends on the compilation environment.
+      # Even though it is x86_64-linux, the compiled ruby may
+      # be a 32-bit executable.
+      cpu = [nil].pack('p').size == 4 ? :i386 : :x86_64
       check_proc = Proc.new do |file|
         so = MiniSOReader.new(file)
-        if so.cpu == :x86_64
+        if so.cpu == cpu
           true
         else
           puts "  skip: #{file} is for #{so.cpu} cpu."

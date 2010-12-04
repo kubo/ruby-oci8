@@ -54,6 +54,7 @@ class TestObj1 < Test::Unit::TestCase
 
     def next
       @n += 1.2
+      @n = (@n * 10).round / 10.0
       @int_val = @n.round
       @flt_val = @n
       @num_val = @n
@@ -101,7 +102,7 @@ class TestObj1 < Test::Unit::TestCase
       @n <= 20
     end
 
-    def assert(val)
+    def should_be_equal(val)
       if val.is_a? Array
         int_val = val[0]
         flt_val = val[1]
@@ -178,7 +179,7 @@ class TestObj1 < Test::Unit::TestCase
       assert(expected_val.next)
 
       assert_in_delta(expected_val.n, row[0], Delta)
-      expected_val.assert(row[1])
+      expected_val.should_be_equal(row[1])
     end
     assert(!expected_val.next)
   end
@@ -187,8 +188,7 @@ class TestObj1 < Test::Unit::TestCase
     expected_val = ExpectedVal.new
     @conn.exec("select * from rb_test_obj_tab2 order by int_val") do |row|
       assert(expected_val.next)
-
-      expected_val.assert(row)
+      expected_val.should_be_equal(row)
     end
     assert(!expected_val.next)
   end
@@ -197,8 +197,7 @@ class TestObj1 < Test::Unit::TestCase
     expected_val = ExpectedVal.new
     @conn.exec("select value(p) from rb_test_obj_tab2 p order by int_val") do |row|
       assert(expected_val.next)
-
-      expected_val.assert(row[0])
+      expected_val.should_be_equal(row[0])
     end
     assert(!expected_val.next)
   end
@@ -208,7 +207,7 @@ class TestObj1 < Test::Unit::TestCase
     @conn.exec("select ref(p) from rb_test_obj_tab2 p order by int_val") do |row|
       assert(expected_val.next)
 
-      expected_val.assert(row[0])
+      expected_val.should_be_equal(row[0])
     end
     assert(!expected_val.next)
   end
@@ -217,7 +216,7 @@ class TestObj1 < Test::Unit::TestCase
     expected_val = ExpectedVal.new
     while expected_val.next
       obj = RbTestObj.new(expected_val.n)
-      expected_val.assert(obj)
+      expected_val.should_be_equal(obj)
       assert_nothing_raised do
         obj.inspect
       end
@@ -228,7 +227,7 @@ class TestObj1 < Test::Unit::TestCase
     expected_val = ExpectedVal.new
     while expected_val.next
       obj = RbTestObj.new(expected_val.int_val, expected_val.flt_val, expected_val.str_val, expected_val.raw_val, expected_val.str_array_val, expected_val.raw_array_val, expected_val.num_array_val)
-      expected_val.assert(obj)
+      expected_val.should_be_equal(obj)
     end
   end
 
@@ -242,11 +241,11 @@ class TestObj1 < Test::Unit::TestCase
     assert_nil(obj.str_val)
   end
 
-  def test_class_func
+  def _test_class_func
     expected_val = ExpectedVal.new
     while expected_val.next
       obj = RbTestObj.class_func(expected_val.n)
-      expected_val.assert(obj)
+      expected_val.should_be_equal(obj)
     end
   end
 
@@ -255,11 +254,11 @@ class TestObj1 < Test::Unit::TestCase
     while expected_val.next
       obj = RbTestObj.new(0)
       RbTestObj.class_proc1(obj, expected_val.n)
-      expected_val.assert(obj)
+      expected_val.should_be_equal(obj)
     end
   end
 
-  def test_class_proc2
+  def _test_class_proc2
     expected_val = ExpectedVal.new
     while expected_val.next
       obj = RbTestObj.new
@@ -281,7 +280,7 @@ class TestObj1 < Test::Unit::TestCase
       obj.obj_array_val = expected_val.obj_array_val
       obj.obj_ary_of_ary_val = expected_val.obj_ary_of_ary_val
       RbTestObj.class_proc2(obj)
-      expected_val.assert(obj)
+      expected_val.should_be_equal(obj)
     end
   end
 
@@ -293,7 +292,7 @@ class TestObj1 < Test::Unit::TestCase
     end
   end
 
-  def test_plsql_member_func
+  def _test_plsql_member_func
     expected_val = ExpectedVal.new
     while expected_val.next
       obj = RbTestObj.new(expected_val.n)
@@ -315,5 +314,29 @@ EOS
       obj.member_proc(expected_val.int_val)
       assert_equal(expected_val.int_val, obj.int_val)
     end
+  end
+
+  def test_bind_nil
+    csr = @conn.parse(<<EOS)
+DECLARE
+  obj RB_TEST_OBJ := :in;
+BEGIN
+  IF obj IS NULL THEN
+    :out := 'IS NULL';
+  ELSE
+    :out := 'IS NOT NULL';
+  END IF;
+END;
+EOS
+    csr.bind_param(:in, nil, RbTestObj)
+    csr.bind_param(:out, nil, String, 11)
+    csr.exec
+    assert_equal('IS NULL', csr[:out])
+    csr[:in] = RbTestObj.new(@conn)
+    csr.exec
+    assert_equal('IS NOT NULL', csr[:out])
+    csr[:in] = nil
+    csr.exec
+    assert_equal('IS NULL', csr[:out])
   end
 end

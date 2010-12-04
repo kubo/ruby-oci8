@@ -1,3 +1,13 @@
+2010-12-04  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/object.c, ext/oci8/bind.c, lib/oci8/object.rb,
+	  test/test_object.rb: fix a problem to assign NULL bind value
+	    to object type bind variables.
+	    (reported by Raimonds Simanovskis)
+	* ext/oci8/oraconf.rb: fix for 32-bit ruby compiled on
+	    x86_64 linux. (reported by Jason Renschler)
+	* ext/oci8/oranumber_util.c, test/test_oranumber.rb:
+	    suppress warning: unknown conversion type character 'h' in format
+
 2010-09-18  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/win32.c: undefine boolean to pass compilation on
 	    Cygwin. (reported by Don Hill).

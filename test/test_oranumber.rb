@@ -707,4 +707,20 @@ EOS
       assert_equal(ary[1], OraNumber.new(ary[0]).to_s)
     end
   end
+
+  def test_dump
+    conn = get_oci8_connection
+    begin
+      cursor = conn.parse("select dump(to_number(:1)) from dual")
+      cursor.bind_param(1, nil, String, 40)
+      LARGE_RANGE_VALUES.each do |val|
+        cursor[1] = val
+        cursor.exec
+        assert_equal(cursor.fetch[0], OraNumber.new(val).dump)
+      end
+    ensure
+      conn.logoff
+    end
+    LARGE_RANGE_VALUES
+  end
 end

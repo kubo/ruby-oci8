@@ -315,10 +315,6 @@ static VALUE oci8_bind_get(VALUE self)
     if (NIL_P(obind->tdo)) {
         if (obind->u.inds[idx] != 0)
             return Qnil;
-    } else {
-        null_structp = &obind->u.null_structs[idx];
-        if (*(OCIInd*)*null_structp != 0)
-            return Qnil;
     }
     return obc->get(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_structp);
 }
@@ -362,6 +358,7 @@ static VALUE oci8_bind_set(VALUE self, VALUE val)
             obind->u.inds[idx] = 0;
         } else {
             null_structp = &obind->u.null_structs[idx];
+            *(OCIInd*)obind->u.null_structs[idx] = 0;
         }
         obc->set(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_structp, val);
     }

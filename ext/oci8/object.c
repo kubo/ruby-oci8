@@ -260,6 +260,25 @@ static VALUE oci8_named_type_set_attribute(VALUE self, VALUE datatype, VALUE typ
     return Qnil;
 }
 
+static VALUE oci8_named_type_null_p(VALUE self)
+{
+    void *data;
+    OCIInd *ind;
+
+    oci8_named_type_check_offset(self, INT2FIX(0), INT2FIX(0), sizeof(void*), &data, &ind);
+    return *ind ? Qtrue : Qfalse;
+}
+
+static VALUE oci8_named_type_set_null(VALUE self, VALUE val)
+{
+    void *data;
+    OCIInd *ind;
+
+    oci8_named_type_check_offset(self, INT2FIX(0), INT2FIX(0), sizeof(void*), &data, &ind);
+    *ind = RTEST(val) ? -1 : 0;
+    return val;
+}
+
 typedef struct {
     VALUE self;
     VALUE datatype;
@@ -607,6 +626,7 @@ static void bind_named_type_init_elem(oci8_bind_t *obind, VALUE svc)
 
         oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->base.hp.svc, tc, tdo->hp.tdo, NULL, OCI_DURATION_SESSION, TRUE, (dvoid**)obj->instancep));
         oci_lc(OCIObjectGetInd(oci8_envhp, oci8_errhp, (dvoid*)*obj->instancep, (dvoid**)obj->null_structp));
+        *(OCIInd*)*obj->null_structp = -1;
     } while (++idx < obind->maxar_sz);
 }
 
@@ -666,6 +686,8 @@ void Init_oci_object(VALUE cOCI8)
     rb_define_method(cOCI8NamedType, "tdo", oci8_named_type_tdo, 0);
     rb_define_private_method(cOCI8NamedType, "get_attribute", oci8_named_type_get_attribute, 4);
     rb_define_private_method(cOCI8NamedType, "set_attribute", oci8_named_type_set_attribute, 5);
+    rb_define_method(cOCI8NamedType, "null?", oci8_named_type_null_p, 0);
+    rb_define_method(cOCI8NamedType, "null=", oci8_named_type_set_null, 1);
 
     /* OCI8::NamedCollection */
     cOCI8NamedCollection = oci8_define_class_under(cOCI8, "NamedCollection", &oci8_named_type_class);
