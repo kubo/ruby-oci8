@@ -14,7 +14,7 @@ static ID id_bind_type;
 static VALUE cOCI8BindTypeBase;
 
 /*
- * bind_string
+ * bind_char and bind_nchar
  */
 static VALUE bind_string_get(oci8_bind_t *obind, void *data, void *null_struct)
 {
@@ -54,7 +54,7 @@ static void bind_string_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE len
     obind->alloc_sz = (sz + (sizeof(sb4) - 1)) & ~(sizeof(sb4) - 1);
 }
 
-static const oci8_bind_class_t bind_string_class = {
+static const oci8_bind_class_t bind_char_class = {
     {
         NULL,
         oci8_bind_free,
@@ -68,6 +68,23 @@ static const oci8_bind_class_t bind_string_class = {
     NULL,
     NULL,
     SQLT_LVC
+};
+
+static const oci8_bind_class_t bind_nchar_class = {
+    {
+        NULL,
+        oci8_bind_free,
+        sizeof(oci8_bind_t)
+    },
+    bind_string_get,
+    bind_string_set,
+    bind_string_init,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    SQLT_LVC,
+    SQLCS_NCHAR,
 };
 
 /*
@@ -460,7 +477,8 @@ void Init_oci8_bind(VALUE klass)
     rb_define_method(cOCI8BindTypeBase, "set", oci8_bind_set, 1);
 
     /* register primitive data types. */
-    oci8_define_bind_class("String", &bind_string_class);
+    oci8_define_bind_class("CHAR", &bind_char_class);
+    oci8_define_bind_class("NCHAR", &bind_nchar_class);
     oci8_define_bind_class("RAW", &bind_raw_class);
 #ifdef USE_DYNAMIC_FETCH
     oci8_define_bind_class("Long", &bind_long_class);

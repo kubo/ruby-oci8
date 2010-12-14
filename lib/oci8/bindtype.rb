@@ -1,7 +1,7 @@
 #--
 # bindtype.rb -- OCI8::BindType
 #
-# Copyright (C) 2009 KUBO Takehiro <kubo@jiubao.org>
+# Copyright (C) 2009-2010 KUBO Takehiro <kubo@jiubao.org>
 #++
 
 class OCI8
@@ -116,6 +116,8 @@ class OCI8
               length = val.size
             end
           end
+          # use the default value when :nchar is not set explicitly.
+          nchar = OCI8.properties[:bind_string_as_nchar] unless param.has_key?(:nchar)
         when OCI8::Metadata::Base
           case param.data_type
           when :char, :varchar2
@@ -124,13 +126,18 @@ class OCI8
             # The length of a Japanese half-width kana is one in Shift_JIS,
             # two in EUC-JP, three in UTF-8.
             length *= 3 unless param.char_used?
+            nchar = (param.charset_form == :nchar)
           when :raw
             # HEX needs twice space.
             length = param.data_size * 2
           end
         end
         length = @@minimum_bind_length if length.nil? or length < @@minimum_bind_length
-        self.new(con, val, length, max_array_size)
+        if nchar
+          OCI8::BindType::NCHAR.new(con, val, length, max_array_size)
+        else
+          OCI8::BindType::CHAR.new(con, val, length, max_array_size)
+        end
       end
     end
 
@@ -153,7 +160,7 @@ class OCI8
 
     class Long < OCI8::BindType::String
       def self.create(con, val, param, max_array_size)
-        self.new(con, val, con.long_read_len, max_array_size)
+        super(con, val, {:length => con.long_read_len}, max_array_size)
       end
     end
 
