@@ -13,6 +13,7 @@
 static ID id_bind_type;
 static VALUE sym_length;
 static VALUE sym_char_semantics;
+static VALUE sym_nchar;
 
 static VALUE cOCI8BindTypeBase;
 
@@ -20,6 +21,7 @@ typedef struct {
     oci8_bind_t obind;
     sb4 bytelen;
     sb4 charlen;
+    ub1 csfrm;
 } oci8_bind_string_t;
 
 /*
@@ -49,11 +51,13 @@ static void bind_string_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE par
     oci8_bind_string_t *obs = (oci8_bind_string_t *)obind;
     VALUE length;
     VALUE char_semantics;
+    VALUE nchar;
     sb4 sz;
 
     Check_Type(param, T_HASH);
     length = rb_hash_aref(param, sym_length);
     char_semantics = rb_hash_aref(param, sym_char_semantics);
+    nchar = rb_hash_aref(param, sym_nchar);
 
     sz = NUM2INT(length);
     if (sz < 0) {
@@ -72,6 +76,11 @@ static void bind_string_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE par
         obs->bytelen = sz;
         obs->charlen = 0;
     }
+    if (RTEST(nchar)) {
+        obs->csfrm = SQLCS_NCHAR; /* bind as NCHAR/NVARCHAR2 */
+    } else {
+        obs->csfrm = SQLCS_IMPLICIT; /* bind as CHAR/VARCHAR2 */
+    }
     if (sz == 0) {
         sz = 1; /* to avoid ORA-01459. */
     }
@@ -87,6 +96,7 @@ static void bind_string_post_bind_hook(oci8_bind_t *obind)
     if (oracle_client_version >= ORAVER_9_0 && obs->charlen != 0) {
         oci_lc(OCIAttrSet(obind->base.hp.ptr, obind->base.type, (void*)&obs->charlen, 0, OCI_ATTR_MAXCHAR_SIZE, oci8_errhp));
     }
+    oci_lc(OCIAttrSet(obind->base.hp.ptr, obind->base.type, (void*)&obs->csfrm, 0, OCI_ATTR_CHARSET_FORM, oci8_errhp));
 }
 
 static const oci8_bind_class_t bind_string_class = {
@@ -493,6 +503,7 @@ void Init_oci8_bind(VALUE klass)
     id_bind_type = rb_intern("bind_type");
     sym_length = ID2SYM(rb_intern("length"));
     sym_char_semantics = ID2SYM(rb_intern("char_semantics"));
+    sym_nchar = ID2SYM(rb_intern("nchar"));
 
     rb_define_method(cOCI8BindTypeBase, "initialize", oci8_bind_initialize, 4);
     rb_define_method(cOCI8BindTypeBase, "get", oci8_bind_get, 0);

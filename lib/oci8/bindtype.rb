@@ -123,14 +123,22 @@ class OCI8
               param[:length] = @@minimum_bind_length
             end
           end
+          # use the default value when :nchar is not set explicitly.
+          param[:nchar] = OCI8.properties[:bind_string_as_nchar] unless param.has_key?(:nchar)
         when OCI8::Metadata::Base
           case param.data_type
           when :char, :varchar2
-            if param.charset_form == :nchar or param.char_used?
-              param = {:length => param.char_size, :char_semantics => true}
+            char_semantics = param.char_used?
+            if char_semantics
+              length = param.char_size
             else
-              param = {:length => param.data_size}
+              length = param.data_size * OCI8.nls_ratio
             end
+            param = {
+              :length => length,
+              :char_semantics => char_semantics,
+              :nchar => (param.charset_form == :nchar),
+            }
           when :raw
             # HEX needs twice space.
             param = {:length => param.data_size * 2}
@@ -168,7 +176,7 @@ class OCI8
     class Long < OCI8::BindType::String
       def self.create(con, val, param, max_array_size)
         param = {:length => con.long_read_len, :char_semantics => true}
-        self.new(con, val, param, max_array_size)
+        super(con, val, param, max_array_size)
       end
     end
 

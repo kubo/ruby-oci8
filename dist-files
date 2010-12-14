@@ -58,6 +58,7 @@ lib/oci8/object.rb
 lib/oci8/oci8.rb
 lib/oci8/ocihandle.rb
 lib/oci8/oracle_version.rb
+lib/oci8/properties.rb
 test/README
 test/config.rb
 test/test_all.rb
