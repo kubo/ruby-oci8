@@ -1,3 +1,7 @@
+2010-12-26  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/ocinumber.c, lib/oci8/bindtype.rb, test/test_oranumber.rb:
+	    add OraNumber#has_decimal_part? and OCI8::BindType::BasicNumberType.
+
 2010-12-14  KUBO Takehiro  <kubo@jiubao.org>
 	* dist-files, lib/oci8.rb.in, lib/oci8/.document, lib/oci8/properties.rb:
 	    add OCI8.properties to get and set ruby-oci8 global setting.

@@ -185,6 +185,21 @@ EOS
     end
   end
 
+  def test_bind_basic_number_type
+    conn = get_oci8_connection
+    bind_type = OCI8::BindType::Mapping[:number]
+    begin
+      OCI8::BindType::Mapping[:number] = OCI8::BindType::BasicNumberType
+      assert_kind_of(NilClass, conn.select_one('select CAST(NULL AS NUMBER) from dual')[0])
+      assert_kind_of(Integer,  conn.select_one('select 0.0 from dual')[0])
+      assert_kind_of(Integer,  conn.select_one('select 10.0 from dual')[0])
+      assert_kind_of(Float,    conn.select_one('select 10.1 from dual')[0])
+    ensure
+      conn.logoff
+      OCI8::BindType::Mapping[:number] = bind_type
+    end
+  end
+
   def test_dup
     (LARGE_RANGE_VALUES + ['~', '-~']).each do |x|
       n = OraNumber.new(x)
@@ -722,5 +737,10 @@ EOS
       conn.logoff
     end
     LARGE_RANGE_VALUES
+  end
+
+  def test_has_decimal_part
+    assert_equal(false, OraNumber(10.0).has_decimal_part?)
+    assert_equal(true,  OraNumber(10.1).has_decimal_part?)
   end
 end
