@@ -46,6 +46,12 @@ class OCI8
       end
     end
 
+    class BasicNumberType < OCI8::BindType::OraNumber
+      def get()
+        (val = super()) && (val.has_decimal_part? ? val.to_f : val.to_i)
+      end
+    end
+
     # get/set Number (for OCI8::SQLT_NUM)
     class Number
       def self.create(con, val, param, max_array_size)
