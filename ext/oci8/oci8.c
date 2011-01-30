@@ -34,6 +34,34 @@ extern rb_pid_t rb_w32_getpid(void);
 #define OCI8_STATE_SERVER_ATTACH_WAS_CALLED 0x02
 
 static VALUE cOCI8;
+static VALUE cSession;
+static VALUE cServer;
+
+typedef struct oci8_svcctx_associate {
+    oci8_base_t base;
+    oci8_svcctx_t *svcctx;
+} oci8_svcctx_associate_t;
+
+static void oci8_svcctx_associate_free(oci8_base_t *base)
+{
+    oci8_svcctx_associate_t *assoc = (oci8_svcctx_associate_t *)base;
+    if (assoc->svcctx != NULL) {
+        switch (assoc->base.type) {
+        case OCI_HTYPE_SESSION:
+            assoc->svcctx->session = NULL;
+            break;
+        case OCI_HTYPE_SERVER:
+            assoc->svcctx->server = NULL;
+            break;
+        }
+    }
+}
+
+static oci8_base_class_t oci8_svcctx_associate_class = {
+    NULL,
+    oci8_svcctx_associate_free,
+    sizeof(oci8_svcctx_associate_t),
+};
 
 static void oci8_svcctx_mark(oci8_base_t *base)
 {
@@ -66,8 +94,10 @@ static void oci8_svcctx_init(oci8_base_t *base)
     oci8_svcctx_t *svcctx = (oci8_svcctx_t *)base;
 
     svcctx->executing_thread = Qnil;
-    svcctx->session = DATA_PTR(rb_obj_alloc(oci8_cOCIHandle));
-    svcctx->server = DATA_PTR(rb_obj_alloc(oci8_cOCIHandle));
+    svcctx->session = DATA_PTR(rb_obj_alloc(cSession));
+    svcctx->server = DATA_PTR(rb_obj_alloc(cServer));
+    ((oci8_svcctx_associate_t *)svcctx->session)->svcctx = svcctx;
+    ((oci8_svcctx_associate_t *)svcctx->server)->svcctx = svcctx;
     svcctx->pid = getpid();
     svcctx->is_autocommit = 0;
 #ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
@@ -976,6 +1006,8 @@ VALUE Init_oci8(void)
     cOCI8 = rb_define_class("OCI8", oci8_cOCIHandle);
 #endif
     cOCI8 = oci8_define_class("OCI8", &oci8_svcctx_class);
+    cSession = oci8_define_class_under(cOCI8, "Session", &oci8_svcctx_associate_class);
+    cServer = oci8_define_class_under(cOCI8, "Server", &oci8_svcctx_associate_class);
 
     oracle_client_vernum = INT2FIX(oracle_client_version);
     if (have_OCIClientVersion) {

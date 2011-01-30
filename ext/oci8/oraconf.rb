@@ -378,6 +378,18 @@ EOS
 
   private
 
+  def self.make_proc_to_check_cpu(expect)
+    Proc.new do |file|
+      so = MiniSOReader.new(file)
+      if so.cpu == expect
+        true
+      else
+        puts "  skip: #{file} is for #{so.cpu} cpu."
+        false
+      end
+    end
+  end
+
   def self.check_ic_dir
     puts "checking for load library path... "
     STDOUT.flush
@@ -390,6 +402,8 @@ EOS
     so_ext = 'so'
     nls_data_ext = nil
     check_proc = nil
+    is_32bit = [nil].pack('p').size == 4
+    is_big_endian = "\x01\x02".unpack('s')[0] == 0x0102
     case RUBY_PLATFORM
     when /mswin32|cygwin|mingw32|bccwin32/
       oci_basename = 'oci'
@@ -398,44 +412,29 @@ EOS
       @@ld_envs = %w[PATH]
       so_ext = 'dll'
     when /i.86-linux/
-      check_proc = Proc.new do |file|
-        so = MiniSOReader.new(file)
-        if so.cpu == :i386
-          true
-        else
-          puts "  skip: #{file} is for #{so.cpu} cpu."
-          false
-        end
-      end
+      check_proc = make_proc_to_check_cpu(:i386)
     when /ia64-linux/
-      check_proc = Proc.new do |file|
-        so = MiniSOReader.new(file)
-        if so.cpu == :ia64
-          true
-        else
-          puts "  skip: #{file} is for #{so.cpu} cpu."
-          false
-        end
-      end
+      check_proc = make_proc_to_check_cpu(:ia64)
     when /x86_64-linux/
       # RUBY_PLATFORM depends on the compilation environment.
       # Even though it is x86_64-linux, the compiled ruby may
       # be a 32-bit executable.
-      cpu = [nil].pack('p').size == 4 ? :i386 : :x86_64
-      check_proc = Proc.new do |file|
-        so = MiniSOReader.new(file)
-        if so.cpu == cpu
-          true
-        else
-          puts "  skip: #{file} is for #{so.cpu} cpu."
-          false
-        end
-      end
+      check_proc = make_proc_to_check_cpu(is_32bit ? :i386 : :x86_64)
     when /solaris/
-      if [0].pack('l!').length == 8
-        @@ld_envs = %w[LD_LIBRARY_PATH_64 LD_LIBRARY_PATH]
-      else
+      if is_32bit
         @@ld_envs = %w[LD_LIBRARY_PATH_32 LD_LIBRARY_PATH]
+        if is_big_endian
+          check_proc = make_proc_to_check_cpu(:sparc)
+        else
+          check_proc = make_proc_to_check_cpu(:i386)
+        end
+      else
+        @@ld_envs = %w[LD_LIBRARY_PATH_64 LD_LIBRARY_PATH]
+        if is_big_endian
+          check_proc = make_proc_to_check_cpu(:sparcv9)
+        else
+          check_proc = make_proc_to_check_cpu(:x86_64)
+        end
       end
     when /aix/
       oci_glob_postfix = ''
@@ -443,29 +442,27 @@ EOS
       so_ext = 'a'
       nls_data_ext = 'so'
     when /hppa.*-hpux/
-      if [0].pack('l!').length == 4
+      if is_32bit
         @@ld_envs = %w[SHLIB_PATH]
       end
       so_ext = 'sl'
     when /darwin/
       @@ld_envs = %w[DYLD_LIBRARY_PATH]
       so_ext = 'dylib'
-      check_proc = Proc.new do |file|
-        is_32bit = [0].pack('l!').size == 4
-        is_big_endian = "\x01\x02".unpack('s')[0] == 0x0102
-        if is_32bit
-          if is_big_endian
-            this_cpu = :ppc    # 32-bit big-endian
-          else
-            this_cpu = :i386   # 32-bit little-endian
-          end
+      if is_32bit
+        if is_big_endian
+          this_cpu = :ppc    # 32-bit big-endian
         else
-          if is_big_endian
-            this_cpu = :ppc64  # 64-bit big-endian
-          else
-            this_cpu = :x86_64 # 64-bit little-endian
-          end
+          this_cpu = :i386   # 32-bit little-endian
         end
+      else
+        if is_big_endian
+          this_cpu = :ppc64  # 64-bit big-endian
+        else
+          this_cpu = :x86_64 # 64-bit little-endian
+        end
+      end
+      check_proc = Proc.new do |file|
         so = MiniSOReader.new(file)
         if so.file_format == :universal
           if so.cpu.include? this_cpu
@@ -499,40 +496,43 @@ EOS
         next
       end
       puts "  #{env}... "
-      ENV[env].split(File::PATH_SEPARATOR).each do |path|
-        next if path.nil? or path == ''
-        print "    checking #{path}... "
-        path.gsub!(/\\/, '/') if /mswin32|cygwin|mingw32|bccwin32/ =~ RUBY_PLATFORM
-        files = Dir.glob(File.join(path, glob_name))
-        if files.empty?
-          puts "no"
-          next
-        end
-        STDOUT.flush
-        next if (check_proc && !check_proc.call(files[0]))
-        file = files[0]
-        ld_path = path
-        puts "yes"
-        break
-      end
-      break
+      ld_path, file = check_lib_in_path(ENV[env], glob_name, check_proc)
+      break if ld_path
     end
 
-    if ld_path.nil? and RUBY_PLATFORM =~ /linux/
-      open("|/sbin/ldconfig -p") do |f|
-        print "  checking ld.so.conf... "
-        STDOUT.flush
-        while line = f.gets
-          if line =~ /libclntsh\.so\..* => (\/.*)\/libclntsh\.so\.(.*)/
-            file = "#$1/libclntsh.so.#$2"
-            path = $1
-            next if (check_proc && !check_proc.call(file))
-            ld_path = path
-            puts "yes"
-            break
+    if ld_path.nil?
+      case RUBY_PLATFORM
+      when /linux/
+        open("|/sbin/ldconfig -p") do |f|
+          print "  checking ld.so.conf... "
+          STDOUT.flush
+          while line = f.gets
+            if line =~ /libclntsh\.so\..* => (\/.*)\/libclntsh\.so\.(.*)/
+              file = "#$1/libclntsh.so.#$2"
+              path = $1
+              next if (check_proc && !check_proc.call(file))
+              ld_path = path
+              puts "yes"
+              break
+            end
+          end
+          puts "no"
+        end
+      when /solaris/
+        if is_32bit
+          crle_cmd = 'crle'
+        else
+          crle_cmd = 'crle -64'
+        end
+        open('|env LANG=C /usr/bin/' + crle_cmd) do |f|
+          while line = f.gets
+            if line =~ /Default Library Path[^:]*:\s*(\S*)/
+              puts "  checking output of `#{crle_cmd}'... "
+              ld_path, file = check_lib_in_path($1, glob_name, check_proc)
+              break
+            end
           end
         end
-        puts "no"
       end
     end
 
@@ -547,6 +547,23 @@ EOS
       puts "  #{file} looks like a full client."
     end
     nil
+  end
+
+  def self.check_lib_in_path(paths, glob_name, check_proc)
+    paths.split(File::PATH_SEPARATOR).each do |path|
+      next if path.nil? or path == ''
+      print "    checking #{path}... "
+      path.gsub!(/\\/, '/') if /mswin32|cygwin|mingw32|bccwin32/ =~ RUBY_PLATFORM
+      files = Dir.glob(File.join(path, glob_name))
+      if files.empty?
+        puts "no"
+        next
+      end
+      STDOUT.flush
+      next if (check_proc && !check_proc.call(files[0]))
+      puts "yes"
+      return path, files[0]
+    end
   end
 
   def init
@@ -1113,20 +1130,8 @@ EOS
     end
 
     if RUBY_PLATFORM =~ /darwin/
-      is_intelmac = ([1].pack('s') == "\001\000")
-      arch_ppc_error = false
-      arch_i386_error = false
       open('mkmf.log', 'r') do |f|
         while line = f.gets
-          # universal-darwin8.0 (Mac OS X 10.4?)
-          if line.include? 'cputype (18, architecture ppc) does not match cputype (7)'
-            # try to link an i386 library but the instant client is ppc.
-            arch_i386_error = true
-          end
-          if line.include? 'cputype (7, architecture i386) does not match cputype (18)'
-            # try to link a ppc library but the instant client is i386.
-            arch_ppc_error = true
-          end
           if line.include? '/libclntsh.dylib load command 8 unknown cmd field'
             raise <<EOS
 Intel mac instant client is for Mac OS X 10.5.
@@ -1139,54 +1144,37 @@ You have three workarounds.
 EOS
             # '
           end
-          # universal-darwin9.0 (Mac OS X 10.5?)
-          if line.include? 'Undefined symbols for architecture i386:'
-            # try to link an i386 library but the instant client is ppc.
-            arch_i386_error = true
-          end
-          if line.include? 'Undefined symbols for architecture ppc:'
-            # try to link a ppc library but the instant client is i386.
-            arch_ppc_error = true
+
+          case line
+          when /cputype \(\d+, architecture \w+\) does not match cputype \(\d+\) for specified -arch flag: (\w+)/
+            missing_arch = $1
+          when /Undefined symbols for architecture (\w+)/
+            missing_arch = $1
+          when /missing required architecture (\w+) in file/
+            missing_arch = $1
           end
 
-          if arch_i386_error
-            if is_intelmac
-              # intel mac and '-arch i386' error
-              raise <<EOS
-Could not compile with Oracle instant client.
-Use intel mac instant client.
-EOS
+          if missing_arch
+            if [nil].pack('p').size == 8
+              my_arch = 'x86_64'
+            elsif "\x01\x02".unpack('s')[0] == 0x0201
+              my_arch = 'i386'
             else
-              # ppc mac and '-arch i386' error
-              raise <<EOS
-Could not compile with Oracle instant client.
-You may need to set a environment variable:
-    RC_ARCHS=ppc
-    export RC_ARCHS
-If it does not fix the problem, delete all '-arch i386'
-in '#{Config::CONFIG['archdir']}/rbconfig.rb'.
-EOS
+              my_arch = 'ppc'
             end
-          end
+            raise <<EOS
+Could not compile with Oracle instant client.
+You may need to set the environment variable RC_ARCHS or ARCHFLAGS as follows:
 
-          if arch_ppc_error
-            if is_intelmac
-              # intel mac and '-arch ppc' error
-              raise <<EOS
-Could not compile with Oracle instant client.
-You may need to set a environment variable:
-    RC_ARCHS=i386
+    RC_ARCHS=#{my_arch}
     export RC_ARCHS
-If it does not fix the problem, delete all '-arch ppc'
+or
+    ARCHFLAGS='-arch #{my_arch}'
+    export RC_ARCHS
+
+If it does not fix the problem, delete all '-arch #{missing_arch}'
 in '#{Config::CONFIG['archdir']}/rbconfig.rb'.
 EOS
-            else
-              # ppc mac and '-arch ppc' error
-              raise <<EOS
-Could not compile with Oracle instant client.
-Use ppc instant client.
-EOS
-            end
           end
         end
       end
