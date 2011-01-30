@@ -1,3 +1,9 @@
+2011-01-30  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: check Oracle client's cpu type on Solaris as
+	    on Linux and Mac OS X. change error messages on Mac OS X to suggest
+	    to set RC_ARCHS=x86_64 when mkmf.log contains messages such as
+	    'missing required architecture i386 in file.'
+
 2010-12-26  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocinumber.c, lib/oci8/bindtype.rb, test/test_oranumber.rb:
 	    add OraNumber#has_decimal_part? and OCI8::BindType::BasicNumberType.
@@ -68,6 +74,7 @@
 2010-08-15  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c, ext/oci8/object.c, ext/oci8/oci8.h,
 	  lib/oci8/object.rb: support LOB datatypes in Oracle objects.
+	  (reported by Michael Sexton)
 	* ext/oci8/ocihandle.c: fix SEGV in finalizer when temporary LOBs
 	    are used. This bug was introduced by the previous commit.
 
