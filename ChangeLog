@@ -1,3 +1,9 @@
+2011-02-01  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/ocidatetime.c, lib/oci8/datetime.rb: rename
+	    the name of the class to binding timestamp with time zone
+	    from OCITimestamp to OCITimestampTZ. OCITimestamp will be
+	    used for timestamp without time zone.
+
 2011-01-30  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c: fix SEGV which depends on GC order.
 	* ext/oci8/oraconf.rb: check Oracle client's cpu type on Solaris as

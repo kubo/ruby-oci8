@@ -38,6 +38,14 @@ class OCI8
         @@time_new_accepts_timezone = false # prior to ruby 1.9.2
       end
 
+      begin
+        # 2001-01-01 00:00:59.999
+        ::DateTime.civil(2001, 1, 1, 0, 0, Rational(59_999, 1000), 0)
+        @@datetime_has_fractional_second_bug = false
+      rescue ArgumentError
+        @@datetime_has_fractional_second_bug = true
+      end
+
       def self.default_timezone
         @@default_timezone
       end
@@ -162,8 +170,8 @@ class OCI8
           return nil if ary.nil?
 
           year, month, day, hour, minute, sec, fsec, tz_hour, tz_min = ary
-          if sec >= 59 and fsec != 0
-            # convert to a DateTime via a String as a last resort.
+          if @@datetime_has_fractional_second_bug and sec >= 59 and fsec != 0
+            # convert to a DateTime via a String as a workaround
             if tz_hour >= 0 && tz_min >= 0
               sign = ?+
             else
@@ -245,7 +253,7 @@ class OCI8
     end
 
     if OCI8.oracle_client_version >= ORAVER_9_0
-      class DateTimeViaOCITimestamp < OCI8::BindType::OCITimestamp # :nodoc:
+      class DateTimeViaOCITimestampTZ < OCI8::BindType::OCITimestampTZ # :nodoc:
         include OCI8::BindType::Util
 
         def set(val) # :nodoc:
@@ -257,7 +265,7 @@ class OCI8
         end
       end
 
-      class TimeViaOCITimestamp < OCI8::BindType::OCITimestamp # :nodoc:
+      class TimeViaOCITimestampTZ < OCI8::BindType::OCITimestampTZ # :nodoc:
         include OCI8::BindType::Util
 
         def set(val) # :nodoc:
@@ -335,7 +343,7 @@ class OCI8
       if OCI8.oracle_client_version >= ORAVER_9_0
         def self.create(con, val, param, max_array_size) # :nodoc:
           if true # TODO: check Oracle server version
-            DateTimeViaOCITimestamp.new(con, val, param, max_array_size)
+            DateTimeViaOCITimestampTZ.new(con, val, param, max_array_size)
           else
             DateTimeViaOCIDate.new(con, val, param, max_array_size)
           end
@@ -414,7 +422,7 @@ class OCI8
       if OCI8.oracle_client_version >= ORAVER_9_0
         def self.create(con, val, param, max_array_size) # :nodoc:
           if true # TODO: check Oracle server version
-            TimeViaOCITimestamp.new(con, val, param, max_array_size)
+            TimeViaOCITimestampTZ.new(con, val, param, max_array_size)
           else
             TimeViaOCIDate.new(con, val, param, max_array_size)
           end
