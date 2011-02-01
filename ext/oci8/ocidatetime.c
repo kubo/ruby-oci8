@@ -102,7 +102,37 @@ static const oci8_bind_class_t bind_ocidate_class = {
 
 #if defined RUNTIME_API_CHECK || ORACLE_CLIENT_VERSION >= ORAVER_9_0
 
-VALUE oci8_make_ocitimestamp(OCIDateTime *dttm)
+static void bind_init_elem_common(oci8_bind_t *obind, VALUE svc, ub4 type)
+{
+    ub4 idx = 0;
+    sword rv;
+
+    do {
+        rv = OCIDescriptorAlloc(oci8_envhp, (dvoid*)((dvoid**)obind->valuep + idx), type, 0, 0);
+        if (rv != OCI_SUCCESS)
+            oci8_env_raise(oci8_envhp, rv);
+    } while (++idx < obind->maxar_sz);
+}
+
+static void bind_free_common(oci8_base_t *base, ub4 type)
+{
+    oci8_bind_t *obind = (oci8_bind_t *)base;
+
+    if (obind->valuep != NULL) {
+        ub4 idx = 0;
+        void **pp = (void**)obind->valuep;
+
+        do {
+            if (pp[idx] != NULL) {
+                OCIDescriptorFree(pp[idx], type);
+                pp[idx] = NULL;
+            }
+        } while (++idx < obind->maxar_sz);
+    }
+    oci8_bind_free(base);
+}
+
+VALUE oci8_make_ocitimestamp_tz(OCIDateTime *dttm)
 {
     sb2 year;
     ub1 month;
@@ -132,7 +162,7 @@ VALUE oci8_make_ocitimestamp(OCIDateTime *dttm)
                        have_tz ? INT2FIX(tz_minute) : Qnil);
 }
 
-OCIDateTime *oci8_set_ocitimestamp(OCIDateTime *dttm, VALUE val, VALUE svc)
+OCIDateTime *oci8_set_ocitimestamp_tz(OCIDateTime *dttm, VALUE val, VALUE svc)
 {
     long year;
     long month;
@@ -214,35 +244,12 @@ OCIDateTime *oci8_set_ocitimestamp(OCIDateTime *dttm, VALUE val, VALUE svc)
     return dttm;
 }
 
-typedef struct {
-    oci8_bind_t obind;
-    ub4 type;
-} oci8_bind_dsc_t;
-
-static void oci8_bind_dsc_free(oci8_base_t *base)
+static VALUE bind_ocitimestamp_tz_get(oci8_bind_t *obind, void *data, void *null_struct)
 {
-    oci8_bind_t *obind = (oci8_bind_t *)base;
-    ub4 type = ((oci8_bind_dsc_t *)base)->type;
-    if (obind->valuep != NULL) {
-        ub4 idx = 0;
-        void **pp = (void**)obind->valuep;
-
-        do {
-            if (pp[idx] != NULL) {
-                OCIDescriptorFree(pp[idx], type);
-                pp[idx] = NULL;
-            }
-        } while (++idx < obind->maxar_sz);
-    }
-    oci8_bind_free(base);
+    return oci8_make_ocitimestamp_tz(*(OCIDateTime **)data);
 }
 
-static VALUE bind_ocitimestamp_get(oci8_bind_t *obind, void *data, void *null_struct)
-{
-    return oci8_make_ocitimestamp(*(OCIDateTime **)data);
-}
-
-static void bind_ocitimestamp_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
+static void bind_ocitimestamp_tz_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     oci8_base_t *parent;
     oci8_base_t *svcctx;
@@ -259,41 +266,36 @@ static void bind_ocitimestamp_set(oci8_bind_t *obind, void *data, void **null_st
                  parent, parent ? parent->type : -1,
                  svcctx, svcctx ? svcctx->type : -1);
     }
-    oci8_set_ocitimestamp(*(OCIDateTime **)data, val, svcctx->self);
+    oci8_set_ocitimestamp_tz(*(OCIDateTime **)data, val, svcctx->self);
 }
 
-static void bind_ocitimestamp_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
+static void bind_ocitimestamp_tz_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
-    oci8_bind_dsc_t *obind_dsc = (oci8_bind_dsc_t *)obind;
-
     oci8_link_to_parent((oci8_base_t*)obind, (oci8_base_t*)oci8_get_svcctx(svc));
     obind->value_sz = sizeof(OCIDateTime *);
     obind->alloc_sz = sizeof(OCIDateTime *);
-    obind_dsc->type = OCI_DTYPE_TIMESTAMP_TZ;
 }
 
-static void bind_ocitimestamp_init_elem(oci8_bind_t *obind, VALUE svc)
+static void bind_ocitimestamp_tz_init_elem(oci8_bind_t *obind, VALUE svc)
 {
-    ub4 idx = 0;
-    sword rv;
-
-    do {
-        rv = OCIDescriptorAlloc(oci8_envhp, (dvoid*)((OCIDateTime**)obind->valuep + idx), OCI_DTYPE_TIMESTAMP_TZ, 0, 0);
-        if (rv != OCI_SUCCESS)
-            oci8_env_raise(oci8_envhp, rv);
-    } while (++idx < obind->maxar_sz);
+    bind_init_elem_common(obind, svc, OCI_DTYPE_TIMESTAMP_TZ);
 }
 
-static const oci8_bind_class_t bind_ocitimestamp_class = {
+static void bind_ocitimestamp_tz_free(oci8_base_t *base)
+{
+    bind_free_common(base, OCI_DTYPE_TIMESTAMP_TZ);
+}
+
+static const oci8_bind_class_t bind_ocitimestamp_tz_class = {
     {
         NULL,
-        oci8_bind_dsc_free,
-        sizeof(oci8_bind_dsc_t)
+        bind_ocitimestamp_tz_free,
+        sizeof(oci8_bind_t)
     },
-    bind_ocitimestamp_get,
-    bind_ocitimestamp_set,
-    bind_ocitimestamp_init,
-    bind_ocitimestamp_init_elem,
+    bind_ocitimestamp_tz_get,
+    bind_ocitimestamp_tz_set,
+    bind_ocitimestamp_tz_init,
+    bind_ocitimestamp_tz_init_elem,
     NULL,
     NULL,
     NULL,
@@ -417,23 +419,18 @@ static void bind_ociinterval_ym_set(oci8_bind_t *obind, void *data, void **null_
 
 static void bind_ociinterval_ym_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
-    oci8_bind_dsc_t *obind_dsc = (oci8_bind_dsc_t *)obind;
-
     obind->value_sz = sizeof(OCIInterval*);
     obind->alloc_sz = sizeof(OCIInterval*);
-    obind_dsc->type = OCI_DTYPE_INTERVAL_YM;
 }
 
 static void bind_ociinterval_ym_init_elem(oci8_bind_t *obind, VALUE svc)
 {
-    ub4 idx = 0;
-    sword rv;
+    bind_init_elem_common(obind, svc, OCI_DTYPE_INTERVAL_YM);
+}
 
-    do {
-        rv = OCIDescriptorAlloc(oci8_envhp, (dvoid*)((OCIDateTime**)obind->valuep + idx), OCI_DTYPE_INTERVAL_YM, 0, 0);
-        if (rv != OCI_SUCCESS)
-            oci8_env_raise(oci8_envhp, rv);
-    } while (++idx < obind->maxar_sz);
+static void bind_ociinterval_ym_free(oci8_base_t *base)
+{
+    bind_free_common(base, OCI_DTYPE_INTERVAL_YM);
 }
 
 static VALUE bind_ociinterval_ds_get(oci8_bind_t *obind, void *data, void *null_struct)
@@ -448,30 +445,25 @@ static void bind_ociinterval_ds_set(oci8_bind_t *obind, void *data, void **null_
 
 static void bind_ociinterval_ds_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
-    oci8_bind_dsc_t *obind_dsc = (oci8_bind_dsc_t *)obind;
-
     obind->value_sz = sizeof(OCIInterval *);
     obind->alloc_sz = sizeof(OCIInterval *);
-    obind_dsc->type = OCI_DTYPE_INTERVAL_DS;
 }
 
 static void bind_ociinterval_ds_init_elem(oci8_bind_t *obind, VALUE svc)
 {
-    ub4 idx = 0;
-    sword rv;
+    bind_init_elem_common(obind, svc, OCI_DTYPE_INTERVAL_DS);
+}
 
-    do {
-        rv = OCIDescriptorAlloc(oci8_envhp, (dvoid*)((OCIInterval**)obind->valuep + idx), OCI_DTYPE_INTERVAL_DS, 0, 0);
-        if (rv != OCI_SUCCESS)
-            oci8_env_raise(oci8_envhp, rv);
-    } while (++idx < obind->maxar_sz);
+static void bind_ociinterval_ds_free(oci8_base_t *base)
+{
+    bind_free_common(base, OCI_DTYPE_INTERVAL_DS);
 }
 
 static const oci8_bind_class_t bind_ociinterval_ym_class = {
     {
         NULL,
-        oci8_bind_dsc_free,
-        sizeof(oci8_bind_dsc_t)
+        bind_ociinterval_ym_free,
+        sizeof(oci8_bind_t)
     },
     bind_ociinterval_ym_get,
     bind_ociinterval_ym_set,
@@ -486,8 +478,8 @@ static const oci8_bind_class_t bind_ociinterval_ym_class = {
 static const oci8_bind_class_t bind_ociinterval_ds_class = {
     {
         NULL,
-        oci8_bind_dsc_free,
-        sizeof(oci8_bind_dsc_t)
+        bind_ociinterval_ds_free,
+        sizeof(oci8_bind_t)
     },
     bind_ociinterval_ds_get,
     bind_ociinterval_ds_set,
@@ -507,7 +499,7 @@ void Init_oci_datetime(void)
 
 #if defined RUNTIME_API_CHECK || ORACLE_CLIENT_VERSION >= ORAVER_9_0
     if (oracle_client_version >= ORAVER_9_0) {
-        oci8_define_bind_class("OCITimestamp", &bind_ocitimestamp_class);
+        oci8_define_bind_class("OCITimestampTZ", &bind_ocitimestamp_tz_class);
         oci8_define_bind_class("OCIIntervalYM", &bind_ociinterval_ym_class);
         oci8_define_bind_class("OCIIntervalDS", &bind_ociinterval_ds_class);
     }
