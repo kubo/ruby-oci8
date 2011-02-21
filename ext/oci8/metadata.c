@@ -38,7 +38,7 @@ VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE parent)
     VALUE klass;
     VALUE obj;
 
-    Check_Handle(parent, oci8_cOCIHandle, p);
+    p = oci8_get_handle(parent, oci8_cOCIHandle);
 
     oci_lc(OCIAttrGet(parmhp, OCI_DTYPE_PARAM, &ptype, &size, OCI_ATTR_PTYPE, oci8_errhp));
     klass = rb_hash_aref(ptype_to_class, INT2FIX(ptype));

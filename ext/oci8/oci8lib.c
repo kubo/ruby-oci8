@@ -488,3 +488,19 @@ void *oci8_find_symbol(const char *symbol_name)
 #endif /* defined _WIN32 */
 }
 #endif /* RUNTIME_API_CHECK */
+
+oci8_base_t *oci8_get_handle(VALUE obj, VALUE klass)
+{
+    oci8_base_t *hp;
+
+    if (!rb_obj_is_kind_of(obj, klass)) {
+        rb_raise(rb_eTypeError, "invalid argument %s (expect %s)",
+                 rb_obj_classname(obj), rb_class2name(klass));
+    }
+    Data_Get_Struct(obj, oci8_base_t, hp);
+    if (hp->type == 0) {
+        rb_raise(rb_eRuntimeError, "%s was already closed.",
+                 rb_obj_classname(obj));
+    }
+    return hp;
+}

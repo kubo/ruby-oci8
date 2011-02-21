@@ -425,6 +425,7 @@ sword oci8_exec_sql(oci8_svcctx_t *svcctx, const char *sql_text, ub4 num_define_
 #if defined RUNTIME_API_CHECK
 void *oci8_find_symbol(const char *symbol_name);
 #endif
+oci8_base_t *oci8_get_handle(VALUE obj, VALUE klass);
 
 /* error.c */
 extern VALUE eOCIException;

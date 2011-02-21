@@ -1,3 +1,9 @@
+2011-02-21  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c, ext/oci8/metadata.c, ext/oci8/oci8.c,
+	  ext/oci8/oci8.h, ext/oci8/oci8lib.c, ext/oci8/stmt.c:
+	    fix segmentation fault when calling closed statement object's
+	    OCI8::Cursor#[]. (reported by Hugo L. Borges)
+
 2011-02-01  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocidatetime.c, lib/oci8/datetime.rb: rename
 	    the name of the class to binding timestamp with time zone
