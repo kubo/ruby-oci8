@@ -66,8 +66,7 @@ VALUE oci8_make_bfile(oci8_svcctx_t *svcctx, OCILobLocator *s)
 
 static void oci8_assign_lob(VALUE klass, oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
 {
-    oci8_base_t *base;
-    Check_Handle(lob, klass, base);
+    oci8_base_t *base = oci8_get_handle(lob, klass);
     oci_lc(OCILobLocatorAssign_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, base->hp.lob, dest));
 }
 

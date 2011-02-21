@@ -28,6 +28,8 @@ static ID id_clear;
 
 VALUE cOCIStmt;
 
+#define TO_STMT(obj) ((oci8_stmt_t *)oci8_get_handle((obj), cOCIStmt))
+
 typedef struct {
     oci8_base_t base;
     VALUE svc;
@@ -94,7 +96,7 @@ static VALUE oci8_stmt_initialize(int argc, VALUE *argv, VALUE self)
 
 static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
 {
-    oci8_stmt_t *stmt = DATA_PTR(self);
+    oci8_stmt_t *stmt = TO_STMT(self);
     ub4 position;
     oci8_bind_t *obind;
     const oci8_bind_class_t *bind_class;
@@ -144,7 +146,7 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
 
 static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
 {
-    oci8_stmt_t *stmt = DATA_PTR(self);
+    oci8_stmt_t *stmt = TO_STMT(self);
     char *placeholder_ptr = (char*)-1; /* initialize as an invalid value */
     ub4 placeholder_len = 0;
     ub4 position = 0;
@@ -241,7 +243,7 @@ static sword oci8_call_stmt_execute(oci8_svcctx_t *svcctx, oci8_stmt_t *stmt, ub
 
 static VALUE oci8_stmt_execute(VALUE self, VALUE iteration_count)
 {
-    oci8_stmt_t *stmt = DATA_PTR(self);
+    oci8_stmt_t *stmt = TO_STMT(self);
     oci8_svcctx_t *svcctx = oci8_get_svcctx(stmt->svc);
     ub4 iters;
     ub4 mode;
@@ -327,8 +329,8 @@ static VALUE clear_binds_iterator_proc(VALUE val, VALUE arg)
 
 static VALUE oci8_stmt_clear_binds(VALUE self)
 {
-    oci8_stmt_t *stmt = DATA_PTR(self);
-    
+    oci8_stmt_t *stmt = TO_STMT(self);
+
     if(!RTEST(rb_funcall(stmt->binds, id_empty_p, 0)))
     {
         rb_iterate(each_value, stmt->binds, clear_binds_iterator_proc, Qnil);
@@ -453,7 +455,7 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
  */
 static VALUE oci8_stmt_fetch(VALUE self)
 {
-    oci8_stmt_t *stmt = DATA_PTR(self);
+    oci8_stmt_t *stmt = TO_STMT(self);
     oci8_svcctx_t *svcctx = oci8_get_svcctx(stmt->svc);
 
     if (rb_block_given_p()) {
@@ -470,7 +472,7 @@ static VALUE oci8_stmt_fetch(VALUE self)
 
 static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
 {
-    oci8_stmt_t *stmt = DATA_PTR(self);
+    oci8_stmt_t *stmt = TO_STMT(self);
     OCIParam *parmhp = NULL;
     sword rv;
 
@@ -502,7 +504,7 @@ static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
  */
 static VALUE oci8_stmt_get_stmt_type(VALUE self)
 {
-    VALUE stmt_type = oci8_get_ub2_attr(DATA_PTR(self), OCI_ATTR_STMT_TYPE);
+    VALUE stmt_type = oci8_get_ub2_attr(oci8_get_handle(self, cOCIStmt), OCI_ATTR_STMT_TYPE);
     switch (FIX2INT(stmt_type)) {
     case OCI_STMT_SELECT:
         return oci8_sym_select_stmt;
@@ -532,7 +534,7 @@ static VALUE oci8_stmt_get_stmt_type(VALUE self)
  */
 static VALUE oci8_stmt_get_row_count(VALUE self)
 {
-    return oci8_get_ub4_attr(DATA_PTR(self), OCI_ATTR_ROW_COUNT);
+    return oci8_get_ub4_attr(oci8_get_handle(self, cOCIStmt), OCI_ATTR_ROW_COUNT);
 }
 
 /*
@@ -551,12 +553,12 @@ static VALUE oci8_stmt_get_row_count(VALUE self)
  */
 static VALUE oci8_stmt_get_rowid(VALUE self)
 {
-    return oci8_get_rowid_attr(DATA_PTR(self), OCI_ATTR_ROWID);
+    return oci8_get_rowid_attr(oci8_get_handle(self, cOCIStmt), OCI_ATTR_ROWID);
 }
 
 static VALUE oci8_stmt_get_param_count(VALUE self)
 {
-    return oci8_get_ub4_attr(DATA_PTR(self), OCI_ATTR_PARAM_COUNT);
+    return oci8_get_ub4_attr(oci8_get_handle(self, cOCIStmt), OCI_ATTR_PARAM_COUNT);
 }
 
 /*
@@ -599,7 +601,7 @@ static VALUE oci8_stmt_get_param_count(VALUE self)
  */
 static VALUE oci8_stmt_aref(VALUE self, VALUE key)
 {
-    oci8_stmt_t *stmt = DATA_PTR(self);
+    oci8_stmt_t *stmt = TO_STMT(self);
     VALUE obj = rb_hash_aref(stmt->binds, key);
     if (NIL_P(obj)) {
         return Qnil;
@@ -637,7 +639,7 @@ static VALUE oci8_stmt_aset(VALUE self, VALUE key, VALUE val)
     long actual_array_size;
     long bind_array_size;
 
-    oci8_stmt_t *stmt = DATA_PTR(self);
+    oci8_stmt_t *stmt = TO_STMT(self);
     VALUE obj = rb_hash_aref(stmt->binds, key);
     if (NIL_P(obj)) {
         return Qnil; /* ?? MUST BE ERROR? */
@@ -654,7 +656,7 @@ static VALUE oci8_stmt_aset(VALUE self, VALUE key, VALUE val)
         if(bind_array_size <= max_array_size && actual_array_size == 0) {
             rb_ivar_set(self, id_at_actual_array_size, INT2NUM(bind_array_size));
         }
-    }     
+    }
     oci8_bind_set_data(obj, val);
     return val;
 }
@@ -667,13 +669,13 @@ static VALUE oci8_stmt_aset(VALUE self, VALUE key, VALUE val)
  */
 static VALUE oci8_stmt_keys(VALUE self)
 {
-    oci8_stmt_t *stmt = DATA_PTR(self);
+    oci8_stmt_t *stmt = TO_STMT(self);
     return rb_funcall(stmt->binds, oci8_id_keys, 0);
 }
 
 static VALUE oci8_stmt_defined_p(VALUE self, VALUE pos)
 {
-    oci8_stmt_t *stmt = DATA_PTR(self);
+    oci8_stmt_t *stmt = TO_STMT(self);
     long position = NUM2INT(pos);
 
     if (position - 1 < RARRAY_LEN(stmt->defns)) {
@@ -697,7 +699,7 @@ static VALUE oci8_stmt_defined_p(VALUE self, VALUE pos)
  */
 static VALUE oci8_stmt_set_prefetch_rows(VALUE self, VALUE rows)
 {
-    oci8_stmt_t *stmt = DATA_PTR(self);
+    oci8_stmt_t *stmt = TO_STMT(self);
     ub4 num = NUM2UINT(rows);
 
     oci_lc(OCIAttrSet(stmt->base.hp.ptr, OCI_HTYPE_STMT, &num, 0, OCI_ATTR_PREFETCH_ROWS, oci8_errhp));
