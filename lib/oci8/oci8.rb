@@ -8,6 +8,7 @@
 #
 
 require 'date'
+require 'yaml'
 
 # A connection to a Oracle database server.
 #
@@ -655,13 +656,28 @@ class OraDate
 end
 
 class OraNumber
-  def yaml_initialize(type, val) # :nodoc:
-    initialize(val)
-  end
 
-  def to_yaml(opts = {}) # :nodoc:
-    YAML.quick_emit(object_id, opts) do |out|
-      out.scalar(taguri, self.to_s, :plain)
+  if YAML == Psych
+
+    yaml_tag '!ruby/object:OraNumber'
+    def encode_with coder # :nodoc:
+      coder.scalar = self.to_s
+    end
+
+    def init_with coder # :nodoc:
+      initialize(coder.scalar)
+    end
+
+  else
+
+    def yaml_initialize(type, val) # :nodoc:
+      initialize(val)
+    end
+
+    def to_yaml(opts = {}) # :nodoc:
+      YAML.quick_emit(object_id, opts) do |out|
+        out.scalar(taguri, self.to_s, :plain)
+      end
     end
   end
 

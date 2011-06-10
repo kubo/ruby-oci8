@@ -1,4 +1,9 @@
 2011-06-10  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml, lib/oci8/oci8.rb: fix for Psych YAML library.
+	* ext/oci8/extconf.rb, ext/oci8/oci8.h, ext/oci8/ocihandle.c: fix to
+	    work with ruby 1.9.3dev.
+
+2011-06-10  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/env.c, ext/oci8/oci8.h: Free OCI error handles on the
 	    native thread termination, not on the ruby thread termination.
 	    (reported by Jordan Curzon and Aaron Qian)

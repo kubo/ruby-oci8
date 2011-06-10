@@ -74,10 +74,10 @@ typedef orasb8 sb8;
 #ifndef HAVE_TYPE_ORATEXT
 typedef unsigned char oratext;
 #endif
-#ifndef HAVE_TYPE_OCIDATETIME_
+#if !defined HAVE_TYPE_OCIDATETIME_ && !defined HAVE_TYPE_OCIDATETIMEP
 typedef struct OCIDateTime OCIDateTime;
 #endif
-#ifndef HAVE_TYPE_OCIINTERVAL_
+#if !defined HAVE_TYPE_OCIINTERVAL_ && !defined HAVE_TYPE_OCIINTERVALP
 typedef struct OCIInterval OCIInterval;
 #endif
 #ifndef HAVE_TYPE_OCICALLBACKLOBREAD2
@@ -90,13 +90,13 @@ typedef sb4 (*OCICallbackLobWrite2)(dvoid *ctxp, dvoid *bufp, oraub8 *lenp,
                                     ub1 *piece, dvoid **changed_bufpp,
                                     oraub8 *changed_lenp);
 #endif
-#ifndef HAVE_TYPE_OCIADMIN_
+#if !defined HAVE_TYPE_OCIADMIN_ && !defined HAVE_TYPE_OCIADMINP
 typedef struct OCIAdmin OCIAdmin;
 #endif
-#ifndef HAVE_TYPE_OCIMSG_
+#if !defined HAVE_TYPE_OCIMSG_ && !defined HAVE_TYPE_OCIMSGP
 typedef struct OCIMsg  OCIMsg;
 #endif
-#ifndef HAVE_TYPE_OCICPOOL_
+#if !defined HAVE_TYPE_OCICPOOL_ && !defined HAVE_TYPE_OCICPOOLP
 typedef struct OCICPool OCICPool;
 #endif
 
@@ -119,9 +119,6 @@ typedef struct OCICPool OCICPool;
 /* new macros in ruby 1.9.
  * define compatible macros for ruby 1.8 or lower.
  */
-#ifndef RCLASS_SUPER
-#define RCLASS_SUPER(c) RCLASS(c)->super
-#endif
 #ifndef RFLOAT_VALUE
 #define RFLOAT_VALUE(obj) RFLOAT(obj)->value
 #endif
@@ -150,6 +147,17 @@ typedef VALUE rb_blocking_function_t(void *);
 #define rb_str_export_to_enc(str, enc) (str)
 #define rb_usascii_str_new(ptr, len) rb_str_new((ptr), (len))
 #define rb_usascii_str_new_cstr(ptr) rb_str_new2(ptr)
+#endif
+
+/* a new function in ruby 1.9.3.
+ * define a compatible macro for ruby 1.9.2 or lower.
+ */
+#ifndef HAVE_RB_CLASS_SUPERCLASS
+#ifdef RCLASS_SUPER
+#define rb_class_superclass(cls) RCLASS_SUPER(cls)
+#else
+#define rb_class_superclass(cls) (RCLASS(cls)->super)
+#endif
 #endif
 
 /* macros depends on the compiler.
