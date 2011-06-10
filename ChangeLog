@@ -1,8 +1,14 @@
+2011-06-10  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/env.c, ext/oci8/oci8.h: Free OCI error handles on the
+	    native thread termination, not on the ruby thread termination.
+	    (reported by Jordan Curzon and Aaron Qian)
+	    See: http://rubyforge.org/forum/forum.php?thread_id=49751&forum_id=1078
+
 2011-02-21  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c, ext/oci8/metadata.c, ext/oci8/oci8.c,
 	  ext/oci8/oci8.h, ext/oci8/oci8lib.c, ext/oci8/stmt.c:
-	    fix segmentation fault when calling closed statement object's
-	    OCI8::Cursor#[]. (reported by Hugo L. Borges)
+	    fix segmentation fault when calling OCI8::Cursor#[] for
+	    closed statement object's (reported by Hugo L. Borges)
 
 2011-02-01  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocidatetime.c, lib/oci8/datetime.rb: rename
@@ -120,7 +126,7 @@
 
 2010-02-28  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 2.0.3 and 2.0.4.
-	* VERSION: change the version to 2.0.3.
+	* VERSION: change the version to 2.0.4.
 	* ext/oci8/stmt.c: fix segmentation fault when OCI8::Cursor#fetch
 	    is called prior to OCI8::Cursor#exec.
 	* ext/oci8/oci8.c: minor fix in rdoc comment.
