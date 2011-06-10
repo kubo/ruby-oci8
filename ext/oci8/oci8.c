@@ -263,12 +263,12 @@ static VALUE oci8_svcctx_initialize(int argc, VALUE *argv, VALUE self)
                          RSTRING_ORATEXT(vpassword), RSTRING_LEN(vpassword),
                          NIL_P(vdbname) ? NULL : RSTRING_ORATEXT(vdbname),
                          NIL_P(vdbname) ? 0 : RSTRING_LEN(vdbname));
+        if (IS_OCI_ERROR(rv)) {
+            oci8_raise(oci8_errhp, rv, NULL);
+        }
         svcctx->base.hp.svc = svchp;
         svcctx->base.type = OCI_HTYPE_SVCCTX;
         svcctx->logon_type = T_IMPLICIT;
-        if (rv != OCI_SUCCESS) {
-            oci8_raise(oci8_errhp, rv, NULL);
-        }
         break;
     case T_EXPLICIT:
         /* allocate OCI handles. */

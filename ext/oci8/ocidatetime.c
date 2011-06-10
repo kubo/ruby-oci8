@@ -143,13 +143,10 @@ VALUE oci8_make_ocitimestamp_tz(OCIDateTime *dttm)
     ub4 fsec;
     sb1 tz_hour;
     sb1 tz_minute;
-    sword rv;
-    int have_tz;
 
     oci_lc(OCIDateTimeGetDate(oci8_envhp, oci8_errhp, dttm, &year, &month, &day));
     oci_lc(OCIDateTimeGetTime(oci8_envhp, oci8_errhp, dttm, &hour, &minute, &sec, &fsec));
-    rv = OCIDateTimeGetTimeZoneOffset(oci8_envhp, oci8_errhp, dttm, &tz_hour, &tz_minute);
-    have_tz = (rv == OCI_SUCCESS);
+    oci_lc(OCIDateTimeGetTimeZoneOffset(oci8_envhp, oci8_errhp, dttm, &tz_hour, &tz_minute));
     return rb_ary_new3(9,
                        INT2FIX(year),
                        INT2FIX(month),
@@ -158,8 +155,8 @@ VALUE oci8_make_ocitimestamp_tz(OCIDateTime *dttm)
                        INT2FIX(minute),
                        INT2FIX(sec),
                        INT2FIX(fsec),
-                       have_tz ? INT2FIX(tz_hour) : Qnil,
-                       have_tz ? INT2FIX(tz_minute) : Qnil);
+                       INT2FIX(tz_hour),
+                       INT2FIX(tz_minute));
 }
 
 OCIDateTime *oci8_set_ocitimestamp_tz(OCIDateTime *dttm, VALUE val, VALUE svc)

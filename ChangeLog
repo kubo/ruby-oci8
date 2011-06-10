@@ -1,4 +1,14 @@
 2011-06-10  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c: prevent GC on failed-logon connections from freeing
+	    alive connections when the service context handle addresses are
+	    accidentally same.
+	* ext/oci8/ocidatetime.c: raise "OCIError: ORA-01805: possible error in
+	    date/time operation" when Oracle 11gR2's client and server timezone versions
+	    are not same instead of raising a exception "undefined method `*' for
+	    nil:NilClass." This is a temporary fix.
+	    See: http://rubyforge.org/forum/forum.php?thread_id=49102&forum_id=1078
+
+2011-06-10  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/env.c, ext/oci8/oci8.h: Free OCI error handles on the
 	    native thread termination, not on the ruby thread termination.
 	    (reported by Jordan Curzon and Aaron Qian)
