@@ -1,4 +1,9 @@
 2011-06-10  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml, lib/oci8/oci8.rb: fix for Psych YAML library.
+	* ext/oci8/extconf.rb, ext/oci8/oci8.h, ext/oci8/ocihandle.c: fix to
+	    work with ruby 1.9.3dev.
+
+2011-06-10  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c: prevent GC on failed-logon connections from freeing
 	    alive connections when the service context handle addresses are
 	    accidentally same.
