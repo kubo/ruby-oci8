@@ -2,7 +2,7 @@
 /*
  * env.c - part of ruby-oci8
  *
- * Copyright (C) 2002-2009 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2011 KUBO Takehiro <kubo@jiubao.org>
  */
 #include "oci8.h"
 
@@ -37,17 +37,47 @@ OCIEnv *oci8_make_envhp(void)
  */
 
 oci8_tls_key_t oci8_tls_key; /* native thread key */
-static ID id_thread_key;     /* ruby's thread key */
 
-static void oci8_free_errhp(OCIError *errhp)
+/* This function is called on the native thread termination
+ * if the thread local errhp is not null.
+ */
+static void oci8_free_errhp(void *errhp)
 {
     OCIHandleFree(errhp, OCI_HTYPE_ERROR);
 }
 
+#ifdef _WIN32
+static int dllmain_is_called;
+
+__declspec(dllexport)
+BOOL WINAPI DllMain(HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved)
+{
+    void *errhp;
+
+    switch (fdwReason) {
+    case DLL_PROCESS_ATTACH:
+        dllmain_is_called = 1;
+        break;
+    case DLL_THREAD_ATTACH:
+        /* do nothing */
+        break;
+    case DLL_THREAD_DETACH:
+        errhp = oci8_tls_get(oci8_tls_key);
+        if (errhp != NULL) {
+            oci8_free_errhp(errhp);
+        }
+        break;
+    case DLL_PROCESS_DETACH:
+        /* do nothing */
+        break;
+    }
+    return TRUE;
+}
+#endif
+
 OCIError *oci8_make_errhp(void)
 {
     OCIError *errhp;
-    VALUE obj;
     sword rv;
 
     /* create a new errhp. */
@@ -55,15 +85,9 @@ OCIError *oci8_make_errhp(void)
     if (rv != OCI_SUCCESS) {
         oci8_env_raise(oci8_envhp, rv);
     }
-    /* create a new ruby object which contains errhp to make
-     * sure that the errhp is freed when it become unnecessary.
+    /* Set the errhp to the thread local storage.
+     * It is freed by oci8_free_errhp().
      */
-    obj = Data_Wrap_Struct(rb_cObject, NULL, oci8_free_errhp, errhp);
-    /* set the ruby object to ruby's thread local storage to prevent
-     * it from being freed while the thread is available.
-     */
-    rb_thread_local_aset(rb_thread_current(), id_thread_key, obj);
-
     oci8_tls_set(oci8_tls_key, (void*)errhp);
     return errhp;
 }
@@ -137,8 +161,21 @@ void Init_oci8_env(void)
     }
 
 #ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
-    id_thread_key = rb_intern("__oci8_errhp__");
-    error = oci8_tls_key_init(&oci8_tls_key);
+/* ruby 1.9 */
+#if defined(_WIN32)
+    if (!dllmain_is_called) {
+        /* sanity check */
+        rb_raise(rb_eRuntimeError, "DllMain is not unexpectedly called. This causes resource leaks.");
+    }
+    oci8_tls_key = TlsAlloc();
+    if (oci8_tls_key == 0xFFFFFFFF) {
+        error = GetLastError();
+    } else {
+        error = 0;
+    }
+#else
+    error = pthread_key_create(&oci8_tls_key, oci8_free_errhp);
+#endif
     if (error != 0) {
         rb_raise(rb_eRuntimeError, "Cannot create thread local key (errno = %d)", error);
     }

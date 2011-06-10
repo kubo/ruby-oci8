@@ -2,7 +2,7 @@
 /*
  * oci8.h - part of ruby-oci8
  *
- * Copyright (C) 2002-2010 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2011 KUBO Takehiro <kubo@jiubao.org>
  */
 #ifndef _RUBY_OCI_H_
 #define _RUBY_OCI_H_ 1
@@ -177,10 +177,6 @@ typedef VALUE rb_blocking_function_t(void *);
 
 /* macros to access thread-local storage.
  *
- *  int oci8_tls_key_init(oci8_tls_key_t *key);
- *    initialie a key to access thread-local storege
- *    This returns 0 on success or error number.
- *
  *  void *oci8_tls_get(oci8_tls_key_t key);
  *    get a value associated with the key.
  *
@@ -193,15 +189,11 @@ typedef VALUE rb_blocking_function_t(void *);
 #if defined(_WIN32)
 #include <windows.h>
 #define oci8_tls_key_t           DWORD
-#define oci8_tls_key_init(key_p) \
-    ((*(key_p) = TlsAlloc()), \
-    (*(key_p) == 0xFFFFFFFF) ? GetLastError() : 0)
 #define oci8_tls_get(key)        TlsGetValue(key)
 #define oci8_tls_set(key, val)   TlsSetValue((key), (val))
 #else
 #include <pthread.h>
 #define oci8_tls_key_t           pthread_key_t
-#define oci8_tls_key_init(key_p) pthread_key_create((key_p), NULL)
 #define oci8_tls_get(key)        pthread_getspecific(key)
 #define oci8_tls_set(key, val)   pthread_setspecific((key), (val))
 #endif
