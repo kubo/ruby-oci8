@@ -51,6 +51,9 @@ static void at_exit_func(VALUE val)
 }
 #endif
 
+#ifdef _WIN32
+__declspec(dllexport)
+#endif
 void
 Init_oci8lib()
 {
@@ -216,7 +219,7 @@ void oci8_unlink_from_parent(oci8_base_t *base)
     base->parent = NULL;
 }
 
-#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
+#ifdef HAVE_RB_THREAD_BLOCKING_REGION
 
 #if 0
 typedef struct {
@@ -271,7 +274,7 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
         return (sword)func(data);
     }
 }
-#else /* HAVE_TYPE_RB_BLOCKING_FUNCTION_T */
+#else /* HAVE_RB_THREAD_BLOCKING_REGION */
 
 /* ruby 1.8 */
 sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data)
@@ -301,7 +304,7 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
     svcctx->executing_thread = Qnil;
     return rv;
 }
-#endif /* HAVE_TYPE_RB_BLOCKING_FUNCTION_T */
+#endif /* HAVE_RB_THREAD_BLOCKING_REGION */
 
 typedef struct {
     oci8_svcctx_t *svcctx;

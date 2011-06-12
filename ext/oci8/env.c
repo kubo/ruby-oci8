@@ -12,7 +12,7 @@
 #include <util.h>
 #endif
 
-#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
+#ifdef HAVE_RB_THREAD_BLOCKING_REGION
 ub4 oci8_env_mode = OCI_OBJECT | OCI_THREADED;
 #else
 ub4 oci8_env_mode = OCI_OBJECT;
@@ -31,7 +31,7 @@ OCIEnv *oci8_make_envhp(void)
     return oci8_global_envhp;
 }
 
-#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
+#ifdef HAVE_RB_THREAD_BLOCKING_REGION
 /*
  * oci8_errhp is a thread local object in ruby 1.9.
  */
@@ -110,11 +110,11 @@ OCIError *oci8_make_errhp(void)
 
 void Init_oci8_env(void)
 {
-#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
+#ifdef HAVE_RB_THREAD_BLOCKING_REGION
     int error;
 #endif
 
-#if !defined(HAVE_TYPE_RB_BLOCKING_FUNCTION_T) && !defined(_WIN32)
+#if !defined(HAVE_RB_THREAD_BLOCKING_REGION) && !defined(_WIN32)
     /* workaround code.
      *
      * Some instant clients set the environment variables
@@ -160,7 +160,7 @@ void Init_oci8_env(void)
         }
     }
 
-#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
+#ifdef HAVE_RB_THREAD_BLOCKING_REGION
 /* ruby 1.9 */
 #if defined(_WIN32)
     if (!dllmain_is_called) {

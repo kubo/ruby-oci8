@@ -402,7 +402,15 @@ EOS
     so_ext = 'so'
     nls_data_ext = nil
     check_proc = nil
-    is_32bit = [nil].pack('p').size == 4
+    size_of_pointer = begin
+                        # the size of a pointer.
+                        [nil].pack('P').size
+                      rescue ArgumentError
+                        # Rubinius 1.2.3 doesn't support Array#pack('P').
+                        # Use Fixnum#size, which returns the size of long.
+                        1.size
+                      end
+    is_32bit = size_of_pointer == 4
     is_big_endian = "\x01\x02".unpack('s')[0] == 0x0102
     case RUBY_PLATFORM
     when /mswin32|cygwin|mingw32|bccwin32/

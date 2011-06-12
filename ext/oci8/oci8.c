@@ -100,7 +100,7 @@ static void oci8_svcctx_init(oci8_base_t *base)
     ((oci8_svcctx_associate_t *)svcctx->server)->svcctx = svcctx;
     svcctx->pid = getpid();
     svcctx->is_autocommit = 0;
-#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
+#ifdef HAVE_RB_THREAD_BLOCKING_REGION
     svcctx->non_blocking = 1;
 #endif
     svcctx->long_read_len = INT2FIX(65535);
@@ -478,7 +478,7 @@ static VALUE oci8_rollback(VALUE self)
 static VALUE oci8_non_blocking_p(VALUE self)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
-#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
+#ifdef HAVE_RB_THREAD_BLOCKING_REGION
     return svcctx->non_blocking ? Qtrue : Qfalse;
 #else
     sb1 non_blocking;
@@ -531,7 +531,7 @@ static VALUE oci8_non_blocking_p(VALUE self)
 static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
-#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
+#ifdef HAVE_RB_THREAD_BLOCKING_REGION
     svcctx->non_blocking = RTEST(val);
 #else
     sb1 non_blocking;
@@ -621,14 +621,14 @@ static VALUE oci8_set_long_read_len(VALUE self, VALUE val)
 static VALUE oci8_break(VALUE self)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
-#ifndef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
+#ifndef HAVE_RB_THREAD_BLOCKING_REGION
     sword rv;
 #endif
 
     if (NIL_P(svcctx->executing_thread)) {
         return Qfalse;
     }
-#ifndef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
+#ifndef HAVE_RB_THREAD_BLOCKING_REGION
     rv = OCIBreak(svcctx->base.hp.ptr, oci8_errhp);
     if (rv != OCI_SUCCESS)
         oci8_raise(oci8_errhp, rv, NULL);
