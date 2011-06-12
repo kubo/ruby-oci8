@@ -189,7 +189,7 @@ typedef VALUE rb_blocking_function_t(void *);
  *    set a value to the key.
  *
  */
-#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
+#ifdef HAVE_RB_THREAD_BLOCKING_REGION
 /* ruby 1.9 */
 #if defined(_WIN32)
 #include <windows.h>
@@ -202,7 +202,7 @@ typedef VALUE rb_blocking_function_t(void *);
 #define oci8_tls_get(key)        pthread_getspecific(key)
 #define oci8_tls_set(key, val)   pthread_setspecific((key), (val))
 #endif
-#endif /* HAVE_TYPE_RB_BLOCKING_FUNCTION_T */
+#endif /* HAVE_RB_THREAD_BLOCKING_REGION */
 
 /* utility macros
  */
@@ -308,7 +308,7 @@ typedef struct  {
     OCIServer *srvhp;
     rb_pid_t pid;
     char is_autocommit;
-#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
+#ifdef HAVE_RB_THREAD_BLOCKING_REGION
     char non_blocking;
 #endif
     VALUE long_read_len;
@@ -362,7 +362,7 @@ typedef struct {
  *   extern OCIError *oci8_errhp;
  */
 #define oci8_envhp (LIKELY(oci8_global_envhp != NULL) ? oci8_global_envhp : oci8_make_envhp())
-#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
+#ifdef HAVE_RB_THREAD_BLOCKING_REGION
 #define oci8_errhp oci8_get_errhp()
 #else
 #define oci8_errhp (LIKELY(oci8_global_errhp != NULL) ? oci8_global_errhp : oci8_make_errhp())
@@ -372,7 +372,7 @@ typedef struct {
 extern ub4 oci8_env_mode;
 extern OCIEnv *oci8_global_envhp;
 OCIEnv *oci8_make_envhp(void);
-#ifdef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
+#ifdef HAVE_RB_THREAD_BLOCKING_REGION
 extern oci8_tls_key_t oci8_tls_key; /* native thread key */
 OCIError *oci8_make_errhp(void);
 

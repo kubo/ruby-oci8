@@ -545,7 +545,7 @@ end
 
 class OraNumber
 
-  if YAML == Psych
+  if defined? Psych and YAML == Psych
 
     yaml_tag '!ruby/object:OraNumber'
     def encode_with coder # :nodoc:

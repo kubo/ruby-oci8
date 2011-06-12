@@ -1,3 +1,15 @@
+2011-06-12  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8lib.c: add __declspec(dllexport) to Init_oci8lib(). The mingw32
+	    gcc compiler doesn't export functions without it if more than one function
+	    is declared with it.
+	* ext/oci8/oraconf.rb: work around for rubinius 1.2.3, which doesn't support
+	    Array#pack('P').
+	* lib/oci8/oci8.rb: fix a bug introduced by the previous commit.
+	* ext/oci8/env.c, ext/oci8/extconf.rb, ext/oci8/oci8.c, ext/oci8/oci8.h,
+	  ext/oci8/oci8lib.c: Use HAVE_RB_THREAD_BLOCKING_REGION instead of
+	    HAVE_TYPE_RB_BLOCKING_FUNCTION_T. have_type("rb_blocking_function_t", "ruby.h")
+	    unexpectedly doesn't work on Visual Studio 2010.
+
 2011-06-10  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.yml, lib/oci8/oci8.rb: fix for Psych YAML library.
 	* ext/oci8/extconf.rb, ext/oci8/oci8.h, ext/oci8/ocihandle.c: fix to
