@@ -1,4 +1,7 @@
 2011-06-12  KUBO Takehiro  <kubo@jiubao.org>
+	* NEWS: add changes between 2.0.4 and 2.0.5.
+
+2011-06-12  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8lib.c: add __declspec(dllexport) to Init_oci8lib(). The mingw32
 	    gcc compiler doesn't export functions without it if more than one function
 	    is declared with it.
