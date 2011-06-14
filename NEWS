@@ -1,3 +1,13 @@
+2.0.6:
+
+* Fixed issues
+
+  - fix SEGV when freeing a temporary LOB during GC on rubinius 1.2.3.
+
+  - revert the exception type from RuntimeError to OCIException when
+    a closed OCI handle's method is called. It was chaned in 2.0.5
+    by mistake.
+
 2.0.5:
 
 * New Features

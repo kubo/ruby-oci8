@@ -498,7 +498,7 @@ oci8_base_t *oci8_get_handle(VALUE obj, VALUE klass)
     }
     Data_Get_Struct(obj, oci8_base_t, hp);
     if (hp->type == 0) {
-        rb_raise(rb_eRuntimeError, "%s was already closed.",
+        rb_raise(eOCIException, "%s was already closed.",
                  rb_obj_classname(obj));
     }
     return hp;
