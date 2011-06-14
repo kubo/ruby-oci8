@@ -1019,7 +1019,7 @@ OCILobCreateTemporary_nb:
             - OCIDuration duration
 
 # round trip: 1
-OCILobFreeTemporary_nb:
+OCILobFreeTemporary:
   :version: 810
   :args:
             - OCISvcCtx *svchp

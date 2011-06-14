@@ -23,6 +23,7 @@ enum state {
 typedef struct {
     oci8_base_t base;
     VALUE svc;
+    OCISvcCtx *svchp;
     ub4 pos;
     int char_width;
     ub1 csfrm;
@@ -96,28 +97,20 @@ static void oci8_lob_mark(oci8_base_t *base)
     rb_gc_mark(lob->svc);
 }
 
-static VALUE free_temp_lob(oci8_lob_t *lob)
-{
-    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
-
-    OCILobFreeTemporary_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob);
-    return Qnil;
-}
-
 static void oci8_lob_free(oci8_base_t *base)
 {
     oci8_lob_t *lob = (oci8_lob_t *)base;
     boolean is_temporary;
 
-    if (have_OCILobIsTemporary
+    if (have_OCILobIsTemporary && lob->svchp != NULL
         && OCILobIsTemporary(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_temporary) == OCI_SUCCESS
         && is_temporary) {
-        /* Exceptions in free_temp_lob() are ignored.
-         * oci8_lob_free() is called in GC. It must not raise an exception.
-         */
-        rb_rescue(free_temp_lob, (VALUE)base, NULL, 0);
+
+        /* FIXME: This may stall the GC. */
+        OCILobFreeTemporary(lob->svchp, oci8_errhp, lob->base.hp.lob);
     }
     lob->svc = Qnil;
+    lob->svchp = NULL;
 }
 
 static oci8_base_class_t oci8_lob_class = {
@@ -191,6 +184,7 @@ static VALUE oci8_lob_do_initialize(int argc, VALUE *argv, VALUE self, ub1 csfrm
         oci8_env_raise(oci8_envhp, rv);
     lob->base.type = OCI_DTYPE_LOB;
     lob->svc = svc;
+    lob->svchp = NULL;
     lob->pos = 0;
     lob->char_width = 1;
     lob->csfrm = csfrm;
@@ -202,6 +196,7 @@ static VALUE oci8_lob_do_initialize(int argc, VALUE *argv, VALUE self, ub1 csfrm
             oci8_svcctx_t *svcctx = oci8_get_svcctx(svc);
             OCI8StringValue(val);
             oci_lc(OCILobCreateTemporary_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, 0, csfrm, lobtype, TRUE, OCI_DURATION_SESSION));
+            lob->svchp = oci8_get_oci_svcctx(svc);
             oci8_lob_write(self, val);
         } else {
             rb_raise(rb_eRuntimeError, "creating a temporary lob is not supported on this Oracle version");

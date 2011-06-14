@@ -1,3 +1,11 @@
+2011-06-14  KUBO Takehiro  <kubo@jiubao.org>
+	* NEWS: add changes between 2.0.5 and 2.0.6.
+	* ext/oci8/apiwrap.yml, ext/oci8/lob.c: fix SEGV when freeing a temporary
+	    LOB during GC on rubinius 1.2.3.
+	* ext/oci8/oci8lib.c: revert the exception type from RuntimeError to
+	    OCIException when a closed OCI handle's method is called.
+	    It was chaned in 2.0.5 by mistake.
+
 2011-06-12  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 2.0.4 and 2.0.5.
 
