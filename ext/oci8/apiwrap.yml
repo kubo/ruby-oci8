@@ -220,14 +220,6 @@ OCIDescriptorFree:
             - dvoid *descp
             - ub4 type
 
-OCIEnvInit:
-  :version: 800
-  :args:
-            - OCIEnv **envp
-            - ub4 mode
-            - size_t xtramem_sz
-            - dvoid **usrmempp
-
 OCIErrorGet:
   :version: 800
   :args:
@@ -253,16 +245,6 @@ OCIHandleFree:
   :args:
             - dvoid *hndlp
             - ub4 type
-
-# round trip: 0
-OCIInitialize:
-  :version: 800
-  :args:
-            - ub4 mode
-            - dvoid *ctxp
-            - dvoid *(*malocfp)(dvoid *ctxp, size_t size)
-            - dvoid *(*ralocfp)(dvoid *ctxp, dvoid *memptr, size_t newsize)
-            - void   (*mfreefp)(dvoid *ctxp, dvoid *memptr)
 
 # round trip: 0
 OCILobAssign:

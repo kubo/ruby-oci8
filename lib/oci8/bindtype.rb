@@ -277,13 +277,11 @@ OCI8::BindType::Mapping[:bfile] = OCI8::BindType::BFILE
 # DATE          SQLT_DAT      7    0    0
 OCI8::BindType::Mapping[:date] = OCI8::BindType::Time
 
-if OCI8.oracle_client_version >= OCI8::ORAVER_9_0
-  OCI8::BindType::Mapping[:timestamp] = OCI8::BindType::Time
-  OCI8::BindType::Mapping[:timestamp_tz] = OCI8::BindType::Time
-  OCI8::BindType::Mapping[:timestamp_ltz] = OCI8::BindType::Time
-  OCI8::BindType::Mapping[:interval_ym] = OCI8::BindType::IntervalYM
-  OCI8::BindType::Mapping[:interval_ds] = OCI8::BindType::IntervalDS
-end
+OCI8::BindType::Mapping[:timestamp] = OCI8::BindType::Time
+OCI8::BindType::Mapping[:timestamp_tz] = OCI8::BindType::Time
+OCI8::BindType::Mapping[:timestamp_ltz] = OCI8::BindType::Time
+OCI8::BindType::Mapping[:interval_ym] = OCI8::BindType::IntervalYM
+OCI8::BindType::Mapping[:interval_ds] = OCI8::BindType::IntervalDS
 
 # datatype        type     size prec scale
 # -------------------------------------------------

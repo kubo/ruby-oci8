@@ -64,6 +64,10 @@ Init_oci8lib()
 
 #ifdef RUNTIME_API_CHECK
     Init_oci8_apiwrap();
+    if (oracle_client_version < ORAVER_9_0) {
+        rb_raise(rb_eLoadError, "Oracle 8 (8.0) and Oracle 8i (8.1) is not supported anymore!");
+    }
+
     if (have_OCIClientVersion) {
         sword major, minor, update, patch, port_update;
         OCIClientVersion(&major, &minor, &update, &patch, &port_update);
@@ -115,32 +119,16 @@ Init_oci8lib()
     Init_oci8_lob(cOCI8);
 
     /* allocate a temporary errhp to pass Init_oci_number() */
-    if (have_OCIEnvCreate) {
-        rv = OCIEnvCreate(&envhp, oci8_env_mode, NULL, NULL, NULL, NULL, 0, NULL);
-        if (rv != OCI_SUCCESS) {
-            oci8_raise_init_error();
-        }
-    } else {
-        rv = OCIInitialize(oci8_env_mode, NULL, NULL, NULL, NULL);
-        if (rv != OCI_SUCCESS) {
-            oci8_raise_init_error();
-        }
-        rv = OCIEnvInit(&envhp, OCI_DEFAULT, 0, NULL);
-        if (rv != OCI_SUCCESS) {
-            oci8_raise_init_error();
-        }
+    rv = OCIEnvCreate(&envhp, oci8_env_mode, NULL, NULL, NULL, NULL, 0, NULL);
+    if (rv != OCI_SUCCESS) {
+        oci8_raise_init_error();
     }
     rv = OCIHandleAlloc(envhp, (dvoid *)&errhp, OCI_HTYPE_ERROR, 0, NULL);
     if (rv != OCI_SUCCESS)
         oci8_env_raise(envhp, rv);
     Init_oci_number(cOCI8, errhp);
     OCIHandleFree(errhp, OCI_HTYPE_ERROR);
-    if (have_OCIEnvCreate) {
-        OCIHandleFree(envhp, OCI_HTYPE_ENV);
-    } else {
-        /* Delayed OCIEnv initialization cannot be used on Oracle 8.0. */
-        oci8_global_envhp = envhp;
-    }
+    OCIHandleFree(envhp, OCI_HTYPE_ENV);
 
     Init_ora_date();
     Init_oci_datetime();
@@ -154,10 +142,6 @@ Init_oci8lib()
 #ifdef DEBUG_CORE_FILE
     signal(SIGSEGV, SIG_DFL);
 #endif
-
-    if (have_OCIEnvCreate && oci8_global_envhp != NULL) {
-        rb_raise(rb_eRuntimeError, "Internal Error: OCIEnv should not be initialized here.");
-    }
 }
 
 VALUE oci8_define_class(const char *name, oci8_base_class_t *base_class)

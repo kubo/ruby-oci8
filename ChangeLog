@@ -1,3 +1,11 @@
+2011-06-15  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml, ext/oci8/bind.c, ext/oci8/oci8.c, ext/oci8/oci8lib.c,
+	  lib/oci8/bindtype.rb: drop Oracle 8i support.
+	* ext/oci8/ocidatetime.c: OCI8::BindType::OCIDate was deleted.
+	* lib/oci8/datetime.rb, test/test_datetime.rb: OCI8::BindType::DateTimeViaOCIDate,
+	    OCI8::BindType::TimeViaOCIDate, OCI8::BindType::DateTimeViaOCITimestampTZ
+	    and OCI8::BindType::TimeViaOCITimestampTZ were deleted.
+
 2011-06-14  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 2.0.5 and 2.0.6.
 	* ext/oci8/apiwrap.yml, ext/oci8/lob.c: fix SEGV when freeing a temporary

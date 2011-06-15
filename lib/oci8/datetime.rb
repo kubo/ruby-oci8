@@ -164,117 +164,64 @@ class OCI8
         ocidate_to_datetime(ary)
       end
 
-      if OCI8.oracle_client_version >= ORAVER_9_0
+      def ocitimestamp_to_datetime(ary)
+        return nil if ary.nil?
 
-        def ocitimestamp_to_datetime(ary)
+        year, month, day, hour, minute, sec, fsec, tz_hour, tz_min = ary
+        if @@datetime_has_fractional_second_bug and sec >= 59 and fsec != 0
+          # convert to a DateTime via a String as a workaround
+          if tz_hour >= 0 && tz_min >= 0
+            sign = ?+
+          else
+            sign = ?-
+            tz_hour = - tz_hour
+            tz_min = - tz_min
+          end
+          time_str = format("%04d-%02d-%02dT%02d:%02d:%02d.%09d%c%02d:%02d",
+                            year, month, day, hour, minute, sec, fsec, sign, tz_hour, tz_min)
+          ::DateTime.parse(time_str)
+        else
+          sec += fsec.to_r / 1000000000
+          offset = tz_hour.to_r / 24 + tz_min.to_r / 1440
+          ::DateTime.civil(year, month, day, hour, minute, sec, offset)
+        end
+      end
+
+      if @@time_new_accepts_timezone
+
+        # after ruby 1.9.2
+        def ocitimestamp_to_time(ary)
           return nil if ary.nil?
 
           year, month, day, hour, minute, sec, fsec, tz_hour, tz_min = ary
-          if @@datetime_has_fractional_second_bug and sec >= 59 and fsec != 0
-            # convert to a DateTime via a String as a workaround
-            if tz_hour >= 0 && tz_min >= 0
-              sign = ?+
-            else
-              sign = ?-
-              tz_hour = - tz_hour
-              tz_min = - tz_min
-            end
-            time_str = format("%04d-%02d-%02dT%02d:%02d:%02d.%09d%c%02d:%02d",
-                              year, month, day, hour, minute, sec, fsec, sign, tz_hour, tz_min)
-            ::DateTime.parse(time_str)
-          else
-            sec += fsec.to_r / 1000000000
-            offset = tz_hour.to_r / 24 + tz_min.to_r / 1440
-            ::DateTime.civil(year, month, day, hour, minute, sec, offset)
-          end
+
+          sec += fsec / Rational(1000000000)
+          utc_offset = tz_hour * 3600 + tz_min * 60
+          return ::Time.new(year, month, day, hour, minute, sec, utc_offset)
         end
 
-        if @@time_new_accepts_timezone
+      else
 
-          # after ruby 1.9.2
-          def ocitimestamp_to_time(ary)
-            return nil if ary.nil?
+        # prior to ruby 1.9.2
+        def ocitimestamp_to_time(ary)
+          return nil if ary.nil?
 
-            year, month, day, hour, minute, sec, fsec, tz_hour, tz_min = ary
+          year, month, day, hour, minute, sec, fsec, tz_hour, tz_min = ary
 
-            sec += fsec / Rational(1000000000)
-            utc_offset = tz_hour * 3600 + tz_min * 60
-            return ::Time.new(year, month, day, hour, minute, sec, utc_offset)
-          end
-
-        else
-
-          # prior to ruby 1.9.2
-          def ocitimestamp_to_time(ary)
-            return nil if ary.nil?
-
-            year, month, day, hour, minute, sec, fsec, tz_hour, tz_min = ary
-
-            if year >= 139 || year < 0
-              begin
-                if tz_hour == 0 and tz_min == 0
-                  return ::Time.utc(year, month, day, hour, minute, sec, fsec / Rational(1000))
-                else
-                  tm = ::Time.local(year, month, day, hour, minute, sec, fsec / Rational(1000))
-                  return tm if tm.utc_offset == tz_hour * 3600 + tz_min * 60
-                end
-              rescue StandardError
+          if year >= 139 || year < 0
+            begin
+              if tz_hour == 0 and tz_min == 0
+                return ::Time.utc(year, month, day, hour, minute, sec, fsec / Rational(1000))
+              else
+                tm = ::Time.local(year, month, day, hour, minute, sec, fsec / Rational(1000))
+                return tm if tm.utc_offset == tz_hour * 3600 + tz_min * 60
               end
+            rescue StandardError
             end
-            ocitimestamp_to_datetime(ary)
           end
-
-        end
-      end
-    end
-
-    class DateTimeViaOCIDate < OCI8::BindType::OCIDate # :nodoc:
-      include OCI8::BindType::Util
-
-      def set(val) # :nodoc:
-        super(datetime_to_array(val, false))
-      end
-
-      def get() # :nodoc:
-        ocidate_to_datetime(super())
-      end
-    end
-
-    class TimeViaOCIDate < OCI8::BindType::OCIDate # :nodoc:
-      include OCI8::BindType::Util
-
-      def set(val) # :nodoc:
-        super(datetime_to_array(val, false))
-      end
-
-      def get() # :nodoc:
-        ocidate_to_time(super())
-      end
-    end
-
-    if OCI8.oracle_client_version >= ORAVER_9_0
-      class DateTimeViaOCITimestampTZ < OCI8::BindType::OCITimestampTZ # :nodoc:
-        include OCI8::BindType::Util
-
-        def set(val) # :nodoc:
-          super(datetime_to_array(val, true))
+          ocitimestamp_to_datetime(ary)
         end
 
-        def get() # :nodoc:
-          ocitimestamp_to_datetime(super())
-        end
-      end
-
-      class TimeViaOCITimestampTZ < OCI8::BindType::OCITimestampTZ # :nodoc:
-        include OCI8::BindType::Util
-
-        def set(val) # :nodoc:
-          super(datetime_to_array(val, true))
-        end
-
-        def get() # :nodoc:
-          ocitimestamp_to_time(super())
-        end
       end
     end
 
@@ -339,19 +286,15 @@ class OCI8
     # If you are in the regions where daylight saving time is adopted,
     # you should use OCI8::BindType::Time.
     #
-    class DateTime
-      if OCI8.oracle_client_version >= ORAVER_9_0
-        def self.create(con, val, param, max_array_size) # :nodoc:
-          if true # TODO: check Oracle server version
-            DateTimeViaOCITimestampTZ.new(con, val, param, max_array_size)
-          else
-            DateTimeViaOCIDate.new(con, val, param, max_array_size)
-          end
-        end
-      else
-        def self.create(con, val, param, max_array_size) # :nodoc:
-          DateTimeViaOCIDate.new(con, val, param, max_array_size)
-        end
+    class DateTime < OCI8::BindType::OCITimestampTZ
+      include OCI8::BindType::Util
+
+      def set(val) # :nodoc:
+        super(datetime_to_array(val, true))
+      end
+
+      def get() # :nodoc:
+        ocitimestamp_to_datetime(super())
       end
     end
 
@@ -418,19 +361,15 @@ class OCI8
     #  # or
     #  OCI8::BindType.default_timezone = :utc
     #
-    class Time
-      if OCI8.oracle_client_version >= ORAVER_9_0
-        def self.create(con, val, param, max_array_size) # :nodoc:
-          if true # TODO: check Oracle server version
-            TimeViaOCITimestampTZ.new(con, val, param, max_array_size)
-          else
-            TimeViaOCIDate.new(con, val, param, max_array_size)
-          end
-        end
-      else
-        def self.create(con, val, param, max_array_size) # :nodoc:
-          TimeViaOCIDate.new(con, val, param, max_array_size)
-        end
+    class Time < OCI8::BindType::OCITimestampTZ
+      include OCI8::BindType::Util
+
+      def set(val) # :nodoc:
+        super(datetime_to_array(val, true))
+      end
+
+      def get() # :nodoc:
+        ocitimestamp_to_time(super())
       end
     end
 

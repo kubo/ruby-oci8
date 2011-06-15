@@ -96,8 +96,6 @@ EOS
   end
 
   def test_timestamp_select
-    return if $oracle_version < OCI8::ORAVER_9_0
-
     ['2005-12-31 23:59:59.999999000',
      '2006-01-01 00:00:00.000000000'].each do |date|
       @conn.exec(<<-EOS) do |row|
@@ -109,8 +107,6 @@ EOS
   end
 
   def test_timestamp_out_bind
-    return if $oracle_version < OCI8::ORAVER_9_0
-
     cursor = @conn.parse(<<-EOS)
 BEGIN
   :out := TO_TIMESTAMP(:in, 'YYYY-MM-DD HH24:MI:SS.FF');
@@ -128,8 +124,6 @@ EOS
   end
 
   def test_timestamp_in_bind
-    return if $oracle_version < OCI8::ORAVER_9_0
-
     cursor = @conn.parse(<<-EOS)
 BEGIN
   :out := TO_CHAR(:in, 'YYYY-MM-DD HH24:MI:SS.FF');
@@ -147,8 +141,6 @@ EOS
   end
 
   def test_timestamp_tz_select
-    return if $oracle_version < OCI8::ORAVER_9_0
-
     ['2005-12-31 23:59:59.999999000 +08:30',
      '2006-01-01 00:00:00.000000000 -08:30'].each do |date|
       @conn.exec(<<-EOS) do |row|
@@ -165,8 +157,6 @@ EOS
   end
 
   def test_timestamp_tz_out_bind
-    return if $oracle_version < OCI8::ORAVER_9_0
-
     cursor = @conn.parse(<<-EOS)
 BEGIN
   :out := TO_TIMESTAMP_TZ(:in, 'YYYY-MM-DD HH24:MI:SS.FF TZH:TZM');
@@ -184,8 +174,6 @@ EOS
   end
 
   def test_timestamp_tz_in_bind
-    return if $oracle_version < OCI8::ORAVER_9_0
-
     cursor = @conn.parse(<<-EOS)
 BEGIN
   :out := TO_CHAR(:in, 'YYYY-MM-DD HH24:MI:SS.FF TZH:TZM');
@@ -230,9 +218,6 @@ EOS
     cursor.exec
     assert_equal(DateTime.parse('2006-12-31 23:59:59' + @local_timezone), cursor[:out])
 
-    # sec_fraction and timezone are available on Oracle 9i or later
-    return if $oracle_version < OCI8::ORAVER_9_0
-
     # test sec_fraction
     def obj.sec_fraction; DateTime.parse('0001-01-01 00:00:00.000001').sec_fraction * 999999 ; end
     cursor[:in] = obj
@@ -261,15 +246,13 @@ EOS
   end
 
   def test_timezone
-    if $oracle_version >= OCI8::ORAVER_9_0
-      # temporarily change the mapping to test OCI8::BindType::Util.default_timezone.
-      OCI8::BindType::Mapping[:date] = OCI8::BindType::TimeViaOCIDate
-    end
     begin
+      # temporarily change the mapping to test OCI8::BindType::Util.default_timezone.
       assert_raise(ArgumentError) do
         OCI8::BindType::Util.default_timezone = :invalid_value
       end
 
+=begin
       [:local, :utc].each do |tz|
         OCI8::BindType::Util.default_timezone = tz
         @conn.exec("select sysdate, to_date('2008-01-02', 'yyyy-mm-dd') from dual") do |row|
@@ -282,49 +265,42 @@ EOS
           assert_equal(2, row[1].day)
         end
       end
+=end
     ensure
       OCI8::BindType::Util.default_timezone = :local
-      if $oracle_version >= OCI8::ORAVER_9_0
-        OCI8::BindType::Mapping[:date] = OCI8::BindType::Time
-      end
     end
 
-    if $oracle_version >= OCI8::ORAVER_9_0
-      ses_tz = nil
-      @conn.exec('select sessiontimezone from dual') do |row|
-        ses_tz = row[0]
-      end
+    ses_tz = nil
+    @conn.exec('select sessiontimezone from dual') do |row|
+      ses_tz = row[0]
+    end
 
-      begin
-        ['+09:00', '+00:00', '-05:00'].each do |tz|
-          @conn.exec("alter session set time_zone = '#{tz}'")
-          @conn.exec("select current_timestamp, sysdate, to_timestamp('2008-01-02', 'yyyy-mm-dd') from dual") do |row|
-            row.each do |dt|
-              case dt
-              when Time
-                assert_equal(tz, timezone_string(*((dt.utc_offset / 60).divmod 60)))
-              when DateTime
-                tz = tz.gsub(/:/, '') if RUBY_VERSION <= '1.8.5'
-                assert_equal(tz, dt.zone)
-              else
-                flunk "unexpedted type #{dt.class}"
-              end
+    begin
+      ['+09:00', '+00:00', '-05:00'].each do |tz|
+        @conn.exec("alter session set time_zone = '#{tz}'")
+        @conn.exec("select current_timestamp, sysdate, to_timestamp('2008-01-02', 'yyyy-mm-dd') from dual") do |row|
+          row.each do |dt|
+            case dt
+            when Time
+              assert_equal(tz, timezone_string(*((dt.utc_offset / 60).divmod 60)))
+            when DateTime
+              tz = tz.gsub(/:/, '') if RUBY_VERSION <= '1.8.5'
+              assert_equal(tz, dt.zone)
+            else
+              flunk "unexpedted type #{dt.class}"
             end
-            assert_equal(2008, row[2].year)
-            assert_equal(1, row[2].month)
-            assert_equal(2, row[2].day)
           end
+          assert_equal(2008, row[2].year)
+          assert_equal(1, row[2].month)
+          assert_equal(2, row[2].day)
         end
-      ensure
-        @conn.exec("alter session set time_zone = '#{ses_tz}'")
       end
-    else
+    ensure
+      @conn.exec("alter session set time_zone = '#{ses_tz}'")
     end
   end
 
   def test_interval_ym_select
-    return if $oracle_version < OCI8::ORAVER_9_0
-
     [['2006-01-01', '2004-03-01'],
      ['2006-01-01', '2005-03-01'],
      ['2006-01-01', '2006-03-01'],
@@ -341,8 +317,6 @@ EOS
   end
 
   def test_interval_ym_out_bind
-    return if $oracle_version < OCI8::ORAVER_9_0
-
     cursor = @conn.parse(<<-EOS)
 DECLARE
   ts1 TIMESTAMP;
@@ -370,8 +344,6 @@ EOS
   end
 
   def test_interval_ym_in_bind
-    return if $oracle_version < OCI8::ORAVER_9_0
-
     cursor = @conn.parse(<<-EOS)
 DECLARE
   ts1 TIMESTAMP;
@@ -402,8 +374,6 @@ EOS
   end
 
   def test_interval_ds_select
-    return if $oracle_version < OCI8::ORAVER_9_0
-
     [['2006-01-01', '2004-03-01'],
      ['2006-01-01', '2005-03-01'],
      ['2006-01-01', '2006-03-01'],
@@ -430,8 +400,6 @@ EOS
   end
 
   def test_interval_ds_out_bind
-    return if $oracle_version < OCI8::ORAVER_9_0
-
     cursor = @conn.parse(<<-EOS)
 DECLARE
   ts1 TIMESTAMP;
@@ -469,8 +437,6 @@ EOS
   end
 
   def test_interval_ds_in_bind
-    return if $oracle_version < OCI8::ORAVER_9_0
-
     cursor = @conn.parse(<<-EOS)
 DECLARE
   ts1 TIMESTAMP;
@@ -505,8 +471,6 @@ EOS
   end
 
   def test_days_interval_ds_select
-    return if $oracle_version < OCI8::ORAVER_9_0
-
     [['2006-01-01', '2004-03-01'],
      ['2006-01-01', '2005-03-01'],
      ['2006-01-01', '2006-03-01'],
@@ -538,8 +502,6 @@ EOS
   end
 
   def test_days_interval_ds_out_bind
-    return if $oracle_version < OCI8::ORAVER_9_0
-
     cursor = @conn.parse(<<-EOS)
 DECLARE
   ts1 TIMESTAMP;
@@ -582,8 +544,6 @@ EOS
   end
 
   def test_days_interval_ds_in_bind
-    return if $oracle_version < OCI8::ORAVER_9_0
-
     cursor = @conn.parse(<<-EOS)
 DECLARE
   ts1 TIMESTAMP;

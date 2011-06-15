@@ -93,7 +93,7 @@ static void bind_string_post_bind_hook(oci8_bind_t *obind)
 {
     oci8_bind_string_t *obs = (oci8_bind_string_t *)obind;
 
-    if (oracle_client_version >= ORAVER_9_0 && obs->charlen != 0) {
+    if (obs->charlen != 0) {
         oci_lc(OCIAttrSet(obind->base.hp.ptr, obind->base.type, (void*)&obs->charlen, 0, OCI_ATTR_MAXCHAR_SIZE, oci8_errhp));
     }
     oci_lc(OCIAttrSet(obind->base.hp.ptr, obind->base.type, (void*)&obs->csfrm, 0, OCI_ATTR_CHARSET_FORM, oci8_errhp));

@@ -68,40 +68,6 @@ OCIDate *oci8_set_ocidate(OCIDate *od, VALUE val)
     return od;
 }
 
-static VALUE bind_ocidate_get(oci8_bind_t *obind, void *data, void *null_struct)
-{
-    return oci8_make_ocidate((OCIDate *)data);
-}
-
-static void bind_ocidate_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
-{
-    oci8_set_ocidate((OCIDate *)data, val);
-}
-
-static void bind_ocidate_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
-{
-    obind->value_sz = sizeof(OCIDate);
-    obind->alloc_sz = sizeof(OCIDate);
-}
-
-static const oci8_bind_class_t bind_ocidate_class = {
-    {
-        NULL,
-        oci8_bind_free,
-        sizeof(oci8_bind_t)
-    },
-    bind_ocidate_get,
-    bind_ocidate_set,
-    bind_ocidate_init,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    SQLT_ODT,
-};
-
-#if defined RUNTIME_API_CHECK || ORACLE_CLIENT_VERSION >= ORAVER_9_0
-
 static void bind_init_elem_common(oci8_bind_t *obind, VALUE svc, ub4 type)
 {
     ub4 idx = 0;
@@ -491,18 +457,9 @@ static const oci8_bind_class_t bind_ociinterval_ds_class = {
     SQLT_INTERVAL_DS
 };
 
-#endif /* defined RUNTIME_API_CHECK || ORACLE_CLIENT_VERSION >= ORAVER_9_0 */
-
 void Init_oci_datetime(void)
 {
-    oci8_define_bind_class("OCIDate", &bind_ocidate_class);
-
-#if defined RUNTIME_API_CHECK || ORACLE_CLIENT_VERSION >= ORAVER_9_0
-    if (oracle_client_version >= ORAVER_9_0) {
-        oci8_define_bind_class("OCITimestampTZ", &bind_ocitimestamp_tz_class);
-        oci8_define_bind_class("OCIIntervalYM", &bind_ociinterval_ym_class);
-        oci8_define_bind_class("OCIIntervalDS", &bind_ociinterval_ds_class);
-    }
-#endif
-
+    oci8_define_bind_class("OCITimestampTZ", &bind_ocitimestamp_tz_class);
+    oci8_define_bind_class("OCIIntervalYM", &bind_ociinterval_ym_class);
+    oci8_define_bind_class("OCIIntervalDS", &bind_ociinterval_ds_class);
 }
