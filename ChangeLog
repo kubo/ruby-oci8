@@ -1,4 +1,8 @@
 2011-07-16  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, ext/oci8/oci8.h: fix for Solaris compiler.
+	    (Reported by Sanjiv Patel.)
+
+2011-07-16  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: Fix for Oracle 11g solaris-sparc32 instant client.
 	    The machine type of Oracle 10g solaris-sparc32 instant client was
 	    sparc but that of oracle 11g is sparc32plus.

@@ -132,7 +132,7 @@ typedef struct OCIMsg  OCIMsg;
 #if !defined(HAVE_RB_ERRINFO) && defined(HAVE_RUBY_ERRINFO)
 #define rb_errinfo() ruby_errinfo
 #endif
-#ifndef HAVE_TYPE_RB_BLOCKING_FUNCTION_T
+#if !defined HAVE_TYPE_RB_BLOCKING_FUNCTION_T_ && !defined HAVE_TYPE_RB_BLOCKING_FUNCTION_TP
 typedef VALUE rb_blocking_function_t(void *);
 #endif
 
