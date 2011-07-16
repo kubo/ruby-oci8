@@ -114,7 +114,7 @@ have_type('rb_encoding', ['ruby/ruby.h', 'ruby/encoding.h'])
 have_var("ruby_errinfo", "ruby.h") # ruby 1.8
 have_func("rb_errinfo", "ruby.h")  # ruby 1.9
 
-have_type("rb_blocking_function_t", "ruby.h")
+have_type("rb_blocking_function_t*", "ruby.h")
 have_func("rb_set_end_proc", "ruby.h")
 have_func("rb_class_superclass", "ruby.h")
 have_func("rb_thread_blocking_region", "ruby.h")
