@@ -148,7 +148,7 @@ class MiniSOReader
         read_mach_o_unversal(f)
       else
         # AIX and Tru64
-        raise format("unknown file header: %02x %02x", file_header[0], file_header[1])
+        raise format("unknown file header: %02x %02x", file_header[0].to_i, file_header[1].to_i)
       end
     ensure
       f.close
@@ -193,6 +193,8 @@ class MiniSOReader
       @cpu = :i386
     when 15
       @cpu = :parisc
+    when 18
+      @cpu = :sparc32plus
     when 20
       @cpu = :ppc
     when 21
@@ -378,10 +380,10 @@ EOS
 
   private
 
-  def self.make_proc_to_check_cpu(expect)
+  def self.make_proc_to_check_cpu(*expect)
     Proc.new do |file|
       so = MiniSOReader.new(file)
-      if so.cpu == expect
+      if expect.include? so.cpu
         true
       else
         puts "  skip: #{file} is for #{so.cpu} cpu."
@@ -432,7 +434,7 @@ EOS
       if is_32bit
         @@ld_envs = %w[LD_LIBRARY_PATH_32 LD_LIBRARY_PATH]
         if is_big_endian
-          check_proc = make_proc_to_check_cpu(:sparc)
+          check_proc = make_proc_to_check_cpu(:sparc, :sparc32plus)
         else
           check_proc = make_proc_to_check_cpu(:i386)
         end
