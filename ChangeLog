@@ -1,3 +1,9 @@
+2011-07-16  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: Fix for Oracle 11g solaris-sparc32 instant client.
+	    The machine type of Oracle 10g solaris-sparc32 instant client was
+	    sparc but that of oracle 11g is sparc32plus.
+	    (Reported by Sanjiv Patel.)
+
 2011-06-15  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.yml, ext/oci8/bind.c, ext/oci8/oci8.c, ext/oci8/oci8lib.c,
 	  lib/oci8/bindtype.rb: drop Oracle 8i support.
