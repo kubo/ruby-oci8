@@ -1,0 +1,8 @@
+config.save
+ext/oci8/apiwrap.h
+ext/oci8/Makefile
+ext/oci8/apiwrap.c
+ext/oci8/depend
+ext/oci8/extconf.h
+ext/oci8/mkmf.log
+lib/oci8.rb
