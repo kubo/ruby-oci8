@@ -574,6 +574,7 @@ EOS
       puts "yes"
       return path, files[0]
     end
+    nil
   end
 
   def init

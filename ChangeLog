@@ -1,3 +1,8 @@
+2011-08-19  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: fix a bug not to find the OCI library location listed in
+	    'ldconfig -p' when LD_LIBRARY_PATH is set.
+	    (Reported by Edgars Beigarts.)
+
 2011-07-16  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, ext/oci8/oci8.h: fix for Solaris compiler.
 	    (Reported by Sanjiv Patel.)
