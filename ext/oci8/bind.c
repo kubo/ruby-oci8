@@ -2,7 +2,7 @@
 /*
  * bind.c
  *
- * Copyright (C) 2002-2010 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2011 KUBO Takehiro <kubo@jiubao.org>
  */
 #include "oci8.h"
 
@@ -298,40 +298,24 @@ static const oci8_bind_class_t bind_long_raw_class = {
 #endif /* USE_DYNAMIC_FETCH */
 
 /*
- * bind_float
+ * bind_binary_double
  */
-static VALUE bind_float_get(oci8_bind_t *obind, void *data, void *null_struct)
+static VALUE bind_binary_double_get(oci8_bind_t *obind, void *data, void *null_struct)
 {
     return rb_float_new(*(double*)data);
 }
 
-static void bind_float_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
+static void bind_binary_double_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     /* val is converted to Float if it isn't Float. */
     *(double*)data = RFLOAT_VALUE(rb_Float(val));
 }
 
-static void bind_float_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
+static void bind_binary_double_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
     obind->value_sz = sizeof(double);
     obind->alloc_sz = sizeof(double);
 }
-
-static const oci8_bind_class_t bind_float_class = {
-    {
-        NULL,
-        oci8_bind_free,
-        sizeof(oci8_bind_t)
-    },
-    bind_float_get,
-    bind_float_set,
-    bind_float_init,
-    NULL,
-    NULL,
-    NULL,
-    NULL,
-    SQLT_FLT
-};
 
 #ifndef SQLT_BDOUBLE
 #define SQLT_BDOUBLE 22
@@ -342,9 +326,9 @@ static const oci8_bind_class_t bind_binary_double_class = {
         oci8_bind_free,
         sizeof(oci8_bind_t)
     },
-    bind_float_get,
-    bind_float_set,
-    bind_float_init,
+    bind_binary_double_get,
+    bind_binary_double_set,
+    bind_binary_double_init,
     NULL,
     NULL,
     NULL,
@@ -516,7 +500,6 @@ void Init_oci8_bind(VALUE klass)
     oci8_define_bind_class("Long", &bind_long_class);
     oci8_define_bind_class("LongRaw", &bind_long_raw_class);
 #endif /* USE_DYNAMIC_FETCH */
-    oci8_define_bind_class("Float", &bind_float_class);
     if (oracle_client_version >= ORAVER_10_1) {
         oci8_define_bind_class("BinaryDouble", &bind_binary_double_class);
     }

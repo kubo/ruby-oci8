@@ -5,4 +5,7 @@ ext/oci8/apiwrap.c
 ext/oci8/depend
 ext/oci8/extconf.h
 ext/oci8/mkmf.log
+ext/oci8/*.o
+ext/oci8/*.so
+ext/oci8/*.obj
 lib/oci8.rb

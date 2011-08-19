@@ -1,11 +1,12 @@
 # properties.rb -- implements OCI8.properties
 #
-# Copyright (C) 2010 KUBO Takehiro <kubo@jiubao.org>
+# Copyright (C) 2010-2011 KUBO Takehiro <kubo@jiubao.org>
 
 class OCI8
 
   @@properties = {
     :bind_string_as_nchar => false,
+    :float_conversion_type => :ruby,
   }
 
   def @@properties.[](name)
@@ -18,6 +19,9 @@ class OCI8
     case name
     when :bind_string_as_nchar
       val = val ? true : false
+    when :float_conversion_type
+      # handled by native code in oci8lib_xx.so.
+      OCI8.__set_property(name, val)
     end
     super(name, val)
   end
@@ -44,6 +48,14 @@ class OCI8
   # [:bind_string_as_nchar]
   #     +true+ when string bind variables are bound as NCHAR,
   #     otherwise +false+. The default value is +false+.
+  #
+  # [:float_conversion_type]
+  #     (new in 2.1.0)
+  #     Specifies who converts decimal to float and vice versa.
+  #     It should be either +:ruby+ or +:oracle+. The default value
+  #     is +:ruby+.
+  #     See: http://rubyforge.org/forum/forum.php?thread_id=50030&forum_id=1078
+  #
   def self.properties
     @@properties
   end

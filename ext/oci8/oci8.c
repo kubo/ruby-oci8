@@ -2,7 +2,7 @@
 /*
  * oci8.c - part of ruby-oci8
  *
- * Copyright (C) 2002-2010 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2011 KUBO Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
@@ -122,6 +122,27 @@ static ID id_set_prefetch_rows;
 static VALUE oci8_s_oracle_client_vernum(VALUE klass)
 {
     return oracle_client_vernum;
+}
+
+static VALUE oci8_s_set_property(VALUE klass, VALUE name, VALUE val)
+{
+    const char *name_str;
+
+    Check_Type(name, T_SYMBOL);
+    name_str = rb_id2name(SYM2ID(name));
+    if (strcmp(name_str, "float_conversion_type") == 0) {
+        const char *val_str;
+        Check_Type(val, T_SYMBOL);
+        val_str = rb_id2name(SYM2ID(val));
+        if (strcmp(val_str, "ruby") == 0) {
+            oci8_float_conversion_type_is_ruby = 1;
+        } else if (strcmp(val_str, "oracle") == 0) {
+            oci8_float_conversion_type_is_ruby = 0;
+        } else {
+            rb_raise(rb_eArgError, "float_conversion_type's value should be either :ruby or :oracle.");
+        }
+    }
+    return Qnil;
 }
 
 /*
@@ -1016,6 +1037,7 @@ VALUE Init_oci8(void)
 
     rb_define_const(cOCI8, "VERSION", rb_obj_freeze(rb_usascii_str_new_cstr(OCI8LIB_VERSION)));
     rb_define_singleton_method_nodoc(cOCI8, "oracle_client_vernum", oci8_s_oracle_client_vernum, 0);
+    rb_define_singleton_method_nodoc(cOCI8, "__set_property", oci8_s_set_property, 2);
     if (have_OCIMessageOpen && have_OCIMessageGet) {
         rb_define_singleton_method(cOCI8, "error_message", oci8_s_error_message, 1);
     }

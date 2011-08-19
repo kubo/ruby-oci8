@@ -2,18 +2,25 @@
 /*
  *  ocinumber.c
  *
- * Copyright (C) 2005-2009 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2005-2011 KUBO Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
 #include <orl.h>
 #include <errno.h>
+#include <math.h>
 #include "oranumber_util.h"
 
 #ifndef RB_NUM_COERCE_FUNCS_NEED_OPID
 /* ruby 1.8 */
 #define rb_num_coerce_cmp(x, y, id) rb_num_coerce_cmp((x), (y))
 #define rb_num_coerce_bin(x, y, id) rb_num_coerce_bin((x), (y))
+#endif
+
+int oci8_float_conversion_type_is_ruby = 1;
+
+#ifndef INFINITY
+#define INFINITY (1.0/+0.0)
 #endif
 
 static ID id_power; /* rb_intern("**") */
@@ -136,10 +143,7 @@ VALUE oci8_make_integer(OCINumber *s, OCIError *errhp)
 
 VALUE oci8_make_float(OCINumber *s, OCIError *errhp)
 {
-    double dbl;
-
-    oci_lc(OCINumberToReal(errhp, s, sizeof(double), &dbl));
-    return rb_float_new(dbl);
+    return rb_float_new(oci8_onum_to_dbl(s, errhp));
 }
 
 /* fill C structure (OCINumber) from a string. */
@@ -191,7 +195,6 @@ static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VAL
 static int set_oci_number_from_num(OCINumber *result, VALUE num, int force, OCIError *errhp)
 {
     signed long sl;
-    double dbl;
 
     if (!RTEST(rb_obj_is_kind_of(num, rb_cNumeric)))
         rb_raise(rb_eTypeError, "expect Numeric but %s", rb_class2name(CLASS_OF(num)));
@@ -206,8 +209,7 @@ static int set_oci_number_from_num(OCINumber *result, VALUE num, int force, OCIE
         return 1;
     case T_FLOAT:
         /* set from double. */
-        dbl = NUM2DBL(num);
-        oci_lc(OCINumberFromReal(errhp, &dbl, sizeof(dbl), result));
+        oci8_dbl_to_onum(result, NUM2DBL(num), errhp);
         return 1;
     case T_BIGNUM:
         /* change via string. */
@@ -310,6 +312,68 @@ OCINumber *oci8_set_integer(OCINumber *result, VALUE self, OCIError *errhp)
 
     set_oci_number_from_num(&work, self, 1, errhp);
     oci_lc(OCINumberTrunc(errhp, &work, 0, result));
+    return result;
+}
+
+double oci8_onum_to_dbl(OCINumber *s, OCIError *errhp)
+{
+    if (oci8_float_conversion_type_is_ruby) {
+        char buf[256];
+        sword rv;
+
+        double dbl;
+
+        oci_lc(OCINumberToReal(errhp, s, sizeof(double), &dbl));
+
+        rv = oranumber_to_str(s, buf, sizeof(buf));
+        if (rv <= 0) {
+            char buf[ORANUMBER_DUMP_BUF_SIZ];
+
+            oranumber_dump(s, buf);
+            rb_raise(eOCIException, "Invalid internal number format: %s", buf);
+        }
+        if (strcmp(buf, "~") == 0) {
+            return INFINITY;
+        } else if (strcmp(buf, "-~") == 0) {
+            return -INFINITY;
+        }
+        return rb_cstr_to_dbl(buf, Qtrue);
+    } else {
+        double dbl;
+
+        oci_lc(OCINumberToReal(errhp, s, sizeof(double), &dbl));
+        return dbl;
+    }
+}
+
+OCINumber *oci8_dbl_to_onum(OCINumber *result, double dbl, OCIError *errhp)
+{
+    switch (fpclassify(dbl)) {
+    case FP_NAN:
+        rb_raise(rb_eFloatDomainError, "NaN");
+        /* never reach here */
+        break;
+    case FP_INFINITE:
+        if (dbl > 0.0) {
+            oranumber_from_str(result, "~", 1);
+        } else {
+            oranumber_from_str(result, "-~", 2);
+        }
+        return result;
+    }
+
+    if (oci8_float_conversion_type_is_ruby) {
+        VALUE str;
+        sword rv;
+
+        str = rb_obj_as_string(rb_float_new(dbl));
+        rv = oranumber_from_str(result, RSTRING_PTR(str), RSTRING_LEN(str));
+        if (rv != 0) {
+            oci8_raise_by_msgno(rv, NULL);
+        }
+    } else {
+        oci_lc(OCINumberFromReal(errhp, &dbl, sizeof(dbl), result));
+    }
     return result;
 }
 
@@ -1107,11 +1171,7 @@ static VALUE onum_to_i(VALUE self)
  */
 static VALUE onum_to_f(VALUE self)
 {
-    OCIError *errhp = oci8_errhp;
-    double dbl;
-
-    oci_lc(OCINumberToReal(errhp, _NUMBER(self), sizeof(dbl), &dbl));
-    return rb_float_new(dbl);
+    return rb_float_new(oci8_onum_to_dbl(_NUMBER(self), oci8_errhp));
 }
 
 /*
@@ -1363,6 +1423,11 @@ static VALUE bind_integer_get(oci8_bind_t *obind, void *data, void *null_struct)
     return oci8_make_integer((OCINumber*)data, oci8_errhp);
 }
 
+static VALUE bind_float_get(oci8_bind_t *obind, void *data, void *null_struct)
+{
+    return oci8_make_float((OCINumber*)data, oci8_errhp);
+}
+
 static void bind_ocinumber_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     set_oci_number_from_num((OCINumber*)data, val, 1, oci8_errhp);
@@ -1417,6 +1482,22 @@ static const oci8_bind_class_t bind_integer_class = {
     },
     bind_integer_get,
     bind_integer_set,
+    bind_ocinumber_init,
+    bind_ocinumber_init_elem,
+    NULL,
+    NULL,
+    NULL,
+    SQLT_VNU,
+};
+
+static const oci8_bind_class_t bind_float_class = {
+    {
+        NULL,
+        oci8_bind_free,
+        sizeof(oci8_bind_t)
+    },
+    bind_float_get,
+    bind_ocinumber_set,
     bind_ocinumber_init,
     bind_ocinumber_init_elem,
     NULL,
@@ -1544,6 +1625,7 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
 
     oci8_define_bind_class("OraNumber", &bind_ocinumber_class);
     oci8_define_bind_class("Integer", &bind_integer_class);
+    oci8_define_bind_class("Float", &bind_float_class);
 }
 
 OCINumber *oci8_get_ocinumber(VALUE num)

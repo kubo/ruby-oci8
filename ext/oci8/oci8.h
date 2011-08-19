@@ -490,6 +490,7 @@ void oci8_assign_bfile(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest);
 void Init_ora_date(void);
 
 /* ocinumber.c */
+extern int oci8_float_conversion_type_is_ruby;
 void Init_oci_number(VALUE mOCI, OCIError *errhp);
 OCINumber *oci8_get_ocinumber(VALUE num);
 VALUE oci8_make_ocinumber(OCINumber *s, OCIError *errhp);
@@ -497,6 +498,8 @@ VALUE oci8_make_integer(OCINumber *s, OCIError *errhp);
 VALUE oci8_make_float(OCINumber *s, OCIError *errhp);
 OCINumber *oci8_set_ocinumber(OCINumber *result, VALUE self, OCIError *errhp);
 OCINumber *oci8_set_integer(OCINumber *result, VALUE self, OCIError *errhp);
+double oci8_onum_to_dbl(OCINumber *s, OCIError *errhp);
+OCINumber *oci8_dbl_to_onum(OCINumber *result, double dbl, OCIError *errhp);
 
 /* ocidatetim.c */
 void Init_oci_datetime(void);
