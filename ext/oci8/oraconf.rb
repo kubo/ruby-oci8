@@ -1136,6 +1136,18 @@ EOS
       else
         # 10.1.0 doesn't have OCI_MAJOR_VERSION and OCI_MINOR_VERSION in oci.h.
         @version = "1010"
+        if RUBY_PLATFORM =~ /darwin/ and 1.size == 8 and `sw_vers -productVersion`.chomp == "10.7"
+          $stderr.print <<EOS
+WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN!
+
+64-bit Oracle instant client doesn't work on OS X Lion.
+See: https://forums.oracle.com/forums/thread.jspa?threadID=2187558
+
+The compilation is continued because the issue may be fixed in future.
+
+WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN!
+EOS
+        end
       end
       return
     end

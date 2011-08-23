@@ -1,3 +1,7 @@
+2011-08-23  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: warn when the Oracle instant client is
+	    64-bit on OS X Lion.
+
 2011-08-19  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c, ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/ocinumber.c,
 	  lib/oci8/properties.rb: Decimal to float and float to decimal conversions
