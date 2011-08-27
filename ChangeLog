@@ -1,3 +1,7 @@
+2011-08-27  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/bind.c, lib/oci8/bindtype.rb, lib/oci8/properties.rb: add
+	    OCI8.properties[:length_semantics].
+
 2011-08-23  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: warn when the Oracle instant client is
 	    64-bit on OS X Lion.

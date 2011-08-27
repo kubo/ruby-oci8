@@ -1,7 +1,7 @@
 #--
 # bindtype.rb -- OCI8::BindType
 #
-# Copyright (C) 2009-2010 KUBO Takehiro <kubo@jiubao.org>
+# Copyright (C) 2009-2011 KUBO Takehiro <kubo@jiubao.org>
 #++
 
 class OCI8
@@ -105,13 +105,15 @@ class OCI8
       def self.create(con, val, param, max_array_size)
         case param
         when Hash
-          param[:char_semantics] = true unless param.has_key? :char_semantics
+          param[:length_semantics] = OCI8::properties[:length_semantics] unless param.has_key? :length_semantics
           unless param[:length]
             if val.respond_to? :to_str
               val = val.to_str
-              if param[:char_semantics]
+              if param[:length_semantics] == :char
+                # character semantics
                 param[:length] = val.size
               else
+                # byte semantics
                 if OCI8.respond_to? :encoding and OCI8.encoding != val.encoding
                   # If the string encoding is different with NLS_LANG character set,
                   # convert it to get the length.
@@ -134,15 +136,15 @@ class OCI8
         when OCI8::Metadata::Base
           case param.data_type
           when :char, :varchar2
-            char_semantics = param.char_used?
-            if char_semantics
+            length_semantics = OCI8.properties[:length_semantics]
+            if length_semantics == :char
               length = param.char_size
             else
               length = param.data_size * OCI8.nls_ratio
             end
             param = {
               :length => length,
-              :char_semantics => char_semantics,
+              :length_semantics => length_semantics,
               :nchar => (param.charset_form == :nchar),
             }
           when :raw

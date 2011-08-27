@@ -12,7 +12,8 @@
 
 static ID id_bind_type;
 static VALUE sym_length;
-static VALUE sym_char_semantics;
+static VALUE sym_length_semantics;
+static VALUE sym_char;
 static VALUE sym_nchar;
 
 static VALUE cOCI8BindTypeBase;
@@ -50,20 +51,21 @@ static void bind_string_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE par
 {
     oci8_bind_string_t *obs = (oci8_bind_string_t *)obind;
     VALUE length;
-    VALUE char_semantics;
+    VALUE length_semantics;
     VALUE nchar;
     sb4 sz;
 
     Check_Type(param, T_HASH);
     length = rb_hash_aref(param, sym_length);
-    char_semantics = rb_hash_aref(param, sym_char_semantics);
+    length_semantics = rb_hash_aref(param, sym_length_semantics);
     nchar = rb_hash_aref(param, sym_nchar);
 
     sz = NUM2INT(length);
     if (sz < 0) {
         rb_raise(rb_eArgError, "invalid bind length %d", sz);
     }
-    if (RTEST(char_semantics)) {
+    if (length_semantics == sym_char) {
+        /* character semantics */
         obs->charlen = sz;
         obs->bytelen = sz = sz * oci8_nls_ratio;
         if (oci8_nls_ratio == 1) {
@@ -73,6 +75,7 @@ static void bind_string_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE par
             sz *= 2;
         }
     } else {
+        /* byte semantics */
         obs->bytelen = sz;
         obs->charlen = 0;
     }
@@ -486,7 +489,8 @@ void Init_oci8_bind(VALUE klass)
     cOCI8BindTypeBase = klass;
     id_bind_type = rb_intern("bind_type");
     sym_length = ID2SYM(rb_intern("length"));
-    sym_char_semantics = ID2SYM(rb_intern("char_semantics"));
+    sym_length_semantics = ID2SYM(rb_intern("length_semantics"));
+    sym_char = ID2SYM(rb_intern("char"));
     sym_nchar = ID2SYM(rb_intern("nchar"));
 
     rb_define_method(cOCI8BindTypeBase, "initialize", oci8_bind_initialize, 4);

@@ -5,6 +5,7 @@
 class OCI8
 
   @@properties = {
+    :length_semantics => :byte,
     :bind_string_as_nchar => false,
     :float_conversion_type => :ruby,
   }
@@ -17,6 +18,10 @@ class OCI8
   def @@properties.[]=(name, val)
     raise IndexError, "No such property name: #{name}" unless @@properties.has_key?(name)
     case name
+    when :length_semantic
+      if val != :byte and val != char
+        raise ArgumentError, "Invalid property value #{val} for :length_semantics."
+      end
     when :bind_string_as_nchar
       val = val ? true : false
     when :float_conversion_type
@@ -44,6 +49,12 @@ class OCI8
   #   OCI8.properties[:invalid_property_name] = true # raises an IndexError
   #
   # Supported properties are listed below:
+  #
+  # [:length_semantics]
+  #     +:char+ when Oracle character length is counted by the number of characters.
+  #     +:byte+ when it is counted by the number of bytes.
+  #     The default setting is +:byte+ because +:char+ causes unexpected behaviour on
+  #     Oracle 9i.
   #
   # [:bind_string_as_nchar]
   #     +true+ when string bind variables are bound as NCHAR,
