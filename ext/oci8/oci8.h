@@ -29,9 +29,6 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
-#ifdef HAVE_XMLOTN_H
-#include "xmlotn.h"
-#endif
 
 #define ORAVERNUM(major, minor, update, patch, port_update) \
     (((major) << 24) | ((minor) << 20) | ((update) << 12) | ((patch) << 8) | (port_update))
@@ -259,8 +256,6 @@ struct oci8_bind_class {
     void (*set)(oci8_bind_t *obind, void *data, void **null_structp, VALUE val);
     void (*init)(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length);
     void (*init_elem)(oci8_bind_t *obind, VALUE svc);
-    ub1 (*in)(oci8_bind_t *obind, ub4 idx, ub1 piece, void **valuepp, ub4 **alenpp, void **indpp);
-    void (*out)(oci8_bind_t *obind, ub4 idx, ub1 piece, void **valuepp, ub4 **alenpp, void **indpp);
     void (*pre_fetch_hook)(oci8_bind_t *obind, VALUE svc);
     ub2 dty;
     void (*post_bind_hook)(oci8_bind_t *obind);
@@ -512,18 +507,6 @@ VALUE oci8_make_interval_ds(OCIInterval *s);
 
 /* object.c */
 void Init_oci_object(VALUE mOCI);
-
-/* xmldb.c */
-#ifndef XMLCTX_DEFINED
-#define XMLCTX_DEFINED
-struct xmlctx;
-typedef struct xmlctx xmlctx;
-#endif
-#ifndef XML_TYPES
-typedef struct xmlnode xmlnode;
-#endif
-void Init_oci_xmldb(void);
-VALUE oci8_make_rexml(struct xmlctx *xctx, xmlnode *node);
 
 /* attr.c */
 VALUE oci8_get_sb1_attr(oci8_base_t *base, ub4 attrtype);

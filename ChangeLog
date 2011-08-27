@@ -1,4 +1,11 @@
 2011-08-27  KUBO Takehiro  <kubo@jiubao.org>
+	*  ext/oci8/bind.c, ext/oci8/extconf.rb, ext/oci8/lob.c, ext/oci8/object.c,
+	   ext/oci8/oci8.h, ext/oci8/oci8lib.c, ext/oci8/ocidatetime.c,
+	   ext/oci8/ocinumber.c, ext/oci8/oradate.c, ext/oci8/stmt.c,
+	   ext/oci8/xmldb.c: delete unused and unworkable features: dynamic fetch
+	      and xmldb.
+
+2011-08-27  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c, lib/oci8/bindtype.rb, lib/oci8/properties.rb: add
 	    OCI8.properties[:length_semantics].
 

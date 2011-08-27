@@ -321,10 +321,6 @@ double oci8_onum_to_dbl(OCINumber *s, OCIError *errhp)
         char buf[256];
         sword rv;
 
-        double dbl;
-
-        oci_lc(OCINumberToReal(errhp, s, sizeof(double), &dbl));
-
         rv = oranumber_to_str(s, buf, sizeof(buf));
         if (rv <= 0) {
             char buf[ORANUMBER_DUMP_BUF_SIZ];
@@ -1469,8 +1465,6 @@ static const oci8_bind_class_t bind_ocinumber_class = {
     bind_ocinumber_init,
     bind_ocinumber_init_elem,
     NULL,
-    NULL,
-    NULL,
     SQLT_VNU,
 };
 
@@ -1485,8 +1479,6 @@ static const oci8_bind_class_t bind_integer_class = {
     bind_ocinumber_init,
     bind_ocinumber_init_elem,
     NULL,
-    NULL,
-    NULL,
     SQLT_VNU,
 };
 
@@ -1500,8 +1492,6 @@ static const oci8_bind_class_t bind_float_class = {
     bind_ocinumber_set,
     bind_ocinumber_init,
     bind_ocinumber_init_elem,
-    NULL,
-    NULL,
     NULL,
     SQLT_VNU,
 };

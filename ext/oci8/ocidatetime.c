@@ -2,8 +2,8 @@
 /*
  *  ocidatetime.c
  *
- * $Author$
- * $Date$
+ * $Author: kubo $
+ * $Date: 2011-08-27 17:51:45 +0900 (土, 27  8月 2011) $
  *
  * Copyright (C) 2005-2008 KUBO Takehiro <kubo@jiubao.org>
  *
@@ -263,8 +263,6 @@ static const oci8_bind_class_t bind_ocitimestamp_tz_class = {
     bind_ocitimestamp_tz_init,
     bind_ocitimestamp_tz_init_elem,
     NULL,
-    NULL,
-    NULL,
     SQLT_TIMESTAMP_TZ
 };
 
@@ -436,8 +434,6 @@ static const oci8_bind_class_t bind_ociinterval_ym_class = {
     bind_ociinterval_ym_init,
     bind_ociinterval_ym_init_elem,
     NULL,
-    NULL,
-    NULL,
     SQLT_INTERVAL_YM
 };
 
@@ -451,8 +447,6 @@ static const oci8_bind_class_t bind_ociinterval_ds_class = {
     bind_ociinterval_ds_set,
     bind_ociinterval_ds_init,
     bind_ociinterval_ds_init_elem,
-    NULL,
-    NULL,
     NULL,
     SQLT_INTERVAL_DS
 };

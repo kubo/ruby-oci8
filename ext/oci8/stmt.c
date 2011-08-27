@@ -101,7 +101,6 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
     oci8_bind_t *obind;
     const oci8_bind_class_t *bind_class;
     sword status;
-    ub4 mode;
 
     position = NUM2INT(vposition); /* 1 */
     obind = oci8_get_bind(vbindobj); /* 2 */
@@ -109,12 +108,7 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
         oci8_base_free(&obind->base); /* TODO: OK? */
     }
     bind_class = (const oci8_bind_class_t *)obind->base.klass;
-    if (bind_class->out == NULL) {
-        mode = OCI_DEFAULT;
-    } else {
-        mode = OCI_DYNAMIC_FETCH;
-    }
-    status = OCIDefineByPos(stmt->base.hp.stmt, &obind->base.hp.dfn, oci8_errhp, position, obind->valuep, obind->value_sz, bind_class->dty, NIL_P(obind->tdo) ? obind->u.inds : NULL, NULL, 0, mode);
+    status = OCIDefineByPos(stmt->base.hp.stmt, &obind->base.hp.dfn, oci8_errhp, position, obind->valuep, obind->value_sz, bind_class->dty, NIL_P(obind->tdo) ? obind->u.inds : NULL, NULL, 0, OCI_DEFAULT);
     if (status != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, status, stmt->base.hp.ptr);
     }
@@ -151,7 +145,6 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     VALUE old_value;
     void *indp;
     ub4 *curelep;
-    ub4 mode;
 
     if (NIL_P(vplaceholder)) { /* 1 */
         placeholder_ptr = NULL;
@@ -175,11 +168,6 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
         oci8_base_free(&obind->base); /* TODO: OK? */
     }
     bind_class = (const oci8_bind_class_t *)obind->base.klass;
-    if (bind_class->in != NULL || bind_class->out != NULL) {
-        mode = OCI_DATA_AT_EXEC;
-    } else {
-        mode = OCI_DEFAULT;
-    }
 
     indp = NIL_P(obind->tdo) ? obind->u.inds : NULL;
     if (obind->maxar_sz == 0) {
@@ -188,9 +176,9 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
         curelep = &obind->curar_sz;
     }
     if (placeholder_ptr == (char*)-1) {
-        status = OCIBindByPos(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, position, obind->valuep, obind->value_sz, bind_class->dty, indp, NULL, 0, 0, 0, mode);
+        status = OCIBindByPos(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, position, obind->valuep, obind->value_sz, bind_class->dty, indp, NULL, 0, 0, 0, OCI_DEFAULT);
     } else {
-        status = OCIBindByName(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, TO_ORATEXT(placeholder_ptr), placeholder_len, obind->valuep, obind->value_sz, bind_class->dty, indp, NULL, 0, 0, 0, mode);
+        status = OCIBindByName(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, TO_ORATEXT(placeholder_ptr), placeholder_len, obind->valuep, obind->value_sz, bind_class->dty, indp, NULL, 0, 0, 0, OCI_DEFAULT);
     }
     if (status != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, status, stmt->base.hp.stmt);
@@ -250,54 +238,6 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE iteration_count)
         mode = svcctx->is_autocommit ? OCI_COMMIT_ON_SUCCESS : OCI_DEFAULT;
     }
     rv = oci8_call_stmt_execute(svcctx, stmt, iters, mode);
-#ifdef USE_DYNAMIC_FETCH
-    while (rv == OCI_NEED_DATA) {
-        oci8_bind_t *obind;
-        const oci8_bind_class_t *bind_class;
-        /* get piece info. */
-        dvoid *hp;
-        ub4 type;
-        ub1 in_out;
-        ub4 iter;
-        ub4 idx;
-        ub1 piece;
-        /* set piece info. */
-        void *valuep;
-        ub4 *alenp;
-        void *indp;
-
-        oci_lc(OCIStmtGetPieceInfo(stmt->base.hp.ptr, oci8_errhp, &hp, &type, &in_out, &iter, &idx, &piece));
-        obind = (oci8_bind_t*)stmt->base.children;
-        do {
-            if (obind->base.hp.ptr == hp) {
-                if (type != OCI_HTYPE_BIND)
-                    rb_bug("ruby-oci8: expect OCI_HTYPE_BIND but %d", type);
-                bind_class = (const oci8_bind_class_t *)obind->base.klass;
-                switch (in_out) {
-                case OCI_PARAM_IN:
-                    if (bind_class->in == NULL)
-                        rb_bug("....");
-                    piece = bind_class->in(obind, idx, piece, &valuep, &alenp, &indp);
-                    break;
-                case OCI_PARAM_OUT:
-                    if (bind_class->out == NULL)
-                        rb_bug("....");
-                    bind_class->out(obind, idx, piece, &valuep, &alenp, &indp);
-                    break;
-                default:
-                    rb_bug("ruby-oci8: expect OCI_PARAM_IN or OCI_PARAM_OUT but %d", in_out);
-                }
-                oci_lc(OCIStmtSetPieceInfo(obind->base.hp.ptr, OCI_HTYPE_BIND, oci8_errhp, valuep, alenp, 0, indp, NULL));
-                break;
-            }
-            obind = (oci8_bind_t*)obind->base.next;
-        } while (obind != (oci8_bind_t*)stmt->base.children);
-        if (obind == (oci8_bind_t*)stmt) {
-            rb_bug("ruby-oci8: No bind handle is found.");
-        }
-        rv = oci8_call_stmt_execute(svcctx, stmt, iters, mode);
-    }
-#endif /* USE_DYNAMIC_FETCH */
     if (IS_OCI_ERROR(rv)) {
         oci8_raise(oci8_errhp, rv, stmt->base.hp.stmt);
     }
@@ -351,78 +291,12 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
         } while (obind != (oci8_bind_t*)stmt->base.children);
     }
     rv = OCIStmtFetch_nb(svcctx, stmt->base.hp.stmt, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT);
-#ifdef USE_DYNAMIC_FETCH
-    while (rv == OCI_NEED_DATA) {
-        /* get piece info. */
-        dvoid *hp;
-        ub4 type;
-        ub1 in_out;
-        ub4 iter;
-        ub4 idx;
-        ub1 piece;
-        /* set piece info. */
-        void *valuep;
-        ub4 *alenp;
-        void *indp;
-
-        oci_lc(OCIStmtGetPieceInfo(stmt->base.hp.ptr, oci8_errhp, &hp, &type, &in_out, &iter, &idx, &piece));
-        obind = (oci8_bind_t *)stmt->base.children;
-        do {
-            if (obind->base.hp.ptr == hp) {
-                if (type != OCI_HTYPE_DEFINE)
-                    rb_bug("ruby-oci8: expect OCI_HTYPE_DEFINE but %d", type);
-                bind_class = (const oci8_bind_class_t *)obind->base.klass;
-                switch (in_out) {
-                case OCI_PARAM_OUT:
-                    if (bind_class->out == NULL)
-                        rb_bug("....");
-                    bind_class->out(obind, idx, piece, &valuep, &alenp, &indp);
-                    break;
-                default:
-                    rb_bug("ruby-oci8: expect OCI_PARAM_OUT but %d", in_out);
-                }
-                oci_lc(OCIStmtSetPieceInfo(obind->base.hp.ptr, OCI_HTYPE_DEFINE, oci8_errhp, valuep, alenp, 0, indp, NULL));
-                break;
-            }
-            obind = (oci8_bind_t *)obind->base.next;
-        } while (obind != (oci8_bind_t*)stmt->base.children);
-        if (obind == (oci8_bind_t*)stmt) {
-            rb_bug("ruby-oci8: No define handle is found.");
-        }
-        rv = OCIStmtFetch_nb(svcctx, stmt->base.hp.stmt, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT);
-    }
-#endif /* USE_DYNAMIC_FETCH */
     if (rv == OCI_NO_DATA) {
         return Qnil;
     }
     if (IS_OCI_ERROR(rv)) {
         oci8_raise(oci8_errhp, rv, stmt->base.hp.stmt);
     }
-#ifdef USE_DYNAMIC_FETCH
-    obind = (oci8_bind_t *)stmt->base.children;
-    do {
-        /* set piece info. */
-        void *valuep;
-        ub4 *alenp;
-        void *indp;
-        ub1 piece = OCI_LAST_PIECE;
-
-        if (obind->base.type == OCI_HTYPE_DEFINE) {
-            bind_class = (const oci8_bind_class_t *)obind->base.klass;
-            if (bind_class->out != NULL) {
-                if (obind->maxar_sz == 0) {
-                    bind_class->out(obind, 0, piece, &valuep, &alenp, &indp);
-                } else {
-                    ub4 idx;
-                    for (idx = 0; idx < obind->curar_sz; idx++) {
-                        bind_class->out(obind, idx, piece, &valuep, &alenp, &indp);
-                    }
-                }
-            }
-        }
-        obind = (oci8_bind_t *)obind->base.next;
-    } while (obind != (oci8_bind_t*)stmt->base.children);
-#endif /* USE_DYNAMIC_FETCH */
     ary = rb_ary_new2(RARRAY_LEN(stmt->defns));
     for (idx = 0; idx < RARRAY_LEN(stmt->defns); idx++) {
         rb_ary_store(ary, idx, oci8_bind_get_data(RARRAY_PTR(stmt->defns)[idx]));
@@ -746,8 +620,6 @@ static const oci8_bind_class_t bind_stmt_class = {
     bind_stmt_set,
     bind_stmt_init,
     bind_stmt_init_elem,
-    NULL,
-    NULL,
     bind_stmt_init_elem,
     SQLT_RSET
 };

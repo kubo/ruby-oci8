@@ -656,8 +656,6 @@ static const oci8_bind_class_t bind_named_type_class = {
     bind_named_type_init,
     bind_named_type_init_elem,
     NULL,
-    NULL,
-    NULL,
     SQLT_NTY,
     bind_name_type_post_bind_hook,
 };

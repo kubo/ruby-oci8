@@ -113,8 +113,6 @@ static const oci8_bind_class_t bind_string_class = {
     bind_string_init,
     NULL,
     NULL,
-    NULL,
-    NULL,
     SQLT_LVC,
     bind_string_post_bind_hook,
 };
@@ -152,153 +150,8 @@ static const oci8_bind_class_t bind_raw_class = {
     bind_string_init,
     NULL,
     NULL,
-    NULL,
-    NULL,
     SQLT_LVB
 };
-
-#ifdef USE_DYNAMIC_FETCH /* don't use DYNAMIC_FETCH. It doesn't work well... */
-/*
- * bind_long
- */
-typedef struct {
-    VALUE obj;
-    ub4 alen;
-    char buf[1];
-} bind_long_t;
-#define bind_long_offset ((size_t)((bind_long_t*)0)->buf)
-
-static void bind_long_mark(oci8_base_t *base)
-{
-    oci8_bind_t *obind = (oci8_bind_t*)base;
-    ub4 idx = 0;
-
-    if (obind->valuep == NULL)
-        return;
-    do {
-        bind_long_t *bl = (bind_long_t *)((char*)obind->valuep + obind->alloc_sz * idx);
-        rb_gc_mark(bl->obj);
-    } while (++idx < obind->maxar_sz);
-}
-
-static VALUE bind_long_get(oci8_bind_t *obind, void *data, void *null_struct)
-{
-    bind_long_t *bl = (bind_long_t *)data;
-    return RTEST(bl->obj) ? rb_str_dup(bl->obj) : Qnil;
-}
-
-static void bind_long_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
-{
-    bind_long_t *bl = (bind_long_t *)data;
-    bl->obj = rb_str_dup(val);
-}
-
-static void bind_long_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
-{
-    sb4 sz = 0;
-
-    if (!NIL_P(length)) {
-        sz = NUM2INT(length);
-    }
-    if (sz < 4000) {
-        sz = 4000;
-    }
-    sz += bind_long_offset;
-    obind->value_sz = INT_MAX;
-    obind->alloc_sz = (sz + (sizeof(VALUE) - 1)) & ~(sizeof(VALUE) - 1);
-}
-
-static void bind_long_init_elem(oci8_bind_t *obind, VALUE svc)
-{
-    ub4 idx = 0;
-
-    do {
-        bind_long_t *bl = (bind_long_t *)((char*)obind->valuep + obind->alloc_sz * idx);
-        bl->obj = Qnil;
-    } while (++idx < obind->maxar_sz);
-}
-
-static ub1 bind_long_in(oci8_bind_t *obind, ub4 idx, ub1 piece, void **valuepp, ub4 **alenpp, void **indpp)
-{
-    bind_long_t *bl = (bind_long_t *)((char*)obind->valuep + obind->alloc_sz * idx);
-
-    *alenpp = &bl->alen;
-    *indpp = &obind->u.inds[idx];
-    if (NIL_P(bl->obj)) {
-        *valuepp = NULL;
-        bl->alen = 0;
-        obind->u.inds[idx] = -1;
-    } else {
-        StringValue(bl->obj);
-        *valuepp = RSTRING_PTR(bl->obj);
-        bl->alen = RSTRING_LEN(bl->obj);
-        obind->u.inds[idx] = 0;
-    }
-    return OCI_ONE_PIECE;
-}
-
-static void bind_long_out(oci8_bind_t *obind, ub4 idx, ub1 piece, void **valuepp, ub4 **alenpp, void **indpp)
-{
-    bind_long_t *bl = (bind_long_t *)((char*)obind->valuep + obind->alloc_sz * idx);
-
-    switch (piece) {
-    case OCI_NEXT_PIECE:
-    case OCI_LAST_PIECE:
-        if (bl->alen > 0) {
-            if (!RTEST(bl->obj)) {
-                bl->obj = rb_str_buf_new(bl->alen);
-            }
-            rb_str_buf_cat(bl->obj, bl->buf, bl->alen);
-        }
-        break;
-    default:
-        /* OCI_FIRST_PIECE is passed at the first call according to manuals.
-         * But OCI_ONE_PIECE is passed on Oracle 8 and 8i on Windows...
-         */
-        bl->obj = Qnil;
-    }
-    *valuepp = bl->buf;
-    *alenpp = &bl->alen;
-    *indpp = &obind->u.inds[idx];
-    bl->alen = obind->alloc_sz - bind_long_offset;
-    obind->u.inds[idx] = 0;
-}
-
-static const oci8_bind_class_t bind_long_class = {
-    {
-        bind_long_mark,
-        oci8_bind_free,
-        sizeof(oci8_bind_t)
-    },
-    bind_long_get,
-    bind_long_set,
-    bind_long_init,
-    bind_long_init_elem,
-    bind_long_in,
-    bind_long_out,
-    NULL,
-    SQLT_CHR
-};
-
-/*
- * bind_long_raw
- */
-static const oci8_bind_class_t bind_long_raw_class = {
-    {
-        bind_long_mark,
-        oci8_bind_free,
-        sizeof(oci8_bind_t)
-    },
-    bind_long_get,
-    bind_long_set,
-    bind_long_init,
-    bind_long_init_elem,
-    bind_long_in,
-    bind_long_out,
-    NULL,
-    SQLT_BIN
-};
-#endif /* USE_DYNAMIC_FETCH */
 
 /*
  * bind_binary_double
@@ -332,8 +185,6 @@ static const oci8_bind_class_t bind_binary_double_class = {
     bind_binary_double_get,
     bind_binary_double_set,
     bind_binary_double_init,
-    NULL,
-    NULL,
     NULL,
     NULL,
     SQLT_BDOUBLE
@@ -500,10 +351,6 @@ void Init_oci8_bind(VALUE klass)
     /* register primitive data types. */
     oci8_define_bind_class("String", &bind_string_class);
     oci8_define_bind_class("RAW", &bind_raw_class);
-#ifdef USE_DYNAMIC_FETCH
-    oci8_define_bind_class("Long", &bind_long_class);
-    oci8_define_bind_class("LongRaw", &bind_long_raw_class);
-#endif /* USE_DYNAMIC_FETCH */
     if (oracle_client_version >= ORAVER_10_1) {
         oci8_define_bind_class("BinaryDouble", &bind_binary_double_class);
     }

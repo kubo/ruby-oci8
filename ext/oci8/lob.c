@@ -692,8 +692,6 @@ static const oci8_bind_lob_class_t bind_clob_class = {
         bind_lob_init,
         bind_lob_init_elem,
         NULL,
-        NULL,
-        NULL,
         SQLT_CLOB
     },
     &cOCI8CLOB
@@ -710,8 +708,6 @@ static const oci8_bind_lob_class_t bind_nclob_class = {
         bind_lob_set,
         bind_lob_init,
         bind_lob_init_elem,
-        NULL,
-        NULL,
         NULL,
         SQLT_CLOB,
         bind_lob_post_bind_hook_for_nclob,
@@ -731,8 +727,6 @@ static const oci8_bind_lob_class_t bind_blob_class = {
         bind_lob_init,
         bind_lob_init_elem,
         NULL,
-        NULL,
-        NULL,
         SQLT_BLOB
     },
     &cOCI8BLOB
@@ -749,8 +743,6 @@ static const oci8_bind_lob_class_t bind_bfile_class = {
         bind_lob_set,
         bind_lob_init,
         bind_lob_init_elem,
-        NULL,
-        NULL,
         NULL,
         SQLT_BFILE
     },
