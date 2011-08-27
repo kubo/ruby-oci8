@@ -268,7 +268,7 @@ struct oci8_base {
         OCISvcCtx *svc;
         OCICPool *poolhp;
         OCIServer *srvhp;
-        OCISession *authhp;
+        OCISession *usrhp;
         OCIStmt *stmt;
         OCIDefine *dfn;
         OCIBind *bnd;
@@ -305,8 +305,8 @@ typedef struct oci8_svcctx {
     oci8_base_t base;
     volatile VALUE executing_thread;
     void (*logoff_method)(struct oci8_svcctx *svcctx);
-    oci8_base_t *session;
-    oci8_base_t *server;
+    OCISession *usrhp;
+    OCIServer *srvhp;
     rb_pid_t pid;
     unsigned char state;
     char is_autocommit;
