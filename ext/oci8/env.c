@@ -12,11 +12,7 @@
 #include <util.h>
 #endif
 
-#ifdef HAVE_RB_THREAD_BLOCKING_REGION
 ub4 oci8_env_mode = OCI_OBJECT | OCI_THREADED;
-#else
-ub4 oci8_env_mode = OCI_OBJECT;
-#endif
 
 OCIEnv *oci8_global_envhp;
 

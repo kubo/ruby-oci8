@@ -1,6 +1,6 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
- * Copyright (C) 2002-2009 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2011 KUBO Takehiro <kubo@jiubao.org>
  */
 
 #include "oci8.h"
@@ -90,6 +90,7 @@ Init_oci8lib()
     rb_set_end_proc(at_exit_func, Qnil);
 #endif
 
+    Init_oci8_thread_util();
     Init_oci8_error();
     Init_oci8_env();
 

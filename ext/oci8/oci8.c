@@ -6,6 +6,7 @@
  *
  */
 #include "oci8.h"
+#include <errno.h>
 #ifdef HAVE_UNISTD_H
 #include <unistd.h> /* getpid() */
 #endif
@@ -79,9 +80,21 @@ static void copy_server_handle(oci8_svcctx_t *svcctx)
 static void oci8_svcctx_free(oci8_base_t *base)
 {
     oci8_svcctx_t *svcctx = (oci8_svcctx_t *)base;
-    if (svcctx->logoff_method != NULL) {
-        /* TODO: not to block GC. */
-        svcctx->logoff_method(svcctx);
+    if (svcctx->logoff_strategy != NULL) {
+        const oci8_logoff_strategy_t *strategy = svcctx->logoff_strategy;
+        void *data = strategy->prepare(svcctx);
+        int rv;
+        svcctx->base.type = 0;
+        svcctx->logoff_strategy = NULL;
+        rv = oci8_run_native_thread(strategy->execute, data);
+        if (rv != 0) {
+            errno = rv;
+#ifdef WIN32
+            rb_sys_fail("_beginthread");
+#else
+            rb_sys_fail("pthread_create");
+#endif
+        }
     }
 }
 
@@ -226,38 +239,100 @@ static VALUE oci8_parse_connect_string(VALUE self, VALUE conn_str)
     return rb_ary_new3(4, user, pass, dbname, mode);
 }
 
-static void call_oci_logoff(oci8_svcctx_t *svcctx)
+/*
+ * Logoff strategy for sessions connected by OCILogon.
+ */
+typedef struct {
+    OCISvcCtx *svchp;
+    OCISession *usrhp;
+    OCIServer *srvhp;
+} simple_logoff_arg_t;
+
+static void *simple_logoff_prepare(oci8_svcctx_t *svcctx)
 {
-    svcctx->logoff_method = NULL;
-    oci_lc(OCILogoff_nb(svcctx, svcctx->base.hp.svc, oci8_errhp));
-    svcctx->base.type = 0;
+    simple_logoff_arg_t *sla = xmalloc(sizeof(simple_logoff_arg_t));
+    sla->svchp = svcctx->base.hp.svc;
+    sla->usrhp = svcctx->usrhp;
+    sla->srvhp = svcctx->srvhp;
+    svcctx->usrhp = NULL;
+    svcctx->srvhp = NULL;
+    return sla;
 }
 
-static void call_session_end(oci8_svcctx_t *svcctx)
+static VALUE simple_logoff_execute(void *arg)
 {
+    simple_logoff_arg_t *sla = (simple_logoff_arg_t *)arg;
+    OCIError *errhp = oci8_errhp;
+    sword rv;
+
+    OCITransRollback(sla->svchp, errhp, OCI_DEFAULT);
+    rv = OCILogoff(sla->svchp, errhp);
+    free(sla);
+    return (VALUE)rv;
+}
+
+static const oci8_logoff_strategy_t simple_logoff = {
+    simple_logoff_prepare,
+    simple_logoff_execute,
+};
+
+/*
+ * Logoff strategy for sessions connected by OCIServerAttach and OCISessionBegin.
+ */
+
+typedef struct {
+    OCISvcCtx *svchp;
+    OCISession *usrhp;
+    OCIServer *srvhp;
+    unsigned char state;
+} complex_logoff_arg_t;
+
+static void *complex_logoff_prepare(oci8_svcctx_t *svcctx)
+{
+    complex_logoff_arg_t *cla = xmalloc(sizeof(complex_logoff_arg_t));
+    cla->svchp = svcctx->base.hp.svc;
+    cla->usrhp = svcctx->usrhp;
+    cla->srvhp = svcctx->srvhp;
+    cla->state = svcctx->state;
+    svcctx->usrhp = NULL;
+    svcctx->srvhp = NULL;
+    svcctx->state = 0;
+    return cla;
+}
+
+static VALUE complex_logoff_execute(void *arg)
+{
+    complex_logoff_arg_t *cla = (complex_logoff_arg_t *)arg;
+    OCIError *errhp = oci8_errhp;
     sword rv = OCI_SUCCESS;
 
-    if (svcctx->state & OCI8_STATE_SESSION_BEGIN_WAS_CALLED) {
-        rv = OCISessionEnd_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, svcctx->usrhp, OCI_DEFAULT);
-        svcctx->state &= ~OCI8_STATE_SESSION_BEGIN_WAS_CALLED;
+    OCITransRollback(cla->svchp, errhp, OCI_DEFAULT);
+
+    if (cla->state & OCI8_STATE_SESSION_BEGIN_WAS_CALLED) {
+        rv = OCISessionEnd(cla->svchp, oci8_errhp, cla->usrhp, OCI_DEFAULT);
+        cla->state &= ~OCI8_STATE_SESSION_BEGIN_WAS_CALLED;
     }
-    if (svcctx->state & OCI8_STATE_SERVER_ATTACH_WAS_CALLED) {
-        rv = OCIServerDetach_nb(svcctx, svcctx->srvhp, oci8_errhp, OCI_DEFAULT);
-        svcctx->state &= ~OCI8_STATE_SERVER_ATTACH_WAS_CALLED;
+    if (cla->state & OCI8_STATE_SERVER_ATTACH_WAS_CALLED) {
+        rv = OCIServerDetach(cla->srvhp, oci8_errhp, OCI_DEFAULT);
+        cla->state &= ~OCI8_STATE_SERVER_ATTACH_WAS_CALLED;
     }
-    if (svcctx->usrhp != NULL) {
-        OCIHandleFree(svcctx->usrhp, OCI_HTYPE_SESSION);
-        svcctx->usrhp = NULL;
+    if (cla->usrhp != NULL) {
+        OCIHandleFree(cla->usrhp, OCI_HTYPE_SESSION);
     }
-    if (svcctx->srvhp != NULL) {
-        OCIHandleFree(svcctx->srvhp, OCI_HTYPE_SERVER);
-        svcctx->srvhp = NULL;
+    if (cla->srvhp != NULL) {
+        OCIHandleFree(cla->srvhp, OCI_HTYPE_SERVER);
     }
-    svcctx->logoff_method = NULL;
-    if (rv != OCI_SUCCESS) {
-        oci8_raise(oci8_errhp, rv, NULL);
+    if (cla->svchp != NULL) {
+        OCIHandleFree(cla->svchp, OCI_HTYPE_SVCCTX);
     }
+    free(cla);
+    return (VALUE)rv;
 }
+
+static const oci8_logoff_strategy_t complex_logoff = {
+    complex_logoff_prepare,
+    complex_logoff_execute,
+};
 
 /*
  * call-seq:
@@ -271,7 +346,7 @@ static VALUE oci8_logon(VALUE self, VALUE username, VALUE password, VALUE dbname
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
 
-    if (svcctx->logoff_method != NULL) {
+    if (svcctx->logoff_strategy != NULL) {
         rb_raise(rb_eRuntimeError, "Could not reuse the session.");
     }
 
@@ -289,7 +364,7 @@ static VALUE oci8_logon(VALUE self, VALUE username, VALUE password, VALUE dbname
                        NIL_P(dbname) ? NULL : RSTRING_ORATEXT(dbname),
                        NIL_P(dbname) ? 0 : RSTRING_LEN(dbname)));
     svcctx->base.type = OCI_HTYPE_SVCCTX;
-    svcctx->logoff_method = call_oci_logoff;
+    svcctx->logoff_strategy = &simple_logoff;
 
     /* setup the session handle */
     oci_lc(OCIAttrGet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, &svcctx->usrhp, 0, OCI_ATTR_SESSION, oci8_errhp));
@@ -316,10 +391,10 @@ static VALUE oci8_allocate_handles(VALUE self)
     oci8_svcctx_t *svcctx = DATA_PTR(self);
     sword rv;
 
-    if (svcctx->logoff_method != NULL) {
+    if (svcctx->logoff_strategy != NULL) {
         rb_raise(rb_eRuntimeError, "Could not reuse the session.");
     }
-    svcctx->logoff_method = call_session_end;
+    svcctx->logoff_strategy = &complex_logoff;
     svcctx->state = 0;
 
     /* allocate a service context handle */
@@ -380,7 +455,7 @@ static VALUE oci8_server_attach(VALUE self, VALUE dbname, VALUE mode)
 {
     oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
 
-    if (svcctx->logoff_method != call_session_end) {
+    if (svcctx->logoff_strategy != &complex_logoff) {
         rb_raise(rb_eRuntimeError, "Use this method only for the service context handle created by OCI8#server_handle().");
     }
     if (svcctx->state & OCI8_STATE_SERVER_ATTACH_WAS_CALLED) {
@@ -417,7 +492,7 @@ static VALUE oci8_session_begin(VALUE self, VALUE cred, VALUE mode)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
 
-    if (svcctx->logoff_method != call_session_end) {
+    if (svcctx->logoff_strategy != &complex_logoff) {
         rb_raise(rb_eRuntimeError, "Use this method only for the service context handle created by OCI8#server_handle().");
     }
     if (svcctx->state & OCI8_STATE_SESSION_BEGIN_WAS_CALLED) {
@@ -453,9 +528,12 @@ static VALUE oci8_svcctx_logoff(VALUE self)
     while (svcctx->base.children != NULL) {
         oci8_base_free(svcctx->base.children);
     }
-    if (svcctx->logoff_method != NULL) {
-        oci_lc(OCITransRollback_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT));
-        svcctx->logoff_method(svcctx);
+    if (svcctx->logoff_strategy != NULL) {
+        const oci8_logoff_strategy_t *strategy = svcctx->logoff_strategy;
+        void *data = strategy->prepare(svcctx);
+        svcctx->base.type = 0;
+        svcctx->logoff_strategy = NULL;
+        oci_lc(oci8_blocking_region(svcctx, strategy->execute, data));
     }
     return Qtrue;
 }
@@ -519,10 +597,7 @@ static VALUE oci8_non_blocking_p(VALUE self)
 #else
     sb1 non_blocking;
 
-    if (svcctx->server->hp.srvhp == NULL) {
-        oci_lc(OCIAttrGet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, &svcctx->server->hp.srvhp, 0, OCI_ATTR_SERVER, oci8_errhp));
-    }
-    oci_lc(OCIAttrGet(svcctx->server->hp.srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp));
+    oci_lc(OCIAttrGet(svcctx->srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp));
     return non_blocking ? Qtrue : Qfalse;
 #endif
 }
@@ -572,13 +647,10 @@ static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
 #else
     sb1 non_blocking;
 
-    if (svcctx->server->hp.srvhp == NULL) {
-        oci_lc(OCIAttrGet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, &svcctx->server->hp.srvhp, 0, OCI_ATTR_SERVER, oci8_errhp));
-    }
-    oci_lc(OCIAttrGet(svcctx->server->hp.srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp));
+    oci_lc(OCIAttrGet(svcctx->srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp));
     if ((RTEST(val) && !non_blocking) || (!RTEST(val) && non_blocking)) {
         /* toggle blocking / non-blocking. */
-        oci_lc(OCIAttrSet(svcctx->server->hp.srvhp, OCI_HTYPE_SERVER, 0, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp));
+        oci_lc(OCIAttrSet(svcctx->srvhp, OCI_HTYPE_SERVER, 0, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp));
     }
 #endif
     return val;

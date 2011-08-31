@@ -300,11 +300,12 @@ struct oci8_bind {
     } u;
 };
 
+typedef struct oci8_logoff_strategy oci8_logoff_strategy_t;
 
 typedef struct oci8_svcctx {
     oci8_base_t base;
     volatile VALUE executing_thread;
-    void (*logoff_method)(struct oci8_svcctx *svcctx);
+    const oci8_logoff_strategy_t *logoff_strategy;
     OCISession *usrhp;
     OCIServer *srvhp;
     rb_pid_t pid;
@@ -315,6 +316,11 @@ typedef struct oci8_svcctx {
 #endif
     VALUE long_read_len;
 } oci8_svcctx_t;
+
+struct oci8_logoff_strategy {
+    void *(*prepare)(oci8_svcctx_t *svcctx);
+    rb_blocking_function_t *execute;
+};
 
 typedef struct {
     dvoid *hp; /* OCIBind* or OCIDefine* */
@@ -540,6 +546,7 @@ extern rb_encoding *oci8_encoding;
 #define OCI8SafeStringValue(v) SafeStringValue(v)
 #endif
 
+#include "thread_util.h"
 #include "apiwrap.h"
 
 #endif

@@ -1,3 +1,9 @@
+2011-08-31  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/env.c, ext/oci8/extconf.rb, ext/oci8/oci8.c, ext/oci8/oci8.h,
+	  ext/oci8/oci8lib.c, ext/oci8/thread_util.c, ext/oci8/thread_util.h:
+	    run connection-cleanup functions in a native thread to correctly
+	    release connections in GC.
+
 2011-08-27  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c, ext/oci8/oci8.h: refactoring for prior arrangement to
 	    properly release garbage sessions.
