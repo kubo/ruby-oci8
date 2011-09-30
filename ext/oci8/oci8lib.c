@@ -246,8 +246,8 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
             rb_raise(rb_eRuntimeError /* FIXME */, "executing in another thread");
         }
         svcctx->executing_thread = rb_thread_current();
+        /* Note: executing_thread is cleard at the end of the blocking function. */
         rv = (sword)rb_thread_blocking_region(func, data, oci8_unblock_func, svcctx);
-        svcctx->executing_thread = Qnil;
         if (rv == OCI_ERROR) {
             if (oci8_get_error_code(oci8_errhp) == 1013) {
                 rb_raise(eOCIBreak, "Canceled by user request.");
@@ -261,14 +261,20 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
 #else /* HAVE_RB_THREAD_BLOCKING_REGION */
 
 /* ruby 1.8 */
-sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data)
+typedef struct {
+    oci8_svcctx_t *svcctx;
+    rb_blocking_function_t *func;
+    void *data;
+} blocking_region_arg_t;
+
+static VALUE blocking_function_execute(blocking_region_arg_t *arg)
 {
+    oci8_svcctx_t *svcctx = arg->svcctx;
+    rb_blocking_function_t *func = arg->func;
+    void *data = arg->data;
     struct timeval tv;
     sword rv;
 
-    if (!NIL_P(svcctx->executing_thread)) {
-        rb_raise(rb_eRuntimeError /* FIXME */, "executing in another thread");
-    }
     tv.tv_sec = 0;
     tv.tv_usec = 10000;
     svcctx->executing_thread = rb_thread_current();
@@ -279,14 +285,37 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
     }
     if (rv == OCI_ERROR) {
         if (oci8_get_error_code(oci8_errhp) == 1013) {
-            if (have_OCIReset)
-                OCIReset(svcctx->base.hp.ptr, oci8_errhp);
+            OCIReset(svcctx->base.hp.ptr, oci8_errhp);
             svcctx->executing_thread = Qnil;
             rb_raise(eOCIBreak, "Canceled by user request.");
         }
     }
     svcctx->executing_thread = Qnil;
     return rv;
+}
+
+static VALUE blocking_function_ensure(oci8_svcctx_t *svcctx)
+{
+    if (!NIL_P(svcctx->executing_thread)) {
+        /* The thread is killed. */
+        OCIBreak(svcctx->base.hp.ptr, oci8_errhp);
+        OCIReset(svcctx->base.hp.ptr, oci8_errhp);
+        svcctx->executing_thread = Qnil;
+    }
+    return Qnil;
+}
+
+sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data)
+{
+    blocking_region_arg_t arg;
+
+    arg.svcctx = svcctx;
+    arg.func = func;
+    arg.data = data;
+    if (!NIL_P(svcctx->executing_thread)) {
+        rb_raise(rb_eRuntimeError, "executing in another thread");
+    }
+    return (sword)rb_ensure(blocking_function_execute, (VALUE)&arg, blocking_function_ensure, (VALUE)svcctx);
 }
 #endif /* HAVE_RB_THREAD_BLOCKING_REGION */
 

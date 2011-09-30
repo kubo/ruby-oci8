@@ -1,6 +1,7 @@
 # High-level API
 require 'oci8'
 require 'test/unit'
+require 'timeout'
 require File.dirname(__FILE__) + '/config'
 
 class TestBreak < Test::Unit::TestCase
@@ -78,5 +79,17 @@ class TestBreak < Test::Unit::TestCase
     end
     expect[SEND_BREAK]   = TIME_TO_BREAK
     do_test_ocibreak(@conn, expect)
+  end
+
+  def test_timeout
+    @conn.non_blocking = true
+    start_time = Time.now
+    assert_raise(Timeout::Error) do
+      Timeout.timeout(1) do
+        @conn.exec("BEGIN DBMS_LOCK.SLEEP(10); END;")
+      end
+    end
+    @conn.exec("BEGIN NULL; END;")
+    assert_operator(Time.now, :<, start_time + 2)
   end
 end

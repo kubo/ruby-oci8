@@ -1,4 +1,11 @@
 2011-09-30  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.c.tmpl, ext/oci8/oci8lib.c, test/test_break.rb:
+	    clear an executuing thread information in a connection when a SQL
+	    executions is canceled by Thread#kill or Timeout::timeout.
+	    (reported by Aaron Qian)
+	    See: http://rubyforge.org/forum/forum.php?thread_id=50112&forum_id=1078
+
+2011-09-30  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/connection_pool.c: run connection-pool cleanup functions
 	    in a native thread not to block GC.
 	* ext/oci8/oci8.c: use xfree() instead of free() to release memory
