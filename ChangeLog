@@ -1,3 +1,9 @@
+2011-09-30  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/connection_pool.c: run connection-pool cleanup functions
+	    in a native thread not to block GC.
+	* ext/oci8/oci8.c: use xfree() instead of free() to release memory
+	    allocated by xmalloc().
+
 2011-08-31  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/env.c, ext/oci8/extconf.rb, ext/oci8/oci8.c, ext/oci8/oci8.h,
 	  ext/oci8/oci8lib.c, ext/oci8/thread_util.c, ext/oci8/thread_util.h:

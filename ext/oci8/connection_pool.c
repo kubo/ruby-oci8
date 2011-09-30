@@ -21,9 +21,18 @@ static void oci8_cpool_mark(oci8_base_t *base)
     rb_gc_mark(cpool->pool_name);
 }
 
+static VALUE cpool_free_thread(void *arg)
+{
+    OCIConnectionPoolDestroy((OCICPool *)arg, oci8_errhp, OCI_DEFAULT);
+    OCIHandleFree(arg, OCI_HTYPE_CPOOL);
+    return 0;
+}
+
 static void oci8_cpool_free(oci8_base_t *base)
 {
-    OCIConnectionPoolDestroy(base->hp.poolhp, oci8_errhp, OCI_DEFAULT);
+    oci8_run_native_thread(cpool_free_thread, base->hp.poolhp);
+    base->type = 0;
+    base->hp.ptr = NULL;
 }
 
 static void oci8_cpool_init(oci8_base_t *base)

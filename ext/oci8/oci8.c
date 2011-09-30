@@ -267,7 +267,7 @@ static VALUE simple_logoff_execute(void *arg)
 
     OCITransRollback(sla->svchp, errhp, OCI_DEFAULT);
     rv = OCILogoff(sla->svchp, errhp);
-    free(sla);
+    xfree(sla);
     return (VALUE)rv;
 }
 
@@ -325,7 +325,7 @@ static VALUE complex_logoff_execute(void *arg)
     if (cla->svchp != NULL) {
         OCIHandleFree(cla->svchp, OCI_HTYPE_SVCCTX);
     }
-    free(cla);
+    xfree(cla);
     return (VALUE)rv;
 }
 
