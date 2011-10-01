@@ -42,7 +42,7 @@ static void oci8_cpool_init(oci8_base_t *base)
     cpool->pool_name = Qnil;
 }
 
-static oci8_base_class_t oci8_cpool_class = {
+static oci8_base_vtable_t oci8_cpool_vtable = {
     oci8_cpool_mark,
     oci8_cpool_free,
     sizeof(oci8_base_t),
@@ -189,7 +189,7 @@ void Init_oci8_connection_pool(VALUE cOCI8)
     cOCIConnectionPool = rb_define_class_under(cOCI8, "ConnectionPool", cOCIHandle);
 #endif
 
-    cOCIConnectionPool = oci8_define_class_under(cOCI8, "ConnectionPool", &oci8_cpool_class);
+    cOCIConnectionPool = oci8_define_class_under(cOCI8, "ConnectionPool", &oci8_cpool_vtable);
 
     rb_define_private_method(cOCIConnectionPool, "initialize", oci8_cpool_initialize, -1);
     rb_define_method(cOCIConnectionPool, "reinitialize", oci8_cpool_reinitialize, 3);

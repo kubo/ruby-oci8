@@ -1454,7 +1454,7 @@ static void bind_ocinumber_init_elem(oci8_bind_t *obind, VALUE svc)
     } while (++idx < obind->maxar_sz);
 }
 
-static const oci8_bind_class_t bind_ocinumber_class = {
+static const oci8_bind_vtable_t bind_ocinumber_vtable = {
     {
         NULL,
         oci8_bind_free,
@@ -1468,7 +1468,7 @@ static const oci8_bind_class_t bind_ocinumber_class = {
     SQLT_VNU,
 };
 
-static const oci8_bind_class_t bind_integer_class = {
+static const oci8_bind_vtable_t bind_integer_vtable = {
     {
         NULL,
         oci8_bind_free,
@@ -1482,7 +1482,7 @@ static const oci8_bind_class_t bind_integer_class = {
     SQLT_VNU,
 };
 
-static const oci8_bind_class_t bind_float_class = {
+static const oci8_bind_vtable_t bind_float_vtable = {
     {
         NULL,
         oci8_bind_free,
@@ -1613,9 +1613,9 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
     rb_define_method(cOCINumber, "_dump", onum__dump, -1);
     rb_define_singleton_method(cOCINumber, "_load", onum_s_load, 1);
 
-    oci8_define_bind_class("OraNumber", &bind_ocinumber_class);
-    oci8_define_bind_class("Integer", &bind_integer_class);
-    oci8_define_bind_class("Float", &bind_float_class);
+    oci8_define_bind_class("OraNumber", &bind_ocinumber_vtable);
+    oci8_define_bind_class("Integer", &bind_integer_vtable);
+    oci8_define_bind_class("Float", &bind_float_vtable);
 }
 
 OCINumber *oci8_get_ocinumber(VALUE num)

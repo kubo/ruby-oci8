@@ -191,7 +191,7 @@ static VALUE metadata_get_tdo_id(VALUE self)
 #endif
 }
 
-oci8_base_class_t oci8_metadata_class = {
+oci8_base_vtable_t oci8_metadata_vtable = {
     oci8_metadata_mark,
     NULL,
     sizeof(oci8_metadata_t),
@@ -200,7 +200,7 @@ oci8_base_class_t oci8_metadata_class = {
 void Init_oci8_metadata(VALUE cOCI8)
 {
     mOCI8Metadata = rb_define_module_under(cOCI8, "Metadata");
-    cOCI8MetadataBase = oci8_define_class_under(mOCI8Metadata, "Base", &oci8_metadata_class);
+    cOCI8MetadataBase = oci8_define_class_under(mOCI8Metadata, "Base", &oci8_metadata_vtable);
     ptype_to_class = rb_hash_new();
     class_to_ptype = rb_hash_new();
     rb_global_variable(&ptype_to_class);

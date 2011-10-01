@@ -26,7 +26,7 @@ static long check_data_range(VALUE val, long min, long max, const char *type)
 }
 
 
-static oci8_base_class_t oci8_base_class = {
+static oci8_base_vtable_t oci8_base_vtable = {
     NULL,
     NULL,
     sizeof(oci8_base_t),
@@ -55,8 +55,8 @@ static VALUE oci8_handle_free(VALUE self)
 
 static void oci8_handle_mark(oci8_base_t *base)
 {
-    if (base->klass->mark != NULL)
-        base->klass->mark(base);
+    if (base->vptr->mark != NULL)
+        base->vptr->mark(base);
 }
 
 static void oci8_handle_cleanup(oci8_base_t *base)
@@ -76,31 +76,31 @@ static void oci8_handle_cleanup(oci8_base_t *base)
 static VALUE oci8_s_allocate(VALUE klass)
 {
     oci8_base_t *base;
-    const oci8_base_class_t *base_class;
+    const oci8_base_vtable_t *vptr;
     VALUE superklass;
     VALUE obj;
 
     superklass = klass;
-    while (!RTEST(rb_ivar_defined(superklass, oci8_id_oci8_class))) {
+    while (!RTEST(rb_ivar_defined(superklass, oci8_id_oci8_vtable))) {
         superklass = rb_class_superclass(superklass);
         if (superklass == rb_cObject)
             rb_raise(rb_eRuntimeError, "private method `new' called for %s:Class", rb_class2name(klass));
     }
-    obj = rb_ivar_get(superklass, oci8_id_oci8_class);
-    base_class = DATA_PTR(obj);
+    obj = rb_ivar_get(superklass, oci8_id_oci8_vtable);
+    vptr = DATA_PTR(obj);
 
-    base = xmalloc(base_class->size);
-    memset(base, 0, base_class->size);
+    base = xmalloc(vptr->size);
+    memset(base, 0, vptr->size);
 
     obj = Data_Wrap_Struct(klass, oci8_handle_mark, oci8_handle_cleanup, base);
     base->self = obj;
-    base->klass = base_class;
+    base->vptr = vptr;
     base->parent = NULL;
     base->next = base;
     base->prev = base;
     base->children = NULL;
-    if (base_class->init != NULL) {
-        base_class->init(base);
+    if (vptr->init != NULL) {
+        vptr->init(base);
     }
     return obj;
 }
@@ -717,8 +717,8 @@ void Init_oci8_handle(void)
     rb_define_alloc_func(oci8_cOCIHandle, oci8_s_allocate);
     rb_define_method_nodoc(oci8_cOCIHandle, "initialize", oci8_handle_initialize, 0);
     rb_define_private_method(oci8_cOCIHandle, "free", oci8_handle_free, 0);
-    obj = Data_Wrap_Struct(rb_cObject, 0, 0, &oci8_base_class);
-    rb_ivar_set(oci8_cOCIHandle, oci8_id_oci8_class, obj);
+    obj = Data_Wrap_Struct(rb_cObject, 0, 0, &oci8_base_vtable);
+    rb_ivar_set(oci8_cOCIHandle, oci8_id_oci8_vtable, obj);
 
     /* methods to get attributes */
     rb_define_private_method(oci8_cOCIHandle, "attr_get_ub1", attr_get_ub1, 1);

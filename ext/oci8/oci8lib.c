@@ -14,7 +14,7 @@ ID oci8_id_new;
 ID oci8_id_get;
 ID oci8_id_set;
 ID oci8_id_keys;
-ID oci8_id_oci8_class;
+ID oci8_id_oci8_vtable;
 #ifdef CHAR_IS_NOT_A_SHORTCUT_TO_ID
 ID oci8_id_add_op;
 ID oci8_id_sub_op;
@@ -34,8 +34,8 @@ void oci8_base_free(oci8_base_t *base)
         oci8_base_free(base->children);
     }
     oci8_unlink_from_parent(base);
-    if (base->klass->free != NULL)
-        base->klass->free(base);
+    if (base->vptr->free != NULL)
+        base->vptr->free(base);
     if (base->type >= OCI_DTYPE_FIRST)
         OCIDescriptorFree(base->hp.ptr, base->type);
     else if (base->type >= OCI_HTYPE_FIRST)
@@ -79,7 +79,7 @@ Init_oci8lib()
     oci8_id_get = rb_intern("get");
     oci8_id_set = rb_intern("set");
     oci8_id_keys = rb_intern("keys");
-    oci8_id_oci8_class = rb_intern("__oci8_class__");
+    oci8_id_oci8_vtable = rb_intern("__oci8_vtable__");
 #ifdef CHAR_IS_NOT_A_SHORTCUT_TO_ID
     oci8_id_add_op = rb_intern("+");
     oci8_id_sub_op = rb_intern("-");
@@ -144,27 +144,27 @@ Init_oci8lib()
 #endif
 }
 
-VALUE oci8_define_class(const char *name, oci8_base_class_t *base_class)
+VALUE oci8_define_class(const char *name, oci8_base_vtable_t *vptr)
 {
     VALUE klass = rb_define_class(name, oci8_cOCIHandle);
-    VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, base_class);
-    rb_ivar_set(klass, oci8_id_oci8_class, obj);
+    VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, vptr);
+    rb_ivar_set(klass, oci8_id_oci8_vtable, obj);
     return klass;
 }
 
-VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_class_t *base_class)
+VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_vtable_t *vptr)
 {
     VALUE klass = rb_define_class_under(outer, name, oci8_cOCIHandle);
-    VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, base_class);
-    rb_ivar_set(klass, oci8_id_oci8_class, obj);
+    VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, vptr);
+    rb_ivar_set(klass, oci8_id_oci8_vtable, obj);
     return klass;
 }
 
-VALUE oci8_define_bind_class(const char *name, const oci8_bind_class_t *bind_class)
+VALUE oci8_define_bind_class(const char *name, const oci8_bind_vtable_t *vptr)
 {
     VALUE klass = rb_define_class_under(mOCI8BindType, name, cOCI8BindTypeBase);
-    VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, (void*)bind_class);
-    rb_ivar_set(klass, oci8_id_oci8_class, obj);
+    VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, (void*)vptr);
+    rb_ivar_set(klass, oci8_id_oci8_vtable, obj);
     return klass;
 }
 

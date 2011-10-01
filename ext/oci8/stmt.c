@@ -53,7 +53,7 @@ static void oci8_stmt_free(oci8_base_t *base)
     stmt->defns = Qnil;
 }
 
-static oci8_base_class_t oci8_stmt_class = {
+static oci8_base_vtable_t oci8_stmt_vtable = {
     oci8_stmt_mark,
     oci8_stmt_free,
     sizeof(oci8_stmt_t),
@@ -99,7 +99,7 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
     oci8_stmt_t *stmt = TO_STMT(self);
     ub4 position;
     oci8_bind_t *obind;
-    const oci8_bind_class_t *bind_class;
+    const oci8_bind_vtable_t *vptr;
     sword status;
 
     position = NUM2INT(vposition); /* 1 */
@@ -107,8 +107,8 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
     if (obind->base.hp.dfn != NULL) {
         oci8_base_free(&obind->base); /* TODO: OK? */
     }
-    bind_class = (const oci8_bind_class_t *)obind->base.klass;
-    status = OCIDefineByPos(stmt->base.hp.stmt, &obind->base.hp.dfn, oci8_errhp, position, obind->valuep, obind->value_sz, bind_class->dty, NIL_P(obind->tdo) ? obind->u.inds : NULL, NULL, 0, OCI_DEFAULT);
+    vptr = (const oci8_bind_vtable_t *)obind->base.vptr;
+    status = OCIDefineByPos(stmt->base.hp.stmt, &obind->base.hp.dfn, oci8_errhp, position, obind->valuep, obind->value_sz, vptr->dty, NIL_P(obind->tdo) ? obind->u.inds : NULL, NULL, 0, OCI_DEFAULT);
     if (status != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, status, stmt->base.hp.ptr);
     }
@@ -120,8 +120,8 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
     if (NIL_P(obind->tdo) && obind->maxar_sz > 0) {
         oci_lc(OCIDefineArrayOfStruct(obind->base.hp.dfn, oci8_errhp, obind->alloc_sz, sizeof(sb2), 0, 0));
     }
-    if (bind_class->post_bind_hook != NULL) {
-        bind_class->post_bind_hook(obind);
+    if (vptr->post_bind_hook != NULL) {
+        vptr->post_bind_hook(obind);
     }
     if (position - 1 < RARRAY_LEN(stmt->defns)) {
         VALUE old_value = RARRAY_PTR(stmt->defns)[position - 1];
@@ -140,7 +140,7 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     ub4 placeholder_len = 0;
     ub4 position = 0;
     oci8_bind_t *obind;
-    const oci8_bind_class_t *bind_class;
+    const oci8_bind_vtable_t *vptr;
     sword status;
     VALUE old_value;
     void *indp;
@@ -167,7 +167,7 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     if (obind->base.hp.bnd != NULL) {
         oci8_base_free(&obind->base); /* TODO: OK? */
     }
-    bind_class = (const oci8_bind_class_t *)obind->base.klass;
+    vptr = (const oci8_bind_vtable_t *)obind->base.vptr;
 
     indp = NIL_P(obind->tdo) ? obind->u.inds : NULL;
     if (obind->maxar_sz == 0) {
@@ -176,9 +176,9 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
         curelep = &obind->curar_sz;
     }
     if (placeholder_ptr == (char*)-1) {
-        status = OCIBindByPos(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, position, obind->valuep, obind->value_sz, bind_class->dty, indp, NULL, 0, 0, 0, OCI_DEFAULT);
+        status = OCIBindByPos(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, position, obind->valuep, obind->value_sz, vptr->dty, indp, NULL, 0, 0, 0, OCI_DEFAULT);
     } else {
-        status = OCIBindByName(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, TO_ORATEXT(placeholder_ptr), placeholder_len, obind->valuep, obind->value_sz, bind_class->dty, indp, NULL, 0, 0, 0, OCI_DEFAULT);
+        status = OCIBindByName(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, TO_ORATEXT(placeholder_ptr), placeholder_len, obind->valuep, obind->value_sz, vptr->dty, indp, NULL, 0, 0, 0, OCI_DEFAULT);
     }
     if (status != OCI_SUCCESS) {
         oci8_raise(oci8_errhp, status, stmt->base.hp.stmt);
@@ -191,8 +191,8 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     if (NIL_P(obind->tdo) && obind->maxar_sz > 0) {
         oci_lc(OCIBindArrayOfStruct(obind->base.hp.bnd, oci8_errhp, obind->alloc_sz, sizeof(sb2), 0, 0));
     }
-    if (bind_class->post_bind_hook != NULL) {
-        bind_class->post_bind_hook(obind);
+    if (vptr->post_bind_hook != NULL) {
+        vptr->post_bind_hook(obind);
     }
     old_value = rb_hash_aref(stmt->binds, vplaceholder);
     if (!NIL_P(old_value)) {
@@ -276,15 +276,15 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
     sword rv;
     long idx;
     oci8_bind_t *obind;
-    const oci8_bind_class_t *bind_class;
+    const oci8_bind_vtable_t *vptr;
 
     if (stmt->base.children != NULL) {
         obind = (oci8_bind_t *)stmt->base.children;
         do {
             if (obind->base.type == OCI_HTYPE_DEFINE) {
-                bind_class = (const oci8_bind_class_t *)obind->base.klass;
-                if (bind_class->pre_fetch_hook != NULL) {
-                    bind_class->pre_fetch_hook(obind, stmt->svc);
+                vptr = (const oci8_bind_vtable_t *)obind->base.vptr;
+                if (vptr->pre_fetch_hook != NULL) {
+                    vptr->pre_fetch_hook(obind, stmt->svc);
                 }
             }
             obind = (oci8_bind_t *)obind->base.next;
@@ -610,7 +610,7 @@ static void bind_stmt_init_elem(oci8_bind_t *obind, VALUE svc)
     } while (++idx < obind->maxar_sz);
 }
 
-static const oci8_bind_class_t bind_stmt_class = {
+static const oci8_bind_vtable_t bind_stmt_vtable = {
     {
         oci8_bind_hp_obj_mark,
         oci8_bind_free,
@@ -631,7 +631,7 @@ void Init_oci8_stmt(VALUE cOCI8)
     cOCI8 = rb_define_class("OCI8", cOCIHandle);
     cOCIStmt = rb_define_class_under(cOCI8, "Cursor", cOCIHandle);
 #endif
-    cOCIStmt = oci8_define_class_under(cOCI8, "Cursor", &oci8_stmt_class);
+    cOCIStmt = oci8_define_class_under(cOCI8, "Cursor", &oci8_stmt_vtable);
 
     oci8_sym_select_stmt = ID2SYM(rb_intern("select_stmt"));
     oci8_sym_update_stmt = ID2SYM(rb_intern("update_stmt"));
@@ -668,5 +668,5 @@ void Init_oci8_stmt(VALUE cOCI8)
     rb_define_private_method(cOCIStmt, "__defined?", oci8_stmt_defined_p, 1);
     rb_define_method(cOCIStmt, "prefetch_rows=", oci8_stmt_set_prefetch_rows, 1);
 
-    oci8_define_bind_class("Cursor", &bind_stmt_class);
+    oci8_define_bind_class("Cursor", &bind_stmt_vtable);
 }

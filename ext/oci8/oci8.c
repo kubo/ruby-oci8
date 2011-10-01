@@ -51,7 +51,7 @@ static void oci8_svcctx_associate_free(oci8_base_t *base)
     base->hp.ptr = NULL;
 }
 
-static oci8_base_class_t oci8_svcctx_associate_class = {
+static oci8_base_vtable_t oci8_svcctx_associate_vtable = {
     NULL,
     oci8_svcctx_associate_free,
     sizeof(oci8_svcctx_associate_t),
@@ -121,7 +121,7 @@ static void oci8_svcctx_init(oci8_base_t *base)
     svcctx->long_read_len = INT2FIX(65535);
 }
 
-static oci8_base_class_t oci8_svcctx_class = {
+static oci8_base_vtable_t oci8_svcctx_vtable = {
     NULL,
     oci8_svcctx_free,
     sizeof(oci8_svcctx_t),
@@ -1106,9 +1106,9 @@ VALUE Init_oci8(void)
     oci8_cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
     cOCI8 = rb_define_class("OCI8", oci8_cOCIHandle);
 #endif
-    cOCI8 = oci8_define_class("OCI8", &oci8_svcctx_class);
-    cSession = oci8_define_class_under(cOCI8, "Session", &oci8_svcctx_associate_class);
-    cServer = oci8_define_class_under(cOCI8, "Server", &oci8_svcctx_associate_class);
+    cOCI8 = oci8_define_class("OCI8", &oci8_svcctx_vtable);
+    cSession = oci8_define_class_under(cOCI8, "Session", &oci8_svcctx_associate_vtable);
+    cServer = oci8_define_class_under(cOCI8, "Server", &oci8_svcctx_associate_vtable);
     id_at_session_handle = rb_intern("@session_handle");
     id_at_server_handle = rb_intern("@server_handle");
 

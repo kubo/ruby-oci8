@@ -113,7 +113,7 @@ static void oci8_lob_free(oci8_base_t *base)
     lob->svchp = NULL;
 }
 
-static oci8_base_class_t oci8_lob_class = {
+static oci8_base_vtable_t oci8_lob_vtable = {
     oci8_lob_mark,
     oci8_lob_free,
     sizeof(oci8_lob_t),
@@ -631,9 +631,9 @@ static VALUE oci8_bfile_error(VALUE self, VALUE dummy)
  */
 
 typedef struct {
-    oci8_bind_class_t bind;
+    oci8_bind_vtable_t bind;
     VALUE *klass;
-} oci8_bind_lob_class_t;
+} oci8_bind_lob_vtable_t;
 
 static VALUE bind_lob_get(oci8_bind_t *obind, void *data, void *null_struct)
 {
@@ -644,10 +644,10 @@ static VALUE bind_lob_get(oci8_bind_t *obind, void *data, void *null_struct)
 static void bind_lob_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     oci8_hp_obj_t *oho = (oci8_hp_obj_t *)data;
-    const oci8_bind_lob_class_t *klass = (const oci8_bind_lob_class_t *)obind->base.klass;
+    const oci8_bind_lob_vtable_t *vptr = (const oci8_bind_lob_vtable_t *)obind->base.vptr;
     oci8_base_t *h;
-    if (!rb_obj_is_kind_of(val, *klass->klass))
-        rb_raise(rb_eArgError, "Invalid argument: %s (expect %s)", rb_class2name(CLASS_OF(val)), rb_class2name(*klass->klass));
+    if (!rb_obj_is_kind_of(val, *vptr->klass))
+        rb_raise(rb_eArgError, "Invalid argument: %s (expect %s)", rb_class2name(CLASS_OF(val)), rb_class2name(*vptr->klass));
     h = DATA_PTR(val);
     oho->hp = h->hp.ptr;
     oho->obj = val;
@@ -661,13 +661,13 @@ static void bind_lob_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length
 
 static void bind_lob_init_elem(oci8_bind_t *obind, VALUE svc)
 {
-    const oci8_bind_lob_class_t *klass = (const oci8_bind_lob_class_t *)obind->base.klass;
+    const oci8_bind_lob_vtable_t *vptr = (const oci8_bind_lob_vtable_t *)obind->base.vptr;
     oci8_hp_obj_t *oho = (oci8_hp_obj_t *)obind->valuep;
     oci8_base_t *h;
     ub4 idx = 0;
 
     do {
-        oho[idx].obj = rb_funcall(*klass->klass, oci8_id_new, 1, svc);
+        oho[idx].obj = rb_funcall(*vptr->klass, oci8_id_new, 1, svc);
         h = DATA_PTR(oho[idx].obj);
         oho[idx].hp = h->hp.ptr;
     } while (++idx < obind->maxar_sz);
@@ -680,7 +680,7 @@ static void bind_lob_post_bind_hook_for_nclob(oci8_bind_t *obind)
     oci_lc(OCIAttrSet(obind->base.hp.ptr, obind->base.type, (void*)&csfrm, 0, OCI_ATTR_CHARSET_FORM, oci8_errhp));
 }
 
-static const oci8_bind_lob_class_t bind_clob_class = {
+static const oci8_bind_lob_vtable_t bind_clob_vtable = {
     {
         {
             oci8_bind_hp_obj_mark,
@@ -697,7 +697,7 @@ static const oci8_bind_lob_class_t bind_clob_class = {
     &cOCI8CLOB
 };
 
-static const oci8_bind_lob_class_t bind_nclob_class = {
+static const oci8_bind_lob_vtable_t bind_nclob_vtable = {
     {
         {
             oci8_bind_hp_obj_mark,
@@ -715,7 +715,7 @@ static const oci8_bind_lob_class_t bind_nclob_class = {
     &cOCI8NCLOB
 };
 
-static const oci8_bind_lob_class_t bind_blob_class = {
+static const oci8_bind_lob_vtable_t bind_blob_vtable = {
     {
         {
             oci8_bind_hp_obj_mark,
@@ -732,7 +732,7 @@ static const oci8_bind_lob_class_t bind_blob_class = {
     &cOCI8BLOB
 };
 
-static const oci8_bind_lob_class_t bind_bfile_class = {
+static const oci8_bind_lob_vtable_t bind_bfile_vtable = {
     {
         {
             oci8_bind_hp_obj_mark,
@@ -758,7 +758,7 @@ void Init_oci8_lob(VALUE cOCI8)
     seek_cur = rb_eval_string("::IO::SEEK_CUR");
     seek_end = rb_eval_string("::IO::SEEK_END");
 
-    cOCI8LOB = oci8_define_class_under(cOCI8, "LOB", &oci8_lob_class);
+    cOCI8LOB = oci8_define_class_under(cOCI8, "LOB", &oci8_lob_vtable);
     cOCI8CLOB = rb_define_class_under(cOCI8, "CLOB", cOCI8LOB);
     cOCI8NCLOB = rb_define_class_under(cOCI8, "NCLOB", cOCI8LOB);
     cOCI8BLOB = rb_define_class_under(cOCI8, "BLOB", cOCI8LOB);
@@ -795,8 +795,8 @@ void Init_oci8_lob(VALUE cOCI8)
     rb_define_method(cOCI8BFILE, "size=", oci8_bfile_error, 1);
     rb_define_method(cOCI8BFILE, "write", oci8_bfile_error, 1);
 
-    oci8_define_bind_class("CLOB", &bind_clob_class.bind);
-    oci8_define_bind_class("NCLOB", &bind_nclob_class.bind);
-    oci8_define_bind_class("BLOB", &bind_blob_class.bind);
-    oci8_define_bind_class("BFILE", &bind_bfile_class.bind);
+    oci8_define_bind_class("CLOB", &bind_clob_vtable.bind);
+    oci8_define_bind_class("NCLOB", &bind_nclob_vtable.bind);
+    oci8_define_bind_class("BLOB", &bind_blob_vtable.bind);
+    oci8_define_bind_class("BFILE", &bind_bfile_vtable.bind);
 }

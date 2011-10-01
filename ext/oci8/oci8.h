@@ -237,21 +237,23 @@ typedef struct {
     char buf[1];
 } oci8_vstr_t;
 
-typedef struct oci8_base_class oci8_base_class_t;
-typedef struct oci8_bind_class oci8_bind_class_t;
+typedef struct oci8_base_vtable oci8_base_vtable_t;
+typedef struct oci8_bind_vtable oci8_bind_vtable_t;
 
 typedef struct oci8_base oci8_base_t;
 typedef struct oci8_bind oci8_bind_t;
 
-struct oci8_base_class {
+/* The virtual method table of oci8_base_t */
+struct oci8_base_vtable {
     void (*mark)(oci8_base_t *base);
     void (*free)(oci8_base_t *base);
     size_t size;
     void (*init)(oci8_base_t *base);
 };
 
-struct oci8_bind_class {
-    oci8_base_class_t base;
+/* The virtual method table of oci8_bind_t */
+struct oci8_bind_vtable {
+    oci8_base_vtable_t base;
     VALUE (*get)(oci8_bind_t *obind, void *data, void *null_struct);
     void (*set)(oci8_bind_t *obind, void *data, void **null_structp, VALUE val);
     void (*init)(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length);
@@ -261,7 +263,14 @@ struct oci8_bind_class {
     void (*post_bind_hook)(oci8_bind_t *obind);
 };
 
+/* Class structure implemented by C language.
+ * oci8_base_t represents OCIHandle and its subclasses.
+ *
+ * The vptr member points to a virtual method table.
+ * See: http://en.wikipedia.org/wiki/Virtual_method_table
+ */
 struct oci8_base {
+    const oci8_base_vtable_t *vptr;
     ub4 type;
     union {
         dvoid *ptr;
@@ -278,13 +287,18 @@ struct oci8_base {
         OCIDescribe *dschp;
     } hp;
     VALUE self;
-    const oci8_base_class_t *klass;
     oci8_base_t *parent;
     oci8_base_t *next;
     oci8_base_t *prev;
     oci8_base_t *children;
 };
 
+/* Class structure implemented by C language.
+ * This represents OCI8::BindType::Base's subclasses.
+ *
+ * This is a subclass of oci8_base_t because the first member
+ * base is oci8_base_t itself.
+ */
 struct oci8_bind {
     oci8_base_t base;
     void *valuep;
@@ -401,7 +415,7 @@ extern ID oci8_id_new;
 extern ID oci8_id_get;
 extern ID oci8_id_set;
 extern ID oci8_id_keys;
-extern ID oci8_id_oci8_class;
+extern ID oci8_id_oci8_vtable;
 #ifdef CHAR_IS_NOT_A_SHORTCUT_TO_ID
 extern ID oci8_id_add_op; /* ID of the addition operator '+' */
 extern ID oci8_id_sub_op; /* ID of the subtraction operator '-' */
@@ -416,9 +430,9 @@ extern ID oci8_id_div_op; /* ID of the division operator '/' */
 extern int oci8_in_finalizer;
 extern VALUE oci8_cOCIHandle;
 void oci8_base_free(oci8_base_t *base);
-VALUE oci8_define_class(const char *name, oci8_base_class_t *klass);
-VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_class_t *klass);
-VALUE oci8_define_bind_class(const char *name, const oci8_bind_class_t *oci8_bind_class);
+VALUE oci8_define_class(const char *name, oci8_base_vtable_t *vptr);
+VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_vtable_t *vptr);
+VALUE oci8_define_bind_class(const char *name, const oci8_bind_vtable_t *vptr);
 void oci8_link_to_parent(oci8_base_t *base, oci8_base_t *parent);
 void oci8_unlink_from_parent(oci8_base_t *base);
 sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data);

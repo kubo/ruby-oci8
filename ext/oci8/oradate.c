@@ -557,7 +557,7 @@ static void bind_oradate_init_elem(oci8_bind_t *obind, VALUE svc)
     } while (++idx < obind->maxar_sz);
 }
 
-static const oci8_bind_class_t bind_oradate_class = {
+static const oci8_bind_vtable_t bind_oradate_vtable = {
     {
         NULL,
         oci8_bind_free,
@@ -610,5 +610,5 @@ void Init_ora_date(void)
     rb_define_method(cOraDate, "_dump", ora_date_dump, -1);
     rb_define_singleton_method(cOraDate, "_load", ora_date_s_load, 1);
 
-    oci8_define_bind_class("OraDate", &bind_oradate_class);
+    oci8_define_bind_class("OraDate", &bind_oradate_vtable);
 }

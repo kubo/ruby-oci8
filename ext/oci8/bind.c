@@ -102,7 +102,7 @@ static void bind_string_post_bind_hook(oci8_bind_t *obind)
     oci_lc(OCIAttrSet(obind->base.hp.ptr, obind->base.type, (void*)&obs->csfrm, 0, OCI_ATTR_CHARSET_FORM, oci8_errhp));
 }
 
-static const oci8_bind_class_t bind_string_class = {
+static const oci8_bind_vtable_t bind_string_vtable = {
     {
         NULL,
         oci8_bind_free,
@@ -139,7 +139,7 @@ static void bind_raw_set(oci8_bind_t *obind, void *data, void **null_structp, VA
     vstr->size = RSTRING_LEN(val);
 }
 
-static const oci8_bind_class_t bind_raw_class = {
+static const oci8_bind_vtable_t bind_raw_vtable = {
     {
         NULL,
         oci8_bind_free,
@@ -176,7 +176,7 @@ static void bind_binary_double_init(oci8_bind_t *obind, VALUE svc, VALUE val, VA
 #ifndef SQLT_BDOUBLE
 #define SQLT_BDOUBLE 22
 #endif
-static const oci8_bind_class_t bind_binary_double_class = {
+static const oci8_bind_vtable_t bind_binary_double_vtable = {
     {
         NULL,
         oci8_bind_free,
@@ -193,7 +193,7 @@ static const oci8_bind_class_t bind_binary_double_class = {
 static VALUE oci8_bind_get(VALUE self)
 {
     oci8_bind_t *obind = DATA_PTR(self);
-    const oci8_bind_class_t *obc = (const oci8_bind_class_t *)obind->base.klass;
+    const oci8_bind_vtable_t *vptr = (const oci8_bind_vtable_t *)obind->base.vptr;
     ub4 idx = obind->curar_idx;
     void **null_structp = NULL;
 
@@ -201,7 +201,7 @@ static VALUE oci8_bind_get(VALUE self)
         if (obind->u.inds[idx] != 0)
             return Qnil;
     }
-    return obc->get(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_structp);
+    return vptr->get(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_structp);
 }
 
 VALUE oci8_bind_get_data(VALUE self)
@@ -226,7 +226,7 @@ VALUE oci8_bind_get_data(VALUE self)
 static VALUE oci8_bind_set(VALUE self, VALUE val)
 {
     oci8_bind_t *obind = DATA_PTR(self);
-    const oci8_bind_class_t *obc = (const oci8_bind_class_t *)obind->base.klass;
+    const oci8_bind_vtable_t *vptr = (const oci8_bind_vtable_t *)obind->base.vptr;
     ub4 idx = obind->curar_idx;
 
     if (NIL_P(val)) {
@@ -245,7 +245,7 @@ static VALUE oci8_bind_set(VALUE self, VALUE val)
             null_structp = &obind->u.null_structs[idx];
             *(OCIInd*)obind->u.null_structs[idx] = 0;
         }
-        obc->set(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_structp, val);
+        vptr->set(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_structp, val);
     }
     return self;
 }
@@ -277,7 +277,7 @@ void oci8_bind_set_data(VALUE self, VALUE val)
 static VALUE oci8_bind_initialize(VALUE self, VALUE svc, VALUE val, VALUE length, VALUE max_array_size)
 {
     oci8_bind_t *obind = DATA_PTR(self);
-    const oci8_bind_class_t *bind_class = (const oci8_bind_class_t *)obind->base.klass;
+    const oci8_bind_vtable_t *bind_class = (const oci8_bind_vtable_t *)obind->base.vptr;
     ub4 cnt = 1;
 
     obind->tdo = Qnil;
@@ -349,10 +349,10 @@ void Init_oci8_bind(VALUE klass)
     rb_define_method(cOCI8BindTypeBase, "set", oci8_bind_set, 1);
 
     /* register primitive data types. */
-    oci8_define_bind_class("String", &bind_string_class);
-    oci8_define_bind_class("RAW", &bind_raw_class);
+    oci8_define_bind_class("String", &bind_string_vtable);
+    oci8_define_bind_class("RAW", &bind_raw_vtable);
     if (oracle_client_version >= ORAVER_10_1) {
-        oci8_define_bind_class("BinaryDouble", &bind_binary_double_class);
+        oci8_define_bind_class("BinaryDouble", &bind_binary_double_vtable);
     }
 }
 
