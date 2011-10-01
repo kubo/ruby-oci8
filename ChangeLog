@@ -1,4 +1,11 @@
 2011-10-01  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/attr.c, ext/oci8/ocidatetime.c, ext/oci8/oradate.c: delete
+	    subversion keywords.
+	* ext/oci8/env.c, ext/oci8/oci8.h, ext/oci8/thread_util.c,
+	  ext/oci8/thread_util.h: use thread-local errhp not only at ruby 1.9
+	    and rubinius, but also ruby 1.8 configured with --enable-pthread.
+
+2011-10-01  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c, ext/oci8/connection_pool.c, ext/oci8/lob.c,
 	  ext/oci8/metadata.c, ext/oci8/object.c, ext/oci8/oci8.c, ext/oci8/oci8.h,
 	  ext/oci8/oci8lib.c, ext/oci8/ocidatetime.c, ext/oci8/ocihandle.c,

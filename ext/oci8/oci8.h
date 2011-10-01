@@ -157,6 +157,14 @@ typedef VALUE rb_blocking_function_t(void *);
 #endif
 #endif
 
+#if defined(HAVE_NATIVETHREAD) || defined(HAVE_RB_THREAD_BLOCKING_REGION)
+/*
+ * oci8_errhp is a thread local object in ruby 1.9, rubinius
+ * and ruby 1.8 configured with --enable-pthread.
+ */
+#define USE_THREAD_LOCAL_ERRHP 1
+#endif
+
 /* macros depends on the compiler.
  *  LIKELY(x)      hint for the compiler that 'x' is 1(TRUE) in many cases.
  *  UNLIKELY(x)    hint for the compiler that 'x' is 0(FALSE) in many cases.
@@ -189,8 +197,8 @@ typedef VALUE rb_blocking_function_t(void *);
  *    set a value to the key.
  *
  */
-#ifdef HAVE_RB_THREAD_BLOCKING_REGION
-/* ruby 1.9 */
+#ifdef USE_THREAD_LOCAL_ERRHP
+/* rubies with native-thread support. */
 #if defined(_WIN32)
 #include <windows.h>
 #define oci8_tls_key_t           DWORD
@@ -384,7 +392,7 @@ typedef struct {
  *   extern OCIError *oci8_errhp;
  */
 #define oci8_envhp (LIKELY(oci8_global_envhp != NULL) ? oci8_global_envhp : oci8_make_envhp())
-#ifdef HAVE_RB_THREAD_BLOCKING_REGION
+#ifdef USE_THREAD_LOCAL_ERRHP
 #define oci8_errhp oci8_get_errhp()
 #else
 #define oci8_errhp (LIKELY(oci8_global_errhp != NULL) ? oci8_global_errhp : oci8_make_errhp())
@@ -394,7 +402,7 @@ typedef struct {
 extern ub4 oci8_env_mode;
 extern OCIEnv *oci8_global_envhp;
 OCIEnv *oci8_make_envhp(void);
-#ifdef HAVE_RB_THREAD_BLOCKING_REGION
+#ifdef USE_THREAD_LOCAL_ERRHP
 extern oci8_tls_key_t oci8_tls_key; /* native thread key */
 OCIError *oci8_make_errhp(void);
 

@@ -7,6 +7,8 @@
 #include "oci8.h"
 #include <errno.h>
 
+#ifdef USE_THREAD_LOCAL_ERRHP
+
 #ifndef WIN32
 #include <pthread.h>
 static pthread_attr_t detached_thread_attr;
@@ -51,7 +53,7 @@ int oci8_run_native_thread(rb_blocking_function_t func, void *arg)
     return 0;
 }
 
-#else
+#else /* WIN32 */
 
 static void *adapter(void *arg)
 {
@@ -78,4 +80,6 @@ int oci8_run_native_thread(rb_blocking_function_t func, void *arg)
     }
     return rv;
 }
-#endif
+#endif /* WIN32 */
+
+#endif /* USE_THREAD_LOCAL_ERRHP */

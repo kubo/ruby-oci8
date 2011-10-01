@@ -2,9 +2,6 @@
 /*
  * attr.c
  *
- * $Author$
- * $Date$
- *
  * Copyright (C) 2002-2007 KUBO Takehiro <kubo@jiubao.org>
  */
 #include "oci8.h"

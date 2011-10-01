@@ -2,9 +2,6 @@
 /*
  *  oradate.c
  *
- * $Author: kubo $
- * $Date: 2011-08-27 17:51:45 +0900 (土, 27  8月 2011) $
- *
  * Copyright (C) 2002-2008 KUBO Takehiro <kubo@jiubao.org>
  *
  * date and time between 4712 B.C. and 9999 A.D.

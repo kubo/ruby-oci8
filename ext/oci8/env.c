@@ -27,9 +27,9 @@ OCIEnv *oci8_make_envhp(void)
     return oci8_global_envhp;
 }
 
-#ifdef HAVE_RB_THREAD_BLOCKING_REGION
+#ifdef USE_THREAD_LOCAL_ERRHP
 /*
- * oci8_errhp is a thread local object in ruby 1.9.
+ * Setup thread-local oci8_errhp.
  */
 
 oci8_tls_key_t oci8_tls_key; /* native thread key */
@@ -89,7 +89,7 @@ OCIError *oci8_make_errhp(void)
 }
 #else
 /*
- * oci8_errhp is global in ruby 1.8.
+ * oci8_errhp is global in ruby 1.8 configured without --enable-pthread on Unix.
  */
 OCIError *oci8_global_errhp;
 
@@ -106,7 +106,7 @@ OCIError *oci8_make_errhp(void)
 
 void Init_oci8_env(void)
 {
-#ifdef HAVE_RB_THREAD_BLOCKING_REGION
+#ifdef USE_THREAD_LOCAL_ERRHP
     int error;
 #endif
 
@@ -156,8 +156,7 @@ void Init_oci8_env(void)
         }
     }
 
-#ifdef HAVE_RB_THREAD_BLOCKING_REGION
-/* ruby 1.9 */
+#ifdef USE_THREAD_LOCAL_ERRHP
 #if defined(_WIN32)
     if (!dllmain_is_called) {
         /* sanity check */

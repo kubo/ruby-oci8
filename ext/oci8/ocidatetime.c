@@ -2,9 +2,6 @@
 /*
  *  ocidatetime.c
  *
- * $Author: kubo $
- * $Date: 2011-08-27 17:51:45 +0900 (土, 27  8月 2011) $
- *
  * Copyright (C) 2005-2008 KUBO Takehiro <kubo@jiubao.org>
  *
  */
