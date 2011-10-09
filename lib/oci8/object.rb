@@ -425,7 +425,7 @@ EOS
       'INTERVAL DAY TO SECOND'  => :interval_ds,
     }
 
-    # for datetime_to_array and ocidate_to_datetime
+    # to use datetime_to_array and array_to_datetime
     extend OCI8::BindType::Util
 
     def self.check_metadata(con, metadata)
@@ -442,8 +442,8 @@ EOS
         [ATTR_FLOAT,     nil, SIZE_OF_OCINUMBER, 2, ALIGNMENT_OF_OCINUMBER]
       when :date
         [ATTR_OCIDATE,   nil, SIZE_OF_OCIDATE, 2, ALIGNMENT_OF_OCIDATE,
-         Proc.new do |val| datetime_to_array(val, false) end, # set_proc
-         Proc.new do |val| ocidate_to_datetime(val) end, # get_proc
+         Proc.new do |val| datetime_to_array(val, :date) end, # set_proc
+         Proc.new do |val| array_to_datetime(val) end, # get_proc
         ]
       when :binary_double
         [ATTR_BINARY_DOUBLE, nil, SIZE_OF_DOUBLE, 2, ALIGNMENT_OF_DOUBLE]
