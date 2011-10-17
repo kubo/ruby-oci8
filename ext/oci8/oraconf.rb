@@ -703,6 +703,19 @@ EOS
       end
     end
 
+  else
+    # Unix
+    def get_libs(lib_dir)
+      case RUBY_PLATFORM
+      when /solaris/
+        " -L#{lib_dir} -R#{lib_dir} -lclntsh"
+      when /linux/
+        " -L#{lib_dir} -Wl,-rpath,#{lib_dir} -lclntsh"
+      else
+        " -L#{lib_dir} -lclntsh"
+      end
+    end
+
   end
 end
 
@@ -735,14 +748,7 @@ class OraConfFC < OraConf
       else
         lib_dir = "#{@oracle_home}/lib"
       end
-      case RUBY_PLATFORM
-      when /solaris/
-        @libs = " -L#{lib_dir} -R#{lib_dir} -lclntsh"
-      when /linux/
-        @libs = " -L#{lib_dir} -Wl,-rpath,#{lib_dir} -lclntsh"
-      else
-        @libs = " -L#{lib_dir} -lclntsh"
-      end
+      @libs = get_libs(lib_dir)
       return if try_link_oci()
     end
 
@@ -1119,7 +1125,7 @@ EOS
         end
         raise 'failed'
       end
-      @libs = " -L#{lib_dir} -lclntsh "
+      @libs = get_libs(lib_dir)
     end
     unless File.exist?("#{inc_dir}/oci.h")
           raise <<EOS

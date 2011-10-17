@@ -1,3 +1,9 @@
+2011-10-17  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: embed a run-time loading path to the extention
+	    library oci8lib_*.so compiled for not only full clients, but also
+	    instant clients on Linux and Solaris.
+	    (suggested by d c and others.)
+
 2011-10-09  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocidatetime.c, lib/oci8/datetime.rb, lib/oci8/object.rb:
 	    add OCI8::BindType::OCITimestamp, OCI8::BindType::LocalDateTime,
