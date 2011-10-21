@@ -1,4 +1,10 @@
 2011-10-21  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/error.c, ext/oci8/oci8.h: refactor OCIException and its
+	    subclasses. OCIError#codes and OCIError#messages are deleted.
+	* test/test_all.rb, test/test_error.rb: add a testcase to check
+	    OCIException's methods.
+
+2011-10-21  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: fix checking code whether 'sys/types.h' is
 	    available for Ubuntu 11.10 where sys/types.h is not right under
 	    /usr/include.

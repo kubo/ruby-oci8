@@ -2,11 +2,8 @@
 /*
   error.c - part of ruby-oci8
 
-  Copyright (C) 2002-2010 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002-2011 KUBO Takehiro <kubo@jiubao.org>
 
-=begin
-== OCIError
-=end
 */
 #include "oci8.h"
 
@@ -25,10 +22,9 @@ static VALUE eOCIStillExecuting;
 static VALUE eOCIContinue;
 static VALUE eOCISuccessWithInfo;
 
-static ID oci8_id_code;
-static ID oci8_id_message;
-static ID oci8_id_parse_error_offset;
-static ID oci8_id_sql;
+static ID oci8_id_at_code;
+static ID oci8_id_at_sql;
+static ID oci8_id_at_parse_error_offset;
 static ID oci8_id_caller;
 static ID oci8_id_set_backtrace;
 
@@ -38,12 +34,7 @@ static ub4 errbufsiz;
 
 static OCIMsg *msghp;
 
-#ifndef OCI_DURATION_PROCESS
-#define OCI_DURATION_PROCESS ((OCIDuration)5)
-#endif
-
-NORETURN(static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line));
-NORETURN(static void set_backtrace_and_raise(VALUE exc, const char *file, int line));
+static VALUE set_backtrace(VALUE exc, const char *file, int line);
 
 static VALUE get_error_msg(dvoid *errhp, ub4 type, const char *default_msg, sb4 *errcode_p)
 {
@@ -84,75 +75,40 @@ retry:
     return rb_external_str_new_with_enc(errbuf, len, oci8_encoding);
 }
 
-static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line)
+VALUE oci8_make_exc(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line)
 {
-    VALUE vcodes = Qnil;
-    VALUE vmessages = Qnil;
     VALUE exc;
-    char errmsg[1024];
-    sb4 errcode;
-    ub4 recodeno;
+    char errmsg[128];
+    sb4 errcode = -1;
     VALUE msg;
-#ifdef OCI_ATTR_PARSE_ERROR_OFFSET
-    VALUE vparse_error_offset = Qnil;
-#endif
-#ifdef OCI_ATTR_STATEMENT
-    VALUE vsql = Qnil;
-#endif
-    int i;
+    VALUE parse_error_offset = Qnil;
+    VALUE sql = Qnil;
     int rv;
 
     switch (status) {
     case OCI_ERROR:
     case OCI_SUCCESS_WITH_INFO:
-        vcodes = rb_ary_new();
-        vmessages = rb_ary_new();
-        for (recodeno = 1;;recodeno++) {
-            /* get error string */
-            rv = OCIErrorGet(errhp, recodeno, NULL, &errcode, TO_ORATEXT(errmsg), sizeof(errmsg), type);
-            if (rv != OCI_SUCCESS) {
-                break;
-            }
-            /* chop error string */
-            for (i = strlen(errmsg) - 1;i >= 0;i--) {
-                if (errmsg[i] == '\n' || errmsg[i] == '\r') {
-                    errmsg[i] = '\0';
-                } else {
-                    break;
-                }
-            }
-            rb_ary_push(vcodes, INT2FIX(errcode));
-            rb_ary_push(vmessages, rb_external_str_new_with_enc(errmsg, strlen(errmsg), oci8_encoding));
-        }
-        if (RARRAY_LEN(vmessages) > 0) {
-            msg = RARRAY_PTR(vmessages)[0];
-        } else {
-            msg = rb_usascii_str_new_cstr("ERROR");
-        }
+        /* get error string */
+        msg = get_error_msg(errhp, type, "Error", &errcode);
         if (status == OCI_ERROR) {
             exc = eOCIError;
         } else {
             exc = eOCISuccessWithInfo;
         }
-#ifdef OCI_ATTR_PARSE_ERROR_OFFSET
         if (stmthp != NULL) {
             ub2 offset;
+            text *text;
+            ub4 size;
+
             rv = OCIAttrGet(stmthp, OCI_HTYPE_STMT, &offset, 0, OCI_ATTR_PARSE_ERROR_OFFSET, errhp);
             if (rv == OCI_SUCCESS) {
-                vparse_error_offset = INT2FIX(offset);
+                parse_error_offset = INT2FIX(offset);
             }
-        }
-#endif
-#ifdef OCI_ATTR_STATEMENT
-        if (stmthp != NULL) {
-            text *sql;
-            ub4 size;
-            rv = OCIAttrGet(stmthp, OCI_HTYPE_STMT, &sql, &size, OCI_ATTR_STATEMENT, errhp);
+            rv = OCIAttrGet(stmthp, OCI_HTYPE_STMT, &text, &size, OCI_ATTR_STATEMENT, errhp);
             if (rv == OCI_SUCCESS) {
-                vsql = rb_external_str_new_with_enc(TO_CHARPTR(sql), size, oci8_encoding);
+                sql = rb_external_str_new_with_enc(TO_CHARPTR(text), size, oci8_encoding);
             }
         }
-#endif
         break;
     case OCI_NO_DATA:
         exc = eOCINoData;
@@ -176,30 +132,14 @@ static void oci8_raise2(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, c
         break;
     default:
         sprintf(errmsg, "Unknown error (%d)", status);
-        exc = rb_eStandardError;
+        exc = eOCIException;
         msg = rb_usascii_str_new_cstr(errmsg);
     }
-    exc = rb_funcall(exc, oci8_id_new, 1, msg);
-    if (!NIL_P(vcodes)) {
-        rb_ivar_set(exc, oci8_id_code, vcodes);
-    }
-    if (!NIL_P(vmessages)) {
-        rb_ivar_set(exc, oci8_id_message, vmessages);
-    }
-#ifdef OCI_ATTR_PARSE_ERROR_OFFSET
-    if (!NIL_P(vparse_error_offset)) {
-        rb_ivar_set(exc, oci8_id_parse_error_offset, vparse_error_offset);
-    }
-#endif
-#ifdef OCI_ATTR_STATEMENT
-    if (!NIL_P(vsql)) {
-        rb_ivar_set(exc, oci8_id_sql, vsql);
-    }
-#endif
-    set_backtrace_and_raise(exc, file, line);
+    exc = rb_funcall(exc, oci8_id_new, 4, msg, INT2FIX(errcode), sql, parse_error_offset);
+    return set_backtrace(exc, file, line);
 }
 
-static void set_backtrace_and_raise(VALUE exc, const char *file, int line)
+static VALUE set_backtrace(VALUE exc, const char *file, int line)
 {
     char errmsg[64];
     VALUE backtrace;
@@ -215,86 +155,29 @@ static void set_backtrace_and_raise(VALUE exc, const char *file, int line)
         rb_ary_unshift(backtrace, rb_usascii_str_new_cstr(errmsg));
         rb_funcall(exc, oci8_id_set_backtrace, 1, backtrace);
     }
-    rb_exc_raise(exc);
+    return exc;
 }
 
+/*
+ * call-seq:
+ *    OCI8.new(message, code = nil, sql = nil, parse_error_offset = nil)
+ *
+ * Creates a new OCIException object.
+ */
 static VALUE oci8_error_initialize(int argc, VALUE *argv, VALUE self)
 {
     VALUE msg;
     VALUE code;
+    VALUE sql;
+    VALUE parse_error_offset;
 
-    rb_scan_args(argc, argv, "02", &msg, &code);
+    rb_scan_args(argc, argv, "04", &msg, &code, &sql, &parse_error_offset);
     rb_call_super(argc > 1 ? 1 : argc, argv);
-    if (!NIL_P(code)) {
-        rb_ivar_set(self, oci8_id_code, rb_ary_new3(1, code));
-    }
+    rb_ivar_set(self, oci8_id_at_code, code);
+    rb_ivar_set(self, oci8_id_at_sql, sql);
+    rb_ivar_set(self, oci8_id_at_parse_error_offset, parse_error_offset);
     return Qnil;
 }
-
-/*
-=begin
---- OCIError#code()
-=end
-*/
-static VALUE oci8_error_code(VALUE self)
-{
-    VALUE ary = rb_ivar_get(self, oci8_id_code);
-    if (RARRAY_LEN(ary) == 0) {
-        return Qnil;
-    }
-    return RARRAY_PTR(ary)[0];
-}
-
-/*
-=begin
---- OCIError#codes()
-=end
-*/
-static VALUE oci8_error_code_array(VALUE self)
-{
-    return rb_ivar_get(self, oci8_id_code);
-}
-
-/*
-=begin
---- OCIError#message()
-=end
-*/
-
-/*
-=begin
---- OCIError#messages()
-=end
-*/
-static VALUE oci8_error_message_array(VALUE self)
-{
-    return rb_ivar_get(self, oci8_id_message);
-}
-
-#ifdef OCI_ATTR_PARSE_ERROR_OFFSET
-/*
-=begin
---- OCIError#parseErrorOffset()
-=end
-*/
-static VALUE oci8_error_parse_error_offset(VALUE self)
-{
-    return rb_ivar_get(self, oci8_id_parse_error_offset);
-}
-#endif
-
-#ifdef OCI_ATTR_STATEMENT
-/*
-=begin
---- OCIError#sql()
-     (Oracle 8.1.6 or later)
-=end
-*/
-static VALUE oci8_error_sql(VALUE self)
-{
-    return rb_ivar_get(self, oci8_id_sql);
-}
-#endif
 
 sb4 oci8_get_error_code(OCIError *errhp)
 {
@@ -308,10 +191,9 @@ void Init_oci8_error(void)
     errbufsiz = ERRBUF_EXPAND_LEN;
     errbuf = xmalloc(errbufsiz);
 
-    oci8_id_code = rb_intern("code");
-    oci8_id_message = rb_intern("message");
-    oci8_id_parse_error_offset = rb_intern("parse_error_offset");
-    oci8_id_sql = rb_intern("sql");
+    oci8_id_at_code = rb_intern("@code");
+    oci8_id_at_sql = rb_intern("@sql");
+    oci8_id_at_parse_error_offset = rb_intern("@parse_error_offset");
     oci8_id_caller = rb_intern("caller");
     oci8_id_set_backtrace = rb_intern("set_backtrace");
 
@@ -326,36 +208,29 @@ void Init_oci8_error(void)
     eOCIContinue = rb_define_class("OCIContinue", eOCIException);
     eOCISuccessWithInfo = rb_define_class("OCISuccessWithInfo", eOCIError);
 
-    rb_define_method(eOCIError, "initialize", oci8_error_initialize, -1);
-    rb_define_method(eOCIError, "code", oci8_error_code, 0);
-    rb_define_method(eOCIError, "codes", oci8_error_code_array, 0);
-    rb_define_method(eOCIError, "messages", oci8_error_message_array, 0);
-#ifdef OCI_ATTR_PARSE_ERROR_OFFSET
-    rb_define_method(eOCIError, "parseErrorOffset", oci8_error_parse_error_offset, 0);
-#endif
-#ifdef OCI_ATTR_STATEMENT
-    rb_define_method(eOCIError, "sql", oci8_error_sql, 0);
-#endif
+    rb_define_method(eOCIException, "initialize", oci8_error_initialize, -1);
+    rb_define_attr(eOCIException, "code", 1, 0);
+    rb_define_attr(eOCIException, "sql", 1, 0);
+    rb_define_attr(eOCIException, "parse_error_offset", 1, 0);
+    rb_define_alias(eOCIException, "parseErrorOffset", "parse_error_offset");
 }
 
 void oci8_do_raise(OCIError *errhp, sword status, OCIStmt *stmthp, const char *file, int line)
 {
-    oci8_raise2(errhp, status, OCI_HTYPE_ERROR, stmthp, file, line);
+    rb_exc_raise(oci8_make_exc(errhp, status, OCI_HTYPE_ERROR, stmthp, file, line));
 }
 
 void oci8_do_env_raise(OCIEnv *envhp, sword status, const char *file, int line)
 {
-    oci8_raise2(envhp, status, OCI_HTYPE_ENV, NULL, file, line);
+    rb_exc_raise(oci8_make_exc(envhp, status, OCI_HTYPE_ENV, NULL, file, line));
 }
 
 void oci8_do_raise_init_error(const char *file, int line)
 {
     VALUE msg = rb_usascii_str_new_cstr("OCI Library Initialization Error");
-    VALUE exc = rb_funcall(eOCIError, oci8_id_new, 1, msg);
+    VALUE exc = rb_funcall(eOCIError, oci8_id_new, 2, msg, INT2FIX(-1));
 
-    rb_ivar_set(exc, oci8_id_code, rb_ary_new3(1, INT2FIX(-1)));
-    rb_ivar_set(exc, oci8_id_message, rb_ary_new3(1, msg));
-    set_backtrace_and_raise(exc, file, line);
+    rb_exc_raise(set_backtrace(exc, file, line));
 }
 
 VALUE oci8_get_error_message(ub4 msgno, const char *default_msg)
@@ -388,9 +263,83 @@ VALUE oci8_get_error_message(ub4 msgno, const char *default_msg)
 void oci8_do_raise_by_msgno(ub4 msgno, const char *default_msg, const char *file, int line)
 {
     VALUE msg = oci8_get_error_message(msgno, default_msg);
-    VALUE exc = rb_funcall(eOCIError, oci8_id_new, 1, msg);
+    VALUE exc = rb_funcall(eOCIError, oci8_id_new, 2, msg, INT2FIX(-1));
 
-    rb_ivar_set(exc, oci8_id_code, rb_ary_new3(1, INT2FIX(-1)));
-    rb_ivar_set(exc, oci8_id_message, rb_ary_new3(1, msg));
-    set_backtrace_and_raise(exc, file, line);
+    rb_exc_raise(set_backtrace(exc, file, line));
 }
+
+/*
+ * Document-class: OCIException
+ *
+ * The superclass for all exceptions raised by ruby-oci8.
+ *
+ * The following exceptions are defined as subclasses of OCIError.
+ * These exceptions are raised when Oracle Call Interface functions
+ * return with an error status.
+ *
+ * - OCIBreak
+ * - OCINoData
+ * - OCIError
+ * - OCIInvalidHandle
+ * - OCINeedData
+ * - OCIStillExecuting
+ * - OCIContinue
+ * - OCISuccessWithInfo
+ */
+
+/*
+ * Document-class: OCIBreak
+ *
+ * Subclass of OCIException
+ *
+ *
+ */
+
+/*
+ * Document-class: OCINoData
+ *
+ * Subclass of OCIException
+ *
+ */
+
+/*
+ * Document-class: OCIError
+ *
+ * Subclass of OCIException
+ *
+ */
+
+/*
+ * Document-class: OCIInvalidHandle
+ *
+ * Subclass of OCIException
+ *
+ */
+
+/*
+ * Document-class: OCINeedData
+ *
+ * Subclass of OCIException
+ *
+ */
+
+/*
+ * Document-class: OCIStillExecuting
+ *
+ * Subclass of OCIException
+ *
+ */
+
+/*
+ * Document-class: OCIContinue
+ *
+ * Subclass of OCIException
+ *
+ */
+
+/*
+ * Document-class: OCISuccessWithInfo
+ *
+ * Subclass of OCIException
+ *
+ */

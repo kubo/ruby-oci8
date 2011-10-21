@@ -453,6 +453,7 @@ oci8_base_t *oci8_get_handle(VALUE obj, VALUE klass);
 /* error.c */
 extern VALUE eOCIException;
 extern VALUE eOCIBreak;
+VALUE oci8_make_exc(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line);
 void Init_oci8_error(void);
 NORETURN(void oci8_do_raise(OCIError *, sword status, OCIStmt *, const char *file, int line));
 NORETURN(void oci8_do_env_raise(OCIEnv *, sword status, const char *file, int line));
