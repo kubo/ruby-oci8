@@ -581,6 +581,7 @@ EOS
     check_cc()
     @cc_is_gcc = check_cc_is_gcc()
     @lp64 = check_lp64()
+    check_system_header()
     check_ruby_header()
   end
 
@@ -622,6 +623,15 @@ EOS
     end
   end # check_lp64
 
+  def check_system_header
+    if not have_header('sys/types.h')
+      raise <<EOS
+A standard C header file 'sys/types.h' doesn't exist.
+Did you install glibc-devel(redhat) or libc6-dev(debian/ubuntu)?
+EOS
+    end
+  end
+
   def check_ruby_header
     print "checking for ruby header... "
     STDOUT.flush
@@ -642,12 +652,6 @@ EOS
 Install the ruby development library.
 EOS
       end
-    end
-    if RUBY_PLATFORM =~ /linux/ and not File.exist?("/usr/include/sys/types.h")
-      raise <<EOS
-Do you install glibc-devel(redhat) or libc6-dev(debian)?
-You need /usr/include/sys/types.h to compile ruby-oci8.
-EOS
     end
     puts "ok"
     $stdout.flush

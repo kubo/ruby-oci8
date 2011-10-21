@@ -1,4 +1,9 @@
 2011-10-21  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: fix checking code whether 'sys/types.h' is
+	    available for Ubuntu 11.10 where sys/types.h is not right under
+	    /usr/include.
+
+2011-10-21  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: remove code to get linker options for Oracle 8
 	    and Oracle 8i.
 
