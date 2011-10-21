@@ -1,3 +1,7 @@
+2011-10-21  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: remove code to get linker options for Oracle 8
+	    and Oracle 8i.
+
 2011-10-17  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: embed a run-time loading path to the extention
 	    library oci8lib_*.so compiled for not only full clients, but also

@@ -741,27 +741,12 @@ class OraConfFC < OraConf
       use_lib32 = false
     end
 
-    # default
-    if @version.to_i >= 900
-      if use_lib32
-        lib_dir = "#{@oracle_home}/lib32"
-      else
-        lib_dir = "#{@oracle_home}/lib"
-      end
-      @libs = get_libs(lib_dir)
-      return if try_link_oci()
-    end
-
-    # get from demo_rdbms.mk
     if use_lib32
-      if File.exist?("#{@oracle_home}/rdbms/demo/demo_rdbms32.mk")
-        @libs = get_libs('32', '')
-      else
-        @libs = get_libs('', '32')
-      end
+      lib_dir = "#{@oracle_home}/lib32"
     else
-      @libs = get_libs()
+      lib_dir = "#{@oracle_home}/lib"
     end
+    @libs = get_libs(lib_dir)
     return if try_link_oci()
 
     raise 'cannot compile OCI'
@@ -966,70 +951,6 @@ EOS
       end
     end # get_cflags
 
-    def get_libs(postfix1 = '', postfix2 = "")
-      print("Running make for $ORACLE_HOME/rdbms/demo/demo_rdbms#{postfix1}.mk (build#{postfix2}) ...")
-      STDOUT.flush
-
-      make_opt = "CC='echo MARKER' EXE=/dev/null ECHODO=echo ECHO=echo GENCLNTSH='echo genclntsh'"
-      if @cc_is_gcc && /solaris/ =~ RUBY_PLATFORM
-        # suggested by Brian Candler.
-        make_opt += " KPIC_OPTION= NOKPIC_CCFLAGS#{postfix2}="
-      end
-
-      command = "|make -f #{@oracle_home}/rdbms/demo/demo_rdbms#{postfix1}.mk build#{postfix2} #{make_opt}"
-      marker = /^\s*MARKER/
-      echo = /^\s*echo/
-      libs = nil
-      Logging::open do
-        puts command
-        open(command, "r") do |f|
-          while line = f.gets
-            puts line
-            line.chomp!
-            line = $' while line =~ echo
-            if line =~ marker
-              # found a line where a compiler runs.
-              libs = $'
-              libs.gsub!(/-o\s+\/dev\/null/, "")
-              libs.gsub!(/-o\s+build/, "")
-            end
-          end
-        end
-      end
-      raise 'Cannot get proper libs.' if libs.nil?
-      print("OK\n")
-
-      case RUBY_PLATFORM
-      when /hpux/
-        if @cc_is_gcc
-          # strip +DA2.0W, +DS2.0, -Wl,+s, -Wl,+n
-          libs.gsub!(/\+DA\S+(\s)*/, "")
-          libs.gsub!(/\+DS\S+(\s)*/, "")
-          libs.gsub!(/-Wl,\+[sn](\s)*/, "")
-        end
-        libs.gsub!(/ -Wl,/, " ")
-      when /aix/
-        if @cc_is_gcc
-          # strip -bI:/xxx
-          libs.gsub!(/(-bI:\S+)/, '')
-        end
-      end
-
-      # check whether object files are included.
-      if /\S+\.o\b/ =~ libs
-
-        # monkey patching!
-        Object.module_eval do
-          alias :link_command_pre_oci8 :link_command
-          def link_command(*args)
-            args[1] = "" if args[1] == $libs
-            link_command_pre_oci8(*args)
-          end
-        end
-
-      end
-      libs
-    end # get_libs
   end
 end
 
