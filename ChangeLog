@@ -1,3 +1,7 @@
+2011-10-22  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c, ext/oci8/oci8.c, ext/oci8/ocinumber.c:
+	    delete code for Oracle 8 and Oracle 8i.
+
 2011-10-21  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/error.c, ext/oci8/oci8.h: refactor OCIException and its
 	    subclasses. OCIError#codes and OCIError#messages are deleted.

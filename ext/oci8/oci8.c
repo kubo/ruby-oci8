@@ -779,24 +779,8 @@ static VALUE oci8_oracle_server_vernum(VALUE self)
     ub4 version;
     char *p;
 
-    if (have_OCIServerRelease) {
-        /* Oracle 9i or later */
-        oci_lc(OCIServerRelease(svcctx->base.hp.ptr, oci8_errhp, (text*)buf, sizeof(buf), (ub1)svcctx->base.type, &version));
-        return UINT2NUM(version);
-    } else {
-        /* Oracle 8.x */
-        oci_lc(OCIServerVersion(svcctx->base.hp.ptr, oci8_errhp, (text*)buf, sizeof(buf), (ub1)svcctx->base.type));
-        if ((p = strchr(buf, '.')) != NULL) {
-            unsigned int major, minor, update, patch, port_update;
-            while (p >= buf && *p != ' ') {
-                p--;
-            }
-            if (sscanf(p + 1, "%u.%u.%u.%u.%u", &major, &minor, &update, &patch, &port_update) == 5) {
-                return INT2FIX(ORAVERNUM(major, minor, update, patch, port_update));
-            }
-        }
-        return Qnil;
-    }
+    oci_lc(OCIServerRelease(svcctx->base.hp.ptr, oci8_errhp, (text*)buf, sizeof(buf), (ub1)svcctx->base.type, &version));
+    return UINT2NUM(version);
 }
 
 /*
@@ -1127,9 +1111,7 @@ VALUE Init_oci8(void)
     rb_define_const(cOCI8, "VERSION", rb_obj_freeze(rb_usascii_str_new_cstr(OCI8LIB_VERSION)));
     rb_define_singleton_method_nodoc(cOCI8, "oracle_client_vernum", oci8_s_oracle_client_vernum, 0);
     rb_define_singleton_method_nodoc(cOCI8, "__set_property", oci8_s_set_property, 2);
-    if (have_OCIMessageOpen && have_OCIMessageGet) {
-        rb_define_singleton_method(cOCI8, "error_message", oci8_s_error_message, 1);
-    }
+    rb_define_singleton_method(cOCI8, "error_message", oci8_s_error_message, 1);
     rb_define_private_method(cOCI8, "parse_connect_string", oci8_parse_connect_string, 1);
     rb_define_private_method(cOCI8, "logon", oci8_logon, 3);
     rb_define_private_method(cOCI8, "allocate_handles", oci8_allocate_handles, 0);
