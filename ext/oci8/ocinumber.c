@@ -257,19 +257,7 @@ static int set_oci_number_from_num(OCINumber *result, VALUE num, int force, OCIE
             }
             exponent = FIX2INT(ary[3]);
 
-            if (have_OCINumberShift) {
-                /* Oracle 8.1 or upper */
-                oci_lc(OCINumberShift(errhp, &digits, exponent - digits_len, &work));
-            } else {
-                /* Oracle 8.0 */
-                int n = 10;
-                OCINumber base;
-                OCINumber exp;
-
-                oci_lc(OCINumberFromInt(errhp, &n, sizeof(n), OCI_NUMBER_SIGNED, &base));
-                oci_lc(OCINumberIntPower(errhp, &base, exponent - digits_len, &exp));
-                oci_lc(OCINumberMul(errhp, &digits, &exp, &work));
-            }
+            oci_lc(OCINumberShift(errhp, &digits, exponent - digits_len, &work));
             if (sign >= 0) {
                 oci_lc(OCINumberAssign(errhp, &work, result));
             } else {
@@ -1586,9 +1574,7 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
     rb_define_method(cOCINumber, "ceil", onum_ceil, 0);
     rb_define_method(cOCINumber, "round", onum_round, -1);
     rb_define_method(cOCINumber, "truncate", onum_trunc, -1);
-    if (have_OCINumberPrec) {
-        rb_define_method(cOCINumber, "round_prec", onum_round_prec, 1);
-    }
+    rb_define_method(cOCINumber, "round_prec", onum_round_prec, 1);
 
     rb_define_method(cOCINumber, "to_s", onum_to_s, 0);
     rb_define_method(cOCINumber, "to_char", onum_to_char, -1);
@@ -1601,9 +1587,7 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
 
     rb_define_method(cOCINumber, "zero?", onum_zero_p, 0);
     rb_define_method(cOCINumber, "abs", onum_abs, 0);
-    if (have_OCINumberShift) {
-        rb_define_method(cOCINumber, "shift", onum_shift, 1);
-    }
+    rb_define_method(cOCINumber, "shift", onum_shift, 1);
     rb_define_method(cOCINumber, "dump", onum_dump, 0);
 
     rb_define_method_nodoc(cOCINumber, "hash", onum_hash, 0);

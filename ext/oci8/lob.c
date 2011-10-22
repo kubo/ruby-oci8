@@ -102,7 +102,7 @@ static void oci8_lob_free(oci8_base_t *base)
     oci8_lob_t *lob = (oci8_lob_t *)base;
     boolean is_temporary;
 
-    if (have_OCILobIsTemporary && lob->svchp != NULL
+    if (lob->svchp != NULL
         && OCILobIsTemporary(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_temporary) == OCI_SUCCESS
         && is_temporary) {
 
@@ -131,11 +131,9 @@ static ub4 oci8_lob_get_length(oci8_lob_t *lob)
 static void lob_open(oci8_lob_t *lob)
 {
     if (lob->state == S_CLOSE) {
-        if (have_OCILobOpen_nb) {
-            oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+        oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
 
-            oci_lc(OCILobOpen_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, OCI_DEFAULT));
-        }
+        oci_lc(OCILobOpen_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, OCI_DEFAULT));
         lob->state = S_OPEN;
     }
 }
@@ -143,11 +141,9 @@ static void lob_open(oci8_lob_t *lob)
 static void lob_close(oci8_lob_t *lob)
 {
     if (lob->state == S_OPEN) {
-        if (have_OCILobClose_nb) {
-            oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+        oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
 
-            oci_lc(OCILobClose_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob));
-        }
+        oci_lc(OCILobClose_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob));
         lob->state = S_CLOSE;
     }
 }
@@ -192,15 +188,11 @@ static VALUE oci8_lob_do_initialize(int argc, VALUE *argv, VALUE self, ub1 csfrm
     lob->state = S_NO_OPEN_CLOSE;
     oci8_link_to_parent((oci8_base_t*)lob, (oci8_base_t*)DATA_PTR(svc));
     if (!NIL_P(val)) {
-        if (have_OCILobCreateTemporary_nb) {
-            oci8_svcctx_t *svcctx = oci8_get_svcctx(svc);
-            OCI8StringValue(val);
-            oci_lc(OCILobCreateTemporary_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, 0, csfrm, lobtype, TRUE, OCI_DURATION_SESSION));
-            lob->svchp = oci8_get_oci_svcctx(svc);
-            oci8_lob_write(self, val);
-        } else {
-            rb_raise(rb_eRuntimeError, "creating a temporary lob is not supported on this Oracle version");
-        }
+        oci8_svcctx_t *svcctx = oci8_get_svcctx(svc);
+        OCI8StringValue(val);
+        oci_lc(OCILobCreateTemporary_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, 0, csfrm, lobtype, TRUE, OCI_DURATION_SESSION));
+        lob->svchp = oci8_get_oci_svcctx(svc);
+        oci8_lob_write(self, val);
     }
     return Qnil;
 }
@@ -459,16 +451,12 @@ static VALUE oci8_lob_flush(VALUE self)
 
 static VALUE oci8_lob_get_chunk_size(VALUE self)
 {
-    if (have_OCILobGetChunkSize_nb) {
-        oci8_lob_t *lob = DATA_PTR(self);
-        oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
-        ub4 len;
+    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+    ub4 len;
 
-        oci_lc(OCILobGetChunkSize_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &len));
-        return UINT2NUM(len);
-    } else {
-        rb_notimplement();
-    }
+    oci_lc(OCILobGetChunkSize_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &len));
+    return UINT2NUM(len);
 }
 
 static VALUE oci8_lob_clone(VALUE self)
@@ -481,9 +469,8 @@ static VALUE oci8_lob_clone(VALUE self)
 
     newobj = rb_funcall(CLASS_OF(self), oci8_id_new, 1, lob->svc);
     newlob = DATA_PTR(newobj);
-    if (have_OCILobLocatorAssign_nb && have_OCILobIsTemporary
-            && OCILobIsTemporary(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_temporary) == OCI_SUCCESS
-            && is_temporary) {
+    if (OCILobIsTemporary(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_temporary) == OCI_SUCCESS
+        && is_temporary) {
         oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
         rv = OCILobLocatorAssign_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &newlob->base.hp.lob);
     } else {
