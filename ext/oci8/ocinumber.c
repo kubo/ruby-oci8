@@ -119,7 +119,7 @@ VALUE oci8_make_ocinumber(OCINumber *s, OCIError *errhp)
     OCINumber *d;
 
     obj = Data_Make_Struct(cOCINumber, OCINumber, NULL, xfree, d);
-    oci_lc(OCINumberAssign(errhp, s, d));
+    chkerr(OCINumberAssign(errhp, s, d));
     return obj;
 }
 
@@ -184,7 +184,7 @@ static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VAL
         nls_params_ptr = RSTRING_ORATEXT(nls_params);
         nls_params_len = RSTRING_LEN(nls_params);
     }
-    oci_lc(OCINumberFromText(errhp,
+    chkerr(OCINumberFromText(errhp,
                              RSTRING_ORATEXT(str), RSTRING_LEN(str),
                              fmt_ptr, fmt_len, nls_params_ptr, nls_params_len,
                              result));
@@ -205,7 +205,7 @@ static int set_oci_number_from_num(OCINumber *result, VALUE num, int force, OCIE
     case T_FIXNUM:
         /* set from long. */
         sl = NUM2LONG(num);
-        oci_lc(OCINumberFromInt(errhp, &sl, sizeof(sl), OCI_NUMBER_SIGNED, result));
+        chkerr(OCINumberFromInt(errhp, &sl, sizeof(sl), OCI_NUMBER_SIGNED, result));
         return 1;
     case T_FLOAT:
         /* set from double. */
@@ -219,7 +219,7 @@ static int set_oci_number_from_num(OCINumber *result, VALUE num, int force, OCIE
     }
     if (RTEST(rb_obj_is_instance_of(num, cOCINumber))) {
         /* OCI::Number */
-        oci_lc(OCINumberAssign(errhp, DATA_PTR(num), result));
+        chkerr(OCINumberAssign(errhp, DATA_PTR(num), result));
         return 1;
     }
     if (rb_respond_to(num, id_split)) {
@@ -257,11 +257,11 @@ static int set_oci_number_from_num(OCINumber *result, VALUE num, int force, OCIE
             }
             exponent = FIX2INT(ary[3]);
 
-            oci_lc(OCINumberShift(errhp, &digits, exponent - digits_len, &work));
+            chkerr(OCINumberShift(errhp, &digits, exponent - digits_len, &work));
             if (sign >= 0) {
-                oci_lc(OCINumberAssign(errhp, &work, result));
+                chkerr(OCINumberAssign(errhp, &work, result));
             } else {
-                oci_lc(OCINumberNeg(errhp, &work, result));
+                chkerr(OCINumberNeg(errhp, &work, result));
             }
             return 1;
         }
@@ -274,7 +274,7 @@ is_not_big_decimal:
 
         if (set_oci_number_from_num(&numerator, rb_funcall(num, id_numerator, 0), 0, errhp) &&
             set_oci_number_from_num(&denominator, rb_funcall(num, id_denominator, 0), 0, errhp)) {
-            oci_lc(OCINumberDiv(errhp, &numerator, &denominator, result));
+            chkerr(OCINumberDiv(errhp, &numerator, &denominator, result));
             return 1;
         }
     }
@@ -299,7 +299,7 @@ OCINumber *oci8_set_integer(OCINumber *result, VALUE self, OCIError *errhp)
     OCINumber work;
 
     set_oci_number_from_num(&work, self, 1, errhp);
-    oci_lc(OCINumberTrunc(errhp, &work, 0, result));
+    chkerr(OCINumberTrunc(errhp, &work, 0, result));
     return result;
 }
 
@@ -325,7 +325,7 @@ double oci8_onum_to_dbl(OCINumber *s, OCIError *errhp)
     } else {
         double dbl;
 
-        oci_lc(OCINumberToReal(errhp, s, sizeof(double), &dbl));
+        chkerr(OCINumberToReal(errhp, s, sizeof(double), &dbl));
         return dbl;
     }
 }
@@ -356,7 +356,7 @@ OCINumber *oci8_dbl_to_onum(OCINumber *result, double dbl, OCIError *errhp)
             oci8_raise_by_msgno(rv, NULL);
         }
     } else {
-        oci_lc(OCINumberFromReal(errhp, &dbl, sizeof(dbl), result));
+        chkerr(OCINumberFromReal(errhp, &dbl, sizeof(dbl), result));
     }
     return result;
 }
@@ -380,9 +380,9 @@ static VALUE omath_atan2(VALUE self, VALUE Ycoordinate, VALUE Xcoordinate)
     set_oci_number_from_num(&nX, Xcoordinate, 1, errhp);
     set_oci_number_from_num(&nY, Ycoordinate, 1, errhp);
     /* check zero */
-    oci_lc(OCINumberIsZero(errhp, &nX, &is_zero));
+    chkerr(OCINumberIsZero(errhp, &nX, &is_zero));
     if (is_zero) {
-        oci_lc(OCINumberSign(errhp, &nY, &sign));
+        chkerr(OCINumberSign(errhp, &nY, &sign));
         switch (sign) {
         case 0:
             return INT2FIX(0); /* atan2(0, 0) => 0 or ERROR? */
@@ -393,7 +393,7 @@ static VALUE omath_atan2(VALUE self, VALUE Ycoordinate, VALUE Xcoordinate)
         }
     }
     /* atan2 */
-    oci_lc(OCINumberArcTan2(errhp, &nY, &nX, &rv));
+    chkerr(OCINumberArcTan2(errhp, &nY, &nX, &rv));
     return oci8_make_ocinumber(&rv, errhp);
 }
 
@@ -410,7 +410,7 @@ static VALUE omath_cos(VALUE obj, VALUE radian)
     OCINumber r;
     OCINumber rv;
 
-    oci_lc(OCINumberCos(errhp, TO_OCINUM(&r, radian, errhp), &rv));
+    chkerr(OCINumberCos(errhp, TO_OCINUM(&r, radian, errhp), &rv));
     return oci8_make_ocinumber(&rv, errhp);
 }
 
@@ -427,7 +427,7 @@ static VALUE omath_sin(VALUE obj, VALUE radian)
     OCINumber r;
     OCINumber rv;
 
-    oci_lc(OCINumberSin(errhp, TO_OCINUM(&r, radian, errhp), &rv));
+    chkerr(OCINumberSin(errhp, TO_OCINUM(&r, radian, errhp), &rv));
     return oci8_make_ocinumber(&rv, errhp);
 }
 
@@ -443,7 +443,7 @@ static VALUE omath_tan(VALUE obj, VALUE radian)
     OCINumber r;
     OCINumber rv;
 
-    oci_lc(OCINumberTan(errhp, TO_OCINUM(&r, radian, errhp), &rv));
+    chkerr(OCINumberTan(errhp, TO_OCINUM(&r, radian, errhp), &rv));
     return oci8_make_ocinumber(&rv, errhp);
 }
 
@@ -462,15 +462,15 @@ static VALUE omath_acos(VALUE obj, VALUE num)
 
     set_oci_number_from_num(&n, num, 1, errhp);
     /* check upper bound */
-    oci_lc(OCINumberCmp(errhp, &n, &const_p1, &sign));
+    chkerr(OCINumberCmp(errhp, &n, &const_p1, &sign));
     if (sign > 0)
         rb_raise(rb_eRangeError, "out of range for acos");
     /* check lower bound */
-    oci_lc(OCINumberCmp(errhp, &n, &const_m1, &sign));
+    chkerr(OCINumberCmp(errhp, &n, &const_m1, &sign));
     if (sign < 0)
         rb_raise(rb_eRangeError, "out of range for acos");
     /* acos */
-    oci_lc(OCINumberArcCos(errhp, &n, &r));
+    chkerr(OCINumberArcCos(errhp, &n, &r));
     return oci8_make_ocinumber(&r, errhp);
 }
 
@@ -489,15 +489,15 @@ static VALUE omath_asin(VALUE obj, VALUE num)
 
     set_oci_number_from_num(&n, num, 1, errhp);
     /* check upper bound */
-    oci_lc(OCINumberCmp(errhp, &n, &const_p1, &sign));
+    chkerr(OCINumberCmp(errhp, &n, &const_p1, &sign));
     if (sign > 0)
         rb_raise(rb_eRangeError, "out of range for asin");
     /* check lower bound */
-    oci_lc(OCINumberCmp(errhp, &n, &const_m1, &sign));
+    chkerr(OCINumberCmp(errhp, &n, &const_m1, &sign));
     if (sign < 0)
         rb_raise(rb_eRangeError, "out of range for asin");
     /* asin */
-    oci_lc(OCINumberArcSin(errhp, &n, &r));
+    chkerr(OCINumberArcSin(errhp, &n, &r));
     return oci8_make_ocinumber(&r, errhp);
 }
 
@@ -513,7 +513,7 @@ static VALUE omath_atan(VALUE obj, VALUE num)
     OCINumber n;
     OCINumber r;
 
-    oci_lc(OCINumberArcTan(errhp, TO_OCINUM(&n, num, errhp), &r));
+    chkerr(OCINumberArcTan(errhp, TO_OCINUM(&n, num, errhp), &r));
     return oci8_make_ocinumber(&r, errhp);
 }
 
@@ -529,7 +529,7 @@ static VALUE omath_cosh(VALUE obj, VALUE num)
     OCINumber n;
     OCINumber r;
 
-    oci_lc(OCINumberHypCos(errhp, TO_OCINUM(&n, num, errhp), &r));
+    chkerr(OCINumberHypCos(errhp, TO_OCINUM(&n, num, errhp), &r));
     return oci8_make_ocinumber(&r, errhp);
 }
 
@@ -546,7 +546,7 @@ static VALUE omath_sinh(VALUE obj, VALUE num)
     OCINumber n;
     OCINumber r;
 
-    oci_lc(OCINumberHypSin(errhp, TO_OCINUM(&n, num, errhp), &r));
+    chkerr(OCINumberHypSin(errhp, TO_OCINUM(&n, num, errhp), &r));
     return oci8_make_ocinumber(&r, errhp);
 }
 
@@ -563,7 +563,7 @@ static VALUE omath_tanh(VALUE obj, VALUE num)
     OCINumber n;
     OCINumber r;
 
-    oci_lc(OCINumberHypTan(errhp, TO_OCINUM(&n, num, errhp), &r));
+    chkerr(OCINumberHypTan(errhp, TO_OCINUM(&n, num, errhp), &r));
     return oci8_make_ocinumber(&r, errhp);
 }
 
@@ -579,7 +579,7 @@ static VALUE omath_exp(VALUE obj, VALUE num)
     OCINumber n;
     OCINumber r;
 
-    oci_lc(OCINumberExp(errhp, TO_OCINUM(&n, num, errhp), &r));
+    chkerr(OCINumberExp(errhp, TO_OCINUM(&n, num, errhp), &r));
     return oci8_make_ocinumber(&r, errhp);
 }
 
@@ -602,20 +602,20 @@ static VALUE omath_log(int argc, VALUE *argv, VALUE obj)
 
     rb_scan_args(argc, argv, "11", &num, &base);
     set_oci_number_from_num(&n, num, 1, errhp);
-    oci_lc(OCINumberSign(errhp, &n, &sign));
+    chkerr(OCINumberSign(errhp, &n, &sign));
     if (sign <= 0)
         rb_raise(rb_eRangeError, "nonpositive value for log");
     if (NIL_P(base)) {
-        oci_lc(OCINumberLn(errhp, &n, &r));
+        chkerr(OCINumberLn(errhp, &n, &r));
     } else {
         set_oci_number_from_num(&b, base, 1, errhp);
-        oci_lc(OCINumberSign(errhp, &b, &sign));
+        chkerr(OCINumberSign(errhp, &b, &sign));
         if (sign <= 0)
             rb_raise(rb_eRangeError, "nonpositive value for the base of log");
-        oci_lc(OCINumberCmp(errhp, &b, &const_p1, &sign));
+        chkerr(OCINumberCmp(errhp, &b, &const_p1, &sign));
         if (sign == 0)
             rb_raise(rb_eRangeError, "base 1 for log");
-        oci_lc(OCINumberLog(errhp, &b, &n, &r));
+        chkerr(OCINumberLog(errhp, &b, &n, &r));
     }
     return oci8_make_ocinumber(&r, errhp);
 }
@@ -634,10 +634,10 @@ static VALUE omath_log10(VALUE obj, VALUE num)
     sword sign;
 
     set_oci_number_from_num(&n, num, 1, errhp);
-    oci_lc(OCINumberSign(errhp, &n, &sign));
+    chkerr(OCINumberSign(errhp, &n, &sign));
     if (sign <= 0)
         rb_raise(rb_eRangeError, "nonpositive value for log10");
-    oci_lc(OCINumberLog(errhp, &const_p10, &n, &r));
+    chkerr(OCINumberLog(errhp, &const_p10, &n, &r));
     return oci8_make_ocinumber(&r, errhp);
 }
 
@@ -656,12 +656,12 @@ static VALUE omath_sqrt(VALUE obj, VALUE num)
 
     set_oci_number_from_num(&n, num, 1, errhp);
     /* check whether num is negative */
-    oci_lc(OCINumberSign(errhp, &n, &sign));
+    chkerr(OCINumberSign(errhp, &n, &sign));
     if (sign < 0) {
         errno = EDOM;
         rb_sys_fail("sqrt");
     }
-    oci_lc(OCINumberSqrt(errhp, &n, &r));
+    chkerr(OCINumberSqrt(errhp, &n, &r));
     return oci8_make_ocinumber(&r, errhp);
 }
 
@@ -702,7 +702,7 @@ static VALUE onum_initialize_copy(VALUE lhs, VALUE rhs)
         rb_raise(rb_eTypeError, "invalid type: expected %s but %s",
                  rb_class2name(CLASS_OF(lhs)), rb_class2name(CLASS_OF(rhs)));
     }
-    oci_lc(OCINumberAssign(oci8_errhp, _NUMBER(rhs), _NUMBER(lhs)));
+    chkerr(OCINumberAssign(oci8_errhp, _NUMBER(rhs), _NUMBER(lhs)));
     return lhs;
 }
 
@@ -714,7 +714,7 @@ static VALUE onum_coerce(VALUE self, VALUE other)
     switch(rboci8_type(other)) {
     case T_FIXNUM:
         sl = NUM2LONG(other);
-        oci_lc(OCINumberFromInt(oci8_errhp, &sl, sizeof(sl), OCI_NUMBER_SIGNED, &n));
+        chkerr(OCINumberFromInt(oci8_errhp, &sl, sizeof(sl), OCI_NUMBER_SIGNED, &n));
         return rb_assoc_new(oci8_make_ocinumber(&n, oci8_errhp), self);
     case T_BIGNUM:
         /* change via string. */
@@ -743,7 +743,7 @@ static VALUE onum_neg(VALUE self)
     OCIError *errhp = oci8_errhp;
     OCINumber r;
 
-    oci_lc(OCINumberNeg(errhp, _NUMBER(self), &r));
+    chkerr(OCINumberNeg(errhp, _NUMBER(self), &r));
     return oci8_make_ocinumber(&r, errhp);
 }
 
@@ -764,12 +764,12 @@ static VALUE onum_add(VALUE lhs, VALUE rhs)
     case T_FIXNUM:
     case T_BIGNUM:
         if (set_oci_number_from_num(&n, rhs, 0, errhp)) {
-            oci_lc(OCINumberAdd(errhp, _NUMBER(lhs), &n, &r));
+            chkerr(OCINumberAdd(errhp, _NUMBER(lhs), &n, &r));
             return oci8_make_ocinumber(&r, errhp);
         }
         break;
     case RBOCI8_T_ORANUMBER:
-        oci_lc(OCINumberAdd(errhp, _NUMBER(lhs), _NUMBER(rhs), &r));
+        chkerr(OCINumberAdd(errhp, _NUMBER(lhs), _NUMBER(rhs), &r));
         return oci8_make_ocinumber(&r, errhp);
     case T_FLOAT:
         return rb_funcall(onum_to_f(lhs), oci8_id_add_op, 1, rhs);
@@ -798,12 +798,12 @@ static VALUE onum_sub(VALUE lhs, VALUE rhs)
     case T_FIXNUM:
     case T_BIGNUM:
         if (set_oci_number_from_num(&n, rhs, 0, errhp)) {
-            oci_lc(OCINumberSub(errhp, _NUMBER(lhs), &n, &r));
+            chkerr(OCINumberSub(errhp, _NUMBER(lhs), &n, &r));
             return oci8_make_ocinumber(&r, errhp);
         }
         break;
     case RBOCI8_T_ORANUMBER:
-        oci_lc(OCINumberSub(errhp, _NUMBER(lhs), _NUMBER(rhs), &r));
+        chkerr(OCINumberSub(errhp, _NUMBER(lhs), _NUMBER(rhs), &r));
         return oci8_make_ocinumber(&r, errhp);
     case T_FLOAT:
         return rb_funcall(onum_to_f(lhs), oci8_id_sub_op, 1, rhs);
@@ -831,12 +831,12 @@ static VALUE onum_mul(VALUE lhs, VALUE rhs)
     case T_FIXNUM:
     case T_BIGNUM:
         if (set_oci_number_from_num(&n, rhs, 0, errhp)) {
-            oci_lc(OCINumberMul(errhp, _NUMBER(lhs), &n, &r));
+            chkerr(OCINumberMul(errhp, _NUMBER(lhs), &n, &r));
             return oci8_make_ocinumber(&r, errhp);
         }
         break;
     case RBOCI8_T_ORANUMBER:
-        oci_lc(OCINumberMul(errhp, _NUMBER(lhs), _NUMBER(rhs), &r));
+        chkerr(OCINumberMul(errhp, _NUMBER(lhs), _NUMBER(rhs), &r));
         return oci8_make_ocinumber(&r, errhp);
     case T_FLOAT:
         return rb_funcall(onum_to_f(lhs), oci8_id_mul_op, 1, rhs);
@@ -869,16 +869,16 @@ static VALUE onum_div(VALUE lhs, VALUE rhs)
         }
     case T_BIGNUM:
         if (set_oci_number_from_num(&n, rhs, 0, errhp)) {
-            oci_lc(OCINumberDiv(errhp, _NUMBER(lhs), &n, &r));
+            chkerr(OCINumberDiv(errhp, _NUMBER(lhs), &n, &r));
             return oci8_make_ocinumber(&r, errhp);
         }
         break;
     case RBOCI8_T_ORANUMBER:
-        oci_lc(OCINumberIsZero(errhp, _NUMBER(rhs), &is_zero));
+        chkerr(OCINumberIsZero(errhp, _NUMBER(rhs), &is_zero));
         if (is_zero) {
             rb_num_zerodiv();
         }
-        oci_lc(OCINumberDiv(errhp, _NUMBER(lhs), _NUMBER(rhs), &r));
+        chkerr(OCINumberDiv(errhp, _NUMBER(lhs), _NUMBER(rhs), &r));
         return oci8_make_ocinumber(&r, errhp);
     case T_FLOAT:
         return rb_funcall(onum_to_f(lhs), oci8_id_div_op, 1, rhs);
@@ -907,11 +907,11 @@ static VALUE onum_mod(VALUE lhs, VALUE rhs)
     if (!set_oci_number_from_num(&n, rhs, 0, errhp))
         return rb_num_coerce_bin(lhs, rhs, '%');
     /* check whether argument is not zero. */
-    oci_lc(OCINumberIsZero(errhp, &n, &is_zero));
+    chkerr(OCINumberIsZero(errhp, &n, &is_zero));
     if (is_zero)
         rb_num_zerodiv();
     /* modulo */
-    oci_lc(OCINumberMod(errhp, _NUMBER(lhs), &n, &r));
+    chkerr(OCINumberMod(errhp, _NUMBER(lhs), &n, &r));
     return oci8_make_ocinumber(&r, errhp);
 }
 
@@ -928,12 +928,12 @@ static VALUE onum_power(VALUE lhs, VALUE rhs)
     OCINumber r;
 
     if (FIXNUM_P(rhs)) {
-        oci_lc(OCINumberIntPower(errhp, _NUMBER(lhs), FIX2INT(rhs), &r));
+        chkerr(OCINumberIntPower(errhp, _NUMBER(lhs), FIX2INT(rhs), &r));
     } else {
         /* change to OCINumber */
         if (!set_oci_number_from_num(&n, rhs, 0, errhp))
             return rb_num_coerce_bin(lhs, rhs, id_power);
-        oci_lc(OCINumberPower(errhp, _NUMBER(lhs), &n, &r));
+        chkerr(OCINumberPower(errhp, _NUMBER(lhs), &n, &r));
     }
     return oci8_make_ocinumber(&r, errhp);
 }
@@ -956,7 +956,7 @@ static VALUE onum_cmp(VALUE lhs, VALUE rhs)
     if (!set_oci_number_from_num(&n, rhs, 0, errhp))
         return rb_num_coerce_cmp(lhs, rhs, id_cmp);
     /* compare */
-    oci_lc(OCINumberCmp(errhp, _NUMBER(lhs), &n, &r));
+    chkerr(OCINumberCmp(errhp, _NUMBER(lhs), &n, &r));
     if (r > 0) {
         return INT2FIX(1);
     } else if (r == 0) {
@@ -977,7 +977,7 @@ static VALUE onum_floor(VALUE self)
     OCIError *errhp = oci8_errhp;
     OCINumber r;
 
-    oci_lc(OCINumberFloor(errhp, _NUMBER(self), &r));
+    chkerr(OCINumberFloor(errhp, _NUMBER(self), &r));
     return oci8_make_integer(&r, errhp);
 }
 
@@ -993,7 +993,7 @@ static VALUE onum_ceil(VALUE self)
     OCIError *errhp = oci8_errhp;
     OCINumber r;
 
-    oci_lc(OCINumberCeil(errhp, _NUMBER(self), &r));
+    chkerr(OCINumberCeil(errhp, _NUMBER(self), &r));
     return oci8_make_integer(&r, errhp);
 }
 
@@ -1016,7 +1016,7 @@ static VALUE onum_round(int argc, VALUE *argv, VALUE self)
     OCINumber r;
 
     rb_scan_args(argc, argv, "01", &decplace /* 0 */);
-    oci_lc(OCINumberRound(errhp, _NUMBER(self), NIL_P(decplace) ? 0 : NUM2INT(decplace), &r));
+    chkerr(OCINumberRound(errhp, _NUMBER(self), NIL_P(decplace) ? 0 : NUM2INT(decplace), &r));
     if (argc == 0) {
         return oci8_make_integer(&r, errhp);
     } else {
@@ -1039,7 +1039,7 @@ static VALUE onum_trunc(int argc, VALUE *argv, VALUE self)
     OCINumber r;
 
     rb_scan_args(argc, argv, "01", &decplace /* 0 */);
-    oci_lc(OCINumberTrunc(errhp, _NUMBER(self), NIL_P(decplace) ? 0 : NUM2INT(decplace), &r));
+    chkerr(OCINumberTrunc(errhp, _NUMBER(self), NIL_P(decplace) ? 0 : NUM2INT(decplace), &r));
     return oci8_make_ocinumber(&r, errhp);
 }
 
@@ -1059,7 +1059,7 @@ static VALUE onum_round_prec(VALUE self, VALUE ndigs)
     OCIError *errhp = oci8_errhp;
     OCINumber r;
 
-    oci_lc(OCINumberPrec(errhp, _NUMBER(self), NUM2INT(ndigs), &r));
+    chkerr(OCINumberPrec(errhp, _NUMBER(self), NUM2INT(ndigs), &r));
     return oci8_make_ocinumber(&r, errhp);
 }
 
@@ -1115,7 +1115,7 @@ static VALUE onum_to_char(int argc, VALUE *argv, VALUE self)
             if (NIL_P(fmt)) /* implicit conversion */
                 return rb_usascii_str_new_cstr("overflow");
         }
-        oci8_raise(errhp, rv, NULL);
+        chkerr(rv);
     }
     return rb_usascii_str_new(buf, buf_size);
 }
@@ -1142,7 +1142,7 @@ static VALUE onum_to_i(VALUE self)
     OCIError *errhp = oci8_errhp;
     OCINumber num;
 
-    oci_lc(OCINumberTrunc(errhp, _NUMBER(self), 0, &num));
+    chkerr(OCINumberTrunc(errhp, _NUMBER(self), 0, &num));
     return oci8_make_integer(&num, errhp);
 }
 
@@ -1173,15 +1173,15 @@ static VALUE onum_to_r(VALUE self)
     int current = 0;
     boolean is_int;
 
-    oci_lc(OCINumberAssign(oci8_errhp, _NUMBER(self), &onum[0]));
+    chkerr(OCINumberAssign(oci8_errhp, _NUMBER(self), &onum[0]));
 
     for (;;) {
-        oci_lc(OCINumberIsInt(oci8_errhp, &onum[current], &is_int));
+        chkerr(OCINumberIsInt(oci8_errhp, &onum[current], &is_int));
         if (is_int) {
             break;
         }
         nshift++;
-        oci_lc(OCINumberShift(oci8_errhp, &onum[current], 1, &onum[1 - current]));
+        chkerr(OCINumberShift(oci8_errhp, &onum[current], 1, &onum[1 - current]));
         current = 1 - current;
     }
     x = oci8_make_integer(&onum[current], oci8_errhp);
@@ -1224,7 +1224,7 @@ static VALUE onum_to_d_real(OCINumber *num, OCIError *errhp)
         rb_require("bigdecimal");
         cBigDecimal = rb_const_get(rb_cObject, id_BigDecimal);
     }
-    oci_lc(OCINumberToText(errhp, num, (const oratext *)fmt, strlen(fmt),
+    chkerr(OCINumberToText(errhp, num, (const oratext *)fmt, strlen(fmt),
                            NULL, 0, &buf_size, TO_ORATEXT(buf)));
     return rb_funcall(rb_cObject, id_BigDecimal, 1, rb_usascii_str_new(buf, buf_size));
 }
@@ -1243,7 +1243,7 @@ static VALUE onum_has_decimal_part_p(VALUE self)
     OCIError *errhp = oci8_errhp;
     boolean result;
 
-    oci_lc(OCINumberIsInt(errhp, _NUMBER(self), &result));
+    chkerr(OCINumberIsInt(errhp, _NUMBER(self), &result));
     return result ? Qfalse : Qtrue;
 }
 
@@ -1271,7 +1271,7 @@ static VALUE onum_zero_p(VALUE self)
     OCIError *errhp = oci8_errhp;
     boolean result;
 
-    oci_lc(OCINumberIsZero(errhp, _NUMBER(self), &result));
+    chkerr(OCINumberIsZero(errhp, _NUMBER(self), &result));
     return result ? Qtrue : Qfalse;
 }
 
@@ -1287,7 +1287,7 @@ static VALUE onum_abs(VALUE self)
     OCIError *errhp = oci8_errhp;
     OCINumber result;
 
-    oci_lc(OCINumberAbs(errhp, _NUMBER(self), &result));
+    chkerr(OCINumberAbs(errhp, _NUMBER(self), &result));
     return oci8_make_ocinumber(&result, errhp);
 }
 
@@ -1303,7 +1303,7 @@ static VALUE onum_shift(VALUE self, VALUE exp)
     OCIError *errhp = oci8_errhp;
     OCINumber result;
 
-    oci_lc(OCINumberShift(errhp, _NUMBER(self), NUM2INT(exp), &result));
+    chkerr(OCINumberShift(errhp, _NUMBER(self), NUM2INT(exp), &result));
     return oci8_make_ocinumber(&result, errhp);
 }
 
@@ -1423,7 +1423,8 @@ static void bind_integer_set(oci8_bind_t *obind, void *data, void **null_structp
     OCINumber num;
 
     set_oci_number_from_num(&num, val, 1, errhp);
-    oci_lc(OCINumberTrunc(errhp, &num, 0, (OCINumber*)data));
+    chker2(OCINumberTrunc(errhp, &num, 0, (OCINumber*)data),
+           &obind->base);
 }
 
 static void bind_ocinumber_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)

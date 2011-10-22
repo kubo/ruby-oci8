@@ -10,6 +10,7 @@
 #include <signal.h>
 #endif
 
+ID oci8_id_at_last_error;
 ID oci8_id_new;
 ID oci8_id_get;
 ID oci8_id_set;
@@ -75,6 +76,7 @@ Init_oci8lib()
     }
 #endif
 
+    oci8_id_at_last_error = rb_intern("@last_error");
     oci8_id_new = rb_intern("new");
     oci8_id_get = rb_intern("get");
     oci8_id_set = rb_intern("set");
@@ -361,23 +363,26 @@ static VALUE exec_sql(cb_arg_t *arg)
     if (rv != OCI_SUCCESS) {
         oci8_env_raise(oci8_envhp, rv);
     }
-    oci_lc(OCIStmtPrepare(arg->stmtp, oci8_errhp, (text*)arg->sql_text,
-                          strlen(arg->sql_text), OCI_NTV_SYNTAX, OCI_DEFAULT));
+    chker2(OCIStmtPrepare(arg->stmtp, oci8_errhp, (text*)arg->sql_text,
+                          strlen(arg->sql_text), OCI_NTV_SYNTAX, OCI_DEFAULT),
+           &arg->svcctx->base);
     for (pos = 0; pos < arg->num_define_vars; pos++) {
         arg->define_vars[pos].hp = NULL;
-        oci_lc(OCIDefineByPos(arg->stmtp, (OCIDefine**)&arg->define_vars[pos].hp,
+        chker3(OCIDefineByPos(arg->stmtp, (OCIDefine**)&arg->define_vars[pos].hp,
                               oci8_errhp, pos + 1, arg->define_vars[pos].valuep,
                               arg->define_vars[pos].value_sz,
                               arg->define_vars[pos].dty, arg->define_vars[pos].indp,
-                              arg->define_vars[pos].alenp, NULL, OCI_DEFAULT));
+                              arg->define_vars[pos].alenp, NULL, OCI_DEFAULT),
+               &arg->svcctx->base, arg->stmtp);
     }
     for (pos = 0; pos < arg->num_bind_vars; pos++) {
         arg->bind_vars[pos].hp = NULL;
-        oci_lc(OCIBindByPos(arg->stmtp, (OCIBind**)&arg->bind_vars[pos].hp,
+        chker3(OCIBindByPos(arg->stmtp, (OCIBind**)&arg->bind_vars[pos].hp,
                             oci8_errhp, pos + 1, arg->bind_vars[pos].valuep,
                             arg->bind_vars[pos].value_sz, arg->bind_vars[pos].dty,
                             arg->bind_vars[pos].indp, arg->bind_vars[pos].alenp,
-                            NULL, 0, NULL, OCI_DEFAULT));
+                            NULL, 0, NULL, OCI_DEFAULT),
+               &arg->svcctx->base, arg->stmtp);
     }
     rv = OCIStmtExecute_nb(arg->svcctx, arg->svcctx->base.hp.svc, arg->stmtp, oci8_errhp, 1, 0, NULL, NULL, OCI_DEFAULT);
     if (rv == OCI_ERROR) {
@@ -390,7 +395,7 @@ static VALUE exec_sql(cb_arg_t *arg)
         }
     }
     if (arg->raise_on_error) {
-        oci_lc(rv);
+        chker3(rv, &arg->svcctx->base, arg->stmtp);
     }
     return (VALUE)rv;
 }

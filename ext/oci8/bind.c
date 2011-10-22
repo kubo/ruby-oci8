@@ -97,9 +97,11 @@ static void bind_string_post_bind_hook(oci8_bind_t *obind)
     oci8_bind_string_t *obs = (oci8_bind_string_t *)obind;
 
     if (obs->charlen != 0) {
-        oci_lc(OCIAttrSet(obind->base.hp.ptr, obind->base.type, (void*)&obs->charlen, 0, OCI_ATTR_MAXCHAR_SIZE, oci8_errhp));
+        chker2(OCIAttrSet(obind->base.hp.ptr, obind->base.type, (void*)&obs->charlen, 0, OCI_ATTR_MAXCHAR_SIZE, oci8_errhp),
+               &obind->base);
     }
-    oci_lc(OCIAttrSet(obind->base.hp.ptr, obind->base.type, (void*)&obs->csfrm, 0, OCI_ATTR_CHARSET_FORM, oci8_errhp));
+    chker2(OCIAttrSet(obind->base.hp.ptr, obind->base.type, (void*)&obs->csfrm, 0, OCI_ATTR_CHARSET_FORM, oci8_errhp),
+           &obind->base);
 }
 
 static const oci8_bind_vtable_t bind_string_vtable = {

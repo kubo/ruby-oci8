@@ -123,7 +123,7 @@ static VALUE attr_get_ub1(VALUE self, VALUE attr_type)
 
     v.dummy = MAGIC_NUMBER;
     Check_Type(attr_type, T_FIXNUM);
-    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
     return INT2FIX(v.value);
 }
 
@@ -145,7 +145,7 @@ static VALUE attr_get_ub2(VALUE self, VALUE attr_type)
 
     v.dummy = MAGIC_NUMBER;
     Check_Type(attr_type, T_FIXNUM);
-    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
     return INT2FIX(v.value);
 }
 
@@ -167,7 +167,7 @@ static VALUE attr_get_ub4(VALUE self, VALUE attr_type)
 
     v.dummy = MAGIC_NUMBER;
     Check_Type(attr_type, T_FIXNUM);
-    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
     return UINT2NUM(v.value);
 }
 
@@ -189,7 +189,7 @@ static VALUE attr_get_ub8(VALUE self, VALUE attr_type)
 
     v.dummy = MAGIC_NUMBER;
     Check_Type(attr_type, T_FIXNUM);
-    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
     return ULL2NUM(v.value);
 }
 
@@ -211,7 +211,7 @@ static VALUE attr_get_sb1(VALUE self, VALUE attr_type)
 
     v.dummy = MAGIC_NUMBER;
     Check_Type(attr_type, T_FIXNUM);
-    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
     return INT2FIX(v.value);
 }
 
@@ -233,7 +233,7 @@ static VALUE attr_get_sb2(VALUE self, VALUE attr_type)
 
     v.dummy = MAGIC_NUMBER;
     Check_Type(attr_type, T_FIXNUM);
-    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
     return INT2FIX(v.value);
 }
 
@@ -255,7 +255,7 @@ static VALUE attr_get_sb4(VALUE self, VALUE attr_type)
 
     v.dummy = MAGIC_NUMBER;
     Check_Type(attr_type, T_FIXNUM);
-    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
     return INT2NUM(v.value);
 }
 
@@ -277,7 +277,7 @@ static VALUE attr_get_sb8(VALUE self, VALUE attr_type)
 
     v.dummy = MAGIC_NUMBER;
     Check_Type(attr_type, T_FIXNUM);
-    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
     return LL2NUM(v.value);
 }
 
@@ -299,7 +299,7 @@ static VALUE attr_get_boolean(VALUE self, VALUE attr_type)
 
     v.dummy = MAGIC_NUMBER;
     Check_Type(attr_type, T_FIXNUM);
-    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
     return v.value ? Qtrue : Qfalse;
 }
 
@@ -327,7 +327,7 @@ static VALUE attr_get_string(VALUE self, VALUE attr_type)
 
     v.dummy = MAGIC_NUMBER;
     Check_Type(attr_type, T_FIXNUM);
-    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &v.value, &size, FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, &size, FIX2INT(attr_type), oci8_errhp), base);
     return rb_external_str_new_with_enc(v.value, size, oci8_encoding);
 }
 
@@ -354,7 +354,7 @@ static VALUE attr_get_binary(VALUE self, VALUE attr_type)
 
     v.dummy = 0;
     Check_Type(attr_type, T_FIXNUM);
-    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &v.value, &size, FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, &size, FIX2INT(attr_type), oci8_errhp), base);
     return rb_tainted_str_new(v.value, size);
 }
 
@@ -381,7 +381,7 @@ static VALUE attr_get_integer(VALUE self, VALUE attr_type)
 
     v.dummy = 0;
     Check_Type(attr_type, T_FIXNUM);
-    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &v.value, &size, FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, &size, FIX2INT(attr_type), oci8_errhp), base);
     return oci8_make_integer(v.value, oci8_errhp);
 }
 
@@ -409,7 +409,7 @@ static VALUE attr_get_oradate(VALUE self, VALUE attr_type)
 
     v.dummy = 0;
     Check_Type(attr_type, T_FIXNUM);
-    oci_lc(OCIAttrGet(base->hp.ptr, base->type, &v.value, &size, FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, &size, FIX2INT(attr_type), oci8_errhp), base);
     if (NIL_P(cOraDate))
         cOraDate = rb_eval_string("OraDate");
     return rb_funcall(cOraDate, oci8_id_new, 6,
@@ -441,7 +441,7 @@ static VALUE attr_set_ub1(VALUE self, VALUE attr_type, VALUE val)
     Check_Type(attr_type, T_FIXNUM);
     value = (ub1)check_data_range(val, 0, UCHAR_MAX, "ub1");
     /* set attribute */
-    oci_lc(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp), base);
     return self;
 }
 
@@ -465,7 +465,7 @@ static VALUE attr_set_ub2(VALUE self, VALUE attr_type, VALUE val)
     Check_Type(attr_type, T_FIXNUM);
     value = (ub2)check_data_range(val, 0, USHRT_MAX, "ub2");
     /* set attribute */
-    oci_lc(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp), base);
     return self;
 }
 
@@ -489,7 +489,7 @@ static VALUE attr_set_ub4(VALUE self, VALUE attr_type, VALUE val)
     Check_Type(attr_type, T_FIXNUM);
     value = NUM2UINT(val);
     /* set attribute */
-    oci_lc(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp), base);
     return self;
 }
 
@@ -513,7 +513,7 @@ static VALUE attr_set_ub8(VALUE self, VALUE attr_type, VALUE val)
     Check_Type(attr_type, T_FIXNUM);
     value = NUM2ULL(val);
     /* set attribute */
-    oci_lc(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp), base);
     return self;
 }
 
@@ -537,7 +537,7 @@ static VALUE attr_set_sb1(VALUE self, VALUE attr_type, VALUE val)
     Check_Type(attr_type, T_FIXNUM);
     value = (sb1)check_data_range(val, CHAR_MIN, CHAR_MAX, "sb1");
     /* set attribute */
-    oci_lc(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp), base);
     return self;
 }
 
@@ -561,7 +561,7 @@ static VALUE attr_set_sb2(VALUE self, VALUE attr_type, VALUE val)
     Check_Type(attr_type, T_FIXNUM);
     value = (sb2)check_data_range(val, SHRT_MIN, SHRT_MAX, "sb2");
     /* set attribute */
-    oci_lc(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp), base);
     return self;
 }
 
@@ -585,7 +585,7 @@ static VALUE attr_set_sb4(VALUE self, VALUE attr_type, VALUE val)
     Check_Type(attr_type, T_FIXNUM);
     value = NUM2INT(val);
     /* set attribute */
-    oci_lc(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp), base);
     return self;
 }
 
@@ -609,7 +609,7 @@ static VALUE attr_set_sb8(VALUE self, VALUE attr_type, VALUE val)
     Check_Type(attr_type, T_FIXNUM);
     value = NUM2LL(val);
     /* set attribute */
-    oci_lc(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp), base);
     return self;
 }
 
@@ -633,7 +633,7 @@ static VALUE attr_set_boolean(VALUE self, VALUE attr_type, VALUE val)
     Check_Type(attr_type, T_FIXNUM);
     value = RTEST(val) ? TRUE : FALSE;
     /* set attribute */
-    oci_lc(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp), base);
     return self;
 }
 
@@ -655,7 +655,7 @@ static VALUE attr_set_string(VALUE self, VALUE attr_type, VALUE val)
     Check_Type(attr_type, T_FIXNUM);
     OCI8SafeStringValue(val);
     /* set attribute */
-    oci_lc(OCIAttrSet(base->hp.ptr, base->type, RSTRING_PTR(val), RSTRING_LEN(val), FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrSet(base->hp.ptr, base->type, RSTRING_PTR(val), RSTRING_LEN(val), FIX2INT(attr_type), oci8_errhp), base);
     return self;
 }
 
@@ -675,7 +675,7 @@ static VALUE attr_set_binary(VALUE self, VALUE attr_type, VALUE val)
     Check_Type(attr_type, T_FIXNUM);
     SafeStringValue(val);
     /* set attribute */
-    oci_lc(OCIAttrSet(base->hp.ptr, base->type, RSTRING_PTR(val), RSTRING_LEN(val), FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrSet(base->hp.ptr, base->type, RSTRING_PTR(val), RSTRING_LEN(val), FIX2INT(attr_type), oci8_errhp), base);
     return self;
 }
 
@@ -698,7 +698,7 @@ static VALUE attr_set_integer(VALUE self, VALUE attr_type, VALUE val)
     Check_Type(attr_type, T_FIXNUM);
     oci8_set_integer(&value, val, oci8_errhp);
     /* set attribute */
-    oci_lc(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp));
+    chker2(OCIAttrSet(base->hp.ptr, base->type, &value, sizeof(value), FIX2INT(attr_type), oci8_errhp), base);
     return self;
 }
 

@@ -124,7 +124,7 @@ static VALUE oci8_cpool_initialize(int argc, VALUE *argv, VALUE self)
         oci8_env_raise(oci8_envhp, rv);
     cpool->base.type = OCI_HTYPE_CPOOL;
 
-    oci_lc(OCIConnectionPoolCreate(oci8_envhp, oci8_errhp, cpool->base.hp.poolhp,
+    chker2(OCIConnectionPoolCreate(oci8_envhp, oci8_errhp, cpool->base.hp.poolhp,
                                    &pool_name, &pool_name_len,
                                    NIL_P(dbname) ? NULL : RSTRING_ORATEXT(dbname),
                                    NIL_P(dbname) ? 0 : RSTRING_LEN(dbname),
@@ -134,7 +134,8 @@ static VALUE oci8_cpool_initialize(int argc, VALUE *argv, VALUE self)
                                    NIL_P(username) ? 0 : RSTRING_LEN(username),
                                    NIL_P(password) ? NULL : RSTRING_ORATEXT(password),
                                    NIL_P(password) ? 0 : RSTRING_LEN(password),
-                                   OCI_DEFAULT));
+                                   OCI_DEFAULT),
+           &cpool->base);
     cpool->pool_name = rb_str_new(TO_CHARPTR(pool_name), pool_name_len);
     rb_str_freeze(cpool->pool_name);
     return Qnil;
@@ -158,11 +159,12 @@ static VALUE oci8_cpool_reinitialize(VALUE self, VALUE conn_min, VALUE conn_max,
     Check_Type(conn_max, T_FIXNUM);
     Check_Type(conn_incr, T_FIXNUM);
 
-    oci_lc(OCIConnectionPoolCreate(oci8_envhp, oci8_errhp, cpool->base.hp.poolhp,
+    chker2(OCIConnectionPoolCreate(oci8_envhp, oci8_errhp, cpool->base.hp.poolhp,
                                    &pool_name, &pool_name_len, NULL, 0, 
                                    FIX2UINT(conn_min), FIX2UINT(conn_max),
                                    FIX2UINT(conn_incr),
-                                   NULL, 0, NULL, 0, OCI_CPOOL_REINITIALIZE));
+                                   NULL, 0, NULL, 0, OCI_CPOOL_REINITIALIZE),
+           &cpool->base);
     return self;
 }
 

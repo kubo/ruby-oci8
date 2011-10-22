@@ -371,13 +371,9 @@ typedef struct {
 #define oci8_raise_init_error() oci8_do_raise_init_error(__FILE__, __LINE__)
 #define oci8_raise_by_msgno(msgno, default_msg) oci8_do_raise_by_msgno(msgno, default_msg, __FILE__, __LINE__)
 
-/* raise on error */
-#define oci_lc(rv) do { \
-    sword __rv = (rv); \
-    if (__rv != OCI_SUCCESS) { \
-        oci8_raise(oci8_errhp, __rv, NULL); \
-    } \
-} while(0)
+#define chkerr(status) oci8_check_error_((status), NULL, NULL, __FILE__, __LINE__)
+#define chker2(status, base) oci8_check_error_((status), (base), NULL, __FILE__, __LINE__)
+#define chker3(status, base, stmt) oci8_check_error_((status), (base), (stmt), __FILE__, __LINE__)
 
 #if SIZEOF_LONG > 4
 #define UB4_TO_NUM INT2FIX
@@ -419,6 +415,7 @@ OCIError *oci8_make_errhp(void);
 void Init_oci8_env(void);
 
 /* oci8lib.c */
+extern ID oci8_id_at_last_error;
 extern ID oci8_id_new;
 extern ID oci8_id_get;
 extern ID oci8_id_set;
@@ -453,14 +450,13 @@ oci8_base_t *oci8_get_handle(VALUE obj, VALUE klass);
 /* error.c */
 extern VALUE eOCIException;
 extern VALUE eOCIBreak;
-VALUE oci8_make_exc(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line);
 void Init_oci8_error(void);
-NORETURN(void oci8_do_raise(OCIError *, sword status, OCIStmt *, const char *file, int line));
 NORETURN(void oci8_do_env_raise(OCIEnv *, sword status, const char *file, int line));
 NORETURN(void oci8_do_raise_init_error(const char *file, int line));
 sb4 oci8_get_error_code(OCIError *errhp);
 VALUE oci8_get_error_message(ub4 msgno, const char *default_msg);
 NORETURN(void oci8_do_raise_by_msgno(ub4 msgno, const char *default_msg, const char *file, int line));
+void oci8_check_error_(sword status, oci8_base_t *base, OCIStmt *stmthp, const char *file, int line);
 
 /* ocihandle.c */
 void Init_oci8_handle(void);
@@ -538,12 +534,12 @@ VALUE oci8_make_interval_ds(OCIInterval *s);
 void Init_oci_object(VALUE mOCI);
 
 /* attr.c */
-VALUE oci8_get_sb1_attr(oci8_base_t *base, ub4 attrtype);
-VALUE oci8_get_ub2_attr(oci8_base_t *base, ub4 attrtype);
-VALUE oci8_get_sb2_attr(oci8_base_t *base, ub4 attrtype);
-VALUE oci8_get_ub4_attr(oci8_base_t *base, ub4 attrtype);
-VALUE oci8_get_string_attr(oci8_base_t *base, ub4 attrtype);
-VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype);
+VALUE oci8_get_sb1_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
+VALUE oci8_get_ub2_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
+VALUE oci8_get_sb2_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
+VALUE oci8_get_ub4_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
+VALUE oci8_get_string_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
+VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
 
 /* encoding.c */
 void Init_oci8_encoding(VALUE cOCI8);

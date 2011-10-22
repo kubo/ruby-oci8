@@ -113,10 +113,10 @@ VALUE oci8_make_ocitimestamp(OCIDateTime *dttm, boolean have_tz)
     sb1 tz_hour;
     sb1 tz_minute;
 
-    oci_lc(OCIDateTimeGetDate(oci8_envhp, oci8_errhp, dttm, &year, &month, &day));
-    oci_lc(OCIDateTimeGetTime(oci8_envhp, oci8_errhp, dttm, &hour, &minute, &sec, &fsec));
+    chkerr(OCIDateTimeGetDate(oci8_envhp, oci8_errhp, dttm, &year, &month, &day));
+    chkerr(OCIDateTimeGetTime(oci8_envhp, oci8_errhp, dttm, &hour, &minute, &sec, &fsec));
     if (have_tz) {
-        oci_lc(OCIDateTimeGetTimeZoneOffset(oci8_envhp, oci8_errhp, dttm, &tz_hour, &tz_minute));
+        chkerr(OCIDateTimeGetTimeZoneOffset(oci8_envhp, oci8_errhp, dttm, &tz_hour, &tz_minute));
     }
     return rb_ary_new3(9,
                        INT2FIX(year),
@@ -200,7 +200,7 @@ OCIDateTime *oci8_set_ocitimestamp_tz(OCIDateTime *dttm, VALUE val, VALUE svc)
         tzlen = strlen(tz_str);
     }
     /* construct */
-    oci_lc(OCIDateTimeConstruct(seshp ? (void*)seshp : (void*)oci8_envhp, oci8_errhp, dttm,
+    chkerr(OCIDateTimeConstruct(seshp ? (void*)seshp : (void*)oci8_envhp, oci8_errhp, dttm,
                                 (sb2)year,
                                 (ub1)month,
                                 (ub1)day,
@@ -307,7 +307,7 @@ VALUE oci8_make_ociinterval_ym(OCIInterval *s)
     sb4 year;
     sb4 month;
 
-    oci_lc(OCIIntervalGetYearMonth(oci8_envhp, oci8_errhp, &year, &month, s));
+    chkerr(OCIIntervalGetYearMonth(oci8_envhp, oci8_errhp, &year, &month, s));
     return rb_ary_new3(2, INT2FIX(year), INT2FIX(month));
 }
 
@@ -323,7 +323,7 @@ OCIInterval *oci8_set_ociinterval_ym(OCIInterval *intvl, VALUE val)
     year = NUM2INT(RARRAY_PTR(val)[0]);
     month = NUM2INT(RARRAY_PTR(val)[1]);
     if (oracle_client_version >= ORAVERNUM(9, 2, 0, 3, 0)) {
-        oci_lc(OCIIntervalSetYearMonth(oci8_envhp, oci8_errhp,
+        chkerr(OCIIntervalSetYearMonth(oci8_envhp, oci8_errhp,
                                        year, month, intvl));
     } else {
         /* Workaround for Bug 2227982 */
@@ -340,7 +340,7 @@ OCIInterval *oci8_set_ociinterval_ym(OCIInterval *intvl, VALUE val)
             month = -month;
         }
         sprintf(buf, "%s%d-%d", sign, year, month);
-        oci_lc(OCIIntervalFromText(oci8_envhp, oci8_errhp, (text*)buf, strlen(buf), intvl));
+        chkerr(OCIIntervalFromText(oci8_envhp, oci8_errhp, (text*)buf, strlen(buf), intvl));
     }
     return intvl;
 }
@@ -353,7 +353,7 @@ VALUE oci8_make_ociinterval_ds(OCIInterval *s)
     sb4 sec;
     sb4 fsec;
 
-    oci_lc(OCIIntervalGetDaySecond(oci8_envhp, oci8_errhp, &day, &hour, &minute, &sec, &fsec, s));
+    chkerr(OCIIntervalGetDaySecond(oci8_envhp, oci8_errhp, &day, &hour, &minute, &sec, &fsec, s));
     return rb_ary_new3(5,
                        INT2FIX(day), INT2FIX(hour),
                        INT2FIX(minute), INT2FIX(sec),
@@ -378,7 +378,7 @@ OCIInterval *oci8_set_ociinterval_ds(OCIInterval *intvl, VALUE val)
     sec = NUM2INT(RARRAY_PTR(val)[3]);
     fsec = NUM2INT(RARRAY_PTR(val)[4]);
     if (oracle_client_version >= ORAVERNUM(9, 2, 0, 3, 0)) {
-        oci_lc(OCIIntervalSetDaySecond(oci8_envhp, oci8_errhp,
+        chkerr(OCIIntervalSetDaySecond(oci8_envhp, oci8_errhp,
                                        day, hour, minute, sec, fsec, intvl));
     } else {
         /* Workaround for Bug 2227982 */
@@ -401,7 +401,7 @@ OCIInterval *oci8_set_ociinterval_ds(OCIInterval *intvl, VALUE val)
             }
         }
         sprintf(buf, "%s%d %02d:%02d:%02d.%09d", sign, day, hour, minute, sec, fsec);
-        oci_lc(OCIIntervalFromText(oci8_envhp, oci8_errhp, (text*)buf, strlen(buf), intvl));
+        chkerr(OCIIntervalFromText(oci8_envhp, oci8_errhp, (text*)buf, strlen(buf), intvl));
     }
     return intvl;
 }

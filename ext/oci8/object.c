@@ -80,10 +80,12 @@ static VALUE oci8_tdo_setup(VALUE self, VALUE svc, VALUE md_obj)
         OCIObjectUnpin(oci8_envhp, oci8_errhp, tdo->hp.tdo);
         tdo->hp.tdo = NULL;
     }
-    oci_lc(OCIAttrGet(md->hp.ptr, OCI_DTYPE_PARAM, &tdo_ref, NULL, OCI_ATTR_REF_TDO, oci8_errhp));
+    chker2(OCIAttrGet(md->hp.ptr, OCI_DTYPE_PARAM, &tdo_ref, NULL, OCI_ATTR_REF_TDO, oci8_errhp),
+           &svcctx->base);
     if (tdo_ref == NULL)
         return Qnil;
-    oci_lc(OCIObjectPin_nb(svcctx, oci8_envhp, oci8_errhp, tdo_ref, 0, OCI_PIN_ANY, OCI_DURATION_SESSION, OCI_LOCK_NONE, &tdo->hp.ptr));
+    chker2(OCIObjectPin_nb(svcctx, oci8_envhp, oci8_errhp, tdo_ref, 0, OCI_PIN_ANY, OCI_DURATION_SESSION, OCI_LOCK_NONE, &tdo->hp.ptr),
+           &svcctx->base);
     oci8_link_to_parent(tdo, &svcctx->base);
     return self;
 }
@@ -233,11 +235,11 @@ static VALUE oci8_named_coll_get_coll_element(VALUE self, VALUE datatype, VALUE 
     if (*ind) {
         return Qnil;
     }
-    oci_lc(OCICollSize(oci8_envhp, oci8_errhp, coll, &size));
+    chker2(OCICollSize(oci8_envhp, oci8_errhp, coll, &size), &obj->base);
     ary = rb_ary_new2(size);
     for (idx = 0; idx < size; idx++) {
         boolean exists;
-        oci_lc(OCICollGetElem(oci8_envhp, oci8_errhp, coll, idx, &exists, &data, (dvoid**)&ind));
+        chker2(OCICollGetElem(oci8_envhp, oci8_errhp, coll, idx, &exists, &data, (dvoid**)&ind), &obj->base);
         if (exists) {
             void *tmp;
             if (datatype == INT2FIX(ATTR_NAMED_COLLECTION)) {
@@ -330,11 +332,13 @@ static VALUE oci8_named_coll_set_coll_element(VALUE self, VALUE datatype, VALUE 
     cb_data.coll = (OCIColl*)*obj->instancep;
     switch (FIX2INT(datatype)) {
     case ATTR_STRING:
-        oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_VARCHAR2, NULL, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr));
+        chker2(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_VARCHAR2, NULL, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr),
+               svcctx);
         cb_data.indp = &cb_data.ind;
         break;
     case ATTR_RAW:
-        oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_RAW, NULL, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr));
+        chker2(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_RAW, NULL, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr),
+               svcctx);
         cb_data.indp = &cb_data.ind;
         break;
     case ATTR_OCINUMBER:
@@ -357,14 +361,18 @@ static VALUE oci8_named_coll_set_coll_element(VALUE self, VALUE datatype, VALUE 
     case ATTR_NAMED_TYPE:
         Check_Object(typeinfo, cOCI8TDO);
         tdo = DATA_PTR(typeinfo);
-        oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_OBJECT, tdo->hp.tdo, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr));
-        oci_lc(OCIObjectGetInd(oci8_envhp, oci8_errhp, cb_data.data.ptr, (dvoid**)&cb_data.indp));
+        chker2(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_OBJECT, tdo->hp.tdo, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr),
+               svcctx);
+        chker2(OCIObjectGetInd(oci8_envhp, oci8_errhp, cb_data.data.ptr, (dvoid**)&cb_data.indp),
+               svcctx);
         break;
     case ATTR_NAMED_COLLECTION:
         Check_Object(typeinfo, cOCI8TDO);
         tdo = DATA_PTR(typeinfo);
-        oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_NAMEDCOLLECTION, tdo->hp.tdo, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr));
-        oci_lc(OCIObjectGetInd(oci8_envhp, oci8_errhp, cb_data.data.ptr, (dvoid**)&cb_data.indp));
+        chker2(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_NAMEDCOLLECTION, tdo->hp.tdo, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr),
+               svcctx);
+        chker2(OCIObjectGetInd(oci8_envhp, oci8_errhp, cb_data.data.ptr, (dvoid**)&cb_data.indp),
+               svcctx);
         break;
     case ATTR_CLOB:
     case ATTR_NCLOB:
@@ -395,9 +403,9 @@ static VALUE set_coll_element_func(set_coll_element_cb_data_t *cb_data)
     sb4 idx;
     void *elem_ptr;
 
-    oci_lc(OCICollSize(oci8_envhp, oci8_errhp, coll, &size));
+    chkerr(OCICollSize(oci8_envhp, oci8_errhp, coll, &size));
     if (RARRAY_LEN(val) < size) {
-        oci_lc(OCICollTrim(oci8_envhp, oci8_errhp, size - RARRAY_LEN(val), coll));
+        chkerr(OCICollTrim(oci8_envhp, oci8_errhp, size - RARRAY_LEN(val), coll));
     }
     for (idx = 0; idx < RARRAY_LEN(val); idx++) {
         switch (FIX2INT(datatype)) {
@@ -422,9 +430,9 @@ static VALUE set_coll_element_func(set_coll_element_cb_data_t *cb_data)
             break;
         }
         if (idx < size) {
-            oci_lc(OCICollAssignElem(oci8_envhp, oci8_errhp, idx, elem_ptr, cb_data->indp, cb_data->coll));
+            chkerr(OCICollAssignElem(oci8_envhp, oci8_errhp, idx, elem_ptr, cb_data->indp, cb_data->coll));
         } else {
-            oci_lc(OCICollAppend(oci8_envhp, oci8_errhp, elem_ptr, cb_data->indp, coll));
+            chkerr(OCICollAppend(oci8_envhp, oci8_errhp, elem_ptr, cb_data->indp, coll));
         }
     }
     return Qnil;
@@ -468,13 +476,13 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
     switch (FIX2INT(datatype)) {
     case ATTR_STRING:
         OCI8StringValue(val);
-        oci_lc(OCIStringAssignText(oci8_envhp, oci8_errhp,
+        chkerr(OCIStringAssignText(oci8_envhp, oci8_errhp,
                                    RSTRING_ORATEXT(val), RSTRING_LEN(val),
                                    (OCIString **)data));
         break;
     case ATTR_RAW:
         StringValue(val);
-        oci_lc(OCIRawAssignBytes(oci8_envhp, oci8_errhp,
+        chkerr(OCIRawAssignBytes(oci8_envhp, oci8_errhp,
                                  RSTRING_ORATEXT(val), RSTRING_LEN(val),
                                  (OCIRaw **)data));
         break;
@@ -624,8 +632,10 @@ static void bind_named_type_init_elem(oci8_bind_t *obind, VALUE svc)
         obj->null_structp = (char**)&obind->u.null_structs[idx];
         oci8_link_to_parent(&obj->base, &obind->base);
 
-        oci_lc(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->base.hp.svc, tc, tdo->hp.tdo, NULL, OCI_DURATION_SESSION, TRUE, (dvoid**)obj->instancep));
-        oci_lc(OCIObjectGetInd(oci8_envhp, oci8_errhp, (dvoid*)*obj->instancep, (dvoid**)obj->null_structp));
+        chker2(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->base.hp.svc, tc, tdo->hp.tdo, NULL, OCI_DURATION_SESSION, TRUE, (dvoid**)obj->instancep),
+               &svcctx->base);
+        chker2(OCIObjectGetInd(oci8_envhp, oci8_errhp, (dvoid*)*obj->instancep, (dvoid**)obj->null_structp),
+               &svcctx->base);
         *(OCIInd*)*obj->null_structp = -1;
     } while (++idx < obind->maxar_sz);
 }
@@ -635,12 +645,14 @@ static void bind_name_type_post_bind_hook(oci8_bind_t *obind)
     oci8_base_t *tdo = DATA_PTR(obind->tdo);
     switch (obind->base.type) {
     case OCI_HTYPE_DEFINE:
-        oci_lc(OCIDefineObject(obind->base.hp.dfn, oci8_errhp, tdo->hp.tdo,
-                               obind->valuep, 0, obind->u.null_structs, 0));
+        chker2(OCIDefineObject(obind->base.hp.dfn, oci8_errhp, tdo->hp.tdo,
+                               obind->valuep, 0, obind->u.null_structs, 0),
+               &obind->base);
         break;
     case OCI_HTYPE_BIND:
-        oci_lc(OCIBindObject(obind->base.hp.bnd, oci8_errhp, tdo->hp.tdo,
-                             obind->valuep, 0, obind->u.null_structs, 0));
+        chker2(OCIBindObject(obind->base.hp.bnd, oci8_errhp, tdo->hp.tdo,
+                             obind->valuep, 0, obind->u.null_structs, 0),
+               &obind->base);
         break;
     }
 }

@@ -87,7 +87,7 @@ static VALUE oci8_stmt_initialize(int argc, VALUE *argv, VALUE self)
     if (argc > 1) {
         rv = OCIStmtPrepare(stmt->base.hp.stmt, oci8_errhp, RSTRING_ORATEXT(sql), RSTRING_LEN(sql), OCI_NTV_SYNTAX, OCI_DEFAULT);
         if (IS_OCI_ERROR(rv)) {
-            oci8_raise(oci8_errhp, rv, stmt->base.hp.stmt);
+            chker3(rv, &stmt->base, stmt->base.hp.stmt);
         }
     }
     oci8_link_to_parent((oci8_base_t*)stmt, (oci8_base_t*)DATA_PTR(svc));
@@ -110,7 +110,7 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
     vptr = (const oci8_bind_vtable_t *)obind->base.vptr;
     status = OCIDefineByPos(stmt->base.hp.stmt, &obind->base.hp.dfn, oci8_errhp, position, obind->valuep, obind->value_sz, vptr->dty, NIL_P(obind->tdo) ? obind->u.inds : NULL, NULL, 0, OCI_DEFAULT);
     if (status != OCI_SUCCESS) {
-        oci8_raise(oci8_errhp, status, stmt->base.hp.ptr);
+        chker3(status, &stmt->base, stmt->base.hp.ptr);
     }
     obind->base.type = OCI_HTYPE_DEFINE;
     /* link to the parent as soon as possible to preserve deallocation order. */
@@ -118,7 +118,7 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
     oci8_link_to_parent((oci8_base_t*)obind, (oci8_base_t*)stmt);
 
     if (NIL_P(obind->tdo) && obind->maxar_sz > 0) {
-        oci_lc(OCIDefineArrayOfStruct(obind->base.hp.dfn, oci8_errhp, obind->alloc_sz, sizeof(sb2), 0, 0));
+        chker2(OCIDefineArrayOfStruct(obind->base.hp.dfn, oci8_errhp, obind->alloc_sz, sizeof(sb2), 0, 0), &stmt->base);
     }
     if (vptr->post_bind_hook != NULL) {
         vptr->post_bind_hook(obind);
@@ -181,7 +181,7 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
         status = OCIBindByName(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, TO_ORATEXT(placeholder_ptr), placeholder_len, obind->valuep, obind->value_sz, vptr->dty, indp, NULL, 0, 0, 0, OCI_DEFAULT);
     }
     if (status != OCI_SUCCESS) {
-        oci8_raise(oci8_errhp, status, stmt->base.hp.stmt);
+        chker3(status, &stmt->base, stmt->base.hp.stmt);
     }
     obind->base.type = OCI_HTYPE_BIND;
     /* link to the parent as soon as possible to preserve deallocation order. */
@@ -189,7 +189,8 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     oci8_link_to_parent((oci8_base_t*)obind, (oci8_base_t*)stmt);
 
     if (NIL_P(obind->tdo) && obind->maxar_sz > 0) {
-        oci_lc(OCIBindArrayOfStruct(obind->base.hp.bnd, oci8_errhp, obind->alloc_sz, sizeof(sb2), 0, 0));
+        chker2(OCIBindArrayOfStruct(obind->base.hp.bnd, oci8_errhp, obind->alloc_sz, sizeof(sb2), 0, 0),
+               &stmt->base);
     }
     if (vptr->post_bind_hook != NULL) {
         vptr->post_bind_hook(obind);
@@ -225,9 +226,8 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE iteration_count)
     oci8_svcctx_t *svcctx = oci8_get_svcctx(stmt->svc);
     ub4 iters;
     ub4 mode;
-    sword rv;
 
-    if (oci8_get_ub2_attr(&stmt->base, OCI_ATTR_STMT_TYPE) == INT2FIX(OCI_STMT_SELECT)) {
+    if (oci8_get_ub2_attr(&stmt->base, OCI_ATTR_STMT_TYPE, stmt->base.hp.stmt) == INT2FIX(OCI_STMT_SELECT)) {
         iters = 0;
         mode = OCI_DEFAULT;
     } else {
@@ -237,10 +237,8 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE iteration_count)
             iters = 1;
         mode = svcctx->is_autocommit ? OCI_COMMIT_ON_SUCCESS : OCI_DEFAULT;
     }
-    rv = oci8_call_stmt_execute(svcctx, stmt, iters, mode);
-    if (IS_OCI_ERROR(rv)) {
-        oci8_raise(oci8_errhp, rv, stmt->base.hp.stmt);
-    }
+    chker3(oci8_call_stmt_execute(svcctx, stmt, iters, mode),
+           &stmt->base, stmt->base.hp.stmt);
     return self;
 }
 
@@ -294,9 +292,7 @@ static VALUE oci8_stmt_do_fetch(oci8_stmt_t *stmt, oci8_svcctx_t *svcctx)
     if (rv == OCI_NO_DATA) {
         return Qnil;
     }
-    if (IS_OCI_ERROR(rv)) {
-        oci8_raise(oci8_errhp, rv, stmt->base.hp.stmt);
-    }
+    chker3(rv, &svcctx->base, stmt->base.hp.stmt);
     ary = rb_ary_new2(RARRAY_LEN(stmt->defns));
     for (idx = 0; idx < RARRAY_LEN(stmt->defns); idx++) {
         rb_ary_store(ary, idx, oci8_bind_get_data(RARRAY_PTR(stmt->defns)[idx]));
@@ -343,7 +339,7 @@ static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
     Check_Type(pos, T_FIXNUM); /* 1 */
     rv = OCIParamGet(stmt->base.hp.stmt, OCI_HTYPE_STMT, oci8_errhp, (dvoid *)&parmhp, FIX2INT(pos));
     if (rv != OCI_SUCCESS) {
-        oci8_raise(oci8_errhp, rv, NULL);
+        chker3(rv, &stmt->base, stmt->base.hp.stmt);
     }
     return oci8_metadata_create(parmhp, stmt->svc, self);
 }
@@ -368,7 +364,8 @@ static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
  */
 static VALUE oci8_stmt_get_stmt_type(VALUE self)
 {
-    VALUE stmt_type = oci8_get_ub2_attr(oci8_get_handle(self, cOCIStmt), OCI_ATTR_STMT_TYPE);
+    oci8_base_t *base = oci8_get_handle(self, cOCIStmt);
+    VALUE stmt_type = oci8_get_ub2_attr(base, OCI_ATTR_STMT_TYPE, base->hp.stmt);
     switch (FIX2INT(stmt_type)) {
     case OCI_STMT_SELECT:
         return oci8_sym_select_stmt;
@@ -398,7 +395,8 @@ static VALUE oci8_stmt_get_stmt_type(VALUE self)
  */
 static VALUE oci8_stmt_get_row_count(VALUE self)
 {
-    return oci8_get_ub4_attr(oci8_get_handle(self, cOCIStmt), OCI_ATTR_ROW_COUNT);
+    oci8_base_t *base = oci8_get_handle(self, cOCIStmt);
+    return oci8_get_ub4_attr(base, OCI_ATTR_ROW_COUNT, base->hp.stmt);
 }
 
 /*
@@ -417,12 +415,14 @@ static VALUE oci8_stmt_get_row_count(VALUE self)
  */
 static VALUE oci8_stmt_get_rowid(VALUE self)
 {
-    return oci8_get_rowid_attr(oci8_get_handle(self, cOCIStmt), OCI_ATTR_ROWID);
+    oci8_base_t *base = oci8_get_handle(self, cOCIStmt);
+    return oci8_get_rowid_attr(base, OCI_ATTR_ROWID, base->hp.stmt);
 }
 
 static VALUE oci8_stmt_get_param_count(VALUE self)
 {
-    return oci8_get_ub4_attr(oci8_get_handle(self, cOCIStmt), OCI_ATTR_PARAM_COUNT);
+    oci8_base_t *base = oci8_get_handle(self, cOCIStmt);
+    return oci8_get_ub4_attr(base, OCI_ATTR_PARAM_COUNT, base->hp.stmt);
 }
 
 /*
@@ -566,7 +566,8 @@ static VALUE oci8_stmt_set_prefetch_rows(VALUE self, VALUE rows)
     oci8_stmt_t *stmt = TO_STMT(self);
     ub4 num = NUM2UINT(rows);
 
-    oci_lc(OCIAttrSet(stmt->base.hp.ptr, OCI_HTYPE_STMT, &num, 0, OCI_ATTR_PREFETCH_ROWS, oci8_errhp));
+    chker2(OCIAttrSet(stmt->base.hp.ptr, OCI_HTYPE_STMT, &num, 0, OCI_ATTR_PREFETCH_ROWS, oci8_errhp),
+           &stmt->base);
     return Qfalse;
 }
 

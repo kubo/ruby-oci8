@@ -1,4 +1,15 @@
 2011-10-22  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/attr.c, ext/oci8/bind.c, ext/oci8/connection_pool.c,
+	  ext/oci8/error.c, ext/oci8/lob.c, ext/oci8/metadata.c,
+	  ext/oci8/object.c, ext/oci8/oci8.c, ext/oci8/oci8.h,
+	  ext/oci8/oci8lib.c, ext/oci8/ocidatetime.c, ext/oci8/ocihandle.c,
+	  ext/oci8/ocinumber.c, ext/oci8/stmt.c: add OCI8#last_error and
+	    OCI8#last_error=. When an exception is raised associated with a
+	    connection, the exception is set to OCI8#last_error.
+	    No OCISuccessWithInfo excpetion is raised from now on. It is
+	    set to OCI8#last_error instead.
+
+2011-10-22  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/error.c, test/test_break.rb, test/test_error.rb: change the super
 	    class of OCINoData from OCIException to OCIError and fix testcases for
 	    OCIError and its subclasses.

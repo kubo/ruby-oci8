@@ -75,7 +75,7 @@ retry:
     return rb_external_str_new_with_enc(errbuf, len, oci8_encoding);
 }
 
-VALUE oci8_make_exc(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line)
+static VALUE oci8_make_exc(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line)
 {
     VALUE exc;
     char errmsg[128];
@@ -244,7 +244,7 @@ VALUE oci8_get_error_message(ub4 msgno, const char *default_msg)
 
     if (have_OCIMessageGet) {
         if (msghp == NULL) {
-            oci_lc(OCIMessageOpen(oci8_envhp, oci8_errhp, &msghp, TO_ORATEXT("rdbms"), TO_ORATEXT("ora"), OCI_DURATION_PROCESS));
+            chkerr(OCIMessageOpen(oci8_envhp, oci8_errhp, &msghp, TO_ORATEXT("rdbms"), TO_ORATEXT("ora"), OCI_DURATION_PROCESS));
         }
         errmsg = TO_CHARPTR(OCIMessageGet(msghp, msgno, NULL, 0));
     }
@@ -268,6 +268,23 @@ void oci8_do_raise_by_msgno(ub4 msgno, const char *default_msg, const char *file
     VALUE exc = rb_funcall(eOCIError, oci8_id_new, 2, msg, INT2FIX(-1));
 
     rb_exc_raise(set_backtrace(exc, file, line));
+}
+
+void oci8_check_error_(sword status, oci8_base_t *base, OCIStmt *stmthp, const char *file, int line)
+{
+    if (status != OCI_SUCCESS) {
+        VALUE exc = oci8_make_exc(oci8_errhp, status, OCI_HTYPE_ERROR, stmthp, file, line);
+        while (base != NULL) {
+            if (base->type == OCI_HTYPE_SVCCTX) {
+                rb_ivar_set(exc, oci8_id_at_last_error, exc);
+                break;
+            }
+            base = base->parent;
+        }
+        if (status != OCI_SUCCESS_WITH_INFO) {
+            rb_exc_raise(exc);
+        }
+    }
 }
 
 /*

@@ -40,7 +40,7 @@ VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE parent)
 
     p = oci8_get_handle(parent, oci8_cOCIHandle);
 
-    oci_lc(OCIAttrGet(parmhp, OCI_DTYPE_PARAM, &ptype, &size, OCI_ATTR_PTYPE, oci8_errhp));
+    chker2(OCIAttrGet(parmhp, OCI_DTYPE_PARAM, &ptype, &size, OCI_ATTR_PTYPE, oci8_errhp), p);
     klass = rb_hash_aref(ptype_to_class, INT2FIX(ptype));
     if (NIL_P(klass))
         rb_raise(rb_eRuntimeError, "unknown parameter type %d", ptype);
@@ -88,7 +88,8 @@ static VALUE metadata_get_param(VALUE self, VALUE idx)
 
     Check_Type(idx, T_FIXNUM);
     /* Is it remote call? */
-    oci_lc(OCIAttrGet_nb(svcctx, md->base.hp.ptr, md->base.type, &value, &size, FIX2INT(idx), oci8_errhp));
+    chker2(OCIAttrGet_nb(svcctx, md->base.hp.ptr, md->base.type, &value, &size, FIX2INT(idx), oci8_errhp),
+           &svcctx->base);
     if (size != sizeof(OCIParam *)) {
         rb_raise(rb_eRuntimeError, "Invalid attribute size. expect %d, but %d", (sb4)sizeof(OCIParam *), size);
     }
@@ -103,7 +104,8 @@ static VALUE metadata_get_param_at(VALUE self, VALUE idx)
     oci8_metadata_t *md = DATA_PTR(self);
     OCIParam *value;
 
-    oci_lc(OCIParamGet(md->base.hp.ptr, md->base.type, oci8_errhp, (dvoid *)&value, FIX2INT(idx)));
+    chker2(OCIParamGet(md->base.hp.ptr, md->base.type, oci8_errhp, (dvoid *)&value, FIX2INT(idx)),
+           &md->base);
     return oci8_metadata_create(value, md->svc, self);
 }
 
@@ -133,22 +135,29 @@ static VALUE oci8_do_describe(VALUE self, void *objptr, ub4 objlen, ub1 objtype,
     VALUE type;
     VALUE obj;
     oci8_base_t *desc;
+    int rv;
 
     /* make a describe handle object */
     obj = rb_obj_alloc(oci8_cOCIHandle);
     desc = DATA_PTR(obj);
-    oci_lc(OCIHandleAlloc(oci8_envhp, (dvoid *)&desc->hp.dschp, OCI_HTYPE_DESCRIBE, 0, 0));
+    rv = OCIHandleAlloc(oci8_envhp, (dvoid *)&desc->hp.dschp, OCI_HTYPE_DESCRIBE, 0, 0);
+    if (rv != OCI_SUCCESS) {
+        oci8_env_raise(oci8_envhp, rv);
+    }
     desc->type = OCI_HTYPE_DESCRIBE;
 
     type = rb_hash_aref(class_to_ptype, klass);
     if (RTEST(check_public)) {
         sb4 val = -1;
         /* size of OCI_ATTR_DESC_PUBLIC is undocumented. */
-        oci_lc(OCIAttrSet(desc->hp.dschp, OCI_HTYPE_DESCRIBE, &val, 0, OCI_ATTR_DESC_PUBLIC, oci8_errhp));
+        chker2(OCIAttrSet(desc->hp.dschp, OCI_HTYPE_DESCRIBE, &val, 0, OCI_ATTR_DESC_PUBLIC, oci8_errhp),
+               &svcctx->base);
     }
-    oci_lc(OCIDescribeAny_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, objptr, objlen,
-                             objtype, OCI_DEFAULT, (ub1)FIX2INT(type), desc->hp.dschp));
-    oci_lc(OCIAttrGet(desc->hp.dschp, OCI_HTYPE_DESCRIBE, &parmhp, 0, OCI_ATTR_PARAM, oci8_errhp));
+    chker2(OCIDescribeAny_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, objptr, objlen,
+                             objtype, OCI_DEFAULT, (ub1)FIX2INT(type), desc->hp.dschp),
+           &svcctx->base);
+    chker2(OCIAttrGet(desc->hp.dschp, OCI_HTYPE_DESCRIBE, &parmhp, 0, OCI_ATTR_PARAM, oci8_errhp),
+           &svcctx->base);
     return oci8_metadata_create(parmhp, self, obj);
 }
 
@@ -168,7 +177,8 @@ static VALUE metadata_get_type_metadata(VALUE self, VALUE klass)
     OCIRef *ref = NULL;
 
     /* remote call */
-    oci_lc(OCIAttrGet_nb(svcctx, md->base.hp.ptr, md->base.type, &ref, NULL, OCI_ATTR_REF_TDO, oci8_errhp));
+    chker2(OCIAttrGet_nb(svcctx, md->base.hp.ptr, md->base.type, &ref, NULL, OCI_ATTR_REF_TDO, oci8_errhp),
+           &svcctx->base);
     return oci8_do_describe(md->svc, ref, 0, OCI_OTYPE_REF, klass, Qfalse);
 }
 
@@ -179,11 +189,14 @@ static VALUE metadata_get_tdo_id(VALUE self)
     OCIRef *tdo_ref = NULL;
     void *tdo;
 
-    oci_lc(OCIAttrGet_nb(svcctx, md->base.hp.ptr, md->base.type, &tdo_ref, NULL, OCI_ATTR_REF_TDO, oci8_errhp));
+    chker2(OCIAttrGet_nb(svcctx, md->base.hp.ptr, md->base.type, &tdo_ref, NULL, OCI_ATTR_REF_TDO, oci8_errhp),
+           &svcctx->base);
     if (tdo_ref == NULL)
         return Qnil;
-    oci_lc(OCIObjectPin_nb(svcctx, oci8_envhp, oci8_errhp, tdo_ref, 0, OCI_PIN_ANY, OCI_DURATION_SESSION, OCI_LOCK_NONE, &tdo));
-    oci_lc(OCIObjectUnpin(oci8_envhp, oci8_errhp, tdo));
+    chker2(OCIObjectPin_nb(svcctx, oci8_envhp, oci8_errhp, tdo_ref, 0, OCI_PIN_ANY, OCI_DURATION_SESSION, OCI_LOCK_NONE, &tdo),
+           &svcctx->base);
+    chker2(OCIObjectUnpin(oci8_envhp, oci8_errhp, tdo),
+           &svcctx->base);
 #if SIZEOF_LONG == SIZEOF_VOIDP
     return ((VALUE)tdo | (VALUE)1);
 #else
