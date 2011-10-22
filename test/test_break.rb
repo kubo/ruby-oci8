@@ -34,6 +34,7 @@ class TestBreak < Test::Unit::TestCase
         assert_equal(expect[PLSQL_DONE], (Time.now - $start_time).round, 'PLSQL_DONE')
       rescue OCIBreak
         assert_equal(expect[OCIBREAK], (Time.now - $start_time).round, 'OCIBREAK')
+        assert_equal('Canceled by user request.', $!.to_s)
       end
     end
 

@@ -84,35 +84,23 @@ VALUE oci8_make_exc(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const
     VALUE parse_error_offset = Qnil;
     VALUE sql = Qnil;
     int rv;
+    int numarg = 1;
 
     switch (status) {
     case OCI_ERROR:
-    case OCI_SUCCESS_WITH_INFO:
-        /* get error string */
+        exc = eOCIError;
         msg = get_error_msg(errhp, type, "Error", &errcode);
-        if (status == OCI_ERROR) {
-            exc = eOCIError;
-        } else {
-            exc = eOCISuccessWithInfo;
-        }
-        if (stmthp != NULL) {
-            ub2 offset;
-            text *text;
-            ub4 size;
-
-            rv = OCIAttrGet(stmthp, OCI_HTYPE_STMT, &offset, 0, OCI_ATTR_PARSE_ERROR_OFFSET, errhp);
-            if (rv == OCI_SUCCESS) {
-                parse_error_offset = INT2FIX(offset);
-            }
-            rv = OCIAttrGet(stmthp, OCI_HTYPE_STMT, &text, &size, OCI_ATTR_STATEMENT, errhp);
-            if (rv == OCI_SUCCESS) {
-                sql = rb_external_str_new_with_enc(TO_CHARPTR(text), size, oci8_encoding);
-            }
-        }
+        numarg = 4;
+        break;
+    case OCI_SUCCESS_WITH_INFO:
+        exc = eOCISuccessWithInfo;
+        msg = get_error_msg(errhp, type, "Error", &errcode);
+        numarg = 4;
         break;
     case OCI_NO_DATA:
         exc = eOCINoData;
         msg = get_error_msg(errhp, type, "No Data", &errcode);
+        numarg = 4;
         break;
     case OCI_INVALID_HANDLE:
         exc = eOCIInvalidHandle;
@@ -135,7 +123,21 @@ VALUE oci8_make_exc(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const
         exc = eOCIException;
         msg = rb_usascii_str_new_cstr(errmsg);
     }
-    exc = rb_funcall(exc, oci8_id_new, 4, msg, INT2FIX(errcode), sql, parse_error_offset);
+    if (stmthp != NULL) {
+        ub2 offset;
+        text *text;
+        ub4 size;
+
+        rv = OCIAttrGet(stmthp, OCI_HTYPE_STMT, &offset, 0, OCI_ATTR_PARSE_ERROR_OFFSET, errhp);
+        if (rv == OCI_SUCCESS) {
+            parse_error_offset = INT2FIX(offset);
+        }
+        rv = OCIAttrGet(stmthp, OCI_HTYPE_STMT, &text, &size, OCI_ATTR_STATEMENT, errhp);
+        if (rv == OCI_SUCCESS) {
+            sql = rb_external_str_new_with_enc(TO_CHARPTR(text), size, oci8_encoding);
+        }
+    }
+    exc = rb_funcall(exc, oci8_id_new, numarg, msg, INT2FIX(errcode), sql, parse_error_offset);
     return set_backtrace(exc, file, line);
 }
 
@@ -162,7 +164,7 @@ static VALUE set_backtrace(VALUE exc, const char *file, int line)
  * call-seq:
  *    OCI8.new(message, code = nil, sql = nil, parse_error_offset = nil)
  *
- * Creates a new OCIException object.
+ * Creates a new OCIError object.
  */
 static VALUE oci8_error_initialize(int argc, VALUE *argv, VALUE self)
 {
@@ -200,19 +202,19 @@ void Init_oci8_error(void)
     eOCIException = rb_define_class("OCIException", rb_eStandardError);
     eOCIBreak = rb_define_class("OCIBreak", eOCIException);
 
-    eOCINoData = rb_define_class("OCINoData", eOCIException);
     eOCIError = rb_define_class("OCIError", eOCIException);
+    eOCINoData = rb_define_class("OCINoData", eOCIError);
     eOCIInvalidHandle = rb_define_class("OCIInvalidHandle", eOCIException);
     eOCINeedData = rb_define_class("OCINeedData", eOCIException);
     eOCIStillExecuting = rb_define_class("OCIStillExecuting", eOCIException);
     eOCIContinue = rb_define_class("OCIContinue", eOCIException);
     eOCISuccessWithInfo = rb_define_class("OCISuccessWithInfo", eOCIError);
 
-    rb_define_method(eOCIException, "initialize", oci8_error_initialize, -1);
-    rb_define_attr(eOCIException, "code", 1, 0);
-    rb_define_attr(eOCIException, "sql", 1, 0);
-    rb_define_attr(eOCIException, "parse_error_offset", 1, 0);
-    rb_define_alias(eOCIException, "parseErrorOffset", "parse_error_offset");
+    rb_define_method(eOCIError, "initialize", oci8_error_initialize, -1);
+    rb_define_attr(eOCIError, "code", 1, 0);
+    rb_define_attr(eOCIError, "sql", 1, 0);
+    rb_define_attr(eOCIError, "parse_error_offset", 1, 0);
+    rb_define_alias(eOCIError, "parseErrorOffset", "parse_error_offset");
 }
 
 void oci8_do_raise(OCIError *errhp, sword status, OCIStmt *stmthp, const char *file, int line)
@@ -273,18 +275,18 @@ void oci8_do_raise_by_msgno(ub4 msgno, const char *default_msg, const char *file
  *
  * The superclass for all exceptions raised by ruby-oci8.
  *
- * The following exceptions are defined as subclasses of OCIError.
+ * The following exceptions are defined as subclasses of OCIException
  * These exceptions are raised when Oracle Call Interface functions
  * return with an error status.
  *
  * - OCIBreak
- * - OCINoData
+ * - OCIContinue
  * - OCIError
+ *   - OCISuccessWithInfo
+ *   - OCINoData (It had been a subclass of OCIException, not OCIError, until ruby-oci8 2.0)
  * - OCIInvalidHandle
  * - OCINeedData
  * - OCIStillExecuting
- * - OCIContinue
- * - OCISuccessWithInfo
  */
 
 /*
@@ -292,14 +294,16 @@ void oci8_do_raise_by_msgno(ub4 msgno, const char *default_msg, const char *file
  *
  * Subclass of OCIException
  *
- *
+ * Raised when a SQL execution is cancelled by OCI8#break.
  */
 
 /*
  * Document-class: OCINoData
  *
- * Subclass of OCIException
+ * Subclass of OCIError from ruby-oci8 2.1.
+ * It had been a subclass of OCIException until ruby-oci8 2.0.
  *
+ * Raised when PL/SQL NO_DATA_FOUND exception is got.
  */
 
 /*
@@ -307,6 +311,13 @@ void oci8_do_raise_by_msgno(ub4 msgno, const char *default_msg, const char *file
  *
  * Subclass of OCIException
  *
+ * The following exceptions are defined as subclasses of OCIError.
+ *
+ * - OCISuccessWithInfo
+ * - OCINoData (It had been a subclass of OCIException, not OCIError, until ruby-oci8 2.0)
+ *
+ * Raised when underlying Oracle Call Interface failed with an Oracle error code
+ * such as ORA-00001.
  */
 
 /*
@@ -314,6 +325,8 @@ void oci8_do_raise_by_msgno(ub4 msgno, const char *default_msg, const char *file
  *
  * Subclass of OCIException
  *
+ * Raised when an invalid handle is passed to underlying Oracle Call Interface.
+ * Report to the ruby-oci8 author if it is raised.
  */
 
 /*
@@ -321,13 +334,15 @@ void oci8_do_raise_by_msgno(ub4 msgno, const char *default_msg, const char *file
  *
  * Subclass of OCIException
  *
+ * Report to the ruby-oci8 author if it is raised.
  */
 
 /*
  * Document-class: OCIStillExecuting
  *
- * Subclass of OCIException
+ * Subclass of OCIError
  *
+ * Report to the ruby-oci8 author if it is raised.
  */
 
 /*
@@ -335,11 +350,12 @@ void oci8_do_raise_by_msgno(ub4 msgno, const char *default_msg, const char *file
  *
  * Subclass of OCIException
  *
+ * Report to the ruby-oci8 author if it is raised.
  */
 
 /*
  * Document-class: OCISuccessWithInfo
  *
- * Subclass of OCIException
+ * Subclass of OCIError
  *
  */
