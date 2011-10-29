@@ -1,35 +1,7 @@
 require 'mkmf'
 
-unless defined? macro_defined?
-  # ruby 1.6 doesn't have 'macro_defined?'.
-  def macro_defined?(macro, src, opt="")
-    try_cpp(src + <<"SRC", opt)
-#ifndef #{macro}
-# error
-#endif
-SRC
-  end
-end
-
-module Logging
-  unless Logging.respond_to?(:open)
-    # emulate Logging::open of ruby 1.6.8 or later.
-
-    if $log.nil? # ruby 1.6.2 doesn't have $log.
-      $log = open('mkmf.log', 'w')
-    end
-    def Logging::open
-      begin
-        $stderr.reopen($log)
-        $stdout.reopen($log)
-        yield
-      ensure
-        $stderr.reopen($orgerr)
-        $stdout.reopen($orgout)
-      end
-    end
-  end
-end # module Logging
+# compatibility for ruby-1.9
+RbConfig = Config unless defined? RbConfig
 
 module MiniRegistry
   class MiniRegistryError < StandardError
@@ -635,20 +607,20 @@ EOS
   def check_ruby_header
     print "checking for ruby header... "
     STDOUT.flush
-    rubyhdrdir = Config::CONFIG["rubyhdrdir"] || Config::CONFIG['archdir']
+    rubyhdrdir = RbConfig::CONFIG["rubyhdrdir"] || RbConfig::CONFIG['archdir']
     unless File.exist?(rubyhdrdir + '/ruby.h')
       puts "ng"
-      if RUBY_PLATFORM =~ /darwin/ and File.exist?("#{Config::CONFIG['archdir']}/../universal-darwin8.0/ruby.h")
+      if RUBY_PLATFORM =~ /darwin/ and File.exist?("#{RbConfig::CONFIG['archdir']}/../universal-darwin8.0/ruby.h")
         raise <<EOS
-#{Config::CONFIG['archdir']}/ruby.h doesn't exist.
+#{RbConfig::CONFIG['archdir']}/ruby.h doesn't exist.
 Run the following commands to fix the problem.
 
-  cd #{Config::CONFIG['archdir']}
+  cd #{RbConfig::CONFIG['archdir']}
   sudo ln -s ../universal-darwin8.0/* ./
 EOS
       else
         raise <<EOS
-#{Config::CONFIG['archdir']}/ruby.h doesn't exist.
+#{RbConfig::CONFIG['archdir']}/ruby.h doesn't exist.
 Install the ruby development library.
 EOS
       end
@@ -1127,7 +1099,7 @@ or
     export RC_ARCHS
 
 If it does not fix the problem, delete all '-arch #{missing_arch}'
-in '#{Config::CONFIG['archdir']}/rbconfig.rb'.
+in '#{RbConfig::CONFIG['archdir']}/rbconfig.rb'.
 EOS
           end
         end

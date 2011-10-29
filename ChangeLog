@@ -1,3 +1,7 @@
+2011-10-29  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: use RbConfig::CONFIG instead of obsolete
+	    Config::CONFIG.
+
 2011-10-22  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/attr.c, ext/oci8/bind.c, ext/oci8/connection_pool.c,
 	  ext/oci8/error.c, ext/oci8/lob.c, ext/oci8/metadata.c,
