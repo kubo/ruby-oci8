@@ -276,7 +276,7 @@ void oci8_check_error_(sword status, oci8_base_t *base, OCIStmt *stmthp, const c
         VALUE exc = oci8_make_exc(oci8_errhp, status, OCI_HTYPE_ERROR, stmthp, file, line);
         while (base != NULL) {
             if (base->type == OCI_HTYPE_SVCCTX) {
-                rb_ivar_set(exc, oci8_id_at_last_error, exc);
+                rb_ivar_set(base->self, oci8_id_at_last_error, exc);
                 break;
             }
             base = base->parent;

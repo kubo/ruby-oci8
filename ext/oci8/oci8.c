@@ -96,6 +96,7 @@ static void oci8_svcctx_free(oci8_base_t *base)
 #endif
         }
     }
+    svcctx->base.type = 0;
 }
 
 static void oci8_svcctx_init(oci8_base_t *base)
@@ -358,13 +359,13 @@ static VALUE oci8_logon(VALUE self, VALUE username, VALUE password, VALUE dbname
     }
 
     /* logon */
+    svcctx->base.type = OCI_HTYPE_SVCCTX;
     chker2(OCILogon_nb(svcctx, oci8_envhp, oci8_errhp, &svcctx->base.hp.svc,
                        RSTRING_ORATEXT(username), RSTRING_LEN(username),
                        RSTRING_ORATEXT(password), RSTRING_LEN(password),
                        NIL_P(dbname) ? NULL : RSTRING_ORATEXT(dbname),
                        NIL_P(dbname) ? 0 : RSTRING_LEN(dbname)),
            &svcctx->base);
-    svcctx->base.type = OCI_HTYPE_SVCCTX;
     svcctx->logoff_strategy = &simple_logoff;
 
     /* setup the session handle */
@@ -543,22 +544,6 @@ static VALUE oci8_svcctx_logoff(VALUE self)
         chker2(oci8_blocking_region(svcctx, strategy->execute, data), &svcctx->base);
     }
     return Qtrue;
-}
-
-/*
- * call-seq:
- *   parse(sql_text) -> an instance of OCI8::Cursor
- *
- * Prepares the SQL statement and returns a new OCI8::Cursor.
- */
-static VALUE oci8_svcctx_parse(VALUE self, VALUE sql)
-{
-    VALUE obj = rb_funcall(cOCIStmt, oci8_id_new, 2, self, sql);
-    VALUE prefetch_rows = rb_ivar_get(self, id_at_prefetch_rows);
-    if (!NIL_P(prefetch_rows)) {
-        rb_funcall(obj, id_set_prefetch_rows, 1, prefetch_rows);
-    }
-    return obj;
 }
 
 /*
@@ -1125,7 +1110,6 @@ VALUE Init_oci8(void)
     rb_define_private_method(cOCI8, "server_attach", oci8_server_attach, 2);
     rb_define_private_method(cOCI8, "session_begin", oci8_session_begin, 2);
     rb_define_method(cOCI8, "logoff", oci8_svcctx_logoff, 0);
-    rb_define_method(cOCI8, "parse", oci8_svcctx_parse, 1);
     rb_define_method(cOCI8, "commit", oci8_commit, 0);
     rb_define_method(cOCI8, "rollback", oci8_rollback, 0);
     rb_define_method(cOCI8, "non_blocking?", oci8_non_blocking_p, 0);

@@ -137,6 +137,22 @@ class OCI8
     @username = nil
   end
 
+  # call-seq:
+  #   parse(sql_text) -> an OCI8::Cursor
+  #
+  # Returns a prepared SQL handle.
+  def parse(sql)
+    @last_error = nil
+    parse_internal(sql)
+  end
+
+  # same with OCI8#parse except that this doesn't reset OCI8#last_error.
+  def parse_internal(sql)
+    cursor = OCI8::Cursor.new(self, sql)
+    cursor.prefetch_rows = @prefetch_rows if @prefetch_rows
+    cursor
+  end
+
   # Executes the sql statement. The type of return value depends on
   # the type of sql statement: select; insert, update and delete;
   # create, alter and drop; and PL/SQL.
@@ -222,7 +238,13 @@ class OCI8
   #   conn.exec('CREATE TABLE test (col1 CHAR(6))') # => 0
   #   conn.logoff
   #
-  def exec(sql, *bindvars)
+  def exec(sql, *bindvars, &block)
+    @last_error = nil
+    exec_internal(sql, *bindvars, &block)
+  end
+
+  # same with OCI8#exec except that this doesn't reset OCI8#last_error.
+  def exec_internal(sql, *bindvars)
     begin
       cursor = parse(sql)
       ret = cursor.exec(*bindvars)

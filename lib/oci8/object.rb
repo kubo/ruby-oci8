@@ -147,7 +147,7 @@ BEGIN
   :self := #{tdo.typename}(#{bind_arg_helper.arg_str});
 END;
 EOS
-        csr = @con.parse(sql)
+        csr = @con.parse_internal(sql)
         begin
           csr.bind_param(:self, nil, :named_type_internal, tdo)
           bind_arg_helper.exec(@con, csr)
@@ -174,7 +174,7 @@ BEGIN
   #{tdo.typename}.#{method_id}(#{bind_arg_helper.arg_str});
 END;
 EOS
-          csr = con.parse(sql)
+          csr = con.parse_internal(sql)
           begin
             bind_arg_helper.exec(con, csr)
           ensure
@@ -190,7 +190,7 @@ BEGIN
   :rv := #{tdo.typename}.#{method_id}(#{bind_arg_helper.arg_str});
 END;
 EOS
-          csr = con.parse(sql)
+          csr = con.parse_internal(sql)
           begin
             csr.bind_param(:rv, nil, return_type)
             bind_arg_helper.exec(con, csr)
@@ -243,7 +243,7 @@ BEGIN
   :self := val;
 END;
 EOS
-          csr = @con.parse(sql)
+          csr = @con.parse_internal(sql)
           begin
             csr.bind_param(:self, nil, :named_type_internal, tdo)
             csr[:self].attributes = self
@@ -264,7 +264,7 @@ BEGIN
   :self := val;
 END;
 EOS
-          csr = @con.parse(sql)
+          csr = @con.parse_internal(sql)
           begin
             csr.bind_param(:self, nil, :named_type_internal, tdo)
             csr.bind_param(:rv, nil, return_type)
@@ -376,7 +376,7 @@ EOS
         result_type = nil
         if type_method.has_result?
           # function
-          con.exec("select result_type_owner, result_type_name from all_method_results where OWNER = :1 and TYPE_NAME = :2 and METHOD_NO = :3", metadata.schema_name, metadata.name, i + 1) do |r|
+          con.exec_internal("select result_type_owner, result_type_name from all_method_results where OWNER = :1 and TYPE_NAME = :2 and METHOD_NO = :3", metadata.schema_name, metadata.name, i + 1) do |r|
             if r[0].nil?
               result_type = @@result_type_to_bindtype[r[1]]
             else
