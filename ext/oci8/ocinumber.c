@@ -1329,7 +1329,7 @@ static VALUE onum_hash(VALUE self)
 {
     char *c  = DATA_PTR(self);
     int size = c[0] + 1;
-    int i, hash;
+    long i, hash;
 
     /* assert(size <= 22); ?*/
     if (size > 22)
