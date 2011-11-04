@@ -40,10 +40,10 @@ ZHS16GBK:          GBK
 # MS Windows Code Page 950 with Hong Kong Supplementary Character
 # Set HKSCS-2001 (character set conversion to and from Unicode is
 # based on Unicode 3.0)
-ZHT16HKSCS:        [Big5-HKSCS, Big5]
+ZHT16HKSCS:        [CP951, Big5-HKSCS, Big5]
 
 # MS Windows Code Page 950 Traditional Chinese
-ZHT16MSWIN950:     Big5
+ZHT16MSWIN950:     [CP950, Big5]
 
 # EUC 32-bit Traditional Chinese
 ZHT32EUC:          EUC-TW       # Who use this?
@@ -166,7 +166,7 @@ ZHT16DBT:          nil          # FIXME
 # MS Windows Code Page 950 with Hong Kong Supplementary Character
 # Set HKSCS-2001 (character set conversion to and from Unicode is
 # based on Unicode 3.1)
-ZHT16HKSCS31:      [Big5-HKSCS, Big5]
+ZHT16HKSCS31:      [CP951, Big5-HKSCS, Big5]
 
 # SOPS 32-bit Traditional Chinese
 ZHT32SOPS:         nil          # FIXME

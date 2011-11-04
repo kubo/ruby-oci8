@@ -1,4 +1,9 @@
 2011-11-04  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/encoding.yml: fix the mapping from Oracle NLS chacacter set
+	    to ruby encoding to use CP950 and CP951, which are new encodings
+	    in ruby 1.9.3.
+
+2011-11-04  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocinumber.c: add a workaround to avoid a gcc internal
 	    compiler error when using ruby 1.9.2-p290 on ubuntu 11.10 (64bit).
 	    (reported by Bob Saveland.)
