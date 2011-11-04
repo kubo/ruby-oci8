@@ -844,7 +844,7 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
         size = 0;
     }
 
-    if (oracle_client_version >= ORAVERNUM(9, 2, 0, 3, 0) || size >= 0) {
+    if (oracle_client_version >= ORAVERNUM(9, 2, 0, 3, 0) || size > 0) {
         if (size > 0 && ptr[0] == ':') {
             rb_raise(rb_eArgError, "client identifier should not start with ':'.");
         }

@@ -1,3 +1,8 @@
+2011-11-04  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, ext/oci8/oci8.c, ext/oci8/oci8.h,
+	  test/test_datetime.rb, test/test_metadata.rb: fix to pass tests
+	    on Oracle 9i.
+
 2011-10-29  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/error.c, ext/oci8/oci8.c, lib/oci8/object.rb, lib/oci8/oci8.rb:
 	    reset OCI8#last_error when OCI8#parse or OCI8#exec is called.

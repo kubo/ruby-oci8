@@ -442,7 +442,7 @@ DECLARE
   ts1 TIMESTAMP;
 BEGIN
   ts1 := TO_TIMESTAMP(:in1, 'YYYY-MM-DD HH24:MI:SS.FF');
-  :out := TO_CHAR(ts1 + :in2, 'YYYY-MM-DD HH24:MI:SS.FF6');
+  :out := TO_CHAR(ts1 + :in2, 'YYYY-MM-DD HH24:MI:SS.FF');
 END;
 EOS
     cursor.bind_param(:out, nil, String, 36)

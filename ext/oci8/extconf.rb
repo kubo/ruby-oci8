@@ -69,6 +69,7 @@ have_type('OCIInterval*', 'ociap.h')
 have_type('OCICallbackLobRead2', 'ociap.h')
 have_type('OCICallbackLobWrite2', 'ociap.h')
 have_type('OCIAdmin*', 'ociap.h')
+have_type('OCIAuthInfo*', 'ociap.h')
 have_type('OCIMsg*', 'ociap.h')
 have_type('OCICPool*', 'ociap.h')
 

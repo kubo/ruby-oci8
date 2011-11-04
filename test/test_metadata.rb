@@ -1251,14 +1251,16 @@ EOS
       :has_lob? => true,
       :has_file? => false,
     }
-    @conn.exec(<<-EOS)
+    if $oracle_version >= OCI8::ORAVER_9_2
+      @conn.exec(<<-EOS)
 CREATE TYPE test_type_has_nclob AS OBJECT (lob NCLOB)
 EOS
-    expected_values << {
-      :obj_name => 'TEST_TYPE_HAS_NCLOB',
-      :has_lob? => true,
-      :has_file? => false,
-    }
+      expected_values << {
+        :obj_name => 'TEST_TYPE_HAS_NCLOB',
+        :has_lob? => true,
+        :has_file? => false,
+      }
+    end
     @conn.exec(<<-EOS)
 CREATE TYPE test_type_has_blob AS OBJECT (lob BLOB)
 EOS

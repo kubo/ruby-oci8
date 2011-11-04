@@ -90,6 +90,9 @@ typedef sb4 (*OCICallbackLobWrite2)(dvoid *ctxp, dvoid *bufp, oraub8 *lenp,
 #if !defined HAVE_TYPE_OCIADMIN_ && !defined HAVE_TYPE_OCIADMINP
 typedef struct OCIAdmin OCIAdmin;
 #endif
+#if !defined HAVE_TYPE_OCIAUTHINFO_ && !defined HAVE_TYPE_OCIAUTHINFOP
+typedef struct OCIAuthInfo OCIAuthInfo;
+#endif
 #if !defined HAVE_TYPE_OCIMSG_ && !defined HAVE_TYPE_OCIMSGP
 typedef struct OCIMsg  OCIMsg;
 #endif
