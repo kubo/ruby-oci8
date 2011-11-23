@@ -300,6 +300,8 @@ class OCIHandle
   OCI_SYSDBA                  = 0x0002
   # for SYSOPER authorization
   OCI_SYSOPER                 = 0x0004
+  # for SYSASM authorization
+  OCI_SYSASM                  = 0x8000
 
   #################################
   #

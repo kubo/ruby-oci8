@@ -107,6 +107,11 @@ class OCI8
       mode = OCI_SYSDBA
     when :SYSOPER
       mode = OCI_SYSOPER
+    when :SYSASM
+      if OCI8.oracle_client_version < OCI8::ORAVER_11_1
+        raise "SYSASM is not supported on Oracle version #{OCI8.oracle_client_version}"
+      end
+      mode = OCI_SYSASM
     when nil
       # do nothing
     else

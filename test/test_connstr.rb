@@ -17,8 +17,8 @@ class TestConnStr < Test::Unit::TestCase
      ["", ArgumentError],
      ["foo bar/baz", ArgumentError],
      ["foo@bar/baz", ArgumentError],
-     # raise error in connecting but no error in parse_connect_string.
-     ["foo/bar as sysdbaaa", ["foo", "bar", nil, "sysdbaaa"]],
+     # parse_connect_string doesn't check validity of privilege.
+     ["foo/bar as foo_bar", ["foo", "bar", nil, :FOO_BAR]],
 
      ##
      ## following test cases are contributed by Shiwei Zhang.

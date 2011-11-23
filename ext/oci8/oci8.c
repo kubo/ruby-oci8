@@ -130,8 +130,6 @@ static oci8_base_vtable_t oci8_svcctx_vtable = {
 };
 
 static VALUE oracle_client_vernum; /* Oracle client version number */
-static VALUE sym_SYSDBA;
-static VALUE sym_SYSOPER;
 static ID id_at_prefetch_rows;
 static ID id_set_prefetch_rows;
 
@@ -203,14 +201,7 @@ void oci8_do_parse_connect_string(VALUE conn_str, VALUE *user, VALUE *pass, VALU
             *pass = Qnil;
         }
         if (!NIL_P(*mode)) {
-            char *ptr;
-            SafeStringValue(*mode);
-            ptr = RSTRING_PTR(*mode);
-            if (strcasecmp(ptr, "SYSDBA") == 0) {
-                *mode = sym_SYSDBA;
-            } else if (strcasecmp(ptr, "SYSOPER") == 0) {
-                *mode = sym_SYSOPER;
-            }
+            *mode = ID2SYM(rb_to_id(rb_funcall(*mode, rb_intern("upcase"), 0)));
         }
     } else {
         rb_raise(rb_eArgError, "invalid connect string \"%s\" (expect \"username/password[@(tns_name|//host[:port]/service_name)][ as (sysdba|sysoper)]\"", RSTRING_PTR(conn_str));
@@ -1093,8 +1084,6 @@ VALUE Init_oci8(void)
         oracle_client_vernum = INT2FIX(ORAVERNUM(major, minor, update, patch, port_update));
     }
 
-    sym_SYSDBA = ID2SYM(rb_intern("SYSDBA"));
-    sym_SYSOPER = ID2SYM(rb_intern("SYSOPER"));
     id_at_prefetch_rows = rb_intern("@prefetch_rows");
     id_set_prefetch_rows = rb_intern("prefetch_rows=");
 
