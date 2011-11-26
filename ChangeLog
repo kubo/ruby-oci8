@@ -1,3 +1,8 @@
+2011-11-26  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/object.c, test/test_object.rb: fix a bug that an array is
+	   always bound as null. This bug was introduced in ruby-oci8 2.0.5.
+	   (reported by Leoš Bitto)
+
 2011-11-23  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c, lib/oci8/oci8.rb, lib/oci8/ocihandle.rb,
 	  test/test_connstr.rb: support sysasm privilege.

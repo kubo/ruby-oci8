@@ -389,6 +389,7 @@ static VALUE oci8_named_coll_set_coll_element(VALUE self, VALUE datatype, VALUE 
     set_coll_element_func(&cb_data);
     set_coll_element_ensure(&cb_data);
 #endif
+    *ind = 0;
     return Qnil;
 }
 

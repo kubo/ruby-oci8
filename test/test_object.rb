@@ -5,6 +5,9 @@ require File.dirname(__FILE__) + '/config'
 class RbTestObj < OCI8::Object::Base
 end
 
+class RbTestIntArray < OCI8::Object::Base
+end
+
 class TestObj1 < Test::Unit::TestCase
   Delta = 0.00001
 
@@ -338,5 +341,36 @@ EOS
     csr[:in] = nil
     csr.exec
     assert_equal('IS NULL', csr[:out])
+  end
+
+  def test_bind_array
+    csr = @conn.parse <<EOS
+DECLARE
+  ary RB_TEST_INT_ARRAY := :in;
+BEGIN
+  IF ary IS NULL THEN
+    :cnt := -1;
+  ELSE
+    :cnt := ary.count;
+    IF :cnt != 0 THEN
+      :out1 := ary(1);
+      :out2 := ary(2);
+      :out3 := ary(3);
+    END IF;
+  END IF;
+END;
+EOS
+    [nil, [], [1, nil, 3]].each do |ary|
+      csr.bind_param(:in, ary, RbTestIntArray)
+      csr.bind_param(:cnt, nil, Integer)
+      csr.bind_param(:out1, nil, Integer)
+      csr.bind_param(:out2, nil, Integer)
+      csr.bind_param(:out3, nil, Integer)
+      csr.exec
+      assert_equal(ary ? ary.length : -1, csr[:cnt])
+      assert_equal(ary ? ary[0] : nil, csr[:out1])
+      assert_equal(ary ? ary[1] : nil, csr[:out2])
+      assert_equal(ary ? ary[2] : nil, csr[:out3])
+    end
   end
 end
