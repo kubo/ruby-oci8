@@ -1,3 +1,11 @@
+2011-11-27  KUBO Takehiro  <kubo@jiubao.org>
+	* test/test_break.rb: fix test_timeout test for an Oracle server
+	    on Windows.
+	* test/test_all.rb, test/test_connection_pool.rb: add testcases
+	    of OCI8::ConnectionPool.
+	* test/test_oci8.rb: add a testcase for OCI8#last_error.
+	* test/test_oranumber.rb: add a testcase for OCI8.properties[:float_conversion_type].
+
 2011-11-26  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/object.c, test/test_object.rb: fix a bug that an array is
 	   always bound as null. This bug was introduced in ruby-oci8 2.0.5.

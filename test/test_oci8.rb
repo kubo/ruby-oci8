@@ -431,4 +431,21 @@ EOS
     end
   end
 
+  def test_last_error
+    # OCI8#parse and OCI8#exec reset OCI8#last_error
+    @conn.last_error = 'dummy'
+    @conn.exec('begin null; end;')
+    assert_nil(@conn.last_error)
+    @conn.last_error = 'dummy'
+    cursor = @conn.parse('select col1, max(col2) from (select 1 as col1, null as col2 from dual) group by col1')
+    assert_nil(@conn.last_error)
+
+    # When an OCI function returns OCI_SUCCESS_WITH_INFO, OCI8#last_error is set.
+    @conn.last_error = 'dummy'
+    cursor.exec
+    assert_equal('dummy', @conn.last_error)
+    cursor.fetch
+    assert_kind_of(OCISuccessWithInfo, @conn.last_error)
+    assert_equal(24347, @conn.last_error.code)
+  end
 end # TestOCI8

@@ -743,4 +743,35 @@ EOS
     assert_equal(false, OraNumber(10.0).has_decimal_part?)
     assert_equal(true,  OraNumber(10.1).has_decimal_part?)
   end
+
+  def test_float_conversion_type_ruby
+    orig = OCI8.properties[:float_conversion_type]
+    conn = get_oci8_connection
+    begin
+      OCI8.properties[:float_conversion_type] = :ruby
+      # Oracle Number -> Ruby Float
+      cursor = conn.parse('begin :out := :in; end;')
+      cursor.bind_param(:in, nil, String, 50)
+      cursor.bind_param(:out, nil, Float)
+      LARGE_RANGE_VALUES.each do |n|
+        cursor[:in] = n
+        cursor.exec
+        assert_equal(n.to_f, cursor[:out])
+      end
+      cursor.close
+      # Ruby Float -> Oracle Number
+      cursor = conn.parse('begin :out := :in; end;')
+      cursor.bind_param(:in, nil, Float)
+      cursor.bind_param(:out, nil, String, 50)
+      LARGE_RANGE_VALUES.each do |n|
+        cursor[:in] = n.to_f
+        cursor.exec
+        assert_equal(n.to_f, cursor[:out].to_f)
+      end
+      cursor.close
+    ensure
+      OCI8.properties[:float_conversion_type] = orig
+      conn.logoff
+    end
+  end
 end

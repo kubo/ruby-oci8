@@ -17,7 +17,18 @@ class TestBreak < Test::Unit::TestCase
   def report(str)
     printf "%d: %s\n", (Time.now - $start_time), str
   end
-  
+
+  @@server_is_runing_on_windows = nil
+  def server_is_runing_on_windows?
+    if @@server_is_runing_on_windows.nil?
+      @@server_is_runing_on_windows = false
+      @conn.exec('select banner from v$version') do |row|
+        @@server_is_runing_on_windows = true if row[0].include? 'Windows'
+      end
+    end
+    @@server_is_runing_on_windows
+  end
+
   PLSQL_DONE = 1
   OCIBREAK = 2
   SEND_BREAK = 3
@@ -56,15 +67,10 @@ class TestBreak < Test::Unit::TestCase
   end
 
   def test_non_blocking_mode
-    is_windows_server = false
-    @conn.exec('select banner from v$version') do |row|
-      is_windows_server = true if row[0].include? 'Windows'
-    end
-
     @conn.non_blocking = true
     assert_equal(true, @conn.non_blocking?)
     expect = []
-    if is_windows_server
+    if server_is_runing_on_windows?
       if $oracle_server_version >= OCI8::ORAVER_9_0
         # raise after sleeping #{TIME_IN_PLSQL} seconds.
         expect[PLSQL_DONE] = "Invalid status"
@@ -87,10 +93,16 @@ class TestBreak < Test::Unit::TestCase
     start_time = Time.now
     assert_raise(Timeout::Error) do
       Timeout.timeout(1) do
-        @conn.exec("BEGIN DBMS_LOCK.SLEEP(10); END;")
+        @conn.exec("BEGIN DBMS_LOCK.SLEEP(5); END;")
       end
     end
+    if server_is_runing_on_windows?
+      end_time = start_time + 5
+    else
+      end_time = start_time + 1
+    end
+    assert_in_delta(Time.now, end_time, 1)
     @conn.exec("BEGIN NULL; END;")
-    assert_operator(Time.now, :<, start_time + 2)
+    assert_in_delta(Time.now, end_time, 1)
   end
 end
