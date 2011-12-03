@@ -33,18 +33,19 @@ class TestConnectionPool < Test::Unit::TestCase
   end
 
   def check_busy_and_open_count(min_cnt, max_cnt, incr_cnt)
+    msg = "create_pool(#{min_cnt}, #{max_cnt}, #{incr_cnt})"
     # Create a connection pool.
     pool = create_pool(min_cnt, max_cnt, incr_cnt)
-    assert_equal(min_cnt, pool.open_count)
-    assert_equal(0, pool.busy_count)
+    assert_equal(min_cnt, pool.open_count, msg)
+    assert_equal(0, pool.busy_count, msg)
 
     # Create connections from the pool.
     conns = []
     max_cnt.times do
       conns << OCI8.new($dbuser, $dbpass, pool)
     end
-    assert_equal(min_cnt, pool.open_count)
-    assert_equal(0, pool.busy_count)
+    assert_equal(min_cnt, pool.open_count, msg)
+    assert_equal(0, pool.busy_count, msg)
 
     # Execute blocking SQL statements sequentially.
     max_cnt.times do |n|
@@ -52,12 +53,12 @@ class TestConnectionPool < Test::Unit::TestCase
         conns[n].exec "BEGIN DBMS_LOCK.SLEEP(1); END;"
       end
       sleep(0.5)
-      assert_equal(min_cnt, pool.open_count)
-      assert_equal(1, pool.busy_count)
+      assert_equal(min_cnt, pool.open_count, msg)
+      assert_equal(1, pool.busy_count, msg)
       thread.join
     end
-    assert_equal(min_cnt, pool.open_count)
-    assert_equal(0, pool.busy_count)
+    assert_equal(min_cnt, pool.open_count, msg)
+    assert_equal(0, pool.busy_count, msg)
 
     # Execute blocking SQL statements parallel to increment open_count.
     threads = []
@@ -67,8 +68,8 @@ class TestConnectionPool < Test::Unit::TestCase
       end
     end
     sleep(0.5)
-    assert_equal(min_cnt + incr_cnt, pool.open_count)
-    assert_equal(min_cnt + 1, pool.busy_count)
+    assert_equal(min_cnt + incr_cnt, pool.open_count, msg)
+    assert_equal(min_cnt + 1, pool.busy_count, msg)
 
     # Execute blocking SQL statements parallel up to maximum.
     (min_cnt + 1).upto(max_cnt - 1) do |n|
@@ -77,36 +78,34 @@ class TestConnectionPool < Test::Unit::TestCase
       end
     end
     sleep(0.5)
-    assert_equal(max_cnt, pool.open_count)
-    assert_equal(max_cnt, pool.busy_count)
+    assert_equal(max_cnt, pool.open_count, msg)
+    assert_equal(max_cnt, pool.busy_count, msg)
 
     # 
     threads.each do |thr|
       thr.join
     end
-    assert_equal(max_cnt, pool.open_count)
-    assert_equal(0, pool.busy_count)
+    assert_equal(max_cnt, pool.open_count, msg)
+    assert_equal(0, pool.busy_count, msg)
 
     # Set timeout
     pool.timeout = 1
     sleep(1.5)
-    assert_equal(max_cnt, pool.open_count) # open_count doesn't shrink.
-    assert_equal(0, pool.busy_count)
+    assert_equal(max_cnt, pool.open_count, msg) # open_count doesn't shrink.
+    assert_equal(0, pool.busy_count, msg)
     conns[0].ping # make a network roundtrip.
     sleep(0.5)
-    expected_cnt = max_cnt
-    while expected_cnt - incr_cnt > min_cnt
-      expected_cnt -= incr_cnt
-    end
-    assert_equal(expected_cnt, pool.open_count) # open_count shrinks.
-    assert_equal(0, pool.busy_count)
+    # open_count shrinks.
+    # The decrement count depends on Oracle version.
+    assert_operator(pool.open_count, :<, max_cnt, msg)
+    assert_equal(0, pool.busy_count, msg)
 
     # Close all conections.
     conns.each do | conn |
       conn.logoff
     end
-    assert_equal(min_cnt, pool.open_count)
-    assert_equal(0, pool.busy_count)
+    assert_equal(min_cnt, pool.open_count, msg)
+    assert_equal(0, pool.busy_count, msg)
   end
 
   def test_nowait
