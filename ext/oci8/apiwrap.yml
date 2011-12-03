@@ -373,7 +373,7 @@ OCILobWrite_nb:
             - ub1 csfrm
 
 # round trip: 1
-OCILogoff_nb:
+OCILogoff:
   :version: 800
   :args:
             - OCISvcCtx *svchp
@@ -817,7 +817,7 @@ OCIRawSize:
             - CONST OCIRaw *raw
 
 # round trip: 1
-OCISessionEnd_nb:
+OCISessionEnd:
   :version: 800
   :args:
             - OCISvcCtx *svchp
@@ -836,7 +836,7 @@ OCIServerAttach_nb:
             - ub4 mode
 
 # round trip: 1
-OCIServerDetach_nb:
+OCIServerDetach:
   :version: 800
   :args:
             - OCIServer *srvhp
@@ -938,6 +938,14 @@ OCIStringSize:
 
 # round trip: 1
 OCITransCommit_nb:
+  :version: 800
+  :args:
+            - OCISvcCtx *svchp
+            - OCIError *errhp
+            - ub4 flags
+
+# round trip: 1
+OCITransRollback:
   :version: 800
   :args:
             - OCISvcCtx *svchp

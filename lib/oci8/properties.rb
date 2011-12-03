@@ -51,6 +51,7 @@ class OCI8
   # Supported properties are listed below:
   #
   # [:length_semantics]
+  #     (new in 2.1.0)
   #     +:char+ when Oracle character length is counted by the number of characters.
   #     +:byte+ when it is counted by the number of bytes.
   #     The default setting is +:byte+ because +:char+ causes unexpected behaviour on

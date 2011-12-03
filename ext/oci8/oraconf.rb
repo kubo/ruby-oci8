@@ -641,12 +641,12 @@ EOS
 
   if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/ # when Windows
 
-    def get_libs(base_dir = oci_base_dir)
+    def get_libs(lib_dir)
       case RUBY_PLATFORM
       when /cygwin/
         open("OCI.def", "w") do |f|
           f.puts("EXPORTS")
-          open("|nm #{base_dir}/LIB/MSVC/OCI.LIB") do |r|
+          open("|nm #{lib_dir}/MSVC/OCI.LIB") do |r|
             while line = r.gets
               f.puts($') if line =~ / T _/
             end
@@ -661,21 +661,21 @@ EOS
       when /bccwin32/
         # replace '/' to '\\' because bcc linker misunderstands
         # 'C:/foo/bar/OCI.LIB' as unknown option.
-        lib = "#{base_dir}/LIB/BORLAND/OCI.LIB"
+        lib = "#{lib_dir}/BORLAND/OCI.LIB"
         return lib.tr('/', '\\') if File.exist?(lib)
         raise <<EOS
 #{lib} does not exist.
 
 Your Oracle may not support Borland C++.
 If you want to run this module, run the following command at your own risk.
-  cd #{base_dir.tr('/', '\\')}\\LIB
+  cd #{lib_dir.tr('/', '\\')}
   mkdir Borland
   cd Borland
   coff2omf ..\\MSVC\\OCI.LIB OCI.LIB
 EOS
         exit 1
       else
-        "\"#{base_dir}/LIB/MSVC/OCI.LIB\""
+        "\"#{lib_dir}/MSVC/OCI.LIB\""
       end
     end
 
@@ -702,7 +702,7 @@ class OraConfFC < OraConf
 
     @oracle_home = get_home()
     if RUBY_PLATFORM =~ /freebsd/ && @oracle_home == '/usr/local/oracle8-client'
-      @version = '817'
+      raise "Oralce 8i is not supported."
     else
       @version = get_version()
     end
@@ -717,7 +717,9 @@ class OraConfFC < OraConf
       use_lib32 = false
     end
 
-    if use_lib32
+    if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/
+      lib_dir = "#{@oracle_home}/oci/lib"
+    elsif use_lib32
       lib_dir = "#{@oracle_home}/lib32"
     else
       lib_dir = "#{@oracle_home}/lib"
@@ -840,23 +842,14 @@ EOS
       oracle_home.gsub(/\\/, '/')
     end
 
-    def oci_base_dir
-      case @version
-      when /80./
-        "#{@oracle_home}/OCI80"
-      else
-        "#{@oracle_home}/OCI"
-      end
-    end
-
     def get_cflags
-      unless File.exist?("#{oci_base_dir}/INCLUDE/OCI.H")
-        raise "'#{oci_base_dir}/INCLUDE/OCI.H' does not exists. Please install 'Oracle Call Interface'."
+      unless File.exist?("#{@oracle_home}/OCI/INCLUDE/OCI.H")
+        raise "'#{@oracle_home}/OCI/INCLUDE/OCI.H' does not exists. Please install 'Oracle Call Interface'."
       end
       if RUBY_PLATFORM =~ /cygwin/
-        " \"-I#{oci_base_dir}/INCLUDE\" -D_int64=\"long long\""
+        " \"-I#{@oracle_home}/OCI/INCLUDE\" -D_int64=\"long long\""
       else
-        " \"-I#{oci_base_dir}/INCLUDE\""
+        " \"-I#{@oracle_home}/OCI/INCLUDE\""
       end
     end
 
@@ -978,7 +971,7 @@ EOS
       end
       @cflags = " \"-I#{inc_dir}\""
       @cflags += " -D_int64=\"long long\"" if RUBY_PLATFORM =~ /cygwin/
-      @libs = get_libs("#{ic_dir}/sdk")
+      @libs = get_libs("#{ic_dir}/sdk/lib")
       ld_path = nil
     else
       @cflags = " -I#{inc_dir}"

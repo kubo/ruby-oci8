@@ -1,3 +1,10 @@
+2011-12-03  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml: fix for run-time Oracle function checking.
+	* ext/oci8/oraconf.rb: fix a bug not to compile for full client on
+	    Windows. The bug was caused by the commit at 2011-10-17.
+	* lib/oci8/connection_pool.rb, lib/oci8/properties.rb: fix rdoc
+	    comments.
+
 2011-11-27  KUBO Takehiro  <kubo@jiubao.org>
 	* test/test_break.rb: fix test_timeout test for an Oracle server
 	    on Windows.
