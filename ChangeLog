@@ -1,4 +1,8 @@
 2011-12-03  KUBO Takehiro  <kubo@jiubao.org>
+	* test/test_metadata.rb: Check object type availability by querying
+	    all_objects data dictionary. FIx #3 at http://github.com/kubo/ruby-oci8.
+
+2011-12-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ruby-oci8.gemspec: Use Gem::Command.build_args to get arguments
 	    after '--'. This may solve issues #4 at http://github.com/kubo/ruby-oci8.
 

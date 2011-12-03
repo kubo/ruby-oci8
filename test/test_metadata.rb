@@ -59,8 +59,18 @@ class TestMetadata < Test::Unit::TestCase
       @table = hash
     end
 
-    def oraver
-      @table[:oraver]
+    def available?(conn)
+      return false if $oracle_version < @table[:oraver]
+      if /^(\w+)\.(\w+)$/ =~ @table[:data_type_string]
+        if conn.select_one('select 1 from all_objects where owner = :1 and object_name = :2', $1, $2)
+          true
+        else
+          warn "skip a test for unsupported datatype: #{@table[:data_type_string]}."
+          false
+        end
+      else
+        true
+      end
     end
   end
 
@@ -1360,7 +1370,7 @@ EOS
     end
 
     coldef = @@column_test_data.find_all do |c|
-      $oracle_version >= c.oraver
+      c.available?(@conn)
     end
 
     drop_table('test_table')
