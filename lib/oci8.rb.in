@@ -28,7 +28,7 @@ end
 #  191 - ruby 1.9.1 and 1.9.2
 #  19x - ruby 1.9.x future version which will break the API compatibility
 case RUBY_VERSION
-when /^1\.9/
+when /^1\.9/, /^2\.0/
   so_basename += '191'
 when /^1\.8/
   so_basename += '18'

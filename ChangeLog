@@ -1,4 +1,7 @@
 2011-12-03  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8.rb.in: fix to work with ruby 2.0.
+
+2011-12-03  KUBO Takehiro  <kubo@jiubao.org>
 	* test/test_connection_pool.rb: fix to pass a connection pool test.
 	    OCI8::ConnectionPool#open_count after decrement depends on
 	    Oracle version. (reported by Yasuo Honda)
