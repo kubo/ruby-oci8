@@ -8,10 +8,17 @@
 #
 require 'fileutils'
 
-if ARGV.size > 3
-   gem_platform = ARGV[3]
+build_args = if (defined? Gem::Command and Gem::Command.respond_to? :build_args)
+               Gem::Command.build_args
+             else
+               # for old rubygems
+               ARGV.include?("--") ? ARGV[(ARGV.index("--") + 1)...ARGV.size] : []
+             end
+
+if build_args.size > 0
+  gem_platform = build_args[0]
 else
-   gem_platform = Gem::Platform::RUBY
+  gem_platform = Gem::Platform::RUBY
 end
 
 spec = Gem::Specification.new do |s|

@@ -1,4 +1,8 @@
 2011-12-03  KUBO Takehiro  <kubo@jiubao.org>
+	* ruby-oci8.gemspec: Use Gem::Command.build_args to get arguments
+	    after '--'. This may solve issues #4 at http://github.com/kubo/ruby-oci8.
+
+2011-12-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.yml: fix for run-time Oracle function checking.
 	* ext/oci8/oraconf.rb: fix a bug not to compile for full client on
 	    Windows. The bug was caused by the commit at 2011-10-17.
