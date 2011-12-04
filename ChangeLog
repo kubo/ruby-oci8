@@ -1,3 +1,11 @@
+2011-12-04  KUBO Takehiro  <kubo@jiubao.org>
+	* test/config.rb, test/test_encoding.rb: add tests for bind_string_as_nchar
+	    property.
+	* ext/oci8/metadata.c, lib/oci8/metadata.rb: delete the internally used
+	    OCI8::Metadata::Base#__charset_name method.
+	* lib/oci8/oci8.rb: add OCI8#database_charset_name. (added to test
+	    bind_string_as_nchar.)
+
 2011-12-03  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8.rb.in: fix to work with ruby 2.0.
 

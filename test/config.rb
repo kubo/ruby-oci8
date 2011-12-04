@@ -5,6 +5,9 @@ $dbuser = "ruby"
 $dbpass = "oci8"
 $dbname = nil
 
+# for test_bind_string_as_nchar in test_encoding.rb
+ENV['ORA_NCHAR_LITERAL_REPLACE'] = 'TRUE' if OCI8.encoding.name == "UTF-8"
+
 # test_clob.rb
 
 nls_lang = ENV['NLS_LANG']

@@ -1060,7 +1060,7 @@ class OCI8
 
       # character set name if the type attribute is of a string/character type.
       def charset_name
-        __charset_name(charset_id)
+        __con.charset_id2name(charset_id)
       end
 
       def inspect # :nodoc:

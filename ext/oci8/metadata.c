@@ -109,13 +109,6 @@ static VALUE metadata_get_param_at(VALUE self, VALUE idx)
     return oci8_metadata_create(value, md->svc, self);
 }
 
-static VALUE metadata_get_charset_name(VALUE self, VALUE charset_id)
-{
-    oci8_metadata_t *md = DATA_PTR(self);
-
-    return oci8_charset_id2name(md->svc, charset_id);
-}
-
 static VALUE metadata_get_con(VALUE self)
 {
     oci8_metadata_t *md = DATA_PTR(self);
@@ -222,7 +215,6 @@ void Init_oci8_metadata(VALUE cOCI8)
     rb_define_singleton_method(cOCI8MetadataBase, "register_ptype", metadata_s_register_ptype, 1);
     rb_define_private_method(cOCI8MetadataBase, "__param", metadata_get_param, 1);
     rb_define_private_method(cOCI8MetadataBase, "__param_at", metadata_get_param_at, 1);
-    rb_define_private_method(cOCI8MetadataBase, "__charset_name", metadata_get_charset_name, 1);
     rb_define_private_method(cOCI8MetadataBase, "__con", metadata_get_con, 0);
     rb_define_private_method(cOCI8MetadataBase, "__is_implicit?", metadata_is_implicit_p, 0);
 

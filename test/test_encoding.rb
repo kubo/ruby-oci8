@@ -45,9 +45,9 @@ EOS
       assert_equal("\xab\xcd", (data = row[6].read), 'BLOB')
       assert_equal(ascii_8bit, data.encoding);
 
-      if OCI8.encoding.name == "UTF-8"
-        utf_8 = "\u00A1\u00A2\u00A3\u00A4\u00A5\u00A6\u00A7\u00A8\u00A9"
-        iso_8859_1 = utf_8.encode("ISO-8859-1")
+      if OCI8.encoding.name == "UTF-8" and ['WE8ISO8859P1', 'WE8ISO8859P15', 'AL32UTF8', 'UTF8'].include? @conn.database_charset_name
+        utf_8 = "\u00A1\u00A2\u00A3\u00A5\u00A7\u00A9"
+        iso_8859_1 = utf_8.encode("ISO-8859-15")
         # CLOB
         lob = row[4]
         lob.rewind
@@ -66,10 +66,14 @@ EOS
         lob.write(iso_8859_1) # written without encoding conversion
         lob.rewind
         assert_equal(iso_8859_1.force_encoding('ASCII-8BIT'), lob.read)
+      else
+        warn "Skip some asserts because the database character set is neither WE8ISO8859P1, WE8ISO8859P15, AL32UTF8 nor UTF8." if OCI8.encoding.name == "UTF-8"
       end
     end
     drop_table('test_table')
   end
+
+  warn "Skip some tests which runs only when NLS_CHARACTERSETS is unicode." if OCI8.encoding.name != "UTF-8"
 
   if OCI8.encoding.name == "UTF-8"
     def test_bind_string_with_code_conversion
@@ -91,6 +95,37 @@ EOS
         assert_equal(utf_8, row[0])
       end
       drop_table('test_table')
+    end
+
+    def test_bind_string_as_nchar
+      if ['AL32UTF8', 'UTF8', 'ZHS32GB18030'].include? @conn.database_charset_name
+        warn "Skip test_bind_string_as_nchar. It needs Oracle server whose database chracter set is incompatible with unicode."
+      else
+        drop_table('test_table')
+        @conn.exec("CREATE TABLE test_table (ID NUMBER(5), V VARCHAR2(10), NV1 NVARCHAR2(10), NV2 NVARCHAR2(10))")
+
+        test_data = "a\u00A1\u3042"
+        orig_prop = OCI8.properties[:bind_string_as_nchar]
+        begin
+          OCI8.properties[:bind_string_as_nchar] = false
+          @conn.exec("INSERT INTO test_table VALUES (1, N'#{test_data}', N'#{test_data}', :1)", test_data)
+          v, nv1, nv2 = @conn.select_one('select V, NV1, NV2 from test_table where ID = 1')
+          assert_not_equal(test_data, v) # Some UTF-8 chracters should be garbled.
+          assert_equal(test_data, nv1) # No garbled characters
+          assert_equal(v, nv2) # Garbled as VARCHAR2 column.
+
+          OCI8.properties[:bind_string_as_nchar] = true
+          @conn.exec("INSERT INTO test_table VALUES (2, N'#{test_data}', N'#{test_data}', :1)", test_data)
+          v, nv1, nv2 = @conn.select_one('select V, NV1, NV2 from test_table where ID = 2')
+          assert_not_equal(test_data, v) # Some UTF-8 chracters should be garbled.
+          assert_equal(test_data, nv1) # No garbled characters
+          assert_equal(nv1, nv2) # Same as NVARCHAR2.
+
+          @conn.commit
+        ensure
+          OCI8.properties[:bind_string_as_nchar] = orig_prop
+        end
+      end
     end
   end
 
