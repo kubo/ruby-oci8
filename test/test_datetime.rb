@@ -579,4 +579,34 @@ EOS
       end
     end
   end
+
+  def test_time_zone_property
+    orig_prop = OCI8.properties[:time_zone]
+    orig_env = ENV['TZ']
+    conn = nil
+    begin
+      assert_raise(TypeError) do
+        OCI8.properties[:time_zone] = 1
+      end
+
+      OCI8.properties[:time_zone] = 'America/New_York'
+      ENV['TZ'] = nil
+      conn = get_oci8_connection
+      assert_equal('America/New_York', conn.select_one('select sessiontimezone from dual')[0])
+      conn.logoff
+      conn = nil
+
+      OCI8.properties[:time_zone] = nil
+      ENV['TZ'] = 'Europe/Riga'
+      conn = get_oci8_connection
+      assert_equal('Europe/Riga', conn.select_one('select sessiontimezone from dual')[0])
+      conn.logoff
+      conn = nil
+
+    ensure
+      conn.logoff if conn
+      OCI8.properties[:time_zone] = orig_prop
+      ENV['TZ'] = orig_env
+    end
+  end
 end # TestOCI8

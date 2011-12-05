@@ -5,6 +5,7 @@
 class OCI8
 
   @@properties = {
+    :time_zone => nil,
     :length_semantics => :byte,
     :bind_string_as_nchar => false,
     :float_conversion_type => :ruby,
@@ -18,6 +19,8 @@ class OCI8
   def @@properties.[]=(name, val)
     raise IndexError, "No such property name: #{name}" unless @@properties.has_key?(name)
     case name
+    when :time_zone
+      raise TypeError, "invalid property type #{val.class}" unless val.nil? or val.is_a? String
     when :length_semantic
       if val != :byte and val != :char
         raise ArgumentError, "Invalid property value #{val} for :length_semantics."
@@ -50,8 +53,17 @@ class OCI8
   #
   # Supported properties are listed below:
   #
+  # [:time_zone]
+  #     (new in 2.1.0)
+  #     
+  #     If your application runs in a time zone which adopt daylight saving time,
+  #     you should set the environment variable TZ or this +time_zone+ property.
+  #     Otherwise, Oracle session time zone is set with current constant
+  #     offset from GMT.
+  #
   # [:length_semantics]
   #     (new in 2.1.0)
+  #     
   #     +:char+ when Oracle character length is counted by the number of characters.
   #     +:byte+ when it is counted by the number of bytes.
   #     The default setting is +:byte+ because +:char+ causes unexpected behaviour on
@@ -63,9 +75,14 @@ class OCI8
   #
   # [:float_conversion_type]
   #     (new in 2.1.0)
-  #     Specifies who converts decimal to float and vice versa.
-  #     It should be either +:ruby+ or +:oracle+. The default value
-  #     is +:ruby+.
+  #     
+  #     +:ruby+ when Oracle decimal numbers are converted to ruby Float values
+  #     same as Float#to_s does. (default)
+  #     +:oracle:+ when they are done by Oracle OCI functions.
+  #     
+  #     From ruby 1.9.2, a float value converted from Oracle number 15.7 by
+  #     the Oracle function OCINumberToReal() makes a string representation
+  #     15.700000000000001 by Float#to_s.
   #     See: http://rubyforge.org/forum/forum.php?thread_id=50030&forum_id=1078
   #
   def self.properties

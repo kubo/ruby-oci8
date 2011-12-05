@@ -1,4 +1,11 @@
 2011-12-05  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb, lib/oci8/properties.rb, test/test_datetime.rb.
+	    add OCI8.properties[:time_zone] and use ENV['TZ'] or the time_zone
+	    propery to set Oracle session time zone.
+	    Fix #3 at http://github.com/kubo/ruby-oci8.
+	    (reported by Yasuo Honda)
+
+2011-12-05  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/encoding-init.rb, lib/oci8/oci8.rb: add OCI8.client_charset_name.
 	* test/config.rb: use OCI8.client_charset_name instead of OCI8.encoding.
 	    Ruby-oci8 compiled for ruby 1.8 doesn't has the latter.
