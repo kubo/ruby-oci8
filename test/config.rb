@@ -6,7 +6,7 @@ $dbpass = "oci8"
 $dbname = nil
 
 # for test_bind_string_as_nchar in test_encoding.rb
-ENV['ORA_NCHAR_LITERAL_REPLACE'] = 'TRUE' if OCI8.encoding.name == "UTF-8"
+ENV['ORA_NCHAR_LITERAL_REPLACE'] = 'TRUE' if OCI8.client_charset_name.include? 'UTF8'
 
 # test_clob.rb
 

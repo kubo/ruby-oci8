@@ -1,3 +1,12 @@
+2011-12-05  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/encoding-init.rb, lib/oci8/oci8.rb: add OCI8.client_charset_name.
+	* test/config.rb: use OCI8.client_charset_name instead of OCI8.encoding.
+	    Ruby-oci8 compiled for ruby 1.8 doesn't has the latter.
+	* lib/oci8/properties.rb, test/test_all.rb, test/test_bind_string.rb,
+	  test/test_encoding.rb: add a test for OCI8.properties[:lenght_semantics]
+	    and move the test for OCI8.properties[:bind_string_as_nchar] from
+	    test/test_encoding.rb to test/test_bind_string.rb.
+
 2011-12-04  KUBO Takehiro  <kubo@jiubao.org>
 	* test/config.rb, test/test_encoding.rb: add tests for bind_string_as_nchar
 	    property.

@@ -96,37 +96,6 @@ EOS
       end
       drop_table('test_table')
     end
-
-    def test_bind_string_as_nchar
-      if ['AL32UTF8', 'UTF8', 'ZHS32GB18030'].include? @conn.database_charset_name
-        warn "Skip test_bind_string_as_nchar. It needs Oracle server whose database chracter set is incompatible with unicode."
-      else
-        drop_table('test_table')
-        @conn.exec("CREATE TABLE test_table (ID NUMBER(5), V VARCHAR2(10), NV1 NVARCHAR2(10), NV2 NVARCHAR2(10))")
-
-        test_data = "a\u00A1\u3042"
-        orig_prop = OCI8.properties[:bind_string_as_nchar]
-        begin
-          OCI8.properties[:bind_string_as_nchar] = false
-          @conn.exec("INSERT INTO test_table VALUES (1, N'#{test_data}', N'#{test_data}', :1)", test_data)
-          v, nv1, nv2 = @conn.select_one('select V, NV1, NV2 from test_table where ID = 1')
-          assert_not_equal(test_data, v) # Some UTF-8 chracters should be garbled.
-          assert_equal(test_data, nv1) # No garbled characters
-          assert_equal(v, nv2) # Garbled as VARCHAR2 column.
-
-          OCI8.properties[:bind_string_as_nchar] = true
-          @conn.exec("INSERT INTO test_table VALUES (2, N'#{test_data}', N'#{test_data}', :1)", test_data)
-          v, nv1, nv2 = @conn.select_one('select V, NV1, NV2 from test_table where ID = 2')
-          assert_not_equal(test_data, v) # Some UTF-8 chracters should be garbled.
-          assert_equal(test_data, nv1) # No garbled characters
-          assert_equal(nv1, nv2) # Same as NVARCHAR2.
-
-          @conn.commit
-        ensure
-          OCI8.properties[:bind_string_as_nchar] = orig_prop
-        end
-      end
-    end
   end
 
   def teardown

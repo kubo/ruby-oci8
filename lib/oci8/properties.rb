@@ -19,7 +19,7 @@ class OCI8
     raise IndexError, "No such property name: #{name}" unless @@properties.has_key?(name)
     case name
     when :length_semantic
-      if val != :byte and val != char
+      if val != :byte and val != :char
         raise ArgumentError, "Invalid property value #{val} for :length_semantics."
       end
     when :bind_string_as_nchar

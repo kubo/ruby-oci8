@@ -343,6 +343,16 @@ class OCI8
     charset_id2name(server_handle.send(:attr_get_ub2, OCI_ATTR_CHARSET_ID))
   end
 
+  # :call-seq:
+  #   OCI8.client_charset_name -> string
+  #
+  # (new in 2.1.0)
+  #
+  # Returns the client character set name.
+  def self.client_charset_name
+    @@client_charset_name
+  end
+
   # The instance of this class corresponds to cursor in the term of
   # Oracle, which corresponds to java.sql.Statement of JDBC and statement
   # handle $sth of Perl/DBI.
