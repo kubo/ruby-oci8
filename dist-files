@@ -66,9 +66,11 @@ test/test_all.rb
 test/test_appinfo.rb
 test/test_array_dml.rb
 test/test_bind_raw.rb
+test/test_bind_string.rb
 test/test_bind_time.rb
 test/test_break.rb
 test/test_clob.rb
+test/test_connection_pool.rb
 test/test_connstr.rb
 test/test_encoding.rb
 test/test_datetime.rb
