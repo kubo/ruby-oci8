@@ -760,15 +760,25 @@ EOS
       end
       cursor.close
       # Ruby Float -> Oracle Number
-      cursor = conn.parse('begin :out := :in; end;')
-      cursor.bind_param(:in, nil, Float)
-      cursor.bind_param(:out, nil, String, 50)
       LARGE_RANGE_VALUES.each do |n|
-        cursor[:in] = n.to_f
-        cursor.exec
-        assert_equal(n.to_f, cursor[:out].to_f)
+        float_val = n.to_f
+        expected_val = float_val.to_s
+        # convert 
+        if /(-?)(\d).(\d+)e([+-]?\d+)/ =~ expected_val
+          sign = $1
+          int = $2
+          frac = $3
+          shift = $4.to_i
+          if frac.length <= shift
+            expected_val = sign + int + frac + '0' * (shift - frac.length)
+          elsif shift < 0
+            expected_val = sign + '0.' + '0' * (-shift - 1) + int + frac
+            expected_val.gsub!(/0+$/, '')
+          end
+        end
+        expected_val.gsub!(/\.0$/, '')
+        assert_equal(expected_val, OraNumber(float_val).to_s, "n = #{n}, float_val.to_s = #{float_val.to_s}")
       end
-      cursor.close
     ensure
       OCI8.properties[:float_conversion_type] = orig
       conn.logoff

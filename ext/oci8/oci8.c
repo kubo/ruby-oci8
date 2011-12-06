@@ -33,6 +33,7 @@ extern rb_pid_t rb_w32_getpid(void);
 
 #define OCI8_STATE_SESSION_BEGIN_WAS_CALLED 0x01
 #define OCI8_STATE_SERVER_ATTACH_WAS_CALLED 0x02
+#define OCI8_STATE_CPOOL 0x04
 
 static VALUE cOCI8;
 static VALUE cSession;
@@ -446,9 +447,10 @@ static VALUE oci8_get_server_handle(VALUE self)
  *
  * Attachs to the server by the OCI function OCIServerAttach().
  */
-static VALUE oci8_server_attach(VALUE self, VALUE dbname, VALUE mode)
+static VALUE oci8_server_attach(VALUE self, VALUE dbname, VALUE attach_mode)
 {
     oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
+    ub4 mode = NUM2UINT(attach_mode);
 
     if (svcctx->logoff_strategy != &complex_logoff) {
         rb_raise(rb_eRuntimeError, "Use this method only for the service context handle created by OCI8#server_handle().");
@@ -461,19 +463,21 @@ static VALUE oci8_server_attach(VALUE self, VALUE dbname, VALUE mode)
     if (!NIL_P(dbname)) {
         OCI8SafeStringValue(dbname);
     }
-    Check_Type(mode, T_FIXNUM);
 
     /* attach to the server */
     chker2(OCIServerAttach_nb(svcctx, svcctx->srvhp, oci8_errhp,
                               NIL_P(dbname) ? NULL : RSTRING_ORATEXT(dbname),
                               NIL_P(dbname) ? 0 : RSTRING_LEN(dbname),
-                              FIX2UINT(mode)),
+                              mode),
            &svcctx->base);
     chker2(OCIAttrSet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX,
                       svcctx->srvhp, 0, OCI_ATTR_SERVER,
                       oci8_errhp),
            &svcctx->base);
     svcctx->state |= OCI8_STATE_SERVER_ATTACH_WAS_CALLED;
+    if (mode & OCI_CPOOL) {
+        svcctx->state |= OCI8_STATE_CPOOL;
+    }
     return self;
 }
 
@@ -630,6 +634,9 @@ static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
 #else
     sb1 non_blocking;
 
+    if (svcctx->state & OCI8_STATE_CPOOL) {
+        rb_raise(rb_eRuntimeError, "Could not set non-blocking mode to a connection allocated from OCI8::ConnectionPool.");
+    }
     chker2(OCIAttrGet(svcctx->srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp), &svcctx->base);
     if ((RTEST(val) && !non_blocking) || (!RTEST(val) && non_blocking)) {
         /* toggle blocking / non-blocking. */

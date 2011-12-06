@@ -1,8 +1,15 @@
+2011-12-06  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c: raise a RuntimeError when non-blocking mode is set to a connection
+	    allocated from OCI8::ConnectionPool on ruby 1.8.
+	    Ruby 1.9.x and rubinius don't have the limitation.
+	* test/test_connection_pool.rb: fix for ruby 1.8.
+	* test/test_oranumber.rb: fix for ruby 1.9.1 and 1.8.
+
 2011-12-05  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/oci8.rb, lib/oci8/properties.rb, test/test_datetime.rb.
 	    add OCI8.properties[:time_zone] and use ENV['TZ'] or the time_zone
 	    propery to set Oracle session time zone.
-	    Fix #3 at http://github.com/kubo/ruby-oci8.
+	    Fix #2 at http://github.com/kubo/ruby-oci8.
 	    (reported by Yasuo Honda)
 
 2011-12-05  KUBO Takehiro  <kubo@jiubao.org>
