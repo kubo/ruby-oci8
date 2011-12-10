@@ -96,9 +96,9 @@ EOS
     cursor = @conn.parse("INSERT INTO test_table VALUES (:C, :V, :N, :D1, :D2, :D3, :D4, :INT, :BIGNUM)")
     1.upto(10) do |i|
       if i == 1
-	dt = [nil, OraDate]
+        dt = [nil, OraDate]
       else
-	dt = OraDate.new(2000 + i, 8, 3, 23, 59, 59)
+        dt = OraDate.new(2000 + i, i % 2 == 0 ? 7 : 1, 3, 23, 59, 59)
       end
       cursor.exec(format("%10d", i * 10), i.to_s, i, dt, dt, dt, dt, i * 11111111111, i * 10000000000)
     end
@@ -122,9 +122,10 @@ EOS
 	assert_nil(rv[5])
 	assert_nil(rv[6])
       else
-        tm = Time.local(2000 + i, 8, 3, 23, 59, 59)
-	dt = Date.civil(2000 + i, 8, 3)
-	dttm = DateTime.civil(2000 + i, 8, 3, 23, 59, 59, Time.now.utc_offset.to_r/86400)
+        month = i % 2 == 0 ? 7 : 1
+        tm = Time.local(2000 + i, month, 3, 23, 59, 59)
+        dt = Date.civil(2000 + i, month, 3)
+        dttm = DateTime.civil(2000 + i, month, 3, 23, 59, 59, tm.utc_offset.to_r/86400)
 	assert_equal(tm, rv[3])
 	assert_equal(tm, rv[4])
 	assert_equal(dt, rv[5])
@@ -148,9 +149,10 @@ EOS
 	assert_nil(row['D3'])
 	assert_nil(row['D4'])
       else
-        tm = Time.local(2000 + i, 8, 3, 23, 59, 59)
-	dt = Date.civil(2000 + i, 8, 3)
-	dttm = DateTime.civil(2000 + i, 8, 3, 23, 59, 59, Time.now.utc_offset.to_r/86400)
+        month = i % 2 == 0 ? 7 : 1
+        tm = Time.local(2000 + i, month, 3, 23, 59, 59)
+        dt = Date.civil(2000 + i, month, 3)
+        dttm = DateTime.civil(2000 + i, month, 3, 23, 59, 59, tm.utc_offset.to_r/86400)
 	assert_equal(tm, row['D1'])
 	assert_equal(tm, row['D2'])
 	assert_equal(dt, row['D3'])

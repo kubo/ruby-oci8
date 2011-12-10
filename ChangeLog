@@ -1,3 +1,7 @@
+2011-12-10  KUBO Takehiro  <kubo@jiubao.org>
+	* test/test_oci8.rb: fix test_select when TZ set to daylight saving time.
+	    (reported by Yasuo Honda)
+
 2011-12-06  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c: raise a RuntimeError when non-blocking mode is set to a connection
 	    allocated from OCI8::ConnectionPool on ruby 1.8.
