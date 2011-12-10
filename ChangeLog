@@ -1,4 +1,8 @@
 2011-12-10  KUBO Takehiro  <kubo@jiubao.org>
+	* test/test_bind_string.rb: suppress "No tests were specified" when
+	    the client character set is not UTF-8.
+
+2011-12-10  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/oci8.rb, lib/oci8/properties.rb, test/test_datetime.rb:
 	    revert OCI8.properties[:time_zone] which was added 5 days ago.
 	* lib/oci8.rb.in: use ENV['ORA_SDTZ'] instead of 'alter session set time_zone = ...'

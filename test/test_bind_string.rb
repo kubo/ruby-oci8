@@ -96,5 +96,11 @@ EOS
         OCI8.properties[:length_semantics] = orig_prop
       end
     end
+
+  else
+
+    def test_dummy
+      # to suppress "No tests were specified."
+    end
   end
 end
