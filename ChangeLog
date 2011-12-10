@@ -1,4 +1,11 @@
 2011-12-10  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb, lib/oci8/properties.rb, test/test_datetime.rb:
+	    revert OCI8.properties[:time_zone] which was added 5 days ago.
+	* lib/oci8.rb.in: use ENV['ORA_SDTZ'] instead of 'alter session set time_zone = ...'
+	    to set Oracle session time zone. On cygwin, explicitly set
+	    environments variables which start with 'ORA_' to WIN32 environments.
+
+2011-12-10  KUBO Takehiro  <kubo@jiubao.org>
 	* test/test_oci8.rb: fix test_select when TZ set to daylight saving time.
 	    (reported by Yasuo Honda)
 

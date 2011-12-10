@@ -5,7 +5,6 @@
 class OCI8
 
   @@properties = {
-    :time_zone => nil,
     :length_semantics => :byte,
     :bind_string_as_nchar => false,
     :float_conversion_type => :ruby,
@@ -19,8 +18,6 @@ class OCI8
   def @@properties.[]=(name, val)
     raise IndexError, "No such property name: #{name}" unless @@properties.has_key?(name)
     case name
-    when :time_zone
-      raise TypeError, "invalid property type #{val.class}" unless val.nil? or val.is_a? String
     when :length_semantic
       if val != :byte and val != :char
         raise ArgumentError, "Invalid property value #{val} for :length_semantics."
@@ -52,14 +49,6 @@ class OCI8
   #   OCI8.properties[:invalid_property_name] = true # raises an IndexError
   #
   # Supported properties are listed below:
-  #
-  # [:time_zone]
-  #     (new in 2.1.0)
-  #     
-  #     If your application runs in a time zone which adopt daylight saving time,
-  #     you should set the environment variable TZ or this +time_zone+ property.
-  #     Otherwise, Oracle session time zone is set with current constant
-  #     offset from GMT.
   #
   # [:length_semantics]
   #     (new in 2.1.0)

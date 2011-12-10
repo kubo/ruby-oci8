@@ -140,9 +140,6 @@ class OCI8
 
     @prefetch_rows = nil
     @username = nil
-
-    time_zone = OCI8.properties[:time_zone] || ENV['TZ']
-    exec("alter session set time_zone = '#{time_zone}'") if time_zone and time_zone.length > 0
   end
 
   # call-seq:
