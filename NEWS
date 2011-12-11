@@ -1,3 +1,114 @@
+2.1.0:
+
+*** Ruby-oci8 2.1.0 doesn't support Oracle 8 (8.0) and Oracle 8i (8.1) anymore. ***
+
+* New Features
+
+  - OCI connection pooling
+
+    See: http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/oci09adv.htm#sthref1479
+    and http://docs.oracle.com/cd/E11882_01/java.112/e16548/ociconpl.htm#JJDBC28789
+
+    Example:
+
+      # Create a connection pool.
+      # username and password are required to establish an implicit primary session.
+      cpool = OCI8::ConnectionPool.new(1, 5, 2, username, password, database)
+
+      # Get a session from the pool.
+      # Pass the connection pool to the third argument.
+      conn1 = OCI8.new(username, password, cpool)
+
+      # Get another session.
+      conn2 = OCI8.new(username, password, cpool)
+
+  - Daylight saving time aware if TZ is set.
+
+    You should set the environment variable TZ if your applications run
+    in a time zone with daylight saving time transitions.
+    Otherwise, Oracle session time zone is set with current constant
+    offset from GMT.
+    (reported by Yasuo Honda)
+
+  - connect as sysasm (Oracle 11g only)
+
+      OCI8.new('username/password as sysasm')
+    or
+      OCI8.new('username', 'password', nil, :SYSASM)
+
+  - Oracle number is converted to ruby float exactly same as ruby does.
+
+    From ruby 1.9.2, a float value converted from Oracle number 15.7 by
+    the Oracle function OCINumberToReal() makes a string representation
+    15.700000000000001 by Float#to_s. (See: http://redmine.ruby-lang.org/issues/4656)
+    To avoid this issue, any Oracle number is converted to a float as
+    ruby's String#to_f does.
+
+    The behavior is customizable by OCI8.properties[:float_conversion_type].
+
+      OCI8.properties[:float_conversion_type] = :oracle # => Use OCINumberToReal()
+      OCI8.properties[:float_conversion_type] = :ruby # => Use String#to_f
+
+    The default value is :ruby.
+
+  - OCI_SUCCESS_WITH_INFO handling is changed.
+
+    Ruby-oci8 2.0 treats OCI_SUCCESS_WITH_INFO in OCI layer as an error
+    and raise an exception OCISuccessWithInfo such as "ORA-24347: Warning of
+    a NULL column in an aggregate function" and "ORA-28002: the password will
+    expire within xx days."
+
+    From 2.1.0, it is treated as a warning and the exception is set
+    to OCI8#last_error.
+
+  - OCI8#last_error
+
+    The last error or warning associated with the session is set to
+    OCI8#last_error. The usecase is to detect OCI_SUCCESS_WITH_INFO.
+    It is reset by OCI8#exec and OCI8#parse.
+
+  - Experimental support of character length semantics
+
+    This is enabled when :char is set to OCI8.properties[:length_semantics].
+
+  - OCI8.client_charset_name and OCI8#database_charset_name is added.
+
+    They return Oracle charset name such as WE8ISO8859P15.
+
+* Specification changes
+
+  - The parent class OCINoData was changed from OCIException to OCIError.
+
+* Fixed Issues
+
+  - Fix a bug that an array is always bound as null.
+    This bug was introduced in ruby-oci8 2.0.5.
+    (reported by Leoš Bitto)
+
+  - Avoid a gcc internal compiler error when using ruby1.9.2-p290 on
+    ubuntu 11.10 (64bit). (reported by Bob Saveland.)
+
+  - Fix compilation problems on Solaris.
+    (Reported by Sanjiv Patel.)
+
+  - Fix compilation problems on Linux.
+    (Reported by Edgars Beigarts.)
+
+  - Connections are released by GC without explicit logoff.
+
+  - Set ruby encoding CP950 for oracle characterset ZHT16MSWIN950 and
+    CP951 for ZHT16HKSCS and ZHT16HKSCS31 when the ruby is 1.9.3.
+
+  - Clear an executuing thread information in a connection when a SQL
+    executions is canceled by Thread#kill or Timeout::timeout.
+    (reported by Aaron Qian)
+
+  - Fix some test cases for object type and TZ issues.
+    (reported by Yasuo Honda)
+
+  - Use Gem::Command.build_args to get arguments after '--'.
+    (reported by jbirdjavi)
+
 2.0.6:
 
 * Fixed issues

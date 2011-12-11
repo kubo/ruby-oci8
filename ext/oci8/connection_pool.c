@@ -62,6 +62,8 @@ static oci8_base_vtable_t oci8_cpool_vtable = {
  * <i>conn_max</i> specifies the maximum number of connections that
  * can be opened to the database. Once this value is reached, no more
  * connections are opened. Valid values are 1 and higher.
+ * Note that this limits the number of concurent SQL executions, not
+ * the number of concurrent sessions.
  *
  * <i>conn_incr</i> allows the application to set the next increment
  * for connections to be opened to the database if the current number

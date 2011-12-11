@@ -1,3 +1,8 @@
+2011-12-11  KUBO Takehiro  <kubo@jiubao.org>
+	* NEWS: add changes between 2.0.6 and 2.1.0.
+	* README, test/README: rewritten.
+	* ext/oci8/connection_pool.c: add a note.
+
 2011-12-10  KUBO Takehiro  <kubo@jiubao.org>
 	* test/test_bind_string.rb: suppress "No tests were specified" when
 	    the client character set is not UTF-8.
