@@ -1,4 +1,7 @@
 2011-12-11  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/connection_pool.c: fix a buffer overrun in oci8_cpool_initialize().
+
+2011-12-11  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 2.0.6 and 2.1.0.
 	* README, test/README: rewritten.
 	* ext/oci8/connection_pool.c: add a note.

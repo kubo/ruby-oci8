@@ -45,7 +45,7 @@ static void oci8_cpool_init(oci8_base_t *base)
 static oci8_base_vtable_t oci8_cpool_vtable = {
     oci8_cpool_mark,
     oci8_cpool_free,
-    sizeof(oci8_base_t),
+    sizeof(oci8_cpool_t),
     oci8_cpool_init,
 };
 
