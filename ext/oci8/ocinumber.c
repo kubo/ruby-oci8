@@ -1380,13 +1380,13 @@ static VALUE
 onum_s_load(VALUE klass, VALUE str)
 {
     unsigned char *c;
-    int size;
+    size_t size;
     OCINumber num;
 
     Check_Type(str, T_STRING);
     c = RSTRING_ORATEXT(str);
     size = RSTRING_LEN(str);
-    if (size == 0 || size != c[0] + 1 || size > sizeof(num)) {
+    if (size == 0 || size != c[0] + 1u || size > sizeof(num)) {
         rb_raise(rb_eTypeError, "marshaled OCI::Number format differ");
     }
     memset(&num, 0, sizeof(num));

@@ -220,10 +220,15 @@ typedef VALUE rb_blocking_function_t(void *);
 #define IS_OCI_ERROR(v) (((v) != OCI_SUCCESS) && ((v) != OCI_SUCCESS_WITH_INFO))
 #ifdef ALWAYS_INLINE
 #define TO_ORATEXT to_oratext
+#define TO_CONST_ORATEXT to_const_oratext
 #define TO_CHARPTR to_charptr
 static ALWAYS_INLINE OraText *to_oratext(char *c)
 {
     return (OraText*)c;
+}
+static ALWAYS_INLINE const OraText *to_const_oratext(const char *c)
+{
+    return (const OraText*)c;
 }
 static ALWAYS_INLINE char *to_charptr(OraText *c)
 {
@@ -231,6 +236,7 @@ static ALWAYS_INLINE char *to_charptr(OraText *c)
 }
 #else
 #define TO_ORATEXT(c) ((OraText*)(c))
+#define TO_CONST_ORATEXT(c) ((const OraText*)(c))
 #define TO_CHARPTR(c) ((char*)(c))
 #endif
 #define RSTRING_ORATEXT(obj) TO_ORATEXT(RSTRING_PTR(obj))

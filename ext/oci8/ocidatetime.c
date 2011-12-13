@@ -265,8 +265,8 @@ static void bind_ocitimestamp_tz_set(oci8_bind_t *obind, void *data, void **null
     if (svcctx == NULL || svcctx->type != OCI_HTYPE_SVCCTX) {
         rb_raise(rb_eRuntimeError, "oci8lib.so internal error [%s:%d, %p, %d, %p, %d]",
                  __FILE__, __LINE__,
-                 parent, parent ? parent->type : -1,
-                 svcctx, svcctx ? svcctx->type : -1);
+                 parent, parent ? (int)parent->type : -1,
+                 svcctx, svcctx ? (int)svcctx->type : -1);
     }
     oci8_set_ocitimestamp_tz(*(OCIDateTime **)data, val, svcctx->self);
 }
@@ -328,7 +328,7 @@ OCIInterval *oci8_set_ociinterval_ym(OCIInterval *intvl, VALUE val)
     } else {
         /* Workaround for Bug 2227982 */
         char buf[64];
-        char *sign = "";
+        const char *sign = "";
 
         if (year < 0 && month != 0) {
             year += 1;
@@ -383,7 +383,7 @@ OCIInterval *oci8_set_ociinterval_ds(OCIInterval *intvl, VALUE val)
     } else {
         /* Workaround for Bug 2227982 */
         char buf[64];
-        char *sign = "";
+        const char *sign = "";
 
         if (day == 0) {
             if (hour < 0) {

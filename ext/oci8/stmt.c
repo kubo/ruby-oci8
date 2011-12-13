@@ -144,7 +144,6 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     sword status;
     VALUE old_value;
     void *indp;
-    ub4 *curelep;
 
     if (NIL_P(vplaceholder)) { /* 1 */
         placeholder_ptr = NULL;
@@ -170,11 +169,6 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     vptr = (const oci8_bind_vtable_t *)obind->base.vptr;
 
     indp = NIL_P(obind->tdo) ? obind->u.inds : NULL;
-    if (obind->maxar_sz == 0) {
-        curelep = NULL;
-    } else {
-        curelep = &obind->curar_sz;
-    }
     if (placeholder_ptr == (char*)-1) {
         status = OCIBindByPos(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, position, obind->valuep, obind->value_sz, vptr->dty, indp, NULL, 0, 0, 0, OCI_DEFAULT);
     } else {

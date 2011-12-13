@@ -830,7 +830,7 @@ static VALUE oci8_ping(VALUE self)
  */
 static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
 {
-    char *ptr;
+    const char *ptr;
     ub4 size;
 
     if (!NIL_P(val)) {
@@ -846,7 +846,7 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
         if (size > 0 && ptr[0] == ':') {
             rb_raise(rb_eArgError, "client identifier should not start with ':'.");
         }
-        chker2(OCIAttrSet(oci8_get_oci_session(self), OCI_HTYPE_SESSION, ptr,
+        chker2(OCIAttrSet(oci8_get_oci_session(self), OCI_HTYPE_SESSION, (dvoid*)ptr,
                           size, OCI_ATTR_CLIENT_IDENTIFIER, oci8_errhp),
                DATA_PTR(self));
     } else {
@@ -854,7 +854,7 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
         oci8_exec_sql_var_t bind_vars[1];
 
         /* :client_id */
-        bind_vars[0].valuep = ptr;
+        bind_vars[0].valuep = (dvoid*)ptr;
         bind_vars[0].value_sz = size;
         bind_vars[0].dty = SQLT_CHR;
         bind_vars[0].indp = NULL;
@@ -904,7 +904,7 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
  */
 static VALUE oci8_set_module(VALUE self, VALUE val)
 {
-    char *ptr;
+    const char *ptr;
     ub4 size;
 
     if (!NIL_P(val)) {
@@ -917,7 +917,7 @@ static VALUE oci8_set_module(VALUE self, VALUE val)
     }
     if (oracle_client_version >= ORAVER_10_1) {
         /* Oracle 10g or upper */
-        chker2(OCIAttrSet(oci8_get_oci_session(self), OCI_HTYPE_SESSION, ptr,
+        chker2(OCIAttrSet(oci8_get_oci_session(self), OCI_HTYPE_SESSION, (dvoid*)ptr,
                           size, OCI_ATTR_MODULE, oci8_errhp),
                DATA_PTR(self));
     } else {
@@ -925,7 +925,7 @@ static VALUE oci8_set_module(VALUE self, VALUE val)
         oci8_exec_sql_var_t bind_vars[1];
 
         /* :module */
-        bind_vars[0].valuep = ptr;
+        bind_vars[0].valuep = (dvoid*)ptr;
         bind_vars[0].value_sz = size;
         bind_vars[0].dty = SQLT_CHR;
         bind_vars[0].indp = NULL;
@@ -974,7 +974,7 @@ static VALUE oci8_set_module(VALUE self, VALUE val)
  */
 static VALUE oci8_set_action(VALUE self, VALUE val)
 {
-    char *ptr;
+    const char *ptr;
     ub4 size;
 
     if (!NIL_P(val)) {
@@ -987,7 +987,7 @@ static VALUE oci8_set_action(VALUE self, VALUE val)
     }
     if (oracle_client_version >= ORAVER_10_1) {
         /* Oracle 10g or upper */
-        chker2(OCIAttrSet(oci8_get_oci_session(self), OCI_HTYPE_SESSION, ptr,
+        chker2(OCIAttrSet(oci8_get_oci_session(self), OCI_HTYPE_SESSION, (dvoid*)ptr,
                           size, OCI_ATTR_ACTION, oci8_errhp),
                DATA_PTR(self));
     } else {
@@ -995,7 +995,7 @@ static VALUE oci8_set_action(VALUE self, VALUE val)
         oci8_exec_sql_var_t bind_vars[1];
 
         /* :action */
-        bind_vars[0].valuep = ptr;
+        bind_vars[0].valuep = (dvoid*)ptr;
         bind_vars[0].value_sz = size;
         bind_vars[0].dty = SQLT_CHR;
         bind_vars[0].indp = NULL;
@@ -1037,7 +1037,7 @@ static VALUE oci8_set_action(VALUE self, VALUE val)
  */
 static VALUE oci8_set_client_info(VALUE self, VALUE val)
 {
-    char *ptr;
+    const char *ptr;
     ub4 size;
 
     if (!NIL_P(val)) {
@@ -1050,7 +1050,7 @@ static VALUE oci8_set_client_info(VALUE self, VALUE val)
     }
     if (oracle_client_version >= ORAVER_10_1) {
         /* Oracle 10g or upper */
-        chker2(OCIAttrSet(oci8_get_oci_session(self), OCI_HTYPE_SESSION, ptr,
+        chker2(OCIAttrSet(oci8_get_oci_session(self), OCI_HTYPE_SESSION, (dvoid*)ptr,
                           size, OCI_ATTR_CLIENT_INFO, oci8_errhp),
                DATA_PTR(self));
     } else {
@@ -1058,7 +1058,7 @@ static VALUE oci8_set_client_info(VALUE self, VALUE val)
         oci8_exec_sql_var_t bind_vars[1];
 
         /* :client_info */
-        bind_vars[0].valuep = ptr;
+        bind_vars[0].valuep = (dvoid*)ptr;
         bind_vars[0].value_sz = size;
         bind_vars[0].dty = SQLT_CHR;
         bind_vars[0].indp = NULL;

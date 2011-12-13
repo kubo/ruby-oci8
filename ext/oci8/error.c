@@ -244,7 +244,7 @@ VALUE oci8_get_error_message(ub4 msgno, const char *default_msg)
 
     if (have_OCIMessageGet) {
         if (msghp == NULL) {
-            chkerr(OCIMessageOpen(oci8_envhp, oci8_errhp, &msghp, TO_ORATEXT("rdbms"), TO_ORATEXT("ora"), OCI_DURATION_PROCESS));
+            chkerr(OCIMessageOpen(oci8_envhp, oci8_errhp, &msghp, TO_CONST_ORATEXT("rdbms"), TO_CONST_ORATEXT("ora"), OCI_DURATION_PROCESS));
         }
         errmsg = TO_CHARPTR(OCIMessageGet(msghp, msgno, NULL, 0));
     }
