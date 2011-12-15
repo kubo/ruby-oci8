@@ -1,3 +1,9 @@
+2011-12-15  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/object.rb, test/setup_test_object.sql, test/test_object.rb:
+	    fix "wrong number of arguments (1 for 2)" when date datatype in a object
+	    type is gotten.
+	    (repored by Leoš Bitto)
+
 2011-12-13  KUBO Takehiro  <kubo@jiubao.org>
 	* VERSION: update to 2.1.0.
 	* ext/oci8/error.c, ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/ocidatetime.c,

@@ -50,10 +50,24 @@ class TestObj1 < Test::Unit::TestCase
     attr_reader :raw_array_val
     attr_reader :obj_array_val
     attr_reader :obj_ary_of_ary_val
+    attr_reader :date_val
+#    attr_reader :date_array_val
 
     def initialize
       @n = 0.0
     end
+
+    @@offset = ::Time.local(2007).utc_offset.to_r / 86400
+    def to_test_date(n)
+      year = (1000 + n * 10).round
+      month = (n.round * 5) % 12 + 1
+      mday = (n.round * 7) % 27 + 1
+      hour = (n.round * 9) % 24
+      minute = (n.round * 11) % 60
+      sec = (n.round * 13) % 60
+      ::DateTime.civil(year, month, mday, hour, minute, sec, @@offset)
+    end
+    private :to_test_date
 
     def next
       @n += 1.2
@@ -67,6 +81,7 @@ class TestObj1 < Test::Unit::TestCase
       @str_val = $` if /.0$/ =~ @str_val
       @raw_val = @str_val
       @obj_val = ExpectedValObjElem.new(@int_val, @int_val + 1)
+      @date_val = to_test_date(@n)
       if @int_val == 1
         @int_array_val = nil
         @flt_array_val = nil
@@ -77,6 +92,7 @@ class TestObj1 < Test::Unit::TestCase
         @raw_array_val = nil
         @obj_array_val = nil
         @obj_ary_of_ary_val = nil
+#        @date_array_val = nil
       else
         @int_array_val = []
         @flt_array_val = []
@@ -87,6 +103,7 @@ class TestObj1 < Test::Unit::TestCase
         @raw_array_val = []
         @obj_array_val = []
         @obj_ary_of_ary_val = []
+#        @date_array_val = []
         0.upto(2) do |i|
           ival = @n.round
           val = (@n + i).to_s
@@ -99,6 +116,7 @@ class TestObj1 < Test::Unit::TestCase
           @str_array_val[i] = val
           @raw_array_val[i] = val
           @obj_array_val[i] = ExpectedValObjElem.new(@int_val + i, @int_val + i + 1)
+#          @date_array_val[i] = to_test_date(@n + i)
         end
         @obj_ary_of_ary_val[0] = @obj_array_val
       end
@@ -124,6 +142,8 @@ class TestObj1 < Test::Unit::TestCase
         raw_array_val = val[14]
         obj_array_val = val[15]
         obj_ary_of_ary_val = val[16]
+        date_val = val[17]
+#        date_array_val = val[18]
       else
         assert_instance_of(RbTestObj, val)
         int_val = val.int_val
@@ -143,6 +163,8 @@ class TestObj1 < Test::Unit::TestCase
         raw_array_val = val.raw_array_val
         obj_array_val = val.obj_array_val
         obj_ary_of_ary_val = val.obj_ary_of_ary_val
+        date_val = val.date_val
+#        date_array_val = val.date_array_val
       end
 
       assert_equal(@int_val, int_val)
@@ -162,6 +184,8 @@ class TestObj1 < Test::Unit::TestCase
       assert_equal(@raw_array_val, raw_array_val && raw_array_val.to_ary)
       assert_equal(@obj_array_val, obj_array_val && obj_array_val.to_ary)
       assert_equal(@obj_ary_of_ary_val, obj_ary_of_ary_val && obj_ary_of_ary_val.to_ary.collect { |elem| elem.to_ary })
+      assert_equal(@date_val, date_val)
+#      assert_equal(@date_array_val, date_array_val && date_array_val.to_ary)
     end
 
     def assert_array_in_delta(exp, val)
@@ -189,11 +213,17 @@ class TestObj1 < Test::Unit::TestCase
 
   def test_select2
     expected_val = ExpectedVal.new
-    @conn.exec("select * from rb_test_obj_tab2 order by int_val") do |row|
-      assert(expected_val.next)
-      expected_val.should_be_equal(row)
+    orig_val = OCI8::BindType::Mapping[:date]
+    OCI8::BindType::Mapping[:date] = OCI8::BindType::DateTime # TODO: Delete this line later.
+    begin
+      @conn.exec("select * from rb_test_obj_tab2 order by int_val") do |row|
+        assert(expected_val.next)
+        expected_val.should_be_equal(row)
+      end
+      assert(!expected_val.next)
+    ensure
+      OCI8::BindType::Mapping[:date] = orig_val
     end
-    assert(!expected_val.next)
   end
 
   def test_select3
