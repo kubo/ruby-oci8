@@ -1,3 +1,6 @@
+2012-01-08  KUBO Takehiro  <kubo@jiubao.org>
+	* doc/*: remove obsolete documents.
+
 2011-12-15  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/object.rb, test/setup_test_object.sql, test/test_object.rb:
 	    fix "wrong number of arguments (1 for 2)" when date datatype in a object
