@@ -1,6 +1,8 @@
 .svn
+.yardoc
 config.save
-doc/.svn
+doc
+docs/.svn
 ext/.svn
 ext/oci8/.svn
 ext/oci8/apiwrap.h

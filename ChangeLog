@@ -1,3 +1,6 @@
+2012-01-09  KUBO Takehiro  <kubo@jiubao.org>
+	* docs/install-full-client.md: add a new document file.
+
 2012-01-08  KUBO Takehiro  <kubo@jiubao.org>
 	* doc/*: remove obsolete documents.
 
