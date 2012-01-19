@@ -13,12 +13,7 @@ ENV['ORA_NCHAR_LITERAL_REPLACE'] = 'TRUE' if OCI8.client_charset_name.include? '
 nls_lang = ENV['NLS_LANG']
 nls_lang = nls_lang.split('.')[1] unless nls_lang.nil?
 nls_lang = nls_lang.upcase unless nls_lang.nil?
-case nls_lang
-when 'JA16EUC'
-  $lobfile = File.dirname(__FILE__) + '/../doc/api.ja.rd' # EUC-JP file
-else
-  $lobfile = File.dirname(__FILE__) + '/../doc/api.en.rd' # ASCII file
-end
+$lobfile = File.dirname(__FILE__) + '/../setup.rb'
 $lobreadnum = 256 # counts in charactors
 
 # don't modify below.

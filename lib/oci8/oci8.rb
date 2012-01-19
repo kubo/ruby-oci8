@@ -118,17 +118,22 @@ class OCI8
       raise "unknown privilege type #{mode}"
     end
 
-    if mode.nil? and cred.nil? and (not dbname.is_a? OCI8::ConnectionPool)
-      # logon by the OCI function OCILogon().
-      logon(username, password, dbname)
-    else
-      # logon by the OCI function OCISessionBegin().
+    if mode.nil? and cred.nil?
+      # logon by the OCI function OCILogon2().
+      logon2_mode = 0
       if dbname.is_a? OCI8::ConnectionPool
         @pool = dbname # to prevent GC from freeing the connection pool.
-        attach_mode = OCI_CPOOL
         dbname = dbname.send(:pool_name)
-      else
-        attach_mode = OCI_DEFAULT
+        logon2_mode |= 0x0200 # OCI_LOGON2_CPOOL
+      end
+      logon2(username, password, dbname, logon2_mode)
+    else
+      # logon by the OCI function OCISessionBegin().
+      attach_mode = 0
+      if dbname.is_a? OCI8::ConnectionPool
+        @pool = dbname # to prevent GC from freeing the connection pool.
+        dbname = dbname.send(:pool_name)
+        attach_mode |= 0x0200 # OCI_CPOOL
       end
 
       allocate_handles()

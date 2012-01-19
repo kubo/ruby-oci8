@@ -329,13 +329,13 @@ static const oci8_logoff_strategy_t complex_logoff = {
 
 /*
  * call-seq:
- *   logon(username, password, dbname) -> connection
+ *   logon2(username, password, dbname, mode) -> connection
  *
  * <b>internal use only</b>
  *
- * Creates a simple logon session by the OCI function OCILogon().
+ * Creates a simple logon session by the OCI function OCILogon2().
  */
-static VALUE oci8_logon(VALUE self, VALUE username, VALUE password, VALUE dbname)
+static VALUE oci8_logon2(VALUE self, VALUE username, VALUE password, VALUE dbname, VALUE mode)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
 
@@ -352,11 +352,11 @@ static VALUE oci8_logon(VALUE self, VALUE username, VALUE password, VALUE dbname
 
     /* logon */
     svcctx->base.type = OCI_HTYPE_SVCCTX;
-    chker2(OCILogon_nb(svcctx, oci8_envhp, oci8_errhp, &svcctx->base.hp.svc,
-                       RSTRING_ORATEXT(username), RSTRING_LEN(username),
-                       RSTRING_ORATEXT(password), RSTRING_LEN(password),
-                       NIL_P(dbname) ? NULL : RSTRING_ORATEXT(dbname),
-                       NIL_P(dbname) ? 0 : RSTRING_LEN(dbname)),
+    chker2(OCILogon2_nb(svcctx, oci8_envhp, oci8_errhp, &svcctx->base.hp.svc,
+                        RSTRING_ORATEXT(username), RSTRING_LEN(username),
+                        RSTRING_ORATEXT(password), RSTRING_LEN(password),
+                        NIL_P(dbname) ? NULL : RSTRING_ORATEXT(dbname),
+                        NIL_P(dbname) ? 0 : RSTRING_LEN(dbname), NUM2UINT(mode)),
            &svcctx->base);
     svcctx->logoff_strategy = &simple_logoff;
 
@@ -1099,7 +1099,7 @@ VALUE Init_oci8(void)
     rb_define_singleton_method_nodoc(cOCI8, "__set_property", oci8_s_set_property, 2);
     rb_define_singleton_method(cOCI8, "error_message", oci8_s_error_message, 1);
     rb_define_private_method(cOCI8, "parse_connect_string", oci8_parse_connect_string, 1);
-    rb_define_private_method(cOCI8, "logon", oci8_logon, 3);
+    rb_define_private_method(cOCI8, "logon2", oci8_logon2, 4);
     rb_define_private_method(cOCI8, "allocate_handles", oci8_allocate_handles, 0);
     rb_define_private_method(cOCI8, "session_handle", oci8_get_session_handle, 0);
     rb_define_private_method(cOCI8, "server_handle", oci8_get_server_handle, 0);
