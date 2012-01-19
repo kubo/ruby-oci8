@@ -1,4 +1,8 @@
 2012-01-19  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, pre-distclean.rb, ruby-oci8.gemspec: create map files
+	    of oci8lib_*.so on mingw32 in case of analyzing a core (minidump) file.
+
+2012-01-19  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.yml, ext/oci8/stmt.c, lib/oci8/oci8.rb,
 	  lib/oci8/properties.rb: enable statement caching per session in OCI layer
 	    if the Oracle client is 9iR2 or upper.

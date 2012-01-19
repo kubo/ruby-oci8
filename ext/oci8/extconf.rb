@@ -136,9 +136,8 @@ end
 
 # Config::CONFIG["ruby_version"] indicates the ruby API version.
 #  1.8   - ruby 1.8.x
-#  1.9.1 - ruby 1.9.1 and 1.9.2
-#  1.9.x - ruby 1.9.x future version which will break the API compatibility
-so_basename += Config::CONFIG["ruby_version"].gsub(/\W/, '')
+#  1.9.1 - ruby 1.9.1, 1.9.2 and 2.0.0-dev at the present time.
+so_basename += RbConfig::CONFIG["ruby_version"].gsub(/\W/, '')
 
 $defs << "-DInit_oci8lib=Init_#{so_basename}"
 $defs << "-Doci8lib=#{so_basename}"
@@ -173,6 +172,23 @@ open("depend", "w") do |f|
 end
 
 create_apiwrap()
+
+case RUBY_PLATFORM
+when /mingw32/
+  # Drop '-s' option from LDSHARED and explicitly run 'strip' to get the map file.
+  if RbConfig::MAKEFILE_CONFIG["LDSHARED"].gsub!(/-s\b/, '')
+    alias :oci8_configuration_orig :configuration
+    def configuration(*args)
+      oci8_configuration_orig(*args) << <<EOS
+
+# Dirty hack to get the map file.
+all__: all
+	nm $(DLLIB) | grep ' [TtBb] _[A-Za-z]' > $(TARGET).map
+	strip -s $(DLLIB)
+EOS
+    end
+  end
+end
 
 create_makefile(so_basename)
 
