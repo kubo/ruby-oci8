@@ -35,6 +35,7 @@ typedef struct {
     VALUE svc;
     VALUE binds;
     VALUE defns;
+    int use_stmt_release;
 } oci8_stmt_t;
 
 static void oci8_stmt_mark(oci8_base_t *base)
@@ -51,6 +52,11 @@ static void oci8_stmt_free(oci8_base_t *base)
     stmt->svc = Qnil;
     stmt->binds = Qnil;
     stmt->defns = Qnil;
+    if (stmt->use_stmt_release) {
+        OCIStmtRelease(base->hp.stmt, oci8_errhp, NULL, 0, OCI_DEFAULT);
+        base->type = 0;
+        stmt->use_stmt_release = 0;
+    }
 }
 
 static oci8_base_vtable_t oci8_stmt_vtable = {
@@ -62,20 +68,38 @@ static oci8_base_vtable_t oci8_stmt_vtable = {
 static VALUE oci8_stmt_initialize(int argc, VALUE *argv, VALUE self)
 {
     oci8_stmt_t *stmt = DATA_PTR(self);
+    oci8_svcctx_t *svcctx;
     VALUE svc;
     VALUE sql;
     sword rv;
 
     rb_scan_args(argc, argv, "11", &svc, &sql);
 
-    oci8_check_pid_consistency(oci8_get_svcctx(svc));
-    if (argc > 1)
+    svcctx = oci8_get_svcctx(svc);
+    oci8_check_pid_consistency(svcctx);
+    if (argc > 1 && oracle_client_version >= ORAVER_9_2) {
         OCI8SafeStringValue(sql);
 
-    rv = OCIHandleAlloc(oci8_envhp, &stmt->base.hp.ptr, OCI_HTYPE_STMT, 0, NULL);
-    if (rv != OCI_SUCCESS)
-        oci8_env_raise(oci8_envhp, rv);
-    stmt->base.type = OCI_HTYPE_STMT;
+        rv = OCIStmtPrepare2(svcctx->base.hp.svc, &stmt->base.hp.stmt, oci8_errhp, RSTRING_ORATEXT(sql), RSTRING_LEN(sql), NULL, 0, OCI_NTV_SYNTAX, OCI_DEFAULT);
+        if (IS_OCI_ERROR(rv)) {
+            chker2(rv, &svcctx->base);
+        }
+        stmt->base.type = OCI_HTYPE_STMT;
+        stmt->use_stmt_release = 1;
+    } else {
+        rv = OCIHandleAlloc(oci8_envhp, &stmt->base.hp.ptr, OCI_HTYPE_STMT, 0, NULL);
+        if (rv != OCI_SUCCESS) {
+            oci8_env_raise(oci8_envhp, rv);
+        }
+        stmt->base.type = OCI_HTYPE_STMT;
+        if (argc > 1) {
+            OCI8SafeStringValue(sql);
+            rv = OCIStmtPrepare(stmt->base.hp.stmt, oci8_errhp, RSTRING_ORATEXT(sql), RSTRING_LEN(sql), OCI_NTV_SYNTAX, OCI_DEFAULT);
+            if (IS_OCI_ERROR(rv)) {
+                chker3(rv, &svcctx->base, stmt->base.hp.stmt);
+            }
+        }
+    }
     stmt->svc = svc;
     stmt->binds = rb_hash_new();
     stmt->defns = rb_ary_new();
@@ -84,12 +108,6 @@ static VALUE oci8_stmt_initialize(int argc, VALUE *argv, VALUE self)
     rb_ivar_set(stmt->base.self, id_at_con, svc);
     rb_ivar_set(stmt->base.self, id_at_max_array_size, Qnil);
 
-    if (argc > 1) {
-        rv = OCIStmtPrepare(stmt->base.hp.stmt, oci8_errhp, RSTRING_ORATEXT(sql), RSTRING_LEN(sql), OCI_NTV_SYNTAX, OCI_DEFAULT);
-        if (IS_OCI_ERROR(rv)) {
-            chker3(rv, &stmt->base, stmt->base.hp.stmt);
-        }
-    }
     oci8_link_to_parent((oci8_base_t*)stmt, (oci8_base_t*)DATA_PTR(svc));
     return Qnil;
 }

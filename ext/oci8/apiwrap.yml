@@ -1343,6 +1343,28 @@ OCINlsCharSetNameToId:
             - dvoid *envhp
             - const oratext *name
 
+OCIStmtPrepare2:
+  :version: 920
+  :args:
+            - OCISvcCtx *svchp
+            - OCIStmt **stmtp
+            - OCIError *errhp
+            - const OraText *stmt
+            - ub4 stmt_len
+            - const OraText *key
+            - ub4 key_len
+            - ub4 language
+            - ub4 mode
+
+OCIStmtRelease:
+  :version: 920
+  :args:
+            - OCIStmt *stmtp
+            - OCIError *errhp
+            - const OraText *key
+            - ub4 key_len
+            - ub4 mode
+
 #
 # Oracle 10.1
 #

@@ -118,6 +118,8 @@ class OCI8
       raise "unknown privilege type #{mode}"
     end
 
+    stmt_cache_size = OCI8.properties[:statement_cache_size]
+
     if mode.nil? and cred.nil?
       # logon by the OCI function OCILogon2().
       logon2_mode = 0
@@ -126,7 +128,17 @@ class OCI8
         dbname = dbname.send(:pool_name)
         logon2_mode |= 0x0200 # OCI_LOGON2_CPOOL
       end
+      if stmt_cache_size
+        # enable statement caching
+        logon2_mode |= 0x0004 # OCI_LOGON2_STMTCACHE
+      end
+
       logon2(username, password, dbname, logon2_mode)
+
+      if stmt_cache_size
+        # set statement cache size
+        attr_set_ub4(176, stmt_cache_size) # 176: OCI_ATTR_STMTCACHESIZE
+      end
     else
       # logon by the OCI function OCISessionBegin().
       attach_mode = 0
@@ -135,12 +147,21 @@ class OCI8
         dbname = dbname.send(:pool_name)
         attach_mode |= 0x0200 # OCI_CPOOL
       end
+      if stmt_cache_size
+        # enable statement caching
+        attach_mode |= 0x0004 # OCI_STMT_CACHE
+      end
 
       allocate_handles()
       session_handle.send(:attr_set_string, OCI_ATTR_USERNAME, username) if username
       session_handle.send(:attr_set_string, OCI_ATTR_PASSWORD, password) if password
       server_attach(dbname, attach_mode)
       session_begin(cred ? cred : OCI_CRED_RDBMS, mode ? mode : OCI_DEFAULT)
+
+      if stmt_cache_size
+        # set statement cache size
+        attr_set_ub4(176, stmt_cache_size) # 176: OCI_ATTR_STMTCACHESIZE
+      end
     end
 
     @prefetch_rows = nil

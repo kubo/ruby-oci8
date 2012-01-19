@@ -1,4 +1,9 @@
 2012-01-19  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml, ext/oci8/stmt.c, lib/oci8/oci8.rb,
+	  lib/oci8/properties.rb: enable statement caching per session in OCI layer
+	    if the Oracle client is 9iR2 or upper.
+
+2012-01-19  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.yml, ext/oci8/oci8.c, lib/oci8/oci8.rb: replace
 	    OCILogon() with OCILogon2() and use the latter to use
 	    ConnectionPool.

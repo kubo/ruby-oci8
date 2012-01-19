@@ -8,7 +8,12 @@ class OCI8
     :length_semantics => :byte,
     :bind_string_as_nchar => false,
     :float_conversion_type => :ruby,
+    :statement_cache_size => 20,
   }
+
+  if OCI8.oracle_client_version < OCI8::ORAVER_9_2
+    @@properties[:statement_cache_size] = nil
+  end
 
   def @@properties.[](name)
     raise IndexError, "No such property name: #{name}" unless @@properties.has_key?(name)
@@ -27,6 +32,12 @@ class OCI8
     when :float_conversion_type
       # handled by native code in oci8lib_xx.so.
       OCI8.__set_property(name, val)
+    when :statement_cache_size
+      if OCI8.oracle_client_version < OCI8::ORAVER_9_2
+        raise RuntimeError, ":statement_cache_size is disabled on Oracle 9iR1 client."
+      end
+      val = val.to_i
+      raise ArgumentError, "The property value for :statement_cache_size must not be negative." if val < 0
     end
     super(name, val)
   end
@@ -73,6 +84,13 @@ class OCI8
   #     the Oracle function OCINumberToReal() makes a string representation
   #     15.700000000000001 by Float#to_s.
   #     See: http://rubyforge.org/forum/forum.php?thread_id=50030&forum_id=1078
+  #
+  # [:statement_cache_size]
+  #     (new in 2.1.1)
+  #     
+  #     The statement cache size per each session. The default value is 20 statements.
+  #     This feature is available on Oracle 9iR2 or later.
+  #     See: http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/oci09adv.htm#i471377
   #
   def self.properties
     @@properties
