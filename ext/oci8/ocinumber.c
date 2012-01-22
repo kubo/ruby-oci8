@@ -332,12 +332,10 @@ double oci8_onum_to_dbl(OCINumber *s, OCIError *errhp)
 
 OCINumber *oci8_dbl_to_onum(OCINumber *result, double dbl, OCIError *errhp)
 {
-    switch (fpclassify(dbl)) {
-    case FP_NAN:
+    if (isnan(dbl)) {
         rb_raise(rb_eFloatDomainError, "NaN");
         /* never reach here */
-        break;
-    case FP_INFINITE:
+    } else if (isinf(dbl)) {
         if (dbl > 0.0) {
             oranumber_from_str(result, "~", 1);
         } else {

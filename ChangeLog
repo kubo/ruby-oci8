@@ -1,3 +1,8 @@
+2012-01-22  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/ocinumber.c: Use isnan() and isinf() instead of fpclassify()
+	    for platforms which don't have fpclassify().
+	    (reported by John Beckwith)
+
 2012-01-19  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, pre-distclean.rb, ruby-oci8.gemspec: create map files
 	    of oci8lib_*.so on mingw32 in case of analyzing a core (minidump) file.
