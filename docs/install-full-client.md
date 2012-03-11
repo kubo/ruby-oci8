@@ -41,20 +41,17 @@ compiled by Oracle Solaris Studio.
 Installation
 ============
 
-Download the source code
-------------------------
-
-Download the latest tar.gz package such as ruby-oci8 2.1.0.tar.gz,
-which is the latest version at the time of writing, from [rubyforge][].
+If you get a problem in the following steps, look at {file:docs/platform-specific-issues.md}
+and {file:docs/report-installation-issue.md}.
 
 Set the library search path
------------------------
+---------------------------
 
 ### UNIX
 
 Set the library search path, whose name depends on the OS, to point to
-$ORACLE_HOME/lib. If the database is 64-bit and the ruby is 32-bit,
-use $ORACLE_HOME/lib32 instead.
+$ORACLE\_HOME/lib. If the database is 64-bit and the ruby is 32-bit,
+use $ORACLE\_HOME/lib32 instead.
 
 <table style="border: 1px #E3E3E3 solid; border-collapse: collapse; border-spacing: 0;">
 <thead>
@@ -81,28 +78,39 @@ Do not forget to export the variable as follows:
 
 If sqlplus runs correctly, library search path has no problem.
 
-Run make and install
---------------------
+gem package
+-----------
 
-### UNIX or Windows(mingw32, cygwin)
+Run the following command.
+
+    gem install ruby-oci8
+
+tar.gz package
+--------------
+
+### Download the source code
+
+Download the latest tar.gz package such as ruby-oci8 2.1.0.tar.gz,
+which is the latest version at the time of writing, from [rubyforge][].
+
+### Run make and install
+
+#### UNIX or Windows(mingw32, cygwin)
 
     gzip -dc ruby-oci8-VERSION.tar.gz | tar xvf -
     cd ruby-oci8-VERSION
     make
     make install
 
-note: If you use '''sudo''', use it only when running 'make install'.
-sudo doesn't pass library search path to the executing command for security reasons.
+note: If you use '`sudo`', use it only when running '`make install`'.
+'`sudo`' doesn't pass library search path to the executing command for security reasons.
 
-### Windows(mswin32)
+#### Windows(mswin32)
 
 
     gzip -dc ruby-oci8-VERSION.tar.gz | tar xvf -
     cd ruby-oci8-VERSION
     nmake
     nmake install
-
-If you have a problem, look at {file:docs/platform-specific-issues.md}
-and {file:docs/report-installation-issue.md}.
 
 [rubyforge]: http://rubyforge.org/frs/?group_id=256
