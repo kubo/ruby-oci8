@@ -55,8 +55,8 @@ EOS
       raise "No compiled binary are found. Run make in advance."
     end
     # add map files to analyze a core (minidump) file.
-    so_files << 'ext/oci8/oci8lib_18.map' if has_1_8 and 'ext/coi8/oci8lib_18.map'
-    so_files << 'ext/oci8/oci8lib_191.map' if has_1_9_1 and 'ext/coi8/oci8lib_191.map'
+    so_files << 'ext/oci8/oci8lib_18.map' if has_1_8 and File.exists? 'ext/oci8/oci8lib_18.map'
+    so_files << 'ext/oci8/oci8lib_191.map' if has_1_9_1 and File.exists? 'ext/oci8/oci8lib_191.map'
 
     FileUtils.copy so_files, 'lib', :preserve => true
     files.reject! do |fname|
