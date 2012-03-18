@@ -38,9 +38,19 @@ class TestDateTime < Test::Unit::TestCase
     #Time.local(*str.split(/[- :\.]/).collect do |n| n.to_i; end)
   end
 
+  def string_to_datetime(str)
+    /(\d+-\d+-\d+ ?(?:\d+:\d+:\d+)?(?:\.\d+)?) ?([+-]\d+:\d+)?/ =~ str
+    if $2
+      # with time zone
+      DateTime.parse(str)
+    else
+      tm = string_to_time(str)
+      DateTime.parse(str + timezone_string(*((tm.utc_offset / 60).divmod 60)))
+    end
+  end
+
   def setup
     @conn = get_oci8_connection
-    @local_timezone = timezone_string(*((::Time.now.utc_offset / 60).divmod 60))
   end
 
   def teardown
@@ -48,7 +58,8 @@ class TestDateTime < Test::Unit::TestCase
   end
 
   def test_date_select
-    ['2005-12-31 23:59:59',
+    ['2005-06-01 00:00:00',
+     '2005-12-31 23:59:59',
      '2006-01-01 00:00:00'].each do |date|
       @conn.exec(<<-EOS) do |row|
 SELECT TO_DATE('#{date}', 'YYYY-MM-DD HH24:MI:SS') FROM dual
@@ -66,11 +77,12 @@ END;
 EOS
     cursor.bind_param(:out, nil, DateTime)
     cursor.bind_param(:in, nil, String, 36)
-    ['2005-12-31 23:59:59',
+    ['2005-06-01 00:00:00',
+     '2005-12-31 23:59:59',
      '2006-01-01 00:00:00'].each do |date|
       cursor[:in] = date
       cursor.exec
-      assert_equal(DateTime.parse(date + @local_timezone), cursor[:out])
+      assert_equal(string_to_datetime(date), cursor[:out])
     end
     cursor.close
   end
@@ -86,9 +98,10 @@ END;
 EOS
     cursor.bind_param(:out, nil, String, 33)
     cursor.bind_param(:in, nil, DateTime)
-    ['2005-12-31 23:59:59',
+    ['2005-06-01 00:00:00',
+     '2005-12-31 23:59:59',
      '2006-01-01 00:00:00'].each do |date|
-      cursor[:in] = DateTime.parse(date + @local_timezone)
+      cursor[:in] = string_to_datetime(date)
       cursor.exec
       assert_equal(date, cursor[:out])
     end
@@ -96,7 +109,8 @@ EOS
   end
 
   def test_timestamp_select
-    ['2005-12-31 23:59:59.999999000',
+    ['2005-06-01 00:00:00.999999000',
+     '2005-12-31 23:59:59.999999000',
      '2006-01-01 00:00:00.000000000'].each do |date|
       @conn.exec(<<-EOS) do |row|
 SELECT TO_TIMESTAMP('#{date}', 'YYYY-MM-DD HH24:MI:SS.FF') FROM dual
@@ -114,11 +128,12 @@ END;
 EOS
     cursor.bind_param(:out, nil, DateTime)
     cursor.bind_param(:in, nil, String, 36)
-    ['2005-12-31 23:59:59.999999000',
+    ['2005-06-01 00:00:00.999999000',
+     '2005-12-31 23:59:59.999999000',
      '2006-01-01 00:00:00.000000000'].each do |date|
       cursor[:in] = date
       cursor.exec
-      assert_equal(DateTime.parse(date + @local_timezone), cursor[:out])
+      assert_equal(string_to_datetime(date), cursor[:out])
     end
     cursor.close
   end
@@ -131,9 +146,10 @@ END;
 EOS
     cursor.bind_param(:out, nil, String, 33)
     cursor.bind_param(:in, nil, DateTime)
-    ['2005-12-31 23:59:59.999999000',
+    ['2005-06-01 00:00:00.999999000',
+     '2005-12-31 23:59:59.999999000',
      '2006-01-01 00:00:00.000000000'].each do |date|
-      cursor[:in] = DateTime.parse(date + @local_timezone)
+      cursor[:in] = string_to_datetime(date)
       cursor.exec
       assert_equal(date, cursor[:out])
     end
@@ -141,7 +157,8 @@ EOS
   end
 
   def test_timestamp_tz_select
-    ['2005-12-31 23:59:59.999999000 +08:30',
+    ['2005-06-01 00:00:00.999999000 +00:00',
+     '2005-12-31 23:59:59.999999000 +08:30',
      '2006-01-01 00:00:00.000000000 -08:30'].each do |date|
       @conn.exec(<<-EOS) do |row|
 SELECT TO_TIMESTAMP_TZ('#{date}', 'YYYY-MM-DD HH24:MI:SS.FF TZH:TZM') FROM dual
@@ -149,7 +166,7 @@ EOS
         expected_val = begin
                          string_to_time(date)
                        rescue
-                         DateTime.parse(date)
+                         string_to_datetime(date)
                        end
         assert_equal(expected_val, row[0])
       end
@@ -164,11 +181,12 @@ END;
 EOS
     cursor.bind_param(:out, nil, DateTime)
     cursor.bind_param(:in, nil, String, 36)
-    ['2005-12-31 23:59:59.999999000 +08:30',
-     '2006-01-01 00:00:00.000000000 -08:30'].each do |date|
+    ['2005-06-01 00:00:00.999999000 -08:30',
+     '2005-12-31 23:59:59.999999000 +00:00',
+     '2006-01-01 00:00:00.000000000 +08:30'].each do |date|
       cursor[:in] = date
       cursor.exec
-      assert_equal(DateTime.parse(date), cursor[:out])
+      assert_equal(string_to_datetime(date), cursor[:out])
     end
     cursor.close
   end
@@ -181,9 +199,10 @@ END;
 EOS
     cursor.bind_param(:out, nil, String, 36)
     cursor.bind_param(:in, nil, DateTime)
-    ['2005-12-31 23:59:59.999999000 +08:30',
-     '2006-01-01 00:00:00.000000000 -08:30'].each do |date|
-      cursor[:in] = DateTime.parse(date)
+    ['2005-06-01 00:00:00.999999999 +08:30',
+     '2005-12-31 23:59:59.999999000 -08:30',
+     '2006-01-01 00:00:00.000000000 +00:00'].each do |date|
+      cursor[:in] = string_to_datetime(date)
       cursor.exec
       assert_equal(date, cursor[:out])
     end
@@ -201,48 +220,48 @@ EOS
     def obj.day; 31; end
     cursor[:in] = obj
     cursor.exec
-    assert_equal(DateTime.parse('2006-12-31 00:00:00' + @local_timezone), cursor[:out])
+    assert_equal(string_to_datetime('2006-12-31 00:00:00'), cursor[:out])
     # test hour
     def obj.hour; 23; end
     cursor[:in] = obj
     cursor.exec
-    assert_equal(DateTime.parse('2006-12-31 23:00:00' + @local_timezone), cursor[:out])
+    assert_equal(string_to_datetime('2006-12-31 23:00:00'), cursor[:out])
     # test min
     def obj.min; 59; end
     cursor[:in] = obj
     cursor.exec
-    assert_equal(DateTime.parse('2006-12-31 23:59:00' + @local_timezone), cursor[:out])
+    assert_equal(string_to_datetime('2006-12-31 23:59:00'), cursor[:out])
     # test sec
     def obj.sec; 59; end
     cursor[:in] = obj
     cursor.exec
-    assert_equal(DateTime.parse('2006-12-31 23:59:59' + @local_timezone), cursor[:out])
+    assert_equal(string_to_datetime('2006-12-31 23:59:59'), cursor[:out])
 
     # test sec_fraction
     def obj.sec_fraction; DateTime.parse('0001-01-01 00:00:00.000001').sec_fraction * 999999 ; end
     cursor[:in] = obj
     cursor.exec
-    assert_equal(DateTime.parse('2006-12-31 23:59:59.999999' + @local_timezone), cursor[:out])
+    assert_equal(string_to_datetime('2006-12-31 23:59:59.999999'), cursor[:out])
     # test utc_offset (Time)
     def obj.utc_offset; @utc_offset; end
     obj.instance_variable_set(:@utc_offset, 9 * 60 * 60)
     cursor[:in] = obj
     cursor.exec
-    assert_equal(DateTime.parse('2006-12-31 23:59:59.999999 +09:00'), cursor[:out])
+    assert_equal(string_to_datetime('2006-12-31 23:59:59.999999 +09:00'), cursor[:out])
     obj.instance_variable_set(:@utc_offset, -5 * 60 * 60)
     cursor[:in] = obj
     cursor.exec
-    assert_equal(DateTime.parse('2006-12-31 23:59:59.999999 -05:00'), cursor[:out])
+    assert_equal(string_to_datetime('2006-12-31 23:59:59.999999 -05:00'), cursor[:out])
     # test offset (DateTime)
     def obj.offset; @offset; end
     obj.instance_variable_set(:@offset, 9.to_r / 24)
     cursor[:in] = obj
     cursor.exec
-    assert_equal(DateTime.parse('2006-12-31 23:59:59.999999 +09:00'), cursor[:out])
+    assert_equal(string_to_datetime('2006-12-31 23:59:59.999999 +09:00'), cursor[:out])
     obj.instance_variable_set(:@offset, -5.to_r / 24)
     cursor[:in] = obj
     cursor.exec
-    assert_equal(DateTime.parse('2006-12-31 23:59:59.999999 -05:00'), cursor[:out])
+    assert_equal(string_to_datetime('2006-12-31 23:59:59.999999 -05:00'), cursor[:out])
   end
 
   def test_timezone

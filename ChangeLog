@@ -1,3 +1,7 @@
+2012-03-18  KUBO Takehiro  <kubo@jiubao.org>
+	* test/test_datetime.rb: fix testcase failures in DST.
+	    (reported by Yasuo Honda)
+
 2012-03-11  KUBO Takehiro  <kubo@jiubao.org>
 	* dist-files, docs/install-full-client.md, docs/install-instant-client.md,
 	  docs/platform-specific-issues.md: add and fix documents.
