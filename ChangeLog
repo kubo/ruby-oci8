@@ -1,3 +1,6 @@
+2012-04-02  KUBO Takehiro  <kubo@jiubao.org>
+	* NEWS: change the text format to markdown.
+
 2012-03-18  KUBO Takehiro  <kubo@jiubao.org>
 	* test/test_datetime.rb: fix testcase failures in DST.
 	    (reported by Yasuo Honda)
