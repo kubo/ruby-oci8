@@ -112,7 +112,9 @@ static VALUE onum_s_alloc(VALUE klass)
     return obj;
 }
 
-/* construct an ruby object(OCI::Number) from C structure (OCINumber). */
+/*
+ * OCINumber (C datatype) -> OraNumber (ruby object)
+ */
 VALUE oci8_make_ocinumber(OCINumber *s, OCIError *errhp)
 {
     VALUE obj;
@@ -123,6 +125,9 @@ VALUE oci8_make_ocinumber(OCINumber *s, OCIError *errhp)
     return obj;
 }
 
+/*
+ * OCINumber (C datatype) -> Integer (ruby object)
+ */
 VALUE oci8_make_integer(OCINumber *s, OCIError *errhp)
 {
     signed long sl;
@@ -141,12 +146,17 @@ VALUE oci8_make_integer(OCINumber *s, OCIError *errhp)
     rb_raise(eOCIException, "Invalid internal number format: %s", buf);
 }
 
+/*
+ * OCINumber (C datatype) -> Float (ruby object)
+ */
 VALUE oci8_make_float(OCINumber *s, OCIError *errhp)
 {
     return rb_float_new(oci8_onum_to_dbl(s, errhp));
 }
 
-/* fill C structure (OCINumber) from a string. */
+/*
+ * String (ruby object) -> OCINumber (C datatype)
+ */
 static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VALUE nls_params, OCIError *errhp)
 {
     oratext *fmt_ptr;
@@ -190,8 +200,11 @@ static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VAL
                              result));
 }
 
-/* fill C structure (OCINumber) from a numeric object. */
-/* 1 - success, 0 - error */
+/*
+ * Numeric (ruby object) -> OCINumber (C datatype)
+ *
+ * @return 1 on success. Otherwise, 0.
+ */
 static int set_oci_number_from_num(OCINumber *result, VALUE num, int force, OCIError *errhp)
 {
     signed long sl;
@@ -287,6 +300,9 @@ is_not_big_decimal:
     return 0;
 }
 
+/*
+ * Numeric (ruby object) -> OCINumber (C datatype)
+ */
 OCINumber *oci8_set_ocinumber(OCINumber *result, VALUE self, OCIError *errhp)
 {
     set_oci_number_from_num(result, self, 1, errhp);
@@ -294,6 +310,9 @@ OCINumber *oci8_set_ocinumber(OCINumber *result, VALUE self, OCIError *errhp)
 }
 #define TO_OCINUM oci8_set_ocinumber
 
+/*
+ * Numeric (ruby object) -> OCINumber (C datatype) as an integer
+ */
 OCINumber *oci8_set_integer(OCINumber *result, VALUE self, OCIError *errhp)
 {
     OCINumber work;
@@ -303,6 +322,9 @@ OCINumber *oci8_set_integer(OCINumber *result, VALUE self, OCIError *errhp)
     return result;
 }
 
+/*
+ * OCINumber (C datatype) -> double (C datatype)
+ */
 double oci8_onum_to_dbl(OCINumber *s, OCIError *errhp)
 {
     if (oci8_float_conversion_type_is_ruby) {
@@ -330,6 +352,9 @@ double oci8_onum_to_dbl(OCINumber *s, OCIError *errhp)
     }
 }
 
+/*
+ * double (C datatype) -> OCINumber (C datatype)
+ */
 OCINumber *oci8_dbl_to_onum(OCINumber *result, double dbl, OCIError *errhp)
 {
     if (isnan(dbl)) {
@@ -361,10 +386,15 @@ OCINumber *oci8_dbl_to_onum(OCINumber *result, double dbl, OCIError *errhp)
 
 /*
  *  call-seq:
- *     OCI8::Math.atan2(y, x) -> oranumber
+ *    atan2(y, x)
  *
- *  Computes the arc tangent given <i>y</i> and <i>x</i>. Returns
- *  -PI..PI.
+ *  Computes the principal value of the arc tangent of <i>y/x</i>,
+ *  using the signs of both arguments to determine the quadrant of the
+ *  return value.
+ *
+ *  @param [Numeric] y
+ *  @param [Numeric] x
+ *  @return [OraNumber]  Computed value in the range [-{PI}, {PI}]
  */
 static VALUE omath_atan2(VALUE self, VALUE Ycoordinate, VALUE Xcoordinate)
 {
@@ -397,10 +427,12 @@ static VALUE omath_atan2(VALUE self, VALUE Ycoordinate, VALUE Xcoordinate)
 
 /*
  *  call-seq:
- *     OCI8::Math.cos(x) -> oranumber
+ *     cos(x)
  *
- *  Computes the cosine of <i>x</i> (expressed in radians). Returns
- *  -1..1.
+ *  Computes the cosine of <i>x</i>, measured in radians.
+ *
+ *  @param [Numeric] x
+ *  @return [OraNumber]  Computed value in the range [-1, 1]
  */
 static VALUE omath_cos(VALUE obj, VALUE radian)
 {
@@ -414,10 +446,12 @@ static VALUE omath_cos(VALUE obj, VALUE radian)
 
 /*
  *  call-seq:
- *     OCI8::Math.sin(x)    -> oranumber
+ *     sin(x)
  *
- *  Computes the sine of <i>x</i> (expressed in radians). Returns
- *  -1..1.
+ *  Computes the sine of <i>x</i>, measured in radians.
+ *
+ *  @param [Numeric] x
+ *  @return [OraNumber]  Computed value in the range [-1, 1]
  */
 static VALUE omath_sin(VALUE obj, VALUE radian)
 {
@@ -431,9 +465,12 @@ static VALUE omath_sin(VALUE obj, VALUE radian)
 
 /*
  *  call-seq:
- *     OCI8::Math.tan(x)    -> oranumber
+ *     tan(x)
  *
- *  Returns the tangent of <i>x</i> (expressed in radians).
+ *  Computes the tangent of <i>x</i>, measured in radians.
+ *
+ *  @param [Numeric] x
+ *  @return [OraNumber]
  */
 static VALUE omath_tan(VALUE obj, VALUE radian)
 {
@@ -447,9 +484,12 @@ static VALUE omath_tan(VALUE obj, VALUE radian)
 
 /*
  *  call-seq:
- *     OCI8::Math.acos(x)    -> oranumber
+ *     acos(x)
  *
- *  Computes the arc cosine of <i>x</i>. Returns 0..PI.
+ *  Computes the principal value of the arc cosine of <i>x</i>.
+ *
+ *  @param [Numeric] x
+ *  @return [OraNumber]  Computed value in the range [0, {PI}]
  */
 static VALUE omath_acos(VALUE obj, VALUE num)
 {
@@ -474,9 +514,12 @@ static VALUE omath_acos(VALUE obj, VALUE num)
 
 /*
  *  call-seq:
- *     OCI8::Math.asin(x)    -> oranumber
+ *     asin(x)
  *
- *  Computes the arc sine of <i>x</i>. Returns 0..PI.
+ *  Computes the principal value of the arc sine of <i>x</i>.
+ *
+ *  @param [Numeric] x
+ *  @return [OraNumber]  Computed value in the range [-{PI}/2, {PI}]/2]
  */
 static VALUE omath_asin(VALUE obj, VALUE num)
 {
@@ -501,9 +544,12 @@ static VALUE omath_asin(VALUE obj, VALUE num)
 
 /*
  *  call-seq:
- *     OCI8::Math.atan(x)    -> oranumber
+ *     atan(x)
  *
- *  Computes the arc tangent of <i>x</i>. Returns -{PI/2} .. {PI/2}.
+ *  Computes the principal value of the arc tangent of their argument <i>x</i>.
+ *
+ *  @param [Numeric] x
+ *  @return [OraNumber]  Computed value in the range [-{PI}/2, {PI}/2]
  */
 static VALUE omath_atan(VALUE obj, VALUE num)
 {
@@ -517,9 +563,12 @@ static VALUE omath_atan(VALUE obj, VALUE num)
 
 /*
  *  call-seq:
- *     OCI8::Math.cosh(x)    -> oranumber
+ *     cosh(x)
  *
- *  Computes the hyperbolic cosine of <i>x</i> (expressed in radians).
+ *  Computes the hyperbolic cosine of <i>x</i>.
+ *
+ *  @param [Numeric] x
+ *  @return [OraNumber]
  */
 static VALUE omath_cosh(VALUE obj, VALUE num)
 {
@@ -533,10 +582,12 @@ static VALUE omath_cosh(VALUE obj, VALUE num)
 
 /*
  *  call-seq:
- *     OCI8::Math.sinh(x)    -> oranumber
+ *     sinh(x)
  *
- *  Computes the hyperbolic sine of <i>x</i> (expressed in
- *  radians).
+ *  Computes the hyperbolic sine of <i>x</i>.
+ *
+ *  @param [Numeric] x
+ *  @return [OraNumber]
  */
 static VALUE omath_sinh(VALUE obj, VALUE num)
 {
@@ -550,10 +601,12 @@ static VALUE omath_sinh(VALUE obj, VALUE num)
 
 /*
  *  call-seq:
- *     OCI8::Math.tanh()    -> oranumber
+ *     tanh(x)
  *
- *  Computes the hyperbolic tangent of <i>x</i> (expressed in
- *  radians).
+ *  Computes the hyperbolic tangent of <i>x</i>.
+ *
+ *  @param [Numeric] x
+ *  @return [OraNumber]
  */
 static VALUE omath_tanh(VALUE obj, VALUE num)
 {
@@ -567,9 +620,12 @@ static VALUE omath_tanh(VALUE obj, VALUE num)
 
 /*
  *  call-seq:
- *     OCI8::Math.exp(x)    -> oranumber
+ *     exp(x)
  *
- *  Returns e**x.
+ *  Computes the base- <i>e</i> exponential of <i>x</i>.
+ *
+ *  @param [Numeric] x
+ *  @return [OraNumber]
  */
 static VALUE omath_exp(VALUE obj, VALUE num)
 {
@@ -582,12 +638,16 @@ static VALUE omath_exp(VALUE obj, VALUE num)
 }
 
 /*
- *  call-seq:
- *     OCI8::Math.log(numeric)    -> oranumber
- *     OCI8::Math.log(numeric, base_num)  -> oranumber
+ *  @overload log(x)
+ *    Computes the natural logarithm of <i>x</i>.
+ *    @param [Numeric] x
+ *    @return [OraNumber]
  *
- *  Returns the natural logarithm of <i>numeric</i> for one argument.
- *  Returns the base <i>base_num</i> logarithm of <i>numeric</i> for two arguments.
+ *  @overload log(x, y)
+ *    Computes the base <i>y</I> logarithm of <i>x</i>.
+ *    @param [Numeric] x
+ *    @param [Numeric] y
+ *    @return [OraNumber]
  */
 static VALUE omath_log(int argc, VALUE *argv, VALUE obj)
 {
@@ -620,9 +680,12 @@ static VALUE omath_log(int argc, VALUE *argv, VALUE obj)
 
 /*
  *  call-seq:
- *     OCI8::Math.log10(numeric)    -> oranumber
+ *     log10(x)
  *
- *  Returns the base 10 logarithm of <i>numeric</i>.
+ *  Computes the base 10 logarithm of <i>x</i>.
+ *
+ *  @param [Numeric] x
+ *  @return [OraNumber]
  */
 static VALUE omath_log10(VALUE obj, VALUE num)
 {
@@ -641,9 +704,12 @@ static VALUE omath_log10(VALUE obj, VALUE num)
 
 /*
  *  call-seq:
- *     OCI8::Math.sqrt(numeric)    -> oranumber
+ *     sqrt(x)
  *
- *  Returns the non-negative square root of <i>numeric</i>.
+ *  Computes the square root of <i>x</i>.
+ *
+ *  @param [Numeric] x
+ *  @return [OraNumber]
  */
 static VALUE omath_sqrt(VALUE obj, VALUE num)
 {
@@ -1525,6 +1591,13 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
     OCINumberSetPi(errhp, &num1);
     obj_PI = oci8_make_ocinumber(&num1, errhp);
 
+    /* Document-module: OCI8::Math
+     *
+     *  The <code>OCI8::Math</code> module contains module functions for basic
+     *  trigonometric and transcendental functions. Their accuracy is
+     *  same with {OraNumber}.
+     */
+
     /* The ratio of the circumference of a circle to its diameter. */
     rb_define_const(mMath, "PI", obj_PI);
 
@@ -1553,10 +1626,10 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
     rb_define_alloc_func(cOCINumber, onum_s_alloc);
 
     /* methods of OCI::Number */
-    rb_define_method(rb_cObject, "OraNumber", onum_f_new, -1);
-    rb_define_method_nodoc(cOCINumber, "initialize", onum_initialize, -1);
-    rb_define_method_nodoc(cOCINumber, "initialize_copy", onum_initialize_copy, 1);
-    rb_define_method_nodoc(cOCINumber, "coerce", onum_coerce, 1);
+    rb_define_global_function("OraNumber", onum_f_new, -1);
+    rb_define_method(cOCINumber, "initialize", onum_initialize, -1);
+    rb_define_method(cOCINumber, "initialize_copy", onum_initialize_copy, 1);
+    rb_define_method(cOCINumber, "coerce", onum_coerce, 1);
 
     rb_include_module(cOCINumber, rb_mComparable);
 
@@ -1582,15 +1655,15 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
     rb_define_method(cOCINumber, "to_r", onum_to_r, 0);
     rb_define_method(cOCINumber, "to_d", onum_to_d, 0);
     rb_define_method(cOCINumber, "has_decimal_part?", onum_has_decimal_part_p, 0);
-    rb_define_method_nodoc(cOCINumber, "to_onum", onum_to_onum, 0);
+    rb_define_method(cOCINumber, "to_onum", onum_to_onum, 0);
 
     rb_define_method(cOCINumber, "zero?", onum_zero_p, 0);
     rb_define_method(cOCINumber, "abs", onum_abs, 0);
     rb_define_method(cOCINumber, "shift", onum_shift, 1);
     rb_define_method(cOCINumber, "dump", onum_dump, 0);
 
-    rb_define_method_nodoc(cOCINumber, "hash", onum_hash, 0);
-    rb_define_method_nodoc(cOCINumber, "inspect", onum_inspect, 0);
+    rb_define_method(cOCINumber, "hash", onum_hash, 0);
+    rb_define_method(cOCINumber, "inspect", onum_inspect, 0);
 
     /* methods for marshaling */
     rb_define_method(cOCINumber, "_dump", onum__dump, -1);
@@ -1599,8 +1672,22 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
     oci8_define_bind_class("OraNumber", &bind_ocinumber_vtable);
     oci8_define_bind_class("Integer", &bind_integer_vtable);
     oci8_define_bind_class("Float", &bind_float_vtable);
+
+#if 0 /* for rdoc/yard */
+    oci8_cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
+    cOCI8 = rb_define_class("OCI8", oci8_cOCIHandle);
+    mOCI8BindType = rb_define_module_under(cOCI8, "BindType");
+    cOCI8BindTypeBase = rb_define_class_under(mOCI8BindType, "Base", oci8_cOCIHandle);
+
+    dummy1 = rb_define_class_under(mOCI8BindType, "OraNumber", cOCI8BindTypeBase);
+    dummy2 = rb_define_class_under(mOCI8BindType, "Integer", cOCI8BindTypeBase);
+    dummy3 = rb_define_class_under(mOCI8BindType, "Float", cOCI8BindTypeBase);
+#endif
 }
 
+/*
+ * OraNumber (ruby object) -> OCINumber (C datatype)
+ */
 OCINumber *oci8_get_ocinumber(VALUE num)
 {
     if (!rb_obj_is_kind_of(num, cOCINumber)) {

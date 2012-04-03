@@ -521,13 +521,21 @@ void Init_ora_date(void);
 /* ocinumber.c */
 extern int oci8_float_conversion_type_is_ruby;
 void Init_oci_number(VALUE mOCI, OCIError *errhp);
+/* OraNumber (ruby object) -> OCINumber (C datatype) */
 OCINumber *oci8_get_ocinumber(VALUE num);
+/* OCINumber (C datatype) -> OraNumber (ruby object) */
 VALUE oci8_make_ocinumber(OCINumber *s, OCIError *errhp);
+/* OCINumber (C datatype) -> Integer (ruby object) */
 VALUE oci8_make_integer(OCINumber *s, OCIError *errhp);
+/* OCINumber (C datatype) -> Float (ruby object) */
 VALUE oci8_make_float(OCINumber *s, OCIError *errhp);
+/* Numeric (ruby object) -> OCINumber (C datatype) */
 OCINumber *oci8_set_ocinumber(OCINumber *result, VALUE self, OCIError *errhp);
+/* Numeric (ruby object) -> OCINumber (C datatype) as an integer */
 OCINumber *oci8_set_integer(OCINumber *result, VALUE self, OCIError *errhp);
+/* OCINumber (C datatype) -> double (C datatype) */
 double oci8_onum_to_dbl(OCINumber *s, OCIError *errhp);
+/* double (C datatype) -> OCINumber (C datatype) */
 OCINumber *oci8_dbl_to_onum(OCINumber *result, double dbl, OCIError *errhp);
 
 /* ocidatetim.c */
