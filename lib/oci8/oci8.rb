@@ -733,39 +733,60 @@ class OraNumber
   if defined? Psych and YAML == Psych
 
     yaml_tag '!ruby/object:OraNumber'
-    def encode_with coder # :nodoc:
+
+    # @private
+    def encode_with coder
       coder.scalar = self.to_s
     end
 
-    def init_with coder # :nodoc:
+    # @private
+    def init_with coder
       initialize(coder.scalar)
     end
 
   else
 
-    def yaml_initialize(type, val) # :nodoc:
+    # @private
+    def yaml_initialize(type, val)
       initialize(val)
     end
 
-    def to_yaml(opts = {}) # :nodoc:
+    # @private
+    def to_yaml(opts = {})
       YAML.quick_emit(object_id, opts) do |out|
         out.scalar(taguri, self.to_s, :plain)
       end
     end
   end
 
-  def to_json(options=nil) # :nodoc:
+  # @private
+  def to_json(options=nil)
     to_s
   end
 end
 
 class Numeric
+  # Converts +self+ to {OraNumber}.
   def to_onum
     OraNumber.new(self)
   end
 end
 
-class String
+class String # :nodoc:
+
+  # Converts +self+ to {OraNumber}.
+  # Optional <i>fmt</i> and <i>nlsparam</i> is used as
+  # {http://docs.oracle.com/cd/E11882_01/server.112/e17118/functions211.htm Oracle SQL function TO_NUMBER}
+  # does.
+  #
+  # @example
+  #   '123456.789'.to_onum # => #<OraNumber:123456.789>
+  #   '123,456.789'.to_onum('999,999,999.999') # => #<OraNumber:123456.789>
+  #   '123.456,789'.to_onum('999G999G999D999', "NLS_NUMERIC_CHARACTERS = ',.'") # => #<OraNumber:123456.789>
+  #
+  # @param [String] fmt
+  # @param [String] nlsparam
+  # @return [OraNumber]
   def to_onum(format = nil, nls_params = nil)
     OraNumber.new(self, format, nls_params)
   end

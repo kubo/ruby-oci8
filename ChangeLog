@@ -1,3 +1,6 @@
+2012-04-05  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/ocinumber.c, lib/oci8/oci8.rb: revise OraNumber's comments.
+
 2012-04-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.h, ext/oci8/ocinumber.c: change OCI8::Math::*'s comments
 	    for yard.
