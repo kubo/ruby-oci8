@@ -2,7 +2,7 @@
 /*
  *  oradate.c
  *
- * Copyright (C) 2002-2008 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2012 KUBO Takehiro <kubo@jiubao.org>
  *
  * date and time between 4712 B.C. and 9999 A.D.
  */
@@ -14,9 +14,8 @@ static VALUE cOraDate;
 /*
  * Document-class: OraDate
  *
- * ruby class compatible with Oracle <tt>DATE</tt> data type.
- * Date and time between 4712 B.C. and 9999 A.D.
- *
+ * OraDate is the ruby class compatible with Oracle <tt>DATE</tt> data type.
+ * The range is between 4712 B.C. and 9999 A.D.
  */
 struct ora_date {
     unsigned char century;
@@ -79,10 +78,15 @@ static VALUE ora_date_s_allocate(VALUE klass)
 }
 
 /*
- * call-seq:
- *   OraDate.new(year = 1, month = 1, day = 1, hour = 0, min = 0, sec = 0) -> oradate
+ *  call-seq:
+ *   initialize(year = 1, month = 1, day = 1, hour = 0, min = 0, sec = 0)
  *
- * Returns an <code>OraDate</code> object initialized to the specified date and time.
+ *  Returns an <code>OraDate</code> object initialized to the specified date and time.
+ *
+ *  @example
+ *    OraDate.new              # => 0001-01-01 00:00:00
+ *    OraDate.new(2012)        # => 2012-01-01 00:00:00
+ *    OraDate.new(2012, 3, 4)  # => 2012-03-04 00:00:00
  */
 static VALUE ora_date_initialize(int argc, VALUE *argv, VALUE self)
 {
@@ -138,7 +142,9 @@ static VALUE ora_date_initialize(int argc, VALUE *argv, VALUE self)
     return Qnil;
 }
 
-/* :nodoc: */
+/*
+ *  @private
+ */
 static VALUE ora_date_initialize_copy(VALUE lhs, VALUE rhs)
 {
     ora_date_t *l, *r;
@@ -151,11 +157,10 @@ static VALUE ora_date_initialize_copy(VALUE lhs, VALUE rhs)
 }
 
 /*
- * call-seq:
- *   OraDate.now() -> oradate
+ *  Returns an <code>OraDate</code> object initialized to the
+ *  current local time.
  *
- * Returns an <code>OraDate</code> object initialized to the
- * current local time.
+ *  @return [OraDate]
  */
 static VALUE ora_date_s_now(int argc, VALUE *argv, VALUE klass)
 {
@@ -183,11 +188,10 @@ static VALUE ora_date_s_now(int argc, VALUE *argv, VALUE klass)
 }
 
 /*
- * call-seq:
- *   oradate.to_s -> string
+ *  Returns a string representing <i>self</i>.
+ *  The string format is 'yyyy/mm/dd hh:mi:ss'.
  *
- * Returns a string representing <i>oradate</i>.
- * The string format is 'yyyy/mm/dd hh:mi:ss'.
+ *  @return [OraDate]
  */
 static VALUE ora_date_to_s(VALUE self)
 {
@@ -201,11 +205,9 @@ static VALUE ora_date_to_s(VALUE self)
 }
 
 /*
- * call-seq:
- *   oradate.to_a -> array
+ *  Returns a 6-element <i>array</i> of year, month, day, hour, minute and second.
  *
- * Returns a 6-element <i>array</i> of values for <i>oradate</i>:
- * {<code>[year, month, day, hour, minute, second]</code>}.
+ *  @return [Array]
  */
 static VALUE ora_date_to_a(VALUE self)
 {
@@ -223,10 +225,9 @@ static VALUE ora_date_to_a(VALUE self)
 }
 
 /*
- * call-seq:
- *   oradate.year -> fixnum
+ *  Returns the year field of <i>self</i>.
  *
- * Returns the year (-4712..9999) for <i>oradate</i>.
+ *  @return [Fixnum]
  */
 static VALUE ora_date_year(VALUE self)
 {
@@ -237,10 +238,12 @@ static VALUE ora_date_year(VALUE self)
 }
 
 /*
- * call-seq:
- *   oradate.year = fixnum
+ *  call-seq:
+ *    year = num
  *
- * Sets the year (-4712..9999) for <i>oradate</i>.
+ *  Assigns <i>num</i> to the year field of <i>self</i>.
+ *
+ *  @param [Fixnum] number between -4712 and 9999
  */
 static VALUE ora_date_set_year(VALUE self, VALUE val)
 {
@@ -255,10 +258,10 @@ static VALUE ora_date_set_year(VALUE self, VALUE val)
 }
 
 /*
- * call-seq:
- *   oradate.month -> fixnum
+ *  Returns the month field of <i>self</i>.
+ *  The month starts with one.
  *
- * Returns the month of the year (1..12) for <i>oradate</i>.
+ *  @return [Fixnum]
  */
 static VALUE ora_date_month(VALUE self)
 {
@@ -269,10 +272,13 @@ static VALUE ora_date_month(VALUE self)
 }
 
 /*
- * call-seq:
- *   oradate.month = fixnum
+ *  call-seq:
+ *    month = num
  *
- * Sets the month of the year (1..12) for <i>oradate</i>.
+ *  Assigns <i>num</i> to the month field of <i>self</i>.
+ *  The month starts with one.
+ *
+ *  @param [Fixnum] number between 1 and 12
  */
 static VALUE ora_date_set_month(VALUE self, VALUE val)
 {
@@ -287,10 +293,9 @@ static VALUE ora_date_set_month(VALUE self, VALUE val)
 }
 
 /*
- * call-seq:
- *   oradate.day -> fixnum
+ *  Returns the day of month field of <i>self</i>.
  *
- * Returns the day of the month (1..31) for <i>oradate</i>.
+ *  @return [Fixnum]
  */
 static VALUE ora_date_day(VALUE self)
 {
@@ -301,10 +306,12 @@ static VALUE ora_date_day(VALUE self)
 }
 
 /*
- * call-seq:
- *   oradate.day = fixnum
+ *  call-seq:
+ *    day = num
  *
- * Sets the day of the month (1..31) for <i>oradate</i>.
+ *  Assigns <i>num</i> to the day of month field of <i>self</i>.
+ *
+ *  @param [Fixnum] number between 1 and 31
  */
 static VALUE ora_date_set_day(VALUE self, VALUE val)
 {
@@ -319,10 +326,9 @@ static VALUE ora_date_set_day(VALUE self, VALUE val)
 }
 
 /*
- * call-seq:
- *   oradate.hour -> fixnum
+ *  Returns the hour field of <i>self</i>.
  *
- * Returns the hour of the day (0..23) for <i>oradate</i>.
+ *  @return [Fixnum]
  */
 static VALUE ora_date_hour(VALUE self)
 {
@@ -333,10 +339,12 @@ static VALUE ora_date_hour(VALUE self)
 }
 
 /*
- * call-seq:
- *   oradate.hour = fixnum
+ *  call-seq:
+ *    hour = num
  *
- * Sets the hour of the day (0..23) for <i>oradate</i>.
+ *  Assigns <i>num</i> to the hour field of <i>self</i>.
+ *
+ *  @param [Fixnum] number between 0 and 23
  */
 static VALUE ora_date_set_hour(VALUE self, VALUE val)
 {
@@ -351,10 +359,9 @@ static VALUE ora_date_set_hour(VALUE self, VALUE val)
 }
 
 /*
- * call-seq:
- *   oradate.minute -> fixnum
+ *  Returns the minute field of <i>self</i>.
  *
- * Returns the minute of the hour (0..59) for <i>oradate</i>.
+ *  @return [Fixnum]
  */
 static VALUE ora_date_minute(VALUE self)
 {
@@ -365,10 +372,12 @@ static VALUE ora_date_minute(VALUE self)
 }
 
 /*
- * call-seq:
- *   oradate.minute = fixnum
+ *  call-seq:
+ *    minute = num
  *
- * Sets the minute of the hour (0..59) for <i>oradate</i>.
+ *  Assigns <i>num</i> to the minute field of <i>self</i>.
+ *
+ *  @param [Fixnum] number between 0 and 59
  */
 static VALUE ora_date_set_minute(VALUE self, VALUE val)
 {
@@ -383,10 +392,9 @@ static VALUE ora_date_set_minute(VALUE self, VALUE val)
 }
 
 /*
- * call-seq:
- *   oradate.second -> fixnum
+ *  Returns the second field of <i>self</i>.
  *
- * Returns the second of the minute (0..59) for <i>oradate</i>.
+ *  @return [Fixnum]
  */
 static VALUE ora_date_second(VALUE self)
 {
@@ -397,10 +405,12 @@ static VALUE ora_date_second(VALUE self)
 }
 
 /*
- * call-seq:
- *   oradate.second = fixnum
+ *  call-seq:
+ *    second = num
  *
- * Sets the second of the minute (0..59) for <i>oradate</i>.
+ *  Assigns <i>num</i> to the second field of <i>self</i>.
+ *
+ *  @param [Fixnum] number between 0 and 59
  */
 static VALUE ora_date_set_second(VALUE self, VALUE val)
 {
@@ -415,13 +425,13 @@ static VALUE ora_date_set_second(VALUE self, VALUE val)
 }
 
 /*
- * call-seq:
- *   oradate.trunc
+ *  Truncates hour, minute and second fields to zero.
  *
- * Truncates hour, minute and second to zero for <i>oradate</i>.
+ *  @example
+ *    oradate = OraDate.now  # => 2008/07/17 11:07:30
+ *    oradate.trunc          # => 2008/07/17 00:00:00
  *
- *   oradate = OraDate.now   # 2008/07/17 11:07:30
- *   oradate.trunc           # 2008/07/17 00:00:00
+ *  @return [OraDate]
  */
 static VALUE ora_date_trunc(VALUE self)
 {
@@ -435,12 +445,11 @@ static VALUE ora_date_trunc(VALUE self)
 }
 
 /*
- * call-seq:
- *   oradate1 <=> oradate2 -> -1, 0, +1
+ *  call-seq:
+ *     self <=> other
  *
- * Comparison---Compares <i>oradate1</i> with <i>oradate2</i>.
- * Other comparison operators are available because
- * <code>Comparable</code> module is included.
+ *  Returns -1, 0, or +1 depending on whether <i>self</i> is less than,
+ *  equal to, or greater than <i>other</i>.
  */
 static VALUE ora_date_cmp(VALUE self, VALUE val)
 {
@@ -465,7 +474,9 @@ static VALUE ora_date_cmp(VALUE self, VALUE val)
     return INT2FIX(0);
 }
 
-/* :nodoc: */
+/*
+ *  @private
+ */
 static VALUE ora_date_hash(VALUE self)
 {
     ora_date_t *od;
@@ -483,10 +494,11 @@ static VALUE ora_date_hash(VALUE self)
 }
 
 /*
- * call-seq:
- *   oradate._dump -> string
+ *  Serializes <i>self</i>.
+ *  This method is called by Marshal.dump().
  *
- * Dumps <i>oradate</i> for marshaling.
+ *  @return [String] a byte stream
+ *  @see OraDate._load
  */
 static VALUE ora_date_dump(int argc, VALUE *argv, VALUE self)
 {
@@ -496,10 +508,15 @@ static VALUE ora_date_dump(int argc, VALUE *argv, VALUE self)
 }
 
 /*
- * call-seq:
- *   OraDate._load(string) -> oradate
+ *  call-seq:
+ *    _load(bytes)
  *
- * Unmarshals a dumped <code>OraDate</code> object.
+ *  Restores a byte stream serialized by {OraDate#_dump}.
+ *  This method is called by Marshal.load() to deserialize a byte stream
+ *  created by Marshal.dump().
+ *
+ *  @param [String] bytes a byte stream
+ *  @return [OraDate] an deserialized object
  */
 static VALUE ora_date_s_load(VALUE klass, VALUE str)
 {
@@ -516,9 +533,9 @@ static VALUE ora_date_s_load(VALUE klass, VALUE str)
 }
 
 /*
- * Document-class: OCI8::BindType::OraDate
+ *  Document-class: OCI8::BindType::OraDate
  *
- * This is a helper class to bind OraDate as Oracle's <tt>DATE</tt> datatype.
+ *  This is a helper class to bind OraDate as Oracle's <tt>DATE</tt> datatype.
  *
  */
 static VALUE bind_oradate_get(oci8_bind_t *obind, void *data, void *null_struct)

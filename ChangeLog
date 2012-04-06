@@ -1,3 +1,8 @@
+2012-04-06  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/error.c, ext/oci8/ocihandle.c, ext/oci8/oradate.c,
+	  lib/oci8/encoding-init.rb, lib/oci8/oci8.rb, lib/oci8/ocihandle.rb:
+	    revise rdoc comments.
+
 2012-04-05  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocinumber.c, lib/oci8/oci8.rb: revise OraNumber's comments.
 

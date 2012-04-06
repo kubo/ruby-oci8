@@ -2,7 +2,7 @@
 /*
   error.c - part of ruby-oci8
 
-  Copyright (C) 2002-2011 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2002-2012 KUBO Takehiro <kubo@jiubao.org>
 
 */
 #include "oci8.h"
@@ -162,9 +162,13 @@ static VALUE set_backtrace(VALUE exc, const char *file, int line)
 
 /*
  * call-seq:
- *    OCI8.new(message, code = nil, sql = nil, parse_error_offset = nil)
+ *    initialize(message, code = nil, sql = nil, parse_error_offset = nil)
  *
  * Creates a new OCIError object.
+ *
+ * @example
+ *   OCIError.new("ORA-00001: unique constraint (%s.%s) violated", 1)
+ *   # => #<OCIError: ORA-00001: unique constraint (%s.%s) violated>
  */
 static VALUE oci8_error_initialize(int argc, VALUE *argv, VALUE self)
 {
@@ -211,6 +215,10 @@ void Init_oci8_error(void)
     eOCISuccessWithInfo = rb_define_class("OCISuccessWithInfo", eOCIError);
 
     rb_define_method(eOCIError, "initialize", oci8_error_initialize, -1);
+
+    /*
+     * @attr_reader [Integer] code  error code
+     */
     rb_define_attr(eOCIError, "code", 1, 0);
     rb_define_attr(eOCIError, "sql", 1, 0);
     rb_define_attr(eOCIError, "parse_error_offset", 1, 0);
@@ -296,14 +304,11 @@ void oci8_check_error_(sword status, oci8_base_t *base, OCIStmt *stmthp, const c
  * These exceptions are raised when Oracle Call Interface functions
  * return with an error status.
  *
- * - OCIBreak
- * - OCIContinue
- * - OCIError
- *   - OCISuccessWithInfo
- *   - OCINoData (It had been a subclass of OCIException, not OCIError, until ruby-oci8 2.0)
- * - OCIInvalidHandle
- * - OCINeedData
- * - OCIStillExecuting
+ * - {OCIBreak}
+ * - {OCIError}
+ *   - {OCISuccessWithInfo}
+ *   - {OCINoData} (It had been a subclass of OCIException, not OCIError, until ruby-oci8 2.0)
+ * - {OCIInvalidHandle}
  */
 
 /*
@@ -311,7 +316,7 @@ void oci8_check_error_(sword status, oci8_base_t *base, OCIStmt *stmthp, const c
  *
  * Subclass of OCIException
  *
- * Raised when a SQL execution is cancelled by OCI8#break.
+ * Raised when a SQL execution is cancelled by {OCI8#break}.
  */
 
 /*
@@ -335,6 +340,10 @@ void oci8_check_error_(sword status, oci8_base_t *base, OCIStmt *stmthp, const c
  *
  * Raised when underlying Oracle Call Interface failed with an Oracle error code
  * such as ORA-00001.
+ *
+ * @attr_reader [Integer] code  error code
+ * @attr_reader [String] sql    SQL statement
+ * @attr_reader [Integer] parse_error_offset position
  */
 
 /*
@@ -352,6 +361,8 @@ void oci8_check_error_(sword status, oci8_base_t *base, OCIStmt *stmthp, const c
  * Subclass of OCIException
  *
  * Report to the ruby-oci8 author if it is raised.
+ *
+ * @private
  */
 
 /*
@@ -360,6 +371,8 @@ void oci8_check_error_(sword status, oci8_base_t *base, OCIStmt *stmthp, const c
  * Subclass of OCIError
  *
  * Report to the ruby-oci8 author if it is raised.
+ *
+ * @private
  */
 
 /*
@@ -368,6 +381,8 @@ void oci8_check_error_(sword status, oci8_base_t *base, OCIStmt *stmthp, const c
  * Subclass of OCIException
  *
  * Report to the ruby-oci8 author if it is raised.
+ *
+ * @private
  */
 
 /*

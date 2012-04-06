@@ -1,6 +1,6 @@
 # oci8.rb -- implements OCI8 and OCI8::Cursor
 #
-# Copyright (C) 2002-2010 KUBO Takehiro <kubo@jiubao.org>
+# Copyright (C) 2002-2012 KUBO Takehiro <kubo@jiubao.org>
 #
 # Original Copyright is:
 #   Oracle module for Ruby
@@ -690,6 +690,8 @@ class OCI8
 end # OCI8
 
 class OraDate
+
+  # Returns a Time object which denotes self.
   def to_time
     begin
       Time.local(year, month, day, hour, minute, second)
@@ -699,31 +701,40 @@ class OraDate
     end
   end
 
+  # Returns a Date object which denotes self.
   def to_date
     Date.new(year, month, day)
   end
 
   if defined? DateTime # ruby 1.8.0 or upper
 
-    # get timezone offset.
+    # timezone offset of the time the command started
+    # @private
     @@tz_offset = Time.now.utc_offset.to_r/86400
 
+    # Returns a DateTime object which denotes self.
+    #
+    # Note that this is not daylight saving time aware.
+    # The Time zone offset is that of the time the command started.
     def to_datetime
       DateTime.new(year, month, day, hour, minute, second, @@tz_offset)
     end
   end
 
-  def yaml_initialize(type, val) # :nodoc:
+  # @private
+  def yaml_initialize(type, val)
     initialize(*val.split(/[ -\/:]+/).collect do |i| i.to_i end)
   end
 
-  def to_yaml(opts = {}) # :nodoc:
+  # @private
+  def to_yaml(opts = {})
     YAML.quick_emit(object_id, opts) do |out|
       out.scalar(taguri, self.to_s, :plain)
     end
   end
 
-  def to_json(options=nil) # :nodoc:
+  # @private
+  def to_json(options=nil)
     to_datetime.to_json(options)
   end
 end

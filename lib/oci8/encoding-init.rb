@@ -2,6 +2,7 @@
 # setup default OCI encoding from NLS_LANG.
 #
 
+#
 class OCI8
 
   # get the environment variable NLS_LANG.

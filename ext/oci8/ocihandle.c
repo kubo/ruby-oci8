@@ -2,7 +2,7 @@
 /*
  * ocihandle.c
  *
- * Copyright (C) 2009-2010 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2009-2012 KUBO Takehiro <kubo@jiubao.org>
  *
  * implement OCIHandle
  *
@@ -38,12 +38,10 @@ static VALUE oci8_handle_initialize(VALUE self)
 }
 
 /*
- * call-seq:
- *   free()
- *
- * <b>(new in 2.0.0)</b>
- *
  * Clears the object internal structure and its dependents.
+ *
+ * @since 2.0.0
+ * @private
  */
 static VALUE oci8_handle_free(VALUE self)
 {
@@ -107,11 +105,15 @@ static VALUE oci8_s_allocate(VALUE klass)
 
 /*
  * call-seq:
- *   attr_get_ub1(attr_type) -> fixnum
- *
- * <b>(new in 2.0.4)</b>
+ *   attr_get_ub1(attr_type)
  *
  * Gets the value of an attribute as `ub1' datatype.
+ *
+ * @param [Fixnum] attr_type
+ * @return [Fixnum]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_get_ub1(VALUE self, VALUE attr_type)
 {
@@ -129,11 +131,15 @@ static VALUE attr_get_ub1(VALUE self, VALUE attr_type)
 
 /*
  * call-seq:
- *   attr_get_ub2(attr_type) -> fixnum
- *
- * <b>(new in 2.0.4)</b>
+ *   attr_get_ub2(attr_type)
  *
  * Gets the value of an attribute as `ub2' datatype.
+ *
+ * @param [Fixnum] attr_type
+ * @return [Fixnum]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_get_ub2(VALUE self, VALUE attr_type)
 {
@@ -151,11 +157,15 @@ static VALUE attr_get_ub2(VALUE self, VALUE attr_type)
 
 /*
  * call-seq:
- *   attr_get_ub4(attr_type) -> integer
- *
- * <b>(new in 2.0.4)</b>
+ *   attr_get_ub4(attr_type)
  *
  * Gets the value of an attribute as `ub4' datatype.
+ *
+ * @param [Fixnum] attr_type
+ * @return [Integer]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_get_ub4(VALUE self, VALUE attr_type)
 {
@@ -173,11 +183,15 @@ static VALUE attr_get_ub4(VALUE self, VALUE attr_type)
 
 /*
  * call-seq:
- *   attr_get_ub8(attr_type) -> integer
- *
- * <b>(new in 2.0.4)</b>
+ *   attr_get_ub8(attr_type)
  *
  * Gets the value of an attribute as `ub8' datatype.
+ *
+ * @param [Fixnum] attr_type
+ * @return [Integer]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_get_ub8(VALUE self, VALUE attr_type)
 {
@@ -195,11 +209,15 @@ static VALUE attr_get_ub8(VALUE self, VALUE attr_type)
 
 /*
  * call-seq:
- *   attr_get_sb1(attr_type) -> fixnum
- *
- * <b>(new in 2.0.4)</b>
+ *   attr_get_sb1(attr_type)
  *
  * Gets the value of an attribute as `sb1' datatype.
+ *
+ * @param [Fixnum] attr_type
+ * @return [Fixnum]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_get_sb1(VALUE self, VALUE attr_type)
 {
@@ -217,11 +235,15 @@ static VALUE attr_get_sb1(VALUE self, VALUE attr_type)
 
 /*
  * call-seq:
- *   attr_get_sb2(attr_type) -> fixnum
- *
- * <b>(new in 2.0.4)</b>
+ *   attr_get_sb2(attr_type)
  *
  * Gets the value of an attribute as `sb2' datatype.
+ *
+ * @param [Fixnum] attr_type
+ * @return [Fixnum]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_get_sb2(VALUE self, VALUE attr_type)
 {
@@ -239,11 +261,15 @@ static VALUE attr_get_sb2(VALUE self, VALUE attr_type)
 
 /*
  * call-seq:
- *   attr_get_sb4(attr_type) -> integer
- *
- * <b>(new in 2.0.4)</b>
+ *   attr_get_sb4(attr_type)
  *
  * Gets the value of an attribute as `sb4' datatype.
+ *
+ * @param [Fixnum] attr_type
+ * @return [Integer]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_get_sb4(VALUE self, VALUE attr_type)
 {
@@ -261,11 +287,15 @@ static VALUE attr_get_sb4(VALUE self, VALUE attr_type)
 
 /*
  * call-seq:
- *   attr_get_sb8(attr_type) -> integer
- *
- * <b>(new in 2.0.4)</b>
+ *   attr_get_sb8(attr_type)
  *
  * Gets the value of an attribute as `sb8' datatype.
+ *
+ * @param [Fixnum] attr_type
+ * @return [Integer]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_get_sb8(VALUE self, VALUE attr_type)
 {
@@ -283,11 +313,15 @@ static VALUE attr_get_sb8(VALUE self, VALUE attr_type)
 
 /*
  * call-seq:
- *   attr_get_boolean(attr_type) -> true or false
- *
- * <b>(new in 2.0.4)</b>
+ *   attr_get_boolean(attr_type)
  *
  * Gets the value of an attribute as `boolean' datatype.
+ *
+ * @param [Fixnum] attr_type
+ * @return [true of false]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_get_boolean(VALUE self, VALUE attr_type)
 {
@@ -305,16 +339,20 @@ static VALUE attr_get_boolean(VALUE self, VALUE attr_type)
 
 /*
  * call-seq:
- *   attr_get_string(attr_type) -> string
- *
- * <b>(new in 2.0.4)</b>
+ *   attr_get_string(attr_type)
  *
  * Gets the value of an attribute as `oratext *' datatype.
  * The return value is converted to Encoding.default_internal or
- * tagged with OCI8.encoding when the ruby version is 1.9.
+ * tagged with {OCI8.encoding} when the ruby version is 1.9.
  *
- * <b>Caution:</b> If the specified attr_type's datatype is not a
- * pointer type, it causes a segmentation fault.
+ * @note If the specified attr_type's datatype is not a
+ *   pointer type, it causes a segmentation fault.
+ *
+ * @param [Fixnum] attr_type
+ * @return [String]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_get_string(VALUE self, VALUE attr_type)
 {
@@ -333,15 +371,19 @@ static VALUE attr_get_string(VALUE self, VALUE attr_type)
 
 /*
  * call-seq:
- *   attr_get_binary(attr_type) -> string
- *
- * <b>(new in 2.0.4)</b>
+ *   attr_get_binary(attr_type)
  *
  * Gets the value of an attribute as `ub1 *' datatype.
  * The return value is tagged with ASCII-8BIT when the ruby version is 1.9.
  *
- * <b>Caution:</b> If the specified attr_type's datatype is not a
- * pointer type, it causes a segmentation fault.
+ * @note If the specified attr_type's datatype is not a
+ *   pointer type, it causes a segmentation fault.
+ *
+ * @param [Fixnum] attr_type
+ * @return [String]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_get_binary(VALUE self, VALUE attr_type)
 {
@@ -362,13 +404,17 @@ static VALUE attr_get_binary(VALUE self, VALUE attr_type)
  * call-seq:
  *   attr_get_integer(attr_type) -> integer
  *
- * <b>(new in 2.0.4)</b>
- *
  * Gets the value of an attribute as `ub1 *' datatype.
  * The return value is converted to Integer from internal Oracle NUMBER format.
  *
- * <b>Caution:</b> If the specified attr_type's datatype is not a
- * pointer type, it causes a segmentation fault.
+ * @note If the specified attr_type's datatype is not a
+ *   pointer type, it causes a segmentation fault.
+ *
+ * @param [Fixnum] attr_type
+ * @return [Fixnum]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_get_integer(VALUE self, VALUE attr_type)
 {
@@ -389,13 +435,17 @@ static VALUE attr_get_integer(VALUE self, VALUE attr_type)
  * call-seq:
  *   attr_get_oradate(attr_type) -> an OraDate
  *
- * <b>(new in 2.1.0)</b>
- *
  * Gets the value of an attribute as `ub1 *' datatype.
  * The return value is converted to OraDate.
  *
- * <b>Caution:</b> If the specified attr_type's datatype is not a
- * pointer type, it causes a segmentation fault.
+ * @note If the specified attr_type's datatype is not a
+ *   pointer type, it causes a segmentation fault.
+ *
+ * @param [Fixnum] attr_type
+ * @return [OraDate]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_get_oradate(VALUE self, VALUE attr_type)
 {
@@ -425,12 +475,17 @@ static VALUE attr_get_oradate(VALUE self, VALUE attr_type)
  * call-seq:
  *   attr_set_ub1(attr_type, attr_value)
  *
- * <b>(new in 2.0.4)</b>
- *
  * Sets the value of an attribute as `ub1' datatype.
  *
- * <b>Caution:</b> If the specified attr_type's datatype is a
- * pointer type, it causes a segmentation fault.
+ * @note If the specified attr_type's datatype is a
+ *   pointer type, it causes a segmentation fault.
+ *
+ * @param [Fixnum] attr_type
+ * @param [Fixnum] attr_value
+ * @return [self]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_set_ub1(VALUE self, VALUE attr_type, VALUE val)
 {
@@ -449,12 +504,17 @@ static VALUE attr_set_ub1(VALUE self, VALUE attr_type, VALUE val)
  * call-seq:
  *   attr_set_ub2(attr_type, attr_value)
  *
- * <b>(new in 2.0.4)</b>
- *
  * Sets the value of an attribute as `ub2' datatype.
  *
- * <b>Caution:</b> If the specified attr_type's datatype is a
- * pointer type, it causes a segmentation fault.
+ * @note If the specified attr_type's datatype is a
+ *   pointer type, it causes a segmentation fault.
+ *
+ * @param [Fixnum] attr_type
+ * @param [Fixnum] attr_value
+ * @return [self]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_set_ub2(VALUE self, VALUE attr_type, VALUE val)
 {
@@ -473,12 +533,17 @@ static VALUE attr_set_ub2(VALUE self, VALUE attr_type, VALUE val)
  * call-seq:
  *   attr_set_ub4(attr_type, attr_value)
  *
- * <b>(new in 2.0.4)</b>
- *
  * Sets the value of an attribute as `ub4' datatype.
  *
- * <b>Caution:</b> If the specified attr_type's datatype is a
- * pointer type, it causes a segmentation fault.
+ * @note If the specified attr_type's datatype is a
+ *   pointer type, it causes a segmentation fault.
+ *
+ * @param [Fixnum] attr_type
+ * @param [Integer] attr_value
+ * @return [self]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_set_ub4(VALUE self, VALUE attr_type, VALUE val)
 {
@@ -497,12 +562,17 @@ static VALUE attr_set_ub4(VALUE self, VALUE attr_type, VALUE val)
  * call-seq:
  *   attr_set_ub8(attr_type, attr_value)
  *
- * <b>(new in 2.0.4)</b>
- *
  * Sets the value of an attribute as `ub8' datatype.
  *
- * <b>Caution:</b> If the specified attr_type's datatype is a
- * pointer type, it causes a segmentation fault.
+ * @note If the specified attr_type's datatype is a
+ *   pointer type, it causes a segmentation fault.
+ *
+ * @param [Fixnum] attr_type
+ * @param [Integer] attr_value
+ * @return [self]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_set_ub8(VALUE self, VALUE attr_type, VALUE val)
 {
@@ -521,12 +591,17 @@ static VALUE attr_set_ub8(VALUE self, VALUE attr_type, VALUE val)
  * call-seq:
  *   attr_set_sb1(attr_type, attr_value)
  *
- * <b>(new in 2.0.4)</b>
- *
  * Sets the value of an attribute as `sb1' datatype.
  *
- * <b>Caution:</b> If the specified attr_type's datatype is a
- * pointer type, it causes a segmentation fault.
+ * @note If the specified attr_type's datatype is a
+ *   pointer type, it causes a segmentation fault.
+ *
+ * @param [Fixnum] attr_type
+ * @param [Fixnum] attr_value
+ * @return [self]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_set_sb1(VALUE self, VALUE attr_type, VALUE val)
 {
@@ -545,12 +620,17 @@ static VALUE attr_set_sb1(VALUE self, VALUE attr_type, VALUE val)
  * call-seq:
  *   attr_set_sb2(attr_type, attr_value)
  *
- * <b>(new in 2.0.4)</b>
- *
  * Sets the value of an attribute as `sb2' datatype.
  *
- * <b>Caution:</b> If the specified attr_type's datatype is a
- * pointer type, it causes a segmentation fault.
+ * @note If the specified attr_type's datatype is a
+ *  pointer type, it causes a segmentation fault.
+ *
+ * @param [Fixnum] attr_type
+ * @param [Fixnum] attr_value
+ * @return [self]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_set_sb2(VALUE self, VALUE attr_type, VALUE val)
 {
@@ -569,12 +649,17 @@ static VALUE attr_set_sb2(VALUE self, VALUE attr_type, VALUE val)
  * call-seq:
  *   attr_set_sb4(attr_type, attr_value)
  *
- * <b>(new in 2.0.4)</b>
- *
  * Sets the value of an attribute as `sb4' datatype.
  *
- * <b>Caution:</b> If the specified attr_type's datatype is a
- * pointer type, it causes a segmentation fault.
+ * @note If the specified attr_type's datatype is a
+ *   pointer type, it causes a segmentation fault.
+ *
+ * @param [Fixnum] attr_type
+ * @param [Integer] attr_value
+ * @return [self]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_set_sb4(VALUE self, VALUE attr_type, VALUE val)
 {
@@ -593,12 +678,17 @@ static VALUE attr_set_sb4(VALUE self, VALUE attr_type, VALUE val)
  * call-seq:
  *   attr_set_sb8(attr_type, attr_value)
  *
- * <b>(new in 2.0.4)</b>
- *
  * Sets the value of an attribute as `sb8' datatype.
  *
- * <b>Caution:</b> If the specified attr_type's datatype is a
- * pointer type, it causes a segmentation fault.
+ * @note If the specified attr_type's datatype is a
+ *   pointer type, it causes a segmentation fault.
+ *
+ * @param [Fixnum] attr_type
+ * @param [Integer] attr_value
+ * @return [self]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_set_sb8(VALUE self, VALUE attr_type, VALUE val)
 {
@@ -617,12 +707,17 @@ static VALUE attr_set_sb8(VALUE self, VALUE attr_type, VALUE val)
  * call-seq:
  *   attr_set_boolean(attr_type, attr_value)
  *
- * <b>(new in 2.0.4)</b>
- *
  * Sets the value of an attribute as `boolean' datatype.
  *
- * <b>Caution:</b> If the specified attr_type's datatype is a
- * pointer type, it causes a segmentation fault.
+ * @note If the specified attr_type's datatype is a
+ *   pointer type, it causes a segmentation fault.
+ *
+ * @param [Fixnum] attr_type
+ * @param [true or false] attr_value
+ * @return [self]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_set_boolean(VALUE self, VALUE attr_type, VALUE val)
 {
@@ -639,13 +734,18 @@ static VALUE attr_set_boolean(VALUE self, VALUE attr_type, VALUE val)
 
 /*
  * call-seq:
- *   attr_set_string(attr_type, string_value)
- *
- * <b>(new in 2.0.4)</b>
+ *   attr_set_string(attr_type, attr_value)
  *
  * Sets the value of an attribute as `oratext *' datatype.
- * +string_value+ is converted to OCI8.encoding before it is set
+ * +attr_value+ is converted to {OCI8.encoding} before it is set
  * when the ruby version is 1.9.
+ *
+ * @param [Fixnum] attr_type
+ * @param [String] attr_value
+ * @return [self]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_set_string(VALUE self, VALUE attr_type, VALUE val)
 {
@@ -661,11 +761,16 @@ static VALUE attr_set_string(VALUE self, VALUE attr_type, VALUE val)
 
 /*
  * call-seq:
- *   attr_set_binary(attr_type, string_value)
- *
- * <b>(new in 2.0.4)</b>
+ *   attr_set_binary(attr_type, attr_value)
  *
  * Sets the value of an attribute as `ub1 *' datatype.
+ *
+ * @param [Fixnum] attr_type
+ * @param [String] attr_value
+ * @return [self]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_set_binary(VALUE self, VALUE attr_type, VALUE val)
 {
@@ -683,11 +788,16 @@ static VALUE attr_set_binary(VALUE self, VALUE attr_type, VALUE val)
  * call-seq:
  *   attr_set_integer(attr_type, number)
  *
- * <b>(new in 2.0.4)</b>
- *
  * Sets the value of an attribute as `ub1 *' datatype.
  * +number+ is converted to internal Oracle NUMBER format before
  * it is set.
+ *
+ * @param [Fixnum] attr_type
+ * @param [Numeric] number
+ * @return [self]
+ *
+ * @since 2.0.4
+ * @private
  */
 static VALUE attr_set_integer(VALUE self, VALUE attr_type, VALUE val)
 {
@@ -707,11 +817,11 @@ void Init_oci8_handle(void)
     VALUE obj;
 
     /*
-     * <b>(new in 2.0.0)</b>
-     *
      * OCIHandle is the abstract base class of OCI handles and
      * OCI descriptors; opaque data types of Oracle Call Interface.
      * Don't use constants and methods defined in the class.
+     *
+     * @since 2.0.0
      */
     oci8_cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
     rb_define_alloc_func(oci8_cOCIHandle, oci8_s_allocate);
