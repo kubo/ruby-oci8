@@ -163,6 +163,41 @@ static void bfile_close(oci8_lob_t *lob)
     }
 }
 
+/*
+ *  Document-class: OCI8::LOB
+ *
+ *  This is the abstract base class of large-object data types; BFILE, BLOB, CLOB and NCLOB.
+ *
+ */
+
+/*
+ *  Document-class: OCI8::CLOB
+ *
+ */
+
+/*
+ *  Document-class: OCI8::NCLOB
+ *
+ */
+
+/*
+ *  Document-class: OCI8::BLOB
+ *
+ */
+
+/*
+ *  Document-class: OCI8::BFILE
+ *
+ *  @method truncate(length)
+ *  @method size = length
+ *  @method write(data)
+ */
+
+/*
+ *  Closes the lob.
+ *
+ *  @return [self]
+ */
 static VALUE oci8_lob_close(VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
@@ -203,24 +238,82 @@ static VALUE oci8_lob_do_initialize(int argc, VALUE *argv, VALUE self, ub1 csfrm
     return Qnil;
 }
 
+/*
+ *  call-seq:
+ *    initialize(conn, contents = nil)
+ *
+ *  Creates a temporary CLOB when <i>contents</i> is not nil.
+ *  Otherwise, it creates an uninitialized lob, which is used internally
+ *  to fetch CLOB column data.
+ *
+ *  @example
+ *    # Inserts a file name and its contents as CLOB.
+ *    clob = OCI8::CLOB.new(conn, File.read(file_name))
+ *    conn.exec('insert into file_contents values (:1, :2)', file_name, clob)
+ *
+ *  @param [OCI8] conn connection
+ *  @param [String] contents
+ *  @return [OCI8::CLOB]
+ */
 static VALUE oci8_clob_initialize(int argc, VALUE *argv, VALUE self)
 {
     oci8_lob_do_initialize(argc, argv, self, SQLCS_IMPLICIT, OCI_TEMP_CLOB);
     return Qnil;
 }
 
+/*
+ *  call-seq:
+ *    initialize(conn, contents = nil)
+ *
+ *  Creates a temporary NCLOB when <i>contents</i> is not nil.
+ *  Otherwise, it creates an uninitialized lob, which is used internally
+ *  to fetch NCLOB column data.
+ *
+ *  @example
+ *    # Inserts a file name and its contents as NCLOB.
+ *    clob = OCI8::NCLOB.new(conn, File.read(file_name))
+ *    conn.exec('insert into file_contents values (:1, :2)', file_name, clob)
+ *
+ *  @param [OCI8] conn
+ *  @param [String] contents
+ *  @return [OCI8::NCLOB]
+ */
 static VALUE oci8_nclob_initialize(int argc, VALUE *argv, VALUE self)
 {
     oci8_lob_do_initialize(argc, argv, self, SQLCS_NCHAR, OCI_TEMP_CLOB);
     return Qnil;
 }
 
+/*
+ *  call-seq:
+ *    initialize(conn, contents = nil)
+ *
+ *  Creates a temporary BLOB when <i>contents</i> is not nil.
+ *  Otherwise, it creates an uninitialized lob, which is used internally
+ *  to fetch BLOB column data.
+ *
+ *  @example
+ *    # Inserts a file name and its contents as BLOB.
+ *    clob = OCI8::BLOB.new(conn, File.read(file_name, :mode => 'rb'))
+ *    conn.exec('insert into file_contents values (:1, :2)', file_name, clob)
+ *
+ *  @param [OCI8] conn
+ *  @param [String] contents
+ *  @return [OCI8::BLOB]
+ */
 static VALUE oci8_blob_initialize(int argc, VALUE *argv, VALUE self)
 {
     oci8_lob_do_initialize(argc, argv, self, SQLCS_IMPLICIT, OCI_TEMP_BLOB);
     return Qnil;
 }
 
+/*
+ *  call-seq:
+ *    __char_width = size
+ *
+ *  @private
+ *  IMO, nobody need and use this.
+ */
 static VALUE oci8_lob_set_char_width(VALUE self, VALUE vsize)
 {
     oci8_lob_t *lob = DATA_PTR(self);
@@ -234,6 +327,11 @@ static VALUE oci8_lob_set_char_width(VALUE self, VALUE vsize)
     return vsize;
 }
 
+/*
+ *  Returns +true+ when <i>self</i> is initialized.
+ *
+ *  @return [true or false]
+ */
 static VALUE oci8_lob_available_p(VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
@@ -244,17 +342,36 @@ static VALUE oci8_lob_available_p(VALUE self)
     return is_initialized ? Qtrue : Qfalse;
 }
 
+/*
+ *  Returns the size.
+ *  For CLOB and NCLOB it is the number of characters,
+ *  for BLOB and BFILE it is the number of bytes.
+ *
+ *  @return [Integer]
+ */
 static VALUE oci8_lob_get_size(VALUE self)
 {
     return UB4_TO_NUM(oci8_lob_get_length(DATA_PTR(self)));
 }
 
+/*
+ *  Returns the current offset.
+ *  For CLOB and NCLOB it is the number of characters,
+ *  for BLOB and BFILE it is the number of bytes.
+ *
+ *  @return [Integer]
+ */
 static VALUE oci8_lob_get_pos(VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
     return UB4_TO_NUM(lob->pos);
 }
 
+/*
+ *  Returns true if the current offset is at end of lob.
+ *
+ *  @return [true or false]
+ */
 static VALUE oci8_lob_eof_p(VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
@@ -264,6 +381,20 @@ static VALUE oci8_lob_eof_p(VALUE self)
         return Qtrue;
 }
 
+/*
+ *  call-seq:
+ *     seek(amount, whence=IO::SEEK_SET)
+ *
+ *  Seeks to the given offset in the stream. The new position, measured in characters,
+ *  is obtained by adding offset <i>amount</i> to the position specified by <i>whence</i>.
+ *  If <i>whence</i> is set to IO::SEEK_SET, IO::SEEK_CUR, or IO::SEEK_END,
+ *  the offset is relative to the start of the file, the current position
+ *  indicator, or end-of-file, respectively.
+ *
+ *  @param [Integer] amount
+ *  @param [IO::SEEK_SET, IO::SEEK_CUR or IO::SEEK_END] whence
+ *  @return [self]
+ */
 static VALUE oci8_lob_seek(int argc, VALUE *argv, VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
@@ -288,6 +419,11 @@ static VALUE oci8_lob_seek(int argc, VALUE *argv, VALUE self)
     return self;
 }
 
+/*
+ *  Sets the current offset at the beginning.
+ *
+ *  @return [true or false]
+ */
 static VALUE oci8_lob_rewind(VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
@@ -295,6 +431,15 @@ static VALUE oci8_lob_rewind(VALUE self)
     return self;
 }
 
+/*
+ *  call-seq:
+ *    truncate(length)
+ *
+ *  Changes the lob size to the given <i>length</i>.
+ *
+ *  @param [Integer] length
+ *  @return [self]
+ */
 static VALUE oci8_lob_truncate(VALUE self, VALUE len)
 {
     oci8_lob_t *lob = DATA_PTR(self);
@@ -306,12 +451,32 @@ static VALUE oci8_lob_truncate(VALUE self, VALUE len)
     return self;
 }
 
+/*
+ *  call-seq:
+ *    size = length
+ *
+ *  Changes the lob size to the given <i>length</i>.
+ *
+ *  @param [Integer] length
+ *  @return [Integer]
+ */
 static VALUE oci8_lob_set_size(VALUE self, VALUE len)
 {
     oci8_lob_truncate(self, len);
     return len;
 }
 
+/*
+ *  call-seq:
+ *    read(length = nil)
+ *
+ *  Reads <i>length</i> characters for CLOB and NCLOB or <i>length</i>
+ *  bytes for BLOB and BILF from the current position.
+ *  When <i>length</i> is nil, it reads data until EOF.
+ *
+ *  @param [Integer] length
+ *  @return [String]
+ */
 static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
@@ -412,6 +577,15 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
     }
 }
 
+/*
+ *  call-seq:
+ *    write(data)
+ *
+ *  Writes <i>data</i>.
+ *
+ *  @param [String] data
+ *  @return [Integer]
+ */
 static VALUE oci8_lob_write(VALUE self, VALUE data)
 {
     oci8_lob_t *lob = DATA_PTR(self);
@@ -433,12 +607,20 @@ static VALUE oci8_lob_write(VALUE self, VALUE data)
     return UINT2NUM(amt);
 }
 
+/*
+ *  @deprecated I'm not sure that this is what the name indicates.
+ *  @private
+ */
 static VALUE oci8_lob_get_sync(VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
     return (lob->state == S_NO_OPEN_CLOSE) ? Qtrue : Qfalse;
 }
 
+/*
+ *  @deprecated I'm not sure that this is what the name indicates.
+ *  @private
+ */
 static VALUE oci8_lob_set_sync(VALUE self, VALUE b)
 {
     oci8_lob_t *lob = DATA_PTR(self);
@@ -452,6 +634,10 @@ static VALUE oci8_lob_set_sync(VALUE self, VALUE b)
     return b;
 }
 
+/*
+ *  @deprecated I'm not sure that this is what the name indicates.
+ *  @private
+ */
 static VALUE oci8_lob_flush(VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
@@ -459,6 +645,12 @@ static VALUE oci8_lob_flush(VALUE self)
     return self;
 }
 
+/*
+ *  Returns the chunk size of a LOB.
+ *
+ *  @see http://docs.oracle.com/cd/E16338_01/appdev.112/e10646/oci17msc002.htm#i493090
+ *  @return [Integer]
+ */
 static VALUE oci8_lob_get_chunk_size(VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
@@ -544,6 +736,19 @@ static void oci8_bfile_set_name(VALUE self, VALUE dir_alias, VALUE filename)
            &lob->base);
 }
 
+/*
+ *  call-seq:
+ *    initialize(conn, dir_alias = nil, filename = nil)
+ *
+ *  Creates a BFILE object.
+ *  This is correspond to {http://docs.oracle.com/cd/E11882_01/server.112/e17118/functions019.htm#sthref953 BFILENAME}.
+ *
+ *  @param [OCI8] conn
+ *  @param [String] dir_alias  a directory object created by
+ *    {http://docs.oracle.com/cd/E11882_01/server.112/e17118/statements_5007.htm "CREATE DIRECTORY"}.
+ *  @param [String] filename
+ *  @return [OCI8::BFILE]
+ */
 static VALUE oci8_bfile_initialize(int argc, VALUE *argv, VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
@@ -574,6 +779,11 @@ static VALUE oci8_bfile_initialize(int argc, VALUE *argv, VALUE self)
     return Qnil;
 }
 
+/*
+ *  Returns the directory object name.
+ *
+ *  @return [String]
+ */
 static VALUE oci8_bfile_get_dir_alias(VALUE self)
 {
     VALUE dir_alias;
@@ -582,6 +792,11 @@ static VALUE oci8_bfile_get_dir_alias(VALUE self)
     return dir_alias;
 }
 
+/*
+ *  Returns the file name.
+ *
+ *  @return [String]
+ */
 static VALUE oci8_bfile_get_filename(VALUE self)
 {
     VALUE filename;
@@ -590,6 +805,14 @@ static VALUE oci8_bfile_get_filename(VALUE self)
     return filename;
 }
 
+/*
+ *  call-seq:
+ *    dir_alias = name
+ *
+ *  Changes the directory object name.
+ *
+ *  @param [String] name
+ */
 static VALUE oci8_bfile_set_dir_alias(VALUE self, VALUE dir_alias)
 {
     VALUE filename;
@@ -601,6 +824,14 @@ static VALUE oci8_bfile_set_dir_alias(VALUE self, VALUE dir_alias)
     return dir_alias;
 }
 
+/*
+ *  call-seq:
+ *    filename = name
+ *
+ *  Changes the file name.
+ *
+ *  @param [String] name
+ */
 static VALUE oci8_bfile_set_filename(VALUE self, VALUE filename)
 {
     VALUE dir_alias;
@@ -612,6 +843,11 @@ static VALUE oci8_bfile_set_filename(VALUE self, VALUE filename)
     return filename;
 }
 
+/*
+ *  Returns <code>true</code> when the BFILE exists on the server's operating system.
+ *
+ *  @return [true or false]
+ */
 static VALUE oci8_bfile_exists_p(VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
@@ -622,6 +858,39 @@ static VALUE oci8_bfile_exists_p(VALUE self)
            &svcctx->base);
     return flag ? Qtrue : Qfalse;
 }
+
+/*
+ *  Document-method: OCI8::BFILE#truncate
+ *
+ *  call-seq:
+ *    truncate(length)
+ *
+ *  Raises <code>RuntimeError</code>.
+ *
+ *  @raise [RuntimeError] cannot modify a read-only BFILE object
+ */
+
+/*
+ *  Document-method: OCI8::BFILE#size=
+ *
+ *  call-seq:
+ *    size = length
+ *
+ *  Raises <code>RuntimeError</code>.
+ *
+ *  @raise [RuntimeError] cannot modify a read-only BFILE object
+ */
+
+/*
+ *  Document-method: OCI8::BFILE#write
+ *
+ *  call-seq:
+ *    write(data)
+ *
+ *  Raises <code>RuntimeError</code>.
+ *
+ *  @raise [RuntimeError] cannot modify a read-only BFILE object
+ */
 
 static VALUE oci8_bfile_error(VALUE self, VALUE dummy)
 {
@@ -760,6 +1029,12 @@ void Init_oci8_lob(VALUE cOCI8)
     seek_set = rb_eval_string("::IO::SEEK_SET");
     seek_cur = rb_eval_string("::IO::SEEK_CUR");
     seek_end = rb_eval_string("::IO::SEEK_END");
+
+#if 0
+    cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
+    cOCI8 = rb_define_class("OCI8", cOCIHandle);
+    cOCI8LOB = rb_define_class_under(cOCI8, "LOB", cOCIHandle);
+#endif
 
     cOCI8LOB = oci8_define_class_under(cOCI8, "LOB", &oci8_lob_vtable);
     cOCI8CLOB = rb_define_class_under(cOCI8, "CLOB", cOCI8LOB);

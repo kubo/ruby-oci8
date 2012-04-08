@@ -13,6 +13,14 @@
 #endif
 #include <windows.h>
 
+/*
+ *  Document-module: OCI8::Win32Util
+ *
+ *  Windows specific utility module.
+ *
+ *  @private
+ */
+
 NORETURN(static void raise_error(void));
 
 static void raise_error(void)
@@ -33,6 +41,11 @@ static void raise_error(void)
     rb_raise(rb_eRuntimeError, "%s", msg);
 }
 
+/*
+ *  Returns the full path of OCI.DLL used by the current process.
+ *
+ *  @return [String]
+ */
 static VALUE dll_path(VALUE module)
 {
     HMODULE hModule;
@@ -120,6 +133,15 @@ static VALUE enum_homes_ensure(enum_homes_arg_t *arg)
     return Qnil;
 }
 
+/*
+ *  Enumerates full clients' Oracle homes and NLS_LANG parameters
+ *  registerd in the Windows registry.
+ *
+ *  @yield [oracle_home, nls_lang]
+ *  @yieldparam [String] oracle_home
+ *  @yieldparam [String] nls_lang
+ *  @return [nil]
+ */
 static VALUE enum_homes(VALUE module)
 {
     enum_homes_arg_t arg;

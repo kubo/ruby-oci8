@@ -1,3 +1,7 @@
+2012-04-08  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c, ext/oci8/win32.c, lib/oci8/oracle_version.rb:
+	    revise rdoc comments.
+
 2012-04-06  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/error.c, ext/oci8/ocihandle.c, ext/oci8/oradate.c,
 	  lib/oci8/encoding-init.rb, lib/oci8/oci8.rb, lib/oci8/ocihandle.rb:

@@ -2,14 +2,16 @@
 #
 # Copyright (C) 2009 KUBO Takehiro <kubo@jiubao.org>
 
-#--
-
+#
 class OCI8
 
-  # A data class, representing Oracle version.
+  # The data class, representing Oracle version.
   #
   # Oracle version is represented by five numbers:
   # *major*, *minor*, *update*, *patch* and *port_update*.
+  #
+  # @see OCI8.oracle_client_version
+  # @see OCI8#oracle_server_version
   class OracleVersion
     include Comparable
 
@@ -24,7 +26,7 @@ class OCI8
     # The fourth part of the Oracle version.
     attr_reader :port_update
 
-    # Creates a OCI8::OracleVersion object.
+    # Creates an OCI8::OracleVersion object.
     #
     # If the first argument _arg_ is a String, it is parsed as dotted
     # version string. If it is bigger than 0x08000000, it is parsed as
@@ -33,20 +35,32 @@ class OCI8
     # patch and port_update. Unspecified version numbers are zeros by
     # default.
     #
-    # == Example
-    #   oraver = OCI8::OracleVersion.new('10.2.0.4')
-    #   oraver.major       # => 10
+    # @example
+    #   # When the first argument is a String,
+    #   oraver = OCI8::OracleVersion.new('11.2.0.3')
+    #   oraver.major       # => 11
     #   oraver.minor       # =>  2
     #   oraver.update      # =>  0
-    #   oraver.patch       # =>  4
+    #   oraver.patch       # =>  3
     #   oraver.port_update # =>  0
     #
-    #   oraver = OCI8::OracleVersion.new(0x0a200400)
-    #   oraver.major       # => 10
+    #   # When the first argument is bigger than 0x08000000,
+    #   oraver = OCI8::OracleVersion.new(0x0b200300)
+    #   oraver.major       # => 11
     #   oraver.minor       # =>  2
     #   oraver.update      # =>  0
-    #   oraver.patch       # =>  4
+    #   oraver.patch       # =>  3
     #   oraver.port_update # =>  0
+    #
+    #   # Otherwise,
+    #   oraver = OCI8::OracleVersion.new(11, 2, 0, 3)
+    #   oraver.major       # => 11
+    #   oraver.minor       # =>  2
+    #   oraver.update      # =>  0
+    #   oraver.patch       # =>  3
+    #   oraver.port_update # =>  0
+    #
+    # @return [OCI8::OracleVersion]
     def initialize(arg, minor = nil, update = nil, patch = nil, port_update = nil)
       if arg.is_a? String
         major, minor, update, patch, port_update = arg.split('.').collect do |v|
@@ -68,13 +82,12 @@ class OCI8
       @port_update = port_update || 0
     end
 
-    # :call-seq:
-    #   oraver <=> other_oraver -> -1, 0, +1
-    #
-    # Compares +oraver+ and +other_oraver+.
+    # Compares +self+ and +other+.
     #
     # <=> is the basis for the methods <, <=, ==, >, >=, and between?,
-    # included from module Comparable.
+    # included from the Comparable module.
+    #
+    # @return [-1, 0, +1]
     def <=>(other)
       cmp = @major <=> other.major
       return cmp if cmp != 0
@@ -87,57 +100,50 @@ class OCI8
       @port_update <=> other.port_update
     end
 
-    # :call-seq:
-    #   oraver.to_i -> integer
-    #
     # Returns an integer number contains 5-digit Oracle version.
     #
     # If the hexadecimal notation is 0xAABCCDEE, *major*, *minor*,
     # *update*, *patch* and *port_update* are 0xAA, 0xB, 0xCC, 0xD and
     # 0xEE respectively.
     #
-    # == Example
-    #   oraver = OCI8::OracleVersion.new('10.2.0.4')
-    #   oraver.to_i          # => 169870336
-    #   '%08x' % oraver.to_i # => "0a200400"
+    # @example
+    #   oraver = OCI8::OracleVersion.new('11.2.0.3')
+    #   oraver.to_i          # => 186647296
+    #   '%08x' % oraver.to_i # => "0b200300"
+    #
+    # @return [Integer]
     def to_i
       (@major << 24) | (@minor << 20) | (@update << 12) | (@patch << 8) | @port_update
     end
 
-    # :call-seq:
-    #   oraver.to_s -> string
-    #
     # Returns a dotted version string of the Oracle version.
     #
-    # == Example
-    #   oraver = OCI8::OracleVersion.new('10.2.0.4')
-    #   oraver.to_s          # => '10.2.0.4.0'
+    # @example
+    #   oraver = OCI8::OracleVersion.new('11.2.0.3')
+    #   oraver.to_s          # => '11.2.0.3.0'
+    #
+    # @return [Integer]
     def to_s
       format('%d.%d.%d.%d.%d', @major, @minor, @update, @patch, @port_update)
     end
 
-    # :call-seq:
-    #   oraver.eql? other -> true or false
-    #
-    # Returns true if +oraver+ and +other+ are the same type and have
+    # Returns true if +self+ and +other+ are the same type and have
     # equal values.
-    #--
-    # This is for class Hash to test members for equality.
+    #
+    # @return [true or false]
     def eql?(other)
       other.is_a? OCI8::OracleVersion and (self <=> other) == 0
     end
 
-    # :call-seq:
-    #   oraver.hash -> integer
+    # Returns a hash based on the value of +self+.
     #
-    # Returns a hash based on the value of +oraver+.
-    #--
-    # This is for class Hash.
+    # @return [Integer]
     def hash
       to_i
     end
 
-    def inspect # :nodoc:
+    # @private
+    def inspect
       "#<#{self.class.to_s}: #{self.to_s}>"
     end
   end
