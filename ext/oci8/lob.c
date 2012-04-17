@@ -1,4 +1,4 @@
-/* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
+o/* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 #include "oci8.h"
 
 static ID id_plus;
@@ -234,6 +234,7 @@ static VALUE oci8_lob_do_initialize(int argc, VALUE *argv, VALUE self, ub1 csfrm
                &svcctx->base);
         lob->svchp = oci8_get_oci_svcctx(svc);
         oci8_lob_write(self, val);
+        lob->pos = 0; /* reset the position */
     }
     return Qnil;
 }
@@ -601,6 +602,10 @@ static VALUE oci8_lob_write(VALUE self, VALUE data)
     }
     RB_GC_GUARD(data);
     amt = RSTRING_LEN(data);
+    if (amt == 0) {
+        /* to avoid ORA-24801: illegal parameter value in OCI lob function */
+        return INT2FIX(0);
+    }
     chker2(OCILobWrite_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, RSTRING_PTR(data), amt, OCI_ONE_PIECE, NULL, NULL, 0, lob->csfrm),
            &svcctx->base);
     lob->pos += amt;

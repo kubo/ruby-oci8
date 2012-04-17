@@ -1,4 +1,8 @@
 2012-04-17  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c: 1. fix an exception when OCI8::CLOB.new(conn, '')
+	    is called. 2. Reset the position of a newly created LOB.
+
+2012-04-17  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8lib.c: fix core dump.
 	    See: https://github.com/kubo/ruby-oci8/issues/11
 	    (reported by Raimonds Simanovskis)
