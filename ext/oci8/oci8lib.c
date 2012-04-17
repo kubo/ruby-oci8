@@ -37,10 +37,15 @@ void oci8_base_free(oci8_base_t *base)
     oci8_unlink_from_parent(base);
     if (base->vptr->free != NULL)
         base->vptr->free(base);
-    if (base->type >= OCI_DTYPE_FIRST)
+    if (base->type >= OCI_DTYPE_FIRST) {
         OCIDescriptorFree(base->hp.ptr, base->type);
-    else if (base->type >= OCI_HTYPE_FIRST)
+    } else if (base->type == OCI_HTYPE_BIND || base->type == OCI_HTYPE_DEFINE) {
+        ; /* Do nothing. Bind handles and define handles are freed when
+           * associating statement handles are freed.
+           */
+    } else if (base->type >= OCI_HTYPE_FIRST) {
         OCIHandleFree(base->hp.ptr, base->type);
+    }
     base->type = 0;
     base->hp.ptr = NULL;
 }

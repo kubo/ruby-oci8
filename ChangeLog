@@ -1,3 +1,8 @@
+2012-04-17  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8lib.c: fix core dump.
+	    See: https://github.com/kubo/ruby-oci8/issues/11
+	    (reported by Raimonds Simanovskis)
+
 2012-04-08  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c, ext/oci8/win32.c, lib/oci8/oracle_version.rb:
 	    revise rdoc comments.
