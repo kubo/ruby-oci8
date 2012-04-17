@@ -1,4 +1,4 @@
-o/* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
+/* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 #include "oci8.h"
 
 static ID id_plus;
