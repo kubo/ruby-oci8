@@ -1,3 +1,6 @@
+2012-04-21  KUBO Takehiro  <kubo@jiubao.org>
+	* test/test_oci8.rb: fix code to test OCI8::CLOB.new(conn, '').
+
 2012-04-17  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c: 1. fix an exception when OCI8::CLOB.new(conn, '')
 	    is called. 2. Reset the position of a newly created LOB.

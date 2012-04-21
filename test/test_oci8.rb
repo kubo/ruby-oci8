@@ -322,14 +322,20 @@ EOS
     @conn.exec(sql)
     cursor = @conn.parse("INSERT INTO test_table VALUES (:1, :2, :3, :4)")
     0.upto(9) do |i|
-      val = format('%d', i) * 4096
+      val = case i
+            when 5; '' # empty string
+            else format('%d', i) * 4096
+            end
       cursor.exec(i, OCI8::CLOB.new(@conn, val), OCI8::NCLOB.new(@conn, val), OCI8::BLOB.new(@conn, val))
     end
     cursor.close
     cursor = @conn.exec("select * from test_table order by id")
     0.upto(9) do |i|
       rv = cursor.fetch
-      val = format('%d', i) * 4096
+      val = case i
+            when 5; '' # empty string
+            else format('%d', i) * 4096
+            end
       assert_equal(i, rv[0])
       assert_instance_of(OCI8::CLOB, rv[1])
       assert_instance_of(OCI8::NCLOB, rv[2])
