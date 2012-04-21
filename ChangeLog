@@ -1,4 +1,7 @@
 2012-04-21  KUBO Takehiro  <kubo@jiubao.org>
+	* test/test_datetime.rb: fix to pass tests on ruby 1.9.1 and earlier.
+
+2012-04-21  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c: fix to raise a RuntimeError when a connection
 	    retrieved from a connection pool is set as non-blocking on 
 	    ruby 1.8.
