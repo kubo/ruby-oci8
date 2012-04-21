@@ -1,4 +1,7 @@
 2012-04-21  KUBO Takehiro  <kubo@jiubao.org>
+	* custom-rdoc.rb: delete an unused file.
+
+2012-04-21  KUBO Takehiro  <kubo@jiubao.org>
 	* test/test_oci8.rb: fix code to test OCI8::CLOB.new(conn, '').
 
 2012-04-17  KUBO Takehiro  <kubo@jiubao.org>
