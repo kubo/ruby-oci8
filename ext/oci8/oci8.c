@@ -338,6 +338,7 @@ static const oci8_logoff_strategy_t complex_logoff = {
 static VALUE oci8_logon2(VALUE self, VALUE username, VALUE password, VALUE dbname, VALUE mode)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
+    ub4 logon2_mode;
 
     if (svcctx->logoff_strategy != NULL) {
         rb_raise(rb_eRuntimeError, "Could not reuse the session.");
@@ -349,6 +350,7 @@ static VALUE oci8_logon2(VALUE self, VALUE username, VALUE password, VALUE dbnam
     if (!NIL_P(dbname)) {
         OCI8SafeStringValue(dbname);
     }
+    logon2_mode = NUM2UINT(mode);
 
     /* logon */
     svcctx->base.type = OCI_HTYPE_SVCCTX;
@@ -356,9 +358,13 @@ static VALUE oci8_logon2(VALUE self, VALUE username, VALUE password, VALUE dbnam
                         RSTRING_ORATEXT(username), RSTRING_LEN(username),
                         RSTRING_ORATEXT(password), RSTRING_LEN(password),
                         NIL_P(dbname) ? NULL : RSTRING_ORATEXT(dbname),
-                        NIL_P(dbname) ? 0 : RSTRING_LEN(dbname), NUM2UINT(mode)),
+                        NIL_P(dbname) ? 0 : RSTRING_LEN(dbname), logon2_mode),
            &svcctx->base);
     svcctx->logoff_strategy = &simple_logoff;
+
+    if (logon2_mode & OCI_LOGON2_CPOOL) {
+        svcctx->state |= OCI8_STATE_CPOOL;
+    }
 
     /* setup the session handle */
     chker2(OCIAttrGet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, &svcctx->usrhp, 0, OCI_ATTR_SESSION, oci8_errhp),

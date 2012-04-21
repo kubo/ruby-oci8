@@ -1,4 +1,9 @@
 2012-04-21  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c: fix to raise a RuntimeError when a connection
+	    retrieved from a connection pool is set as non-blocking on 
+	    ruby 1.8.
+
+2012-04-21  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c: OCI8::LOB#read() returns an empty string '' when
 	    it is an empty lob.
 
