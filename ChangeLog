@@ -1,4 +1,8 @@
 2012-04-21  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c: OCI8::LOB#read() returns an empty string '' when
+	    it is an empty lob.
+
+2012-04-21  KUBO Takehiro  <kubo@jiubao.org>
 	* custom-rdoc.rb: delete an unused file.
 
 2012-04-21  KUBO Takehiro  <kubo@jiubao.org>

@@ -473,10 +473,14 @@ static VALUE oci8_lob_set_size(VALUE self, VALUE len)
  *
  *  Reads <i>length</i> characters for CLOB and NCLOB or <i>length</i>
  *  bytes for BLOB and BILF from the current position.
- *  When <i>length</i> is nil, it reads data until EOF.
+ *  If <i>length</i> is <code>nil</code>, it reads data until EOF.
+ *
+ *  It returns a string or <code>nil</code>. <code>nil</code> means it
+ *  met EOF at beginning. As a special exception, when <i>length</i> is
+ *  <code>nil</code> and the lob length is zero, it returns an empty string ''.
  *
  *  @param [Integer] length
- *  @return [String]
+ *  @return [String or nil]
  */
 static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
 {
@@ -493,6 +497,9 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
 
     rb_scan_args(argc, argv, "01", &size);
     length = oci8_lob_get_length(lob);
+    if (length == 0 && NIL_P(size)) {
+        return rb_usascii_str_new("", 0);
+    }
     if (length <= lob->pos) /* EOF */
         return Qnil;
     length -= lob->pos;
