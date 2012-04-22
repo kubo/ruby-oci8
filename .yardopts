@@ -1,0 +1,13 @@
+--protected
+--no-private
+--exclude ext/oci8/apiwrap.rb
+--exclude ext/oci8/oraconf.rb
+--exclude lib/oci8/compat.rb
+--exclude lib/dbd
+-
+NEWS
+docs/install-full-client.md
+docs/install-instant-client.md
+docs/install-binary-package.md
+docs/platform-specific-issues.md
+docs/report-installation-issue.md

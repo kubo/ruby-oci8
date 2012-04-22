@@ -1,5 +1,0 @@
-Ruby-oci8 is a ruby interface for Oracle using OCI8 API. 
-The latest version (2.1.x) works with Oracle9i or later.
-Use ruby-oci8 2.0.6 or earlier for Oracle 8.
-
-See: http://ruby-oci8.rubyforge.org

@@ -5,11 +5,17 @@ require 'oci8/metadata.rb'
 
 class OCI8
 
+  # Returns the type descriptor object which correspond to the given class.
+  #
+  # @param [class of an OCI8::Object::Base's subclass]
+  # @return [OCI8::TDO]
+  #
+  # @private
   def get_tdo_by_class(klass)
     @id_to_tdo ||= {}
     @name_to_tdo ||= {}
     tdo = @name_to_tdo[klass.typename]
-    return tdo if tdo
+    return tdo if tdo # found in the cache.
 
     metadata = describe_any(klass.typename)
     if metadata.is_a? OCI8::Metadata::Synonym
@@ -21,6 +27,12 @@ class OCI8
     OCI8::TDO.new(self, metadata, klass)
   end
 
+  # Returns the type descriptor object which correspond to the given metadata.
+  #
+  # @param [OCI8::Metadata::Base's subclass]
+  # @return [OCI8::TDO]
+  #
+  # @private
   def get_tdo_by_metadata(metadata)
     @id_to_tdo ||= {}
     @name_to_tdo ||= {}
@@ -59,7 +71,10 @@ EOS
     OCI8::TDO.new(self, metadata, klass)
   end
 
-  class BindArgumentHelper # :nodoc:
+  # A helper class to bind arguments.
+  #
+  # @private
+  class BindArgumentHelper
     attr_reader :arg_str
     def initialize(*args)
       if args.length == 1 and args[0].is_a? Hash
@@ -102,12 +117,14 @@ EOS
       @@name_to_class = {}
       @@default_connection = nil
 
+      # @private
       def self.inherited(klass)
         name = klass.to_s.gsub(/^.*::/, '').gsub(/([a-z\d])([A-Z])/,'\1_\2').upcase
         @@class_to_name[klass] = name
         @@name_to_class[name] = klass
       end
 
+      # @private
       def self.get_class_by_typename(name)
         @@name_to_class[name]
       end
@@ -125,6 +142,7 @@ EOS
         @@name_to_class[name] = self
       end
 
+      # @deprecated
       def self.default_connection=(con)
         @@default_connection = con
       end
@@ -158,6 +176,8 @@ EOS
       end
 
       # class method
+
+      # @private
       def self.method_missing(method_id, *args)
         if args[0].is_a? OCI8
           con = args.shift
@@ -204,6 +224,8 @@ EOS
       end
 
       # instance method
+
+      # @private
       def method_missing(method_id, *args)
         if @attributes.is_a? Array
           return @attributes if method_id == :to_ary
@@ -283,13 +305,14 @@ EOS
     end # OCI8::Object::Base
   end # OCI8::Object
 
+  # @private
   class TDO
     # full-qualified object type name.
     #  e.g.
     #   MDSYS.SDO_GEOMETRY
     attr_reader :typename
 
-    # named_type
+    # a subclass of OCI8::Object::Base
     attr_reader :ruby_class
 
     attr_reader :val_size
@@ -495,6 +518,7 @@ EOS
     end
   end
 
+  # @private
   class NamedType
     def to_value
       return nil if self.null?
@@ -528,6 +552,7 @@ EOS
     end
   end
 
+  # @private
   class NamedCollection
     def to_value
       attr = self.attributes

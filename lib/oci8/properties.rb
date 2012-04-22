@@ -2,6 +2,7 @@
 #
 # Copyright (C) 2010-2011 KUBO Takehiro <kubo@jiubao.org>
 
+#
 class OCI8
 
   @@properties = {

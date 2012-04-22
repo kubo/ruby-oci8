@@ -4,6 +4,7 @@
 # Copyright (C) 2009-2011 KUBO Takehiro <kubo@jiubao.org>
 #++
 
+#
 class OCI8
   module BindType
     Mapping = {}

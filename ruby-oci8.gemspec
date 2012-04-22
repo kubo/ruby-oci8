@@ -31,7 +31,7 @@ spec = Gem::Specification.new do |s|
   s.description = <<EOS
 ruby-oci8 is a ruby interface for Oracle using OCI8 API. It is available with Oracle8, Oracle8i, Oracle9i, Oracle10g and Oracle Instant Client.
 EOS
-  s.has_rdoc = true
+  s.has_rdoc = 'yard'
   s.authors = ['KUBO Takehiro']
   s.platform = gem_platform
   files = File.read('dist-files').split("\n")
@@ -67,8 +67,8 @@ EOS
     end
     files << 'lib/oci8.rb'
   end
+  s.require_paths = ['lib', 'ext/oci8']
   s.files = files
   s.test_files = 'test/test_all.rb'
-  s.rdoc_options = ['--main', 'README']
-  s.extra_rdoc_files = ['README']
+  s.extra_rdoc_files = ['README.md']
 end

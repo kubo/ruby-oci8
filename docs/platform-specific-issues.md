@@ -8,12 +8,12 @@ Ubuntu 11.10 (Oneiric Ocelot)
 
 If the following error occurs even though libc6-dev is installed,
 
-  Do you install glibc-devel(redhat) or libc6-dev(debian)?
-  You need /usr/include/sys/types.h to compile ruby-oci8.
+    Do you install glibc-devel(redhat) or libc6-dev(debian)?
+    You need /usr/include/sys/types.h to compile ruby-oci8.
 
 You need to use ruby-oci8 2.1.0 or upper. Otherwise, run the following command and re-install ruby-oci8.
 
- $ sudo ln -s /usr/include/linux/ /usr/include/sys
+    $ sudo ln -s /usr/include/linux/ /usr/include/sys
 
 General Linux
 -------------
@@ -37,11 +37,12 @@ Mac OS X
 OS X 10.7 Lion
 --------------
 
-64-bit instant client doesn't work. Use 32-bit instant client or jruby.
+64-bit instant client doesn't work. Use 32-bit ruby and instant client or jruby.
 
 See:
-* http://rubyforge.org/forum/forum.php?thread_id=49548&forum_id=1078
-* https://forums.oracle.com/forums/thread.jspa?threadID=2187558
+
+* {http://rubyforge.org/forum/forum.php?thread\_id=49548&forum\_id=1078}
+* {https://forums.oracle.com/forums/thread.jspa?threadID=2187558}
 
 Intel Mac (64-bit)
 ------------------

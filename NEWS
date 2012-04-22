@@ -1,5 +1,51 @@
 # @markup markdown
 
+2.1.1
+=====
+
+New Features
+------------
+
+### Statement caching in OCI
+
+See {http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/oci09adv.htm#i471377}.
+This feature is enabled only when the Oracle client is 9iR2 or upper.
+
+The default cache size is 20. It can be changed as follows.
+
+    # change the size to 100.
+    OCI8.properties[:statement_cache_size] = 100
+
+Specification changes
+---------------------
+
+### OCI8::LOB#read() returns an empty string '' when it is an empty lob.
+
+It had been returned nil.
+
+Fixed Issues
+------------
+
+-   OCI8::CLOB.new(conn, '') works now.
+
+-   fix core dump when calling PL/SQL procedure with cursor argument.
+    See: {https://github.com/kubo/ruby-oci8/issues/11}
+
+    (reported by Raimonds Simanovskis)
+
+-   fix testcase failures in DST.
+    See: {https://github.com/kubo/ruby-oci8/issues/8}
+
+    (reported by Yasuo Honda)
+
+-   fix a compilation issue on Redhat.
+
+    (reported by John Beckwith and others)
+
+-   fix "wrong number of arguments (1 for 2)" when a date member in a object type is accessed.
+
+    (repored by Leoš Bitto)
+
 2.1.0
 =====
 

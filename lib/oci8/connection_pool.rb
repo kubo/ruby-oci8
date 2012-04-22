@@ -4,6 +4,7 @@
 # Copyright (C) 2010 KUBO Takehiro <kubo@jiubao.org>
 #++
 
+#
 class OCI8
 
   # Connection pooling is the use of a group (the pool) of reusable
