@@ -1,4 +1,8 @@
 2012-04-22  KUBO Takehiro  <kubo@jiubao.org>
+	* VERSION: update to 2.1.1.
+	* README.md: add links.
+
+2012-04-22  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 2.1.0 and 2.1.1.
 	* README -> README.md: renamed.
 	* .yardopts: added for yard.

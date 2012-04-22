@@ -1,5 +1,3 @@
-# @markup markdown
-
 What is ruby-oci8
 =================
 
@@ -28,9 +26,13 @@ If you install a ruby-oci8 gem package, you may need to add `-rubygems` before `
 Installation
 ============
 
-Look at the followings:
-
 * {file:docs/install-full-client.md}
 * {file:docs/install-instant-client.md}
 * {file:docs/install-binary-package.md}
 
+Report issues
+=============
+
+* {file:docs/report-installation-issue.md}
+* [The issues page on github](https://github.com/kubo/ruby-oci8/issues)
+* [The ruby-oci8 help forum on rubyforge](http://rubyforge.org/forum/forum.php?forum_id=1078)
