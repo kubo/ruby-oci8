@@ -29,6 +29,11 @@ static void oci8_metadata_mark(oci8_base_t *base)
     rb_gc_mark(md->svc);
 }
 
+static void oci8_metadata_free(oci8_base_t *base)
+{
+    base->type = 0; /* to prevent OCIDescriptorFree */
+}
+
 VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE parent)
 {
     oci8_metadata_t *md;
@@ -199,7 +204,7 @@ static VALUE metadata_get_tdo_id(VALUE self)
 
 oci8_base_vtable_t oci8_metadata_vtable = {
     oci8_metadata_mark,
-    NULL,
+    oci8_metadata_free,
     sizeof(oci8_metadata_t),
 };
 

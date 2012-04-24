@@ -1,3 +1,7 @@
+2012-04-24  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/metadata.c: fix internal heap error in OCI.
+	    (github issue #12 reported by Yasuo Honda)
+
 2012-04-22  KUBO Takehiro  <kubo@jiubao.org>
 	* VERSION: update to 2.1.1.
 	* README.md: add links.
