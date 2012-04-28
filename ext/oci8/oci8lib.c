@@ -1,14 +1,9 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
- * Copyright (C) 2002-2011 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2012 KUBO Takehiro <kubo@jiubao.org>
  */
 
 #include "oci8.h"
-
-#define DEBUG_CORE_FILE 1
-#ifdef DEBUG_CORE_FILE
-#include <signal.h>
-#endif
 
 ID oci8_id_at_last_error;
 ID oci8_id_new;
@@ -144,10 +139,6 @@ Init_oci8lib()
 
 #ifdef USE_WIN32_C
     Init_oci8_win32(cOCI8);
-#endif
-
-#ifdef DEBUG_CORE_FILE
-    signal(SIGSEGV, SIG_DFL);
 #endif
 }
 
