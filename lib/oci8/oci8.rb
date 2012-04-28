@@ -119,6 +119,7 @@ class OCI8
     end
 
     stmt_cache_size = OCI8.properties[:statement_cache_size]
+    stmt_cache_size = nil if stmt_cache_size == 0
 
     if mode.nil? and cred.nil?
       # logon by the OCI function OCILogon2().

@@ -1,4 +1,9 @@
 2012-04-28  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb, lib/oci8/properties.rb: disable statement caching by default.
+	    This is workaround about a SIGSEGV issue.
+	    See: https://github.com/rsim/oracle-enhanced/issues/162
+
+2012-04-28  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8lib.c: delete code which overwrites signal handlers
 	    registered by ruby. This was committed by mistake.
 	    See: http://rubyforge.org/forum/forum.php?thread_id=50690&forum_id=1078

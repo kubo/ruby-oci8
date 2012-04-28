@@ -1,6 +1,6 @@
 # properties.rb -- implements OCI8.properties
 #
-# Copyright (C) 2010-2011 KUBO Takehiro <kubo@jiubao.org>
+# Copyright (C) 2010-2012 KUBO Takehiro <kubo@jiubao.org>
 
 #
 class OCI8
@@ -9,7 +9,7 @@ class OCI8
     :length_semantics => :byte,
     :bind_string_as_nchar => false,
     :float_conversion_type => :ruby,
-    :statement_cache_size => 20,
+    :statement_cache_size => 0,
   }
 
   if OCI8.oracle_client_version < OCI8::ORAVER_9_2
@@ -89,7 +89,8 @@ class OCI8
   # [:statement_cache_size]
   #     (new in 2.1.1)
   #     
-  #     The statement cache size per each session. The default value is 20 statements.
+  #     The statement cache size per each session. The default size is 0, which
+  #     means no statement cache, since 2.1.2. It was 20 in 2.1.1.
   #     This feature is available on Oracle 9iR2 or later.
   #     See: http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/oci09adv.htm#i471377
   #
