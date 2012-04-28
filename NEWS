@@ -1,5 +1,26 @@
 # @markup markdown
 
+2.1.2
+=====
+
+Specification changes
+---------------------
+
+### Statement caching in OCI is disabled by default.
+
+This is workaround about a SIGSEGV issue.
+See: [oracle enhanced issue #162](https://github.com/rsim/oracle-enhanced/issues/162)
+Fixed Issues
+------------
+
+-   delete code which overwrites signal handlers registered by ruby.
+    See: [rubyforge thread 50690](http://rubyforge.org/forum/forum.php?thread_id=50690&forum_id=1078)
+
+-   fix internal heap error in OCI.
+    See: [github issue #12](https://github.com/kubo/ruby-oci8/issues/12)
+
+    (reported by Yasuo Honda)
+
 2.1.1
 =====
 
@@ -15,6 +36,8 @@ The default cache size is 20. It can be changed as follows.
 
     # change the size to 100.
     OCI8.properties[:statement_cache_size] = 100
+
+Note: The default size was changed to zero in 2.1.2.
 
 Specification changes
 ---------------------
