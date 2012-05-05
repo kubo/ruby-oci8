@@ -421,32 +421,6 @@ static VALUE oci8_allocate_handles(VALUE self)
 
 /*
  * call-seq:
- *   session_handle -> a session handle
- *
- * <b>internal use only</b>
- *
- * Returns a session handle associated with the service context handle.
- */
-static VALUE oci8_get_session_handle(VALUE self)
-{
-    return rb_ivar_get(self, id_at_session_handle);
-}
-
-/*
- * call-seq:
- *   server_handle -> a server handle
- *
- * <b>internal use only</b>
- *
- * Returns a server handle associated with the service context handle.
- */
-static VALUE oci8_get_server_handle(VALUE self)
-{
-    return rb_ivar_get(self, id_at_server_handle);
-}
-
-/*
- * call-seq:
  *   server_attach(dbname, mode)
  *
  * <b>internal use only</b>
@@ -1107,8 +1081,6 @@ VALUE Init_oci8(void)
     rb_define_private_method(cOCI8, "parse_connect_string", oci8_parse_connect_string, 1);
     rb_define_private_method(cOCI8, "logon2", oci8_logon2, 4);
     rb_define_private_method(cOCI8, "allocate_handles", oci8_allocate_handles, 0);
-    rb_define_private_method(cOCI8, "session_handle", oci8_get_session_handle, 0);
-    rb_define_private_method(cOCI8, "server_handle", oci8_get_server_handle, 0);
     rb_define_private_method(cOCI8, "server_attach", oci8_server_attach, 2);
     rb_define_private_method(cOCI8, "session_begin", oci8_session_begin, 2);
     rb_define_method(cOCI8, "logoff", oci8_svcctx_logoff, 0);

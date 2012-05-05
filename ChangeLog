@@ -1,3 +1,7 @@
+2012-05-05  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c, lib/oci8/oci8.rb: delete private methods OCI8#server_handle
+	    and OCI8#session_handle and use @server_handle and @session_handle instead.
+
 2012-04-28  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 2.1.2 and 2.1.1
 	* VERSION: change the version to 2.1.2.

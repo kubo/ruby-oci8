@@ -154,8 +154,8 @@ class OCI8
       end
 
       allocate_handles()
-      session_handle.send(:attr_set_string, OCI_ATTR_USERNAME, username) if username
-      session_handle.send(:attr_set_string, OCI_ATTR_PASSWORD, password) if password
+      @session_handle.send(:attr_set_string, OCI_ATTR_USERNAME, username) if username
+      @session_handle.send(:attr_set_string, OCI_ATTR_PASSWORD, password) if password
       server_attach(dbname, attach_mode)
       session_begin(cred ? cred : OCI_CRED_RDBMS, mode ? mode : OCI_DEFAULT)
 
@@ -367,7 +367,7 @@ class OCI8
   #
   # Returns the database character set name.
   def database_charset_name
-    charset_id2name(server_handle.send(:attr_get_ub2, OCI_ATTR_CHARSET_ID))
+    charset_id2name(@server_handle.send(:attr_get_ub2, OCI_ATTR_CHARSET_ID))
   end
 
   # :call-seq:
