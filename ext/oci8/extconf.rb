@@ -129,22 +129,22 @@ replace = {
 # make ruby script before running create_makefile.
 replace_keyword(File.dirname(__FILE__) + '/../../lib/oci8.rb.in', '../../lib/oci8.rb', replace)
 
-so_basename = 'oci8lib_'
-if defined? RUBY_ENGINE and RUBY_ENGINE != 'ruby'
-  so_basename += RUBY_ENGINE
-end
+ruby_engine = (defined? RUBY_ENGINE) ? RUBY_ENGINE : 'ruby'
 
-# Config::CONFIG["ruby_version"] indicates the ruby API version.
-#  1.8   - ruby 1.8.x
-#  1.9.1 - ruby 1.9.1, 1.9.2 and 2.0.0-dev at the present time.
-so_basename += RbConfig::CONFIG["ruby_version"].gsub(/\W/, '')
+so_basename = 'oci8lib_'
+if ruby_engine == 'ruby'
+  # Config::CONFIG["ruby_version"] indicates the ruby API version.
+  #  1.8   - ruby 1.8.x
+  #  1.9.1 - ruby 1.9.1, 1.9.2 and 2.0.0-dev at the present time.
+  so_basename += RbConfig::CONFIG["ruby_version"].gsub(/\W/, '')
+else
+  so_basename += ruby_engine
+end
 
 $defs << "-DInit_oci8lib=Init_#{so_basename}"
 $defs << "-Doci8lib=#{so_basename}"
 $defs << "-DOCI8LIB_VERSION=\\\"#{RUBY_OCI8_VERSION}\\\""
-if defined? RUBY_ENGINE and RUBY_ENGINE == 'rbx'
-  $defs << "-DCHAR_IS_NOT_A_SHORTCUT_TO_ID"
-end
+$defs << "-DCHAR_IS_NOT_A_SHORTCUT_TO_ID" if ruby_engine != 'ruby'
 
 create_header()
 
