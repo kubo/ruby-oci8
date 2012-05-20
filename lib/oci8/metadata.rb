@@ -1338,22 +1338,22 @@ class OCI8
 
       # minimum value
       def min
-        __oraint(OCI_ATTR_MIN)
+        attr_get_integer(OCI_ATTR_MIN)
       end
 
       # maximum value
       def max
-        __oraint(OCI_ATTR_MAX)
+        attr_get_integer(OCI_ATTR_MAX)
       end
 
       # increment
       def incr
-        __oraint(OCI_ATTR_INCR)
+        attr_get_integer(OCI_ATTR_INCR)
       end
 
       # number of sequence numbers cached; zero if the sequence is not a cached sequence.
       def cache
-        __oraint(OCI_ATTR_CACHE)
+        attr_get_integer(OCI_ATTR_CACHE)
       end
 
       # whether the sequence is ordered
@@ -1363,7 +1363,7 @@ class OCI8
 
       # high-water mark
       def hw_mark
-        __oraint(OCI_ATTR_HW_MARK)
+        attr_get_integer(OCI_ATTR_HW_MARK)
       end
     end
 

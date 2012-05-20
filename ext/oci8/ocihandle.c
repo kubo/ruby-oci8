@@ -419,8 +419,9 @@ static VALUE attr_get_binary(VALUE self, VALUE attr_type)
 static VALUE attr_get_integer(VALUE self, VALUE attr_type)
 {
     oci8_base_t *base = DATA_PTR(self);
+    OCINumber onum;
     union {
-        OCINumber *value;
+        void *value;
         ub8 dummy; /* padding for incorrect attrtype to protect the stack */
     } v;
     ub4 size = 0;
@@ -428,7 +429,11 @@ static VALUE attr_get_integer(VALUE self, VALUE attr_type)
     v.dummy = 0;
     Check_Type(attr_type, T_FIXNUM);
     chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, &size, FIX2INT(attr_type), oci8_errhp), base);
-    return oci8_make_integer(v.value, oci8_errhp);
+
+    memset(&onum, 0, sizeof(onum));
+    onum.OCINumberPart[0] = size;
+    memcpy(&onum.OCINumberPart[1], v.value, size);
+    return oci8_make_integer(&onum, oci8_errhp);
 }
 
 /*
