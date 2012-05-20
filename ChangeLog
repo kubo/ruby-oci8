@@ -1,4 +1,8 @@
 2012-05-20  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c, test/test_oci8.rb: add OCI8's class variables:
+	    @@environment_handle and @@process_handle.
+
+2012-05-20  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocihandle.c, lib/oci8/metadata.rb, test/test_metadata.rb:
 	    fix methods of OCI8::Metadata::Sequence and add testcases for them.
 

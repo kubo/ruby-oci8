@@ -41,6 +41,26 @@ static VALUE cServer;
 static ID id_at_session_handle;
 static ID id_at_server_handle;
 
+static VALUE dummy_env_method_missing(int argc, VALUE *argv, VALUE self)
+{
+    VALUE obj = rb_cv_get(cOCI8, "@@environment_handle");
+    VALUE method_id, args;
+
+    if (self == obj) {
+        oci8_base_t *base;
+        obj = rb_obj_alloc(oci8_cOCIHandle);
+        base = DATA_PTR(obj);
+        base->type = OCI_HTYPE_ENV;
+        base->hp.ptr = oci8_envhp;
+        base->self = Qnil;
+        rb_cv_set(cOCI8, "@@environment_handle", obj);
+    }
+
+    rb_scan_args(argc, argv, "1*", &method_id, &args);
+    Check_Type(method_id, T_SYMBOL);
+    return rb_apply(obj, SYM2ID(method_id), args);
+}
+
 typedef struct oci8_svcctx_associate {
     oci8_base_t base;
     oci8_svcctx_t *svcctx;
@@ -1054,6 +1074,8 @@ static VALUE oci8_set_client_info(VALUE self, VALUE val)
 
 VALUE Init_oci8(void)
 {
+    VALUE obj;
+    oci8_base_t *base;
 #if 0
     oci8_cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
     cOCI8 = rb_define_class("OCI8", oci8_cOCIHandle);
@@ -1063,6 +1085,18 @@ VALUE Init_oci8(void)
     cServer = oci8_define_class_under(cOCI8, "Server", &oci8_svcctx_associate_vtable);
     id_at_session_handle = rb_intern("@session_handle");
     id_at_server_handle = rb_intern("@server_handle");
+
+    /* setup a dummy environment handle to lazily initialize the environment handle */
+    obj = rb_obj_alloc(rb_cObject);
+    rb_define_singleton_method(obj, "method_missing", dummy_env_method_missing, -1);
+    rb_cv_set(cOCI8, "@@environment_handle", obj);
+
+    /* setup the process handle */
+    obj = rb_obj_alloc(oci8_cOCIHandle);
+    base = DATA_PTR(obj);
+    base->type = OCI_HTYPE_PROC;
+    base->self = Qnil;
+    rb_cv_set(cOCI8, "@@process_handle", obj);
 
     oracle_client_vernum = INT2FIX(oracle_client_version);
     if (have_OCIClientVersion) {

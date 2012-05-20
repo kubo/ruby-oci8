@@ -456,4 +456,20 @@ EOS
     assert_kind_of(OCISuccessWithInfo, @conn.last_error)
     assert_equal(24347, @conn.last_error.code)
   end
+
+  def test_environment_handle
+    # OCI_ATTR_HEAPALLOC
+    assert_operator(OCI8.class_variable_get(:@@environment_handle).send(:attr_get_ub4, 30), :>,  0)
+    # OCI_ATTR_OBJECT
+    assert(OCI8.class_variable_get(:@@environment_handle).send(:attr_get_boolean, 2))
+    # OCI_ATTR_SHARED_HEAPALLOC
+    assert_equal(0, OCI8.class_variable_get(:@@environment_handle).send(:attr_get_ub4, 84))
+  end
+
+  def test_process_handle
+    # OCI_ATTR_MEMPOOL_APPNAME
+    assert_equal('', OCI8.class_variable_get(:@@process_handle).send(:attr_get_string, 90))
+    # OCI_ATTR_MEMPOOL_SIZE
+    assert_equal(0, OCI8.class_variable_get(:@@process_handle).send(:attr_get_ub4, 88))
+  end
 end # TestOCI8
