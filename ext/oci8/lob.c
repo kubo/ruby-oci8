@@ -36,13 +36,19 @@ static VALUE oci8_lob_write(VALUE self, VALUE data);
 static VALUE oci8_make_lob(VALUE klass, oci8_svcctx_t *svcctx, OCILobLocator *s)
 {
     oci8_lob_t *lob;
+    boolean is_temp;
     VALUE lob_obj;
 
     lob_obj = rb_funcall(klass, oci8_id_new, 1, svcctx->base.self);
     lob = DATA_PTR(lob_obj);
     /* If 's' is a temporary lob, use OCILobLocatorAssign instead. */
-    chker2(OCILobAssign(oci8_envhp, oci8_errhp, s, &lob->base.hp.lob),
-           &svcctx->base);
+    chker2(OCILobIsTemporary(oci8_envhp, oci8_errhp, s, &is_temp), &svcctx->base);
+    if (is_temp)
+        chker2(OCILobLocatorAssign(svcctx->base.hp.svc, oci8_errhp, s, &lob->base.hp.lob),
+               &svcctx->base);
+    else
+        chker2(OCILobAssign(oci8_envhp, oci8_errhp, s, &lob->base.hp.lob),
+               &svcctx->base);
     return lob_obj;
 }
 
