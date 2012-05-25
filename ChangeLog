@@ -1,3 +1,11 @@
+2012-05-25  KUBO Takehiro  <kubo@jiubao.org>
+	* test/setup_test_object.sql, test/test_all.rb, test/test_object.rb:
+	   Add tests of the previous commit.
+
+2012-05-25  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c: Merge pull request #13 from timon/temp_lob at github.
+	    If 's' is a temporary lob, use OCILobLocatorAssign instead.
+
 2012-05-20  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c, test/test_oci8.rb: add OCI8's class variables:
 	    @@environment_handle and @@process_handle.

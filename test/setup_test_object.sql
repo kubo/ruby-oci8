@@ -43,6 +43,9 @@ create type rb_test_obj as object (
   bflt_val binary_float,
   str_val varchar2(50),
   raw_val raw(50),
+  clob_val clob,
+  nclob_val nclob,
+  blob_val blob,
   obj_val rb_test_obj_elem,
   int_array_val rb_test_int_array,
   flt_array_val rb_test_flt_array,
@@ -84,6 +87,9 @@ create or replace type body rb_test_obj is
     self.bflt_val := n;
     self.str_val := to_char(n);
     self.raw_val := utl_raw.cast_to_raw(to_char(n));
+    self.clob_val := to_clob(n);
+    self.nclob_val := to_clob(n);
+    self.blob_val := to_blob(utl_raw.cast_to_raw(to_char(n)));
     self.obj_val := rb_test_obj_elem(n, n + 1);
     self.date_val := to_test_date(n);
     if self.int_val != 1 then

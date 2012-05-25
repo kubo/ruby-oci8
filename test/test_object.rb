@@ -2,6 +2,35 @@ require 'oci8'
 require 'test/unit'
 require File.dirname(__FILE__) + '/config'
 
+conn = OCI8.new($dbuser, $dbpass, $dbname)
+begin
+  conn.describe_type('rb_test_int_array')
+  conn.describe_type('rb_test_flt_array')
+  conn.describe_type('rb_test_num_array')
+  conn.describe_type('rb_test_bdbl_array')
+  conn.describe_type('rb_test_bflt_array')
+  conn.describe_type('rb_test_str_array')
+  conn.describe_type('rb_test_raw_array')
+  conn.describe_type('rb_test_obj_elem_array')
+  conn.describe_type('rb_test_obj_elem_ary_of_ary')
+  conn.describe_type('rb_test_obj')
+  conn.describe_table('rb_test_obj_tab1')
+  conn.describe_table('rb_test_obj_tab2')
+rescue OCIError
+  raise if $!.code != 4043
+  raise <<EOS
+
+#{$!}
+You need to execute SQL statements in #{File.dirname(__FILE__)}/setup_test_object.sql as follows:
+
+  $ sqlplus USERNAME/PASSWORD
+  SQL> @test/setup_test_object.sql
+
+EOS
+ensure
+  conn.logoff
+end
+
 class RbTestObj < OCI8::Object::Base
 end
 
@@ -40,6 +69,9 @@ class TestObj1 < Test::Unit::TestCase
     attr_reader :bflt_val
     attr_reader :str_val
     attr_reader :raw_val
+    attr_reader :clob_val
+    attr_reader :nclob_val
+    attr_reader :blob_val
     attr_reader :obj_val
     attr_reader :int_array_val
     attr_reader :flt_array_val
@@ -80,6 +112,9 @@ class TestObj1 < Test::Unit::TestCase
       @str_val = @n.to_s
       @str_val = $` if /.0$/ =~ @str_val
       @raw_val = @str_val
+      @clob_val = @str_val
+      @nclob_val = @str_val
+      @blob_val = @str_val
       @obj_val = ExpectedValObjElem.new(@int_val, @int_val + 1)
       @date_val = to_test_date(@n)
       if @int_val == 1
@@ -132,17 +167,20 @@ class TestObj1 < Test::Unit::TestCase
         bflt_val = val[4]
         str_val = val[5]
         raw_val = val[6]
-        obj_val = val[7]
-        int_array_val = val[8]
-        flt_array_val = val[9]
-        num_array_val = val[10]
-        bdbl_array_val = val[11]
-        bflt_array_val = val[12]
-        str_array_val = val[13]
-        raw_array_val = val[14]
-        obj_array_val = val[15]
-        obj_ary_of_ary_val = val[16]
-        date_val = val[17]
+        clob_val = val[7] && val[7].read
+        nclob_val = val[8] && val[8].read
+        blob_val = val[9] && val[9].read
+        obj_val = val[10]
+        int_array_val = val[11]
+        flt_array_val = val[12]
+        num_array_val = val[13]
+        bdbl_array_val = val[14]
+        bflt_array_val = val[15]
+        str_array_val = val[16]
+        raw_array_val = val[17]
+        obj_array_val = val[18]
+        obj_ary_of_ary_val = val[19]
+        date_val = val[20]
 #        date_array_val = val[18]
       else
         assert_instance_of(RbTestObj, val)
@@ -153,6 +191,9 @@ class TestObj1 < Test::Unit::TestCase
         bflt_val = val.bflt_val
         str_val = val.str_val
         raw_val = val.raw_val
+        clob_val = val.clob_val && val.clob_val.read
+        nclob_val = val.nclob_val && val.nclob_val.read
+        blob_val = val.blob_val && val.blob_val.read
         obj_val = val.obj_val
         int_array_val = val.int_array_val
         flt_array_val = val.flt_array_val
@@ -174,6 +215,9 @@ class TestObj1 < Test::Unit::TestCase
       assert_in_delta(@bflt_val, bflt_val, Delta)
       assert_equal(@str_val, str_val)
       assert_equal(@raw_val, raw_val)
+      assert_equal(@clob_val, clob_val)
+      assert_equal(@nclob_val, nclob_val)
+      assert_equal(@blob_val, blob_val)
       assert_equal(@obj_val, obj_val)
       assert_equal(@int_array_val, int_array_val && int_array_val.to_ary)
       assert_array_in_delta(@flt_array_val, flt_array_val && flt_array_val.to_ary)
@@ -302,6 +346,9 @@ class TestObj1 < Test::Unit::TestCase
       obj.bflt_val = expected_val.bflt_val
       obj.str_val = expected_val.str_val
       obj.raw_val = expected_val.raw_val
+      obj.clob_val = expected_val.clob_val
+      obj.nclob_val = expected_val.nclob_val
+      obj.blob_val = expected_val.blob_val
       obj.obj_val = expected_val.obj_val
       obj.int_array_val = expected_val.int_array_val
       obj.flt_array_val = expected_val.flt_array_val
