@@ -1,4 +1,3 @@
-
 #   --*- ruby -*--
 # This is based on yoshidam's oracle.rb.
 #
@@ -41,7 +40,13 @@ if ruby_engine == 'ruby'
 else
   so_basename += ruby_engine
 end
-require so_basename
+
+begin
+  require so_basename
+rescue LoadError => e
+  puts "Unable to load #{so_basename}.so"
+  puts e.message
+end
 
 if OCI8::VERSION != '@@OCI8_MODULE_VERSION@@'
   require 'rbconfig'
