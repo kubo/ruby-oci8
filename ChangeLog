@@ -1,4 +1,7 @@
 2012-05-25  KUBO Takehiro  <kubo@jiubao.org>
+	* test/test_clob.rb: speed up clob tests 29 times.
+
+2012-05-25  KUBO Takehiro  <kubo@jiubao.org>
 	* test/setup_test_object.sql, test/test_all.rb, test/test_object.rb:
 	   Add tests of the previous commit.
 

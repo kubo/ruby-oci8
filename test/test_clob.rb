@@ -18,8 +18,8 @@ class TestCLob < Test::Unit::TestCase
     cursor = @conn.exec("SELECT content FROM test_table WHERE filename = :1 FOR UPDATE", filename)
     lob = cursor.fetch[0]
     open($lobfile) do |f|
-      while f.gets()
-        lob.write($_)
+      while s = f.read(1000)
+        lob.write(s)
       end
     end
     lob.close
@@ -33,8 +33,8 @@ class TestCLob < Test::Unit::TestCase
     lob = cursor.fetch[0]
     lob.sync = false
     open($lobfile) do |f|
-      while f.gets()
-        lob.write($_)
+      while s = f.read(1000)
+        lob.write(s)
       end
     end
     lob.flush
