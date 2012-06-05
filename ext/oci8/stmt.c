@@ -24,6 +24,7 @@ static ID id_each_value;
 static ID id_at_names;
 static ID id_empty_p;
 static ID id_at_con;
+static ID id_at_query;
 static ID id_clear;
 
 VALUE cOCIStmt;
@@ -107,6 +108,7 @@ static VALUE oci8_stmt_initialize(int argc, VALUE *argv, VALUE self)
     rb_ivar_set(stmt->base.self, id_at_names, Qnil);
     rb_ivar_set(stmt->base.self, id_at_con, svc);
     rb_ivar_set(stmt->base.self, id_at_max_array_size, Qnil);
+	rb_ivar_set(stmt->base.self, id_at_query, sql);
 
     oci8_link_to_parent((oci8_base_t*)stmt, (oci8_base_t*)DATA_PTR(svc));
     return Qnil;
@@ -661,6 +663,7 @@ void Init_oci8_stmt(VALUE cOCI8)
     id_each_value = rb_intern("each_value");
     id_at_names = rb_intern("@names");
     id_at_con = rb_intern("@con");
+	id_at_query = rb_intern("@query");
     id_empty_p = rb_intern("empty?");
     id_clear = rb_intern("clear");
 
@@ -680,6 +683,8 @@ void Init_oci8_stmt(VALUE cOCI8)
     rb_define_method(cOCIStmt, "keys", oci8_stmt_keys, 0);
     rb_define_private_method(cOCIStmt, "__defined?", oci8_stmt_defined_p, 1);
     rb_define_method(cOCIStmt, "prefetch_rows=", oci8_stmt_set_prefetch_rows, 1);
+
+	rb_define_attr(cOCIStmt, "query", 1, 0);
 
     oci8_define_bind_class("Cursor", &bind_stmt_vtable);
 }

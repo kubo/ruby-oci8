@@ -439,6 +439,12 @@ EOS
     end
   end
 
+  def test_parse_sets_query_on_cursor
+    query = "SELECT 1 FROM dual"
+    cursor = @conn.parse(query)
+    assert_equal(query, cursor.query)
+  end
+
   def test_last_error
     # OCI8#parse and OCI8#exec reset OCI8#last_error
     @conn.last_error = 'dummy'
