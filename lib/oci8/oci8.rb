@@ -606,6 +606,24 @@ class OCI8
       @column_metadata = nil
     end # close
 
+    # Returns the text of the SQL statement prepared in the cursor.
+    #
+    # @note
+    #   When {http://docs.oracle.com/cd/E11882_01/server.112/e10729/ch7progrunicode.htm#CACHHIFE
+    #   NCHAR String Literal Replacement} is turned on, it returns the modified SQL text,
+    #   instead of the original SQL text.
+    #
+    # @example
+    #    cursor = conn.parse("select * from country where country_code = 'ja'")
+    #    cursor.statement # => "select * from country where country_code = 'ja'"
+    #
+    # @return [String]
+    def statement
+      # The magic number 144 is OCI_ATTR_STATEMENT.
+      # See http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/ociaahan.htm#sthref5503
+      attr_get_string(144)
+    end
+
     private
 
     def make_bind_object(param)

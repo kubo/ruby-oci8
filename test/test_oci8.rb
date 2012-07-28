@@ -439,6 +439,12 @@ EOS
     end
   end
 
+  def test_parse_sets_query_on_cursor
+    statement = "select * from country where country_code = 'ja'"
+    cursor = @conn.parse(statement)
+    assert_equal(statement, cursor.statement)
+  end
+
   def test_last_error
     # OCI8#parse and OCI8#exec reset OCI8#last_error
     @conn.last_error = 'dummy'

@@ -1,3 +1,7 @@
+2012-07-28  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb, test/test_oci8.rb: add OCI8::Cursor#statement.
+	   See github issue #12 requested by timon.
+
 2012-05-25  KUBO Takehiro  <kubo@jiubao.org>
 	* test/test_clob.rb: speed up clob tests 29 times.
 
