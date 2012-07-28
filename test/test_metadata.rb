@@ -1406,6 +1406,33 @@ EOS
     drop_table('test_table')
   end # test_column_metadata
 
+  def assert_sequence(sequence_name, desc)
+    # defined in OCI8::Metadata::Base
+    assert_object_id(sequence_name, desc.obj_id)
+    assert_equal(sequence_name, desc.obj_name, 'obj_name')
+    assert_equal(@conn.username, desc.obj_schema, 'obj_schema')
+    # defined in OCI8::Metadata::Sequence
+    assert_object_id(sequence_name, desc.objid)
+    min, max, incr, cache, order = @conn.select_one(<<EOS, sequence_name)
+select min_value, max_value, increment_by, cache_size, order_flag
+  from user_sequences
+ where sequence_name = :1
+EOS
+    min = min.to_i
+    max = max.to_i
+    incr = incr.to_i
+    cache = cache.to_i
+    order = order == 'Y'
+    currval = @conn.select_one("select cast(#{sequence_name}.currval as integer) from dual")[0]
+
+    assert_equal(min, desc.min, 'min')
+    assert_equal(max, desc.max, 'max')
+    assert_equal(incr, desc.incr, 'incr')
+    assert_equal(cache, desc.cache, 'cache')
+    assert_equal(order, desc.order?, 'order?')
+    assert_operator(currval, :<=, desc.hw_mark, 'hw_mark')
+  end
+
   def test_sequence
     begin
       @conn.exec("DROP SEQUENCE TEST_SEQ_OCI8")
@@ -1415,33 +1442,21 @@ EOS
     @conn.exec(<<-EOS)
 CREATE SEQUENCE TEST_SEQ_OCI8
     INCREMENT BY 2
-    START WITH 100
+    START WITH 998
     MAXVALUE 1000
     MINVALUE 10
     CYCLE
     CACHE 5
     ORDER
 EOS
-    [
-     @conn.describe_any('test_seq_oci8'),
-     @conn.describe_sequence('test_seq_oci8'),
-     @conn.describe_schema(@conn.username).objects.detect do |obj|
-       obj.obj_name == 'TEST_SEQ_OCI8'
-     end
-    ].each do |desc|
-      # defined in OCI8::Metadata::Base
-      assert_object_id('TEST_SEQ_OCI8', desc.obj_id)
-      assert_equal('TEST_SEQ_OCI8', desc.obj_name, 'obj_name')
-      assert_equal(@conn.username, desc.obj_schema, 'obj_schema')
-      # defined in OCI8::Metadata::Sequence
-      assert_object_id('TEST_SEQ_OCI8', desc.objid)
-      assert_equal(10, desc.min, 'min')
-      assert_equal(1000, desc.max, 'max')
-      assert_equal(2, desc.incr, 'incr')
-      assert_equal(5, desc.cache, 'cache')
-      assert(desc.order?, 'order?')
-      assert_equal(100, desc.hw_mark, 'hw_mark')
-    end
+    @conn.select_one('select test_seq_oci8.nextval from dual')
+    assert_sequence('TEST_SEQ_OCI8', @conn.describe_any('test_seq_oci8'))
+    @conn.select_one('select test_seq_oci8.nextval from dual')
+    assert_sequence('TEST_SEQ_OCI8', @conn.describe_sequence('test_seq_oci8'))
+    @conn.select_one('select test_seq_oci8.nextval from dual')
+    assert_sequence('TEST_SEQ_OCI8', @conn.describe_schema(@conn.username).objects.detect do |obj|
+                      obj.obj_name == 'TEST_SEQ_OCI8'
+                    end)
 
     @conn.exec("DROP SEQUENCE TEST_SEQ_OCI8")
     @conn.exec(<<-EOS)
@@ -1453,26 +1468,19 @@ CREATE SEQUENCE TEST_SEQ_OCI8
     NOCACHE
     NOORDER
 EOS
-    [
-     @conn.describe_any('test_seq_oci8'),
-     @conn.describe_sequence('test_seq_oci8'),
-     @conn.describe_schema(@conn.username).objects.detect do |obj|
-       obj.obj_name == 'TEST_SEQ_OCI8'
-     end
-    ].each do |desc|
-      # defined in OCI8::Metadata::Base
-      assert_object_id('TEST_SEQ_OCI8', desc.obj_id)
-      assert_equal('TEST_SEQ_OCI8', desc.obj_name, 'obj_name')
-      assert_equal(@conn.username, desc.obj_schema, 'obj_schema')
-      # defined in OCI8::Metadata::Sequence
-      assert_object_id('TEST_SEQ_OCI8', desc.objid)
-      assert_equal(-99999999999999999999999999, desc.min, 'min')
-      assert_equal(-1, desc.max, 'max')
-      assert_equal(-1, desc.incr, 'incr')
-      assert_equal(0, desc.cache, 'cache')
-      assert(!desc.order?, 'order?')
-      assert_equal(-1, desc.hw_mark, 'hw_mark')
-    end
+    # @conn.describe_any('test_seq_oci8').min is:
+    #   -99999999999999999999999999 on Oracle 10gR2
+    #   -999999999999999999999999999 on Oracle 11gR2
+
+    @conn.select_one('select test_seq_oci8.nextval from dual')
+    assert_sequence('TEST_SEQ_OCI8', @conn.describe_any('test_seq_oci8'))
+    @conn.select_one('select test_seq_oci8.nextval from dual')
+    assert_sequence('TEST_SEQ_OCI8', @conn.describe_sequence('test_seq_oci8'))
+    @conn.select_one('select test_seq_oci8.nextval from dual')
+    assert_sequence('TEST_SEQ_OCI8', @conn.describe_schema(@conn.username).objects.detect do |obj|
+                      obj.obj_name == 'TEST_SEQ_OCI8'
+                    end)
+
     @conn.exec("DROP SEQUENCE TEST_SEQ_OCI8")
   end
 

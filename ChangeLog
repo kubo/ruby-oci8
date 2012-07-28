@@ -1,4 +1,8 @@
 2012-07-28  KUBO Takehiro  <kubo@jiubao.org>
+	* test/test_metadata.rb: fix a sequence test failure on Oracle 11gR2.
+	    Fix github issue #18 reported by Yasuo Honda.
+
+2012-07-28  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/oci8.rb, test/test_oci8.rb: add OCI8::Cursor#statement.
 	   See github issue #12 requested by timon.
 
