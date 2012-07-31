@@ -44,6 +44,53 @@ else
   $test_clob = true
 end
 
+begin
+  Time.new(2001, 1, 1, 0, 0, 0, '+00:00')
+  # ruby 1.9.2 or later
+  def convert_to_time(year, month, day, hour, minute, sec, subsec, timezone)
+    subsec ||= 0
+    if timezone
+      # with time zone
+      Time.new(year, month, day, hour, minute, sec + subsec, timezone)
+    else
+      # without time zone
+      Time.local(year, month, day, hour, minute, sec, subsec * 1000000)
+    end
+  end
+rescue
+  # ruby 1.9.1 or former
+  def convert_to_time(year, month, day, hour, minute, sec, subsec, timezone)
+    subsec ||= 0
+    if timezone
+      # with time zone
+      /([+-])(\d+):(\d+)/ =~ timezone
+      offset = ($1 + '1').to_i * ($2.to_i * 60 + $3.to_i)
+      if offset == 0
+        Time.utc(year, month, day, hour, minute, sec, subsec * 1000000)
+      else
+        tm = Time.local(year, month, day, hour, minute, sec, subsec * 1000000)
+        raise "Failed to convert #{str} to Time" if tm.utc_offset != offset * 60
+        tm
+      end
+    else
+      # without time zone
+      Time.local(year, month, day, hour, minute, sec, subsec * 1000000)
+    end
+  end
+end
+
+def convert_to_datetime(year, month, day, hour, minute, sec, subsec, timezone)
+  subsec ||= 0
+  utc_offset = if timezone
+                 # with time zone
+                 /([+-])(\d+):(\d+)/ =~ timezone
+                 ($1 + '1').to_i * ($2.to_i * 60 + $3.to_i) * 60
+               else
+                 Time.local(year, month, day, hour, minute, sec).utc_offset
+               end
+  DateTime.civil(year, month, day, hour, minute, sec + subsec, utc_offset.to_r / 86400)
+end
+
 module Test
   module Unit
     class TestCase

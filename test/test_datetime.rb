@@ -13,59 +13,20 @@ class TestDateTime < Test::Unit::TestCase
     end
   end
 
-  @@time_new_accepts_timezone = begin
-                                  Time.new(2001, 1, 1, 0, 0, 0, '+00:00')
-                                  true
-                                rescue
-                                  false
-                                end
-
   def string_to_time(str)
-    /(\d+)-(\d+)-(\d+) ?(?:(\d+):(\d+):(\d+))?(?:\.(\d+))? ?(([+-])(\d+):(\d+))?/ =~ str
-    args = []
-    args << $1.to_i # year
-    args << $2.to_i # month
-    args << $3.to_i # day
-    args << $4.to_i if $4 # hour
-    args << $5.to_i if $5 # minute
-    if $8 and @@time_new_accepts_timezone
-      args << $6.to_i + $7.to_i.to_r / ('1' + '0' * ($7.length)).to_i
-      args << $8
-      Time.new(*args)
-    else
-      if $6
-        args << $6.to_i
-      end
-      if $7
-        args << $7.to_i.to_r * 1000000 / ('1' + '0' * ($7.length)).to_i
-      end
-      if $8
-        # with time zone
-        offset = ($9 + '1').to_i * ($10.to_i * 60 + $11.to_i)
-        if offset == 0
-          Time.utc(*args)
-        else
-          tm = Time.local(*args)
-          raise "Failed to convert #{str} to Time" if tm.utc_offset != offset * 60
-          tm
-        end
-      else
-        # without time zone
-        Time.local(*args)
-      end
+    /(\d+)-(\d+)-(\d+) ?(?:(\d+):(\d+):(\d+))?(?:\.(\d+))? ?([+-]\d+:\d+)?/ =~ str
+    if $7
+      subsec = $7.to_i.to_r / ('1' + '0' * ($7.length)).to_i
     end
-    #Time.local(*str.split(/[- :\.]/).collect do |n| n.to_i; end)
+    convert_to_time($1.to_i, $2.to_i, $3.to_i, $4.to_i, $5.to_i, $6.to_i, subsec, $8)
   end
 
   def string_to_datetime(str)
-    /(\d+-\d+-\d+ ?(?:\d+:\d+:\d+)?(?:\.\d+)?) ?([+-]\d+:\d+)?/ =~ str
-    if $2
-      # with time zone
-      DateTime.parse(str)
-    else
-      tm = string_to_time(str)
-      DateTime.parse(str + timezone_string(*((tm.utc_offset / 60).divmod 60)))
+    /(\d+)-(\d+)-(\d+) ?(?:(\d+):(\d+):(\d+))?(?:\.(\d+))? ?([+-]\d+:\d+)?/ =~ str
+    if $7
+      subsec = $7.to_i.to_r / ('1' + '0' * ($7.length)).to_i
     end
+    convert_to_datetime($1.to_i, $2.to_i, $3.to_i, $4.to_i, $5.to_i, $6.to_i, subsec, $8)
   end
 
   def setup
