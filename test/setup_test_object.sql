@@ -60,6 +60,7 @@ create type rb_test_obj as object (
 --  date_array_val rb_test_date_array,
 
   constructor function rb_test_obj(n number) return self as result,
+  static function test_object_version return integer,
   static function class_func(n number) return rb_test_obj,
   static procedure class_proc1(obj out rb_test_obj, n number),
   static procedure class_proc2(obj in out rb_test_obj),
@@ -72,7 +73,7 @@ create or replace type body rb_test_obj is
   constructor function rb_test_obj(n number) return self as result is
     function to_test_date(n number) return date is
     begin
-      return to_date(to_char(1000 + n * 10, 'FM0000') ||
+      return to_date(to_char(1990 + n, 'FM0000') ||
                      to_char(mod(round(n) * 5, 12) + 1, 'FM00') ||
                      to_char(mod(round(n) * 7, 27) + 1, 'FM00') ||
                      to_char(mod(round(n) * 9, 24), 'FM00') ||
@@ -111,6 +112,11 @@ create or replace type body rb_test_obj is
 --                                                to_test_date(n + 2));
     end if;
     return;
+  end;
+
+  static function test_object_version return integer is
+  begin
+    return 2;
   end;
 
   static function class_func(n number) return rb_test_obj is

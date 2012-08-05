@@ -1,3 +1,9 @@
+2012-08-05  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/object.rb: Change the ruby type which corresponds to
+	    Oracle object type's DATE field from DateTime to Time.
+	* test/setup_test_object.sql, test/test_object.rb:
+	    Fix github issue #17 reported by Yasuo Honda.
+
 2012-07-31  KUBO Takehiro  <kubo@jiubao.org>
 	* test/config.rb, test/test_datetime.rb: refactor test code by adding
 	    global functions convert_to_time() and convert_to_datetime(),

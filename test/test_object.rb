@@ -3,6 +3,7 @@ require 'test/unit'
 require File.dirname(__FILE__) + '/config'
 
 conn = OCI8.new($dbuser, $dbpass, $dbname)
+error_message = nil
 begin
   conn.describe_type('rb_test_int_array')
   conn.describe_type('rb_test_flt_array')
@@ -16,23 +17,34 @@ begin
   conn.describe_type('rb_test_obj')
   conn.describe_table('rb_test_obj_tab1')
   conn.describe_table('rb_test_obj_tab2')
+
+  class RbTestObj < OCI8::Object::Base
+  end
+
+  begin
+    version = RbTestObj.test_object_version(conn)
+    error_message = "Invalid test object version" if version != 2
+  rescue NoMethodError
+    raise unless $!.to_s.include?('test_object_version')
+    error_message = "rb_test_obj.test_object_version is not declared."
+  end
 rescue OCIError
   raise if $!.code != 4043
-  raise <<EOS
+  error_message = $!.to_s
+ensure
+  conn.logoff
+end
 
-#{$!}
+raise <<EOS if error_message
+
+#{error_message}
 You need to execute SQL statements in #{File.dirname(__FILE__)}/setup_test_object.sql as follows:
 
   $ sqlplus USERNAME/PASSWORD
   SQL> @test/setup_test_object.sql
 
 EOS
-ensure
-  conn.logoff
-end
 
-class RbTestObj < OCI8::Object::Base
-end
 
 class RbTestIntArray < OCI8::Object::Base
 end
@@ -89,15 +101,14 @@ class TestObj1 < Test::Unit::TestCase
       @n = 0.0
     end
 
-    @@offset = ::Time.local(2007).utc_offset.to_r / 86400
     def to_test_date(n)
-      year = (1000 + n * 10).round
+      year = (1990 + n).round
       month = (n.round * 5) % 12 + 1
       mday = (n.round * 7) % 27 + 1
       hour = (n.round * 9) % 24
       minute = (n.round * 11) % 60
       sec = (n.round * 13) % 60
-      ::DateTime.civil(year, month, mday, hour, minute, sec, @@offset)
+      convert_to_time(year, month, mday, hour, minute, sec, 0, nil)
     end
     private :to_test_date
 
@@ -258,7 +269,6 @@ class TestObj1 < Test::Unit::TestCase
   def test_select2
     expected_val = ExpectedVal.new
     orig_val = OCI8::BindType::Mapping[:date]
-    OCI8::BindType::Mapping[:date] = OCI8::BindType::DateTime # TODO: Delete this line later.
     begin
       @conn.exec("select * from rb_test_obj_tab2 order by int_val") do |row|
         assert(expected_val.next)
