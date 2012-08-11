@@ -9,7 +9,6 @@ ID oci8_id_at_last_error;
 ID oci8_id_new;
 ID oci8_id_get;
 ID oci8_id_set;
-ID oci8_id_keys;
 ID oci8_id_oci8_vtable;
 #ifdef CHAR_IS_NOT_A_SHORTCUT_TO_ID
 ID oci8_id_add_op;
@@ -80,7 +79,6 @@ Init_oci8lib()
     oci8_id_new = rb_intern("new");
     oci8_id_get = rb_intern("get");
     oci8_id_set = rb_intern("set");
-    oci8_id_keys = rb_intern("keys");
     oci8_id_oci8_vtable = rb_intern("__oci8_vtable__");
 #ifdef CHAR_IS_NOT_A_SHORTCUT_TO_ID
     oci8_id_add_op = rb_intern("+");

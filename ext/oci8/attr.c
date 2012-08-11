@@ -2,18 +2,9 @@
 /*
  * attr.c
  *
- * Copyright (C) 2002-2007 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2012 KUBO Takehiro <kubo@jiubao.org>
  */
 #include "oci8.h"
-
-VALUE oci8_get_sb1_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp)
-{
-    sb1 val;
-
-    chker3(OCIAttrGet(base->hp.ptr, base->type, &val, NULL, attrtype, oci8_errhp),
-           base, stmtp);
-    return INT2FIX(val);
-}
 
 VALUE oci8_get_ub2_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp)
 {
@@ -22,38 +13,6 @@ VALUE oci8_get_ub2_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp)
     chker3(OCIAttrGet(base->hp.ptr, base->type, &val, NULL, attrtype, oci8_errhp),
            base, stmtp);
     return INT2FIX(val);
-}
-
-VALUE oci8_get_sb2_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp)
-{
-    sb2 val;
-
-    chker3(OCIAttrGet(base->hp.ptr, base->type, &val, NULL, attrtype, oci8_errhp),
-           base, stmtp);
-    return INT2FIX(val);
-}
-
-VALUE oci8_get_ub4_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp)
-{
-    ub4 val;
-
-    chker3(OCIAttrGet(base->hp.ptr, base->type, &val, NULL, attrtype, oci8_errhp),
-           base, stmtp);
-#if SIZEOF_LONG > 4
-    return LONG2FIX(val);
-#else
-    return ULONG2NUM(val);
-#endif
-}
-
-VALUE oci8_get_string_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp)
-{
-    text *val;
-    ub4 size;
-
-    chker3(OCIAttrGet(base->hp.ptr, base->type, &val, &size, attrtype, oci8_errhp),
-           base, stmtp);
-    return rb_external_str_new_with_enc(TO_CHARPTR(val), size, oci8_encoding);
 }
 
 #define MAX_ROWID_LEN 128

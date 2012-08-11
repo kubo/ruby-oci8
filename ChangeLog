@@ -1,4 +1,12 @@
 2012-08-11  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/stmt.c, lib/oci8/cursor.rb: refactor OCI8::Cursor to simplify
+	    C code.
+	* ext/oci8/bind.c: add a private function OCI8::BindType::Base#get_data
+	    and #set_data.
+	* ext/oci8/attr.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c: delete
+	    unused functions and a unused variable.
+
+2012-08-11  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8.rb.in, lib/oci8/cursor.rb, lib/oci8/oci8.rb:
 	    move OCI8::Cursor from lib/oci8/oci8.rb to lib/oci8/cursor.rb.
 

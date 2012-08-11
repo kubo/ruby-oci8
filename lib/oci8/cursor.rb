@@ -14,6 +14,16 @@ class OCI8
   # calling OCI8#exec or OCI8#parse.
   class Cursor
 
+    def initialize(con, sql = nil)
+      @bind_handles = {}
+      @define_handles = []
+      @column_metadata = []
+      @names = nil
+      @con = con
+      @max_array_size = nil
+      __initialize(con, sql)
+    end
+
     # explicitly indicate the date type of fetched value. run this
     # method within parse and exec. pos starts from 1. lentgh is used
     # when type is String.
@@ -24,7 +34,12 @@ class OCI8
     #   cursor.define(2, Time)       # fetch the second column as Time.
     #   cursor.exec()
     def define(pos, type, length = nil)
-      __define(pos, make_bind_object(:type => type, :length => length))
+      bindobj = make_bind_object(:type => type, :length => length)
+      __define(pos, bindobj)
+      if old = @define_handles[pos - 1]
+        old.send(:free)
+      end
+      @define_handles[pos - 1] = bindobj
       self
     end # define
 
@@ -77,7 +92,12 @@ class OCI8
       else
         param = {:value => param, :type => type,  :length => length}
       end
-      __bind(key, make_bind_object(param))
+      bindobj = make_bind_object(param)
+      __bind(key, bindobj)
+      if old = @bind_handles[key]
+        old.send(:free)
+      end
+      @bind_handles[key] = bindobj
       self
     end # bind_param
 
@@ -97,14 +117,132 @@ class OCI8
     # variables.
     def exec(*bindvars)
       bind_params(*bindvars)
-      __execute(nil) # Pass a nil to specify the statement isn't an Array DML
       case type
       when :select_stmt
+        __execute(0)
         define_columns()
       else
+        __execute(1)
         row_count
       end
     end # exec
+
+    # Gets fetched data as array. This is available for select
+    # statement only.
+    #
+    # example:
+    #   conn = OCI8.new('scott', 'tiger')
+    #   cursor = conn.exec('SELECT * FROM emp')
+    #   while r = cursor.fetch()
+    #     puts r.join(',')
+    #   end
+    #   cursor.close
+    #   conn.logoff
+    def fetch
+      if block_given?
+        while row = fetch_one_row_as_array
+          yield row
+        end
+        self
+      else
+        fetch_one_row_as_array
+      end
+    end
+
+    # call-seq:
+    #   fetch_hash
+    #
+    # get fetched data as a Hash. The hash keys are column names.
+    # If a block is given, acts as an iterator.
+    def fetch_hash
+      if iterator?
+        while ret = fetch_one_row_as_hash()
+          yield(ret)
+        end
+      else
+        fetch_one_row_as_hash
+      end
+    end
+
+    # call-seq:
+    #   [key]
+    #
+    # Gets the value of the bind variable.
+    #
+    # In case of binding explicitly, use same key with that of
+    # OCI8::Cursor#bind_param. A placeholder can be bound by
+    # name or position. If you bind by name, use that name. If you bind
+    # by position, use the position.
+    #
+    # example:
+    #   cursor = conn.parse("BEGIN :out := 'BAR'; END;")
+    #   cursor.bind_param(':out', 'FOO') # bind by name
+    #   p cursor[':out'] # => 'FOO'
+    #   p cursor[1] # => nil
+    #   cursor.exec()
+    #   p cursor[':out'] # => 'BAR'
+    #   p cursor[1] # => nil
+    #
+    # example:
+    #   cursor = conn.parse("BEGIN :out := 'BAR'; END;")
+    #   cursor.bind_param(1, 'FOO') # bind by position
+    #   p cursor[':out'] # => nil
+    #   p cursor[1] # => 'FOO'
+    #   cursor.exec()
+    #   p cursor[':out'] # => nil
+    #   p cursor[1] # => 'BAR'
+    #
+    # In case of binding by OCI8#exec or OCI8::Cursor#exec,
+    # get the value by position, which starts from 1.
+    #
+    # example:
+    #   cursor = conn.exec("BEGIN :out := 'BAR'; END;", 'FOO')
+    #   # 1st bind variable is bound as String with width 3. Its initial value is 'FOO'
+    #   # After execute, the value become 'BAR'.
+    #   p cursor[1] # => 'BAR'
+    def [](key)
+      handle = @bind_handles[key]
+      handle && handle.send(:get_data)
+    end
+
+    # call-seq:
+    #   [key] = val
+    #
+    # Sets the value to the bind variable. The way to specify the
+    # +key+ is same with OCI8::Cursor#[]. This is available
+    # to replace the value and execute many times.
+    #
+    # example1:
+    #   cursor = conn.parse("INSERT INTO test(col1) VALUES(:1)")
+    #   cursor.bind_params(1, nil, String, 3)
+    #   ['FOO', 'BAR', 'BAZ'].each do |key|
+    #     cursor[1] = key
+    #     cursor.exec
+    #   end
+    #   cursor.close()
+    #
+    # example2:
+    #   ['FOO', 'BAR', 'BAZ'].each do |key|
+    #     conn.exec("INSERT INTO test(col1) VALUES(:1)", key)
+    #   end
+    #
+    # Both example's results are same. But the former will use less resources.
+    #
+    def []=(key, val)
+      handle = @bind_handles[key]
+      return nil if handle.nil?
+
+      if val.is_a? Array
+        if @actual_array_size > 0 && val.length != @actual_array_size
+          raise RuntimeError, "all binding arrays hould be the same size"
+        end
+        if @actual_array_size == 0 && val.length <= @max_array_size
+          @actual_array_size = val.length
+        end
+      end
+      handle.send(:set_data, val)
+      val
+    end
 
     # Set the maximum array size for bind_param_array
     #
@@ -114,7 +252,7 @@ class OCI8
     #  all the binding arrays are required to be the same size
     def max_array_size=(size)
       raise "expect positive number for max_array_size." if size.nil? && size <=0
-      __clearBinds if !@max_array_size.nil?
+      free_bind_handles()  if !@max_array_size.nil?
       @max_array_size = size
       @actual_array_size = nil
     end # max_array_size=
@@ -163,6 +301,11 @@ class OCI8
       raise "unsupported dataType: #{type}" if bindclass.nil?
       bindobj = bindclass.create(@con, var_array, param, @max_array_size)
       __bind(key, bindobj)
+      #
+      if old = @bind_handles[key]
+        old.send(:free)
+      end
+      @bind_handles[key] = bindobj
       self
     end # bind_param_array
 
@@ -210,27 +353,39 @@ class OCI8
       @column_metadata
     end
 
-    # call-seq:
-    #   fetch_hash
-    #
-    # get fetched data as a Hash. The hash keys are column names.
-    # If a block is given, acts as an iterator.
-    def fetch_hash
-      if iterator?
-        while ret = fetch_a_hash_row()
-          yield(ret)
-        end
-      else
-        fetch_a_hash_row
-      end
-    end # fetch_hash
-
     # close the cursor.
     def close
       free()
       @names = nil
       @column_metadata = nil
     end # close
+
+    # call-seq:
+    #   keys -> an Array
+    #
+    # Returns the keys of bind variables as array.
+    def keys
+      @bind_handles.keys
+    end
+
+    # call-seq:
+    #   prefetch_rows = aFixnum
+    #
+    # Set number of rows to be prefetched.
+    # This can reduce the number of network round trips when fetching
+    # many rows. The default value is one.
+    #
+    # FYI: Rails oracle adaptor uses 100 by default.
+    #
+    def prefetch_rows=(rows)
+      attr_set_ub4(11, rows) # OCI_ATTR_PREFETCH_ROWS(11)
+    end
+
+    # Returns the number of processed rows.
+    def row_count
+      # http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/ociaahan.htm#sthref5498
+      attr_get_ub4(9) # OCI_ATTR_ROW_COUNT(9)
+    end
 
     # Returns the text of the SQL statement prepared in the cursor.
     #
@@ -248,6 +403,50 @@ class OCI8
       # The magic number 144 is OCI_ATTR_STATEMENT.
       # See http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/ociaahan.htm#sthref5503
       attr_get_string(144)
+    end
+
+    # gets the type of SQL statement as follows.
+    # * OCI8::STMT_SELECT
+    # * OCI8::STMT_UPDATE
+    # * OCI8::STMT_DELETE
+    # * OCI8::STMT_INSERT
+    # * OCI8::STMT_CREATE
+    # * OCI8::STMT_DROP
+    # * OCI8::STMT_ALTER
+    # * OCI8::STMT_BEGIN (PL/SQL block which starts with a BEGIN keyword)
+    # * OCI8::STMT_DECLARE (PL/SQL block which starts with a DECLARE keyword)
+    # * Other Fixnum value undocumented in Oracle manuals.
+    #
+    # <em>Changes between ruby-oci8 1.0 and 2.0.</em>
+    #
+    # [ruby-oci8 2.0] OCI8::STMT_* are Symbols. (:select_stmt, :update_stmt, etc.)
+    # [ruby-oci8 1.0] OCI8::STMT_* are Fixnums. (1, 2, 3, etc.)
+    #
+    def type
+      # http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/ociaahan.htm#sthref5506
+      stmt_type = attr_get_ub2(24) # OCI_ATTR_STMT_TYPE(24)
+      case stmt_type
+      when 1 # OCI_STMT_SELECT
+        :select_stmt
+      when 2 # OCI_STMT_UPDATE
+        :update_stmt
+      when 3 # OCI_STMT_DELETE
+        :delete_stmt
+      when 4 # OCI_STMT_INSERT
+        :insert_stmt
+      when 5 # OCI_STMT_CREATE
+        :create_stmt
+      when 6 # OCI_STMT_DROP
+        :drop_stmt
+      when 7 # OCI_STMT_ALTER
+        :alter_stmt
+      when 8 # OCI_STMT_BEGIN
+        :begin_stmt
+      when 9 # OCI_STMT_DECLARE
+        :declare_stmt
+      else
+        stmt_type
+      end
     end
 
     private
@@ -296,40 +495,62 @@ class OCI8
     end
 
     def define_columns
-      num_cols = __param_count
+      # http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/ociaahan.htm#sthref5494
+      num_cols = attr_get_ub4(18) # OCI_ATTR_PARAM_COUNT(18)
       1.upto(num_cols) do |i|
         parm = __paramGet(i)
-        define_one_column(i, parm) unless __defined?(i)
+        define_one_column(i, parm) unless @define_handles[i - 1]
         @column_metadata[i - 1] = parm
       end
       num_cols
     end # define_columns
 
     def define_one_column(pos, param)
-      __define(pos, make_bind_object(param))
+      bindobj = make_bind_object(param)
+      __define(pos, bindobj)
+      if old = @define_handles[pos - 1]
+        old.send(:free)
+      end
+      @define_handles[pos - 1] = bindobj
     end # define_one_column
 
     def bind_params(*bindvars)
       bindvars.each_with_index do |val, i|
-	if val.is_a? Array
-	  bind_param(i + 1, val[0], val[1], val[2])
-	else
-	  bind_param(i + 1, val)
-	end
+        if val.is_a? Array
+          bind_param(i + 1, val[0], val[1], val[2])
+        else
+          bind_param(i + 1, val)
+        end
       end
     end # bind_params
 
-    def fetch_a_hash_row
-      if rs = fetch()
-        ret = {}
-        get_col_names.each do |name|
-          ret[name] = rs.shift
+    def fetch_one_row_as_array
+      if __fetch(@con)
+        @define_handles.collect do |handle|
+          handle.send(:get_data)
         end
-        ret
-      else 
+      else
         nil
       end
-    end # fetch_a_hash_row
+    end
 
+    def fetch_one_row_as_hash
+      if __fetch(@con)
+        ret = {}
+        get_col_names.each_with_index do |name, idx|
+          ret[name] = @define_handles[idx].send(:get_data)
+        end
+        ret
+      else
+        nil
+      end
+    end
+
+    def free_bind_handles
+      @bind_handles.each_value do |val|
+        val.send(:free)
+      end
+      @bind_handles.clear
+    end
   end
 end

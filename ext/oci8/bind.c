@@ -206,7 +206,7 @@ static VALUE oci8_bind_get(VALUE self)
     return vptr->get(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_structp);
 }
 
-VALUE oci8_bind_get_data(VALUE self)
+static VALUE oci8_bind_get_data(VALUE self)
 {
     oci8_bind_t *obind = DATA_PTR(self);
 
@@ -252,7 +252,7 @@ static VALUE oci8_bind_set(VALUE self, VALUE val)
     return self;
 }
 
-void oci8_bind_set_data(VALUE self, VALUE val)
+static VALUE oci8_bind_set_data(VALUE self, VALUE val)
 {
     oci8_bind_t *obind = DATA_PTR(self);
 
@@ -274,6 +274,7 @@ void oci8_bind_set_data(VALUE self, VALUE val)
         }
         obind->curar_sz = size;
     }
+    return self;
 }
 
 static VALUE oci8_bind_initialize(VALUE self, VALUE svc, VALUE val, VALUE length, VALUE max_array_size)
@@ -349,6 +350,8 @@ void Init_oci8_bind(VALUE klass)
     rb_define_method(cOCI8BindTypeBase, "initialize", oci8_bind_initialize, 4);
     rb_define_method(cOCI8BindTypeBase, "get", oci8_bind_get, 0);
     rb_define_method(cOCI8BindTypeBase, "set", oci8_bind_set, 1);
+    rb_define_private_method(cOCI8BindTypeBase, "get_data", oci8_bind_get_data, 0);
+    rb_define_private_method(cOCI8BindTypeBase, "set_data", oci8_bind_set_data, 1);
 
     /* register primitive data types. */
     oci8_define_bind_class("String", &bind_string_vtable);

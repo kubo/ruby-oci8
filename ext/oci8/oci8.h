@@ -2,7 +2,7 @@
 /*
  * oci8.h - part of ruby-oci8
  *
- * Copyright (C) 2002-2011 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2012 KUBO Takehiro <kubo@jiubao.org>
  */
 #ifndef _RUBY_OCI_H_
 #define _RUBY_OCI_H_ 1
@@ -428,7 +428,6 @@ extern ID oci8_id_at_last_error;
 extern ID oci8_id_new;
 extern ID oci8_id_get;
 extern ID oci8_id_set;
-extern ID oci8_id_keys;
 extern ID oci8_id_oci8_vtable;
 #ifdef CHAR_IS_NOT_A_SHORTCUT_TO_ID
 extern ID oci8_id_add_op; /* ID of the addition operator '+' */
@@ -496,8 +495,6 @@ void oci8_bind_free(oci8_base_t *base);
 void oci8_bind_hp_obj_mark(oci8_base_t *base);
 void Init_oci8_bind(VALUE cOCI8BindTypeBase);
 oci8_bind_t *oci8_get_bind(VALUE obj);
-void oci8_bind_set_data(VALUE self, VALUE val);
-VALUE oci8_bind_get_data(VALUE self);
 
 /* metadata.c */
 extern VALUE cOCI8MetadataBase;
@@ -551,11 +548,7 @@ VALUE oci8_make_interval_ds(OCIInterval *s);
 void Init_oci_object(VALUE mOCI);
 
 /* attr.c */
-VALUE oci8_get_sb1_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
 VALUE oci8_get_ub2_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
-VALUE oci8_get_sb2_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
-VALUE oci8_get_ub4_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
-VALUE oci8_get_string_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
 VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
 
 /* encoding.c */
