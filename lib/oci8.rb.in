@@ -92,6 +92,7 @@ end
 require 'oci8/ocihandle.rb'
 require 'oci8/datetime.rb'
 require 'oci8/oci8.rb'
+require 'oci8/cursor.rb'
 require 'oci8/bindtype.rb'
 require 'oci8/metadata.rb'
 require 'oci8/compat.rb'

@@ -1,3 +1,7 @@
+2012-08-11  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8.rb.in, lib/oci8/cursor.rb, lib/oci8/oci8.rb:
+	    move OCI8::Cursor from lib/oci8/oci8.rb to lib/oci8/cursor.rb.
+
 2012-08-05  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/object.rb: Change the ruby type which corresponds to
 	    Oracle object type's DATE field from DateTime to Time.
