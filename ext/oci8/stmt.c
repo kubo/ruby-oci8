@@ -41,6 +41,15 @@ static oci8_base_vtable_t oci8_stmt_vtable = {
     sizeof(oci8_stmt_t),
 };
 
+/*
+ * call-seq:
+ *   __initialize(connection, sql_statement)
+ *
+ * @param [OCI8] connection
+ * @param [String] sql_statement
+ *
+ * @private
+ */
 static VALUE oci8_stmt_initialize(VALUE self, VALUE svc, VALUE sql)
 {
     oci8_stmt_t *stmt = DATA_PTR(self);
@@ -78,6 +87,15 @@ static VALUE oci8_stmt_initialize(VALUE self, VALUE svc, VALUE sql)
     return Qnil;
 }
 
+/*
+ * call-seq:
+ *   __define(position, bindobj)
+ *
+ * @param [Integer] position
+ * @param [OCI8::BindType::Base] bindobj
+ *
+ * @private
+ */
 static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
 {
     oci8_stmt_t *stmt = TO_STMT(self);
@@ -110,6 +128,15 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
     return obind->base.self;
 }
 
+/*
+ * call-seq:
+ *   __bind(placeholder, bindobj)
+ *
+ * @param [Integer, String or Symbol] placeholder
+ * @param [OCI8::BindType::Base] bindobj
+ *
+ * @private
+ */
 static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
 {
     oci8_stmt_t *stmt = TO_STMT(self);
@@ -185,6 +212,14 @@ static sword oci8_call_stmt_execute(oci8_svcctx_t *svcctx, oci8_stmt_t *stmt, ub
     return rv;
 }
 
+/*
+ * call-seq:
+ *   __execute(iteration_count)
+ *
+ * @param [Integer] iteration_count
+ *
+ * @private
+ */
 static VALUE oci8_stmt_execute(VALUE self, VALUE iteration_count)
 {
     oci8_stmt_t *stmt = TO_STMT(self);
@@ -196,6 +231,15 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE iteration_count)
     return self;
 }
 
+/*
+ * call-seq:
+ *   __fetch(connection)
+ *
+ * @param [OCI8] connection
+ * @return [true or false] true on success and false when all rows are fetched.
+ *
+ * @private
+ */
 static VALUE oci8_stmt_fetch(VALUE self, VALUE svc)
 {
     oci8_stmt_t *stmt = TO_STMT(self);
@@ -218,12 +262,21 @@ static VALUE oci8_stmt_fetch(VALUE self, VALUE svc)
     }
     rv = OCIStmtFetch_nb(svcctx, stmt->base.hp.stmt, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT);
     if (rv == OCI_NO_DATA) {
-        return Qnil;
+        return Qfalse;
     }
     chker3(rv, &svcctx->base, stmt->base.hp.stmt);
-    return self;
+    return Qtrue;
 }
 
+/*
+ * call-seq:
+ *   __paramGet(pos)
+ *
+ * @param [Fixnum] pos Column position which starts from one
+ * @return [OCI8::Metadata::Base]
+ *
+ * @private
+ */
 static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
 {
     oci8_stmt_t *stmt = TO_STMT(self);
@@ -239,18 +292,15 @@ static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
 }
 
 /*
- * Get the rowid of the last inserted/updated/deleted row.
+ * Get the rowid of the last inserted, updated or deleted row.
  * This cannot be used for select statements.
  *
- * example:
+ * @example
  *   cursor = conn.parse('INSERT INTO foo_table values(:1, :2)', 1, 2)
  *   cursor.exec
- *   cursor.rowid # => the inserted row's rowid
+ *   cursor.rowid # => "AAAFlLAAEAAAAG9AAA", the inserted row's rowid
  *
- * <em>Changes between ruby-oci8 1.0.3 and 1.0.4.</em>
- *
- * [ruby-oci8 1.0.4 or upper] The return value is a String.
- * [ruby-oci8 1.0.3 or lower] It returns an OCIRowid object.
+ * @return [String]
  */
 static VALUE oci8_stmt_get_rowid(VALUE self)
 {

@@ -14,14 +14,18 @@ class OCI8
   # calling OCI8#exec or OCI8#parse.
   class Cursor
 
-    def initialize(con, sql = nil)
+    # @note Don't use this constructor. Use {OCI8#parse} instead.
+    #
+    # @param [OCI8] conn   connection
+    # @param [String] sql  SQL statement
+    def initialize(conn, sql = nil)
       @bind_handles = {}
       @define_handles = []
       @column_metadata = []
       @names = nil
-      @con = con
+      @con = conn
       @max_array_size = nil
-      __initialize(con, sql)
+      __initialize(conn, sql) # Initialize the internal C structure.
     end
 
     # explicitly indicate the date type of fetched value. run this
@@ -41,7 +45,7 @@ class OCI8
       end
       @define_handles[pos - 1] = bindobj
       self
-    end # define
+    end
 
     # Binds variables explicitly.
     # 
@@ -99,7 +103,7 @@ class OCI8
       end
       @bind_handles[key] = bindobj
       self
-    end # bind_param
+    end
 
     # Executes the SQL statement assigned the cursor. The type of
     # return value depends on the type of sql statement: select;
@@ -125,12 +129,12 @@ class OCI8
         __execute(1)
         row_count
       end
-    end # exec
+    end
 
     # Gets fetched data as array. This is available for select
     # statement only.
     #
-    # example:
+    # @example
     #   conn = OCI8.new('scott', 'tiger')
     #   cursor = conn.exec('SELECT * FROM emp')
     #   while r = cursor.fetch()
@@ -138,6 +142,8 @@ class OCI8
     #   end
     #   cursor.close
     #   conn.logoff
+    #
+    # @return [Array]
     def fetch
       if block_given?
         while row = fetch_one_row_as_array
@@ -149,84 +155,85 @@ class OCI8
       end
     end
 
-    # call-seq:
-    #   fetch_hash
-    #
-    # get fetched data as a Hash. The hash keys are column names.
+    # Gets fetched data as a Hash. The hash keys are column names.
     # If a block is given, acts as an iterator.
+    #
+    # @return [Hash] the hash keys are column names and hash values are column values
     def fetch_hash
-      if iterator?
-        while ret = fetch_one_row_as_hash()
-          yield(ret)
+      if block_given?
+        while row = fetch_one_row_as_hash()
+          yield row
         end
       else
         fetch_one_row_as_hash
       end
     end
 
-    # call-seq:
-    #   [key]
-    #
     # Gets the value of the bind variable.
     #
-    # In case of binding explicitly, use same key with that of
-    # OCI8::Cursor#bind_param. A placeholder can be bound by
-    # name or position. If you bind by name, use that name. If you bind
-    # by position, use the position.
+    # When bind variables are explicitly bound by {OCI8::Cursor#bind_param},
+    # the subscript +key+ must be same with the parameter +key+ passed to {OCI8::Cursor#bind_param}.
     #
-    # example:
+    # When they are implicitly bound by {OCI8#exec} or {OCI8::Cursor#exec},
+    # the subscript +key+ is the position which starts from one.
+    #
+    # @example explicitly bind by name
     #   cursor = conn.parse("BEGIN :out := 'BAR'; END;")
-    #   cursor.bind_param(':out', 'FOO') # bind by name
-    #   p cursor[':out'] # => 'FOO'
-    #   p cursor[1] # => nil
+    #   cursor.bind_param(:out, 'FOO') # bind by name
+    #   p cursor[:out] # => 'FOO'  - The subscript must be :out.
     #   cursor.exec()
-    #   p cursor[':out'] # => 'BAR'
-    #   p cursor[1] # => nil
+    #   p cursor[:out] # => 'BAR'
     #
-    # example:
+    # @example explicitly bind by position
     #   cursor = conn.parse("BEGIN :out := 'BAR'; END;")
     #   cursor.bind_param(1, 'FOO') # bind by position
-    #   p cursor[':out'] # => nil
-    #   p cursor[1] # => 'FOO'
+    #   p cursor[1] # => 'FOO'  - The subscript must be 1.
     #   cursor.exec()
-    #   p cursor[':out'] # => nil
     #   p cursor[1] # => 'BAR'
     #
-    # In case of binding by OCI8#exec or OCI8::Cursor#exec,
-    # get the value by position, which starts from 1.
-    #
-    # example:
+    # @example implicitly bind
     #   cursor = conn.exec("BEGIN :out := 'BAR'; END;", 'FOO')
     #   # 1st bind variable is bound as String with width 3. Its initial value is 'FOO'
     #   # After execute, the value become 'BAR'.
     #   p cursor[1] # => 'BAR'
+    #
+    # @param [Object] key bind key
+    # @return [Object] the value of the bind variable
+    #
     def [](key)
       handle = @bind_handles[key]
       handle && handle.send(:get_data)
     end
 
-    # call-seq:
-    #   [key] = val
+    # Changes the bind variable value.
     #
-    # Sets the value to the bind variable. The way to specify the
-    # +key+ is same with OCI8::Cursor#[]. This is available
-    # to replace the value and execute many times.
+    # When bind variables are explicitly bound by {OCI8::Cursor#bind_param},
+    # the subscript +key+ must be same with the parameter +key+ passed to {OCI8::Cursor#bind_param}.
     #
-    # example1:
+    # When they are implicitly bound by {OCI8#exec} or {OCI8::Cursor#exec},
+    # the subscript +key+ is the position which starts from one.
+    #
+    # @example
+    #   # Inserts three rows whose values are 'FOO', 'BAR' and 'BAZ.'
     #   cursor = conn.parse("INSERT INTO test(col1) VALUES(:1)")
-    #   cursor.bind_params(1, nil, String, 3)
-    #   ['FOO', 'BAR', 'BAZ'].each do |key|
-    #     cursor[1] = key
-    #     cursor.exec
+    #   begin
+    #     cursor.bind_params(1, nil, String, 3)
+    #     ['FOO', 'BAR', 'BAZ'].each do |column_value|
+    #       cursor[1] = column_value  # Change the bind value
+    #       cursor.exec               # and insert it.
+    #     end
+    #   ensure
+    #     cursor.close()
     #   end
-    #   cursor.close()
+    #   # This makes same result with the following but is more efficient.
+    #   #
+    #   #  ['FOO', 'BAR', 'BAZ'].each do |column_value|
+    #   #    conn.exec("INSERT INTO test(col1) VALUES(:1)", column_value)
+    #   #  end
+    #   #
     #
-    # example2:
-    #   ['FOO', 'BAR', 'BAZ'].each do |key|
-    #     conn.exec("INSERT INTO test(col1) VALUES(:1)", key)
-    #   end
-    #
-    # Both example's results are same. But the former will use less resources.
+    # @param [Object] key bind key
+    # @param [Object] val bind value
     #
     def []=(key, val)
       handle = @bind_handles[key]
@@ -255,16 +262,16 @@ class OCI8
       free_bind_handles()  if !@max_array_size.nil?
       @max_array_size = size
       @actual_array_size = nil
-    end # max_array_size=
+    end
 
-    # Bind array explicitly
+    # Binds array explicitly
     #
     # When key is number, it binds by position, which starts from 1.
     # When key is string, it binds by the name of placeholder.
     # 
     # The max_array_size should be set before calling bind_param_array
     #
-    # example:
+    # @example
     #   cursor = conn.parse("INSERT INTO test_table VALUES (:str)")
     #   cursor.max_array_size = 3
     #   cursor.bind_param_array(1, ['happy', 'new', 'year'], String, 30)
@@ -307,7 +314,7 @@ class OCI8
       end
       @bind_handles[key] = bindobj
       self
-    end # bind_param_array
+    end
 
     # Executes the SQL statement assigned the cursor with array binding
     def exec_array
@@ -325,22 +332,17 @@ class OCI8
       else
         true
       end
-    end # exec_array
+    end
 
     # Gets the names of select-list as array. Please use this
     # method after exec.
     def get_col_names
       @names ||= @column_metadata.collect { |md| md.name }
-    end # get_col_names
+    end
 
-    # call-seq:
-    #   column_metadata -> column information
-    #
-    # (new in 1.0.0 and 2.0)
-    #
     # Gets an array of OCI8::Metadata::Column of a select statement.
     #
-    # example:
+    # @example
     #   cursor = conn.exec('select * from tab')
     #   puts ' Name                                      Type'
     #   puts ' ----------------------------------------- ----------------------------'
@@ -349,6 +351,10 @@ class OCI8
     #                 colinfo.name,
     #                 colinfo.type_string)
     #   end
+    #
+    # @return [Array of OCI8::Metadata::Column]
+    #
+    # @since 1.0.0
     def column_metadata
       @column_metadata
     end
@@ -358,30 +364,29 @@ class OCI8
       free()
       @names = nil
       @column_metadata = nil
-    end # close
+    end
 
-    # call-seq:
-    #   keys -> an Array
+    # Returns the keys of bind variables.
     #
-    # Returns the keys of bind variables as array.
+    # @return [Array] bind variable keys
     def keys
       @bind_handles.keys
     end
 
-    # call-seq:
-    #   prefetch_rows = aFixnum
-    #
-    # Set number of rows to be prefetched.
+    # Set the number of rows to be prefetched.
     # This can reduce the number of network round trips when fetching
     # many rows. The default value is one.
     #
     # FYI: Rails oracle adaptor uses 100 by default.
     #
+    # @param [Fixnum] rows The number of rows to be prefetched
     def prefetch_rows=(rows)
       attr_set_ub4(11, rows) # OCI_ATTR_PREFETCH_ROWS(11)
     end
 
     # Returns the number of processed rows.
+    #
+    # @return [Integer]
     def row_count
       # http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/ociaahan.htm#sthref5498
       attr_get_ub4(9) # OCI_ATTR_ROW_COUNT(9)
@@ -398,7 +403,10 @@ class OCI8
     #    cursor = conn.parse("select * from country where country_code = 'ja'")
     #    cursor.statement # => "select * from country where country_code = 'ja'"
     #
-    # @return [String]
+    # @return [String] prepared SQL statement
+    #
+    # @since 2.1.3
+    #
     def statement
       # The magic number 144 is OCI_ATTR_STATEMENT.
       # See http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/ociaahan.htm#sthref5503
@@ -503,7 +511,7 @@ class OCI8
         @column_metadata[i - 1] = parm
       end
       num_cols
-    end # define_columns
+    end
 
     def define_one_column(pos, param)
       bindobj = make_bind_object(param)
@@ -512,7 +520,7 @@ class OCI8
         old.send(:free)
       end
       @define_handles[pos - 1] = bindobj
-    end # define_one_column
+    end
 
     def bind_params(*bindvars)
       bindvars.each_with_index do |val, i|
@@ -522,7 +530,7 @@ class OCI8
           bind_param(i + 1, val)
         end
       end
-    end # bind_params
+    end
 
     def fetch_one_row_as_array
       if __fetch(@con)

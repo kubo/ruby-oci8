@@ -1,3 +1,6 @@
+2012-08-12  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/stmt.c, lib/oci8/cursor.rb: revise yard comment.
+
 2012-08-11  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/stmt.c, lib/oci8/cursor.rb: refactor OCI8::Cursor to simplify
 	    C code.
