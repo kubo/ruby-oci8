@@ -28,10 +28,13 @@ ruby_engine = (defined? RUBY_ENGINE) ? RUBY_ENGINE : 'ruby'
 so_basename = 'oci8lib_'
 if ruby_engine == 'ruby'
   # The suffix number indicates the ruby API version.
-  #  18  - ruby 1.8.x
-  #  191 - ruby 1.9.1, 1.9.2 and 2.0.0-dev at the present time.
+  #  1.8   - ruby 1.8.x
+  #  1.9.1 - ruby 1.9.1, 1.9.2
+  #  2.0.0 - ruby 2.0.0-dev at the present time.
   case RUBY_VERSION
-  when /^1\.9/, /^2\.0/
+  when /^2\.0/
+    so_basename += '200'
+  when /^1\.9/
     so_basename += '191'
   when /^1\.8/
     so_basename += '18'

@@ -110,7 +110,7 @@ void Init_oci8_env(void)
     int error;
 #endif
 
-#if !defined(HAVE_RB_THREAD_BLOCKING_REGION) && !defined(_WIN32)
+#if !defined(NATIVE_THREAD_WITH_GVL) && !defined(_WIN32)
     /* workaround code.
      *
      * Some instant clients set the environment variables

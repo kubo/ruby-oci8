@@ -21,11 +21,11 @@ static void oci8_cpool_mark(oci8_base_t *base)
     rb_gc_mark(cpool->pool_name);
 }
 
-static VALUE cpool_free_thread(void *arg)
+static void *cpool_free_thread(void *arg)
 {
     OCIConnectionPoolDestroy((OCICPool *)arg, oci8_errhp, OCI_DEFAULT);
     OCIHandleFree(arg, OCI_HTYPE_CPOOL);
-    return 0;
+    return NULL;
 }
 
 static void oci8_cpool_free(oci8_base_t *base)

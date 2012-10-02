@@ -4,7 +4,7 @@
 %>
 #define API_WRAP_C 1
 #include "apiwrap.h"
-#ifdef HAVE_RB_THREAD_BLOCKING_REGION
+#ifdef NATIVE_THREAD_WITH_GVL
 #define BLOCKING_FUNCTION_EPILOGUE(svcctx) do { (svcctx)->executing_thread = Qnil; } while (0)
 #else
 #define BLOCKING_FUNCTION_EPILOGUE(svcctx) do { } while (0)
@@ -54,7 +54,7 @@ int oci8_have_<%=f.name%>_nb;
 #endif
 
 #if defined RUNTIME_API_CHECK || ORACLE_CLIENT_VERSION >= <%=f.version_num%>
-static VALUE oci8_<%=f.name%>_cb(void *user_data)
+static void *oci8_<%=f.name%>_cb(void *user_data)
 {
     oci8_<%=f.name%>_data_t *data = (oci8_<%=f.name%>_data_t *)user_data;
 <% if f.ret == 'void'
@@ -64,10 +64,10 @@ static VALUE oci8_<%=f.name%>_cb(void *user_data)
 <% end %>
 <% if f.ret == 'sword'
 %>    BLOCKING_FUNCTION_EPILOGUE(data->svcctx);
-    return (VALUE)data->rv;
+    return (void*)(VALUE)data->rv;
 <% else
 %>    BLOCKING_FUNCTION_EPILOGUE(data->svcctx);
-    return (VALUE)0;
+    return NULL;
 <% end %>
 }
 #else
@@ -82,7 +82,7 @@ static VALUE oci8_<%=f.name%>_cb(void *user_data)
 <% f.args.each do |a|
 %>        data.<%=a.name%> = <%=a.name%>;
 <% end
-%>        oci8_blocking_region(svcctx, oci8_<%=f.name%>_cb, &data);
+%>        oci8_call_without_gvl(svcctx, oci8_<%=f.name%>_cb, &data);
 <%   if f.ret != 'void'
 %>        return data.rv;
 <% end

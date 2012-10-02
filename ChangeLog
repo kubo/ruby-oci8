@@ -1,3 +1,13 @@
+2012-10-02  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.c.tmpl, ext/oci8/connection_pool.c, ext/oci8/env.c,
+	  ext/oci8/extconf.rb, ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c,
+	  ext/oci8/thread_util.c, ext/oci8/thread_util.h:
+	    replace rb_thread_blocking_region(), which is deprecated in ruby 2.0.0,
+	    with rb_thread_call_without_gvl() and rename oci8_blocking_region()
+	    to oci8_call_without_gvl().
+	* lib/oci8.rb.in: Ruby 2.0.0-dev's API version is changed to 2.0.0.
+	* setup.rb: use RbConfig instead of Config for ruby 2.0.0-dev.
+
 2012-08-12  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/stmt.c, lib/oci8/cursor.rb: revise yard comment.
 

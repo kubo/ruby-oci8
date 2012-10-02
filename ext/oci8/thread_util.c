@@ -15,7 +15,7 @@ static pthread_attr_t detached_thread_attr;
 #endif
 
 typedef struct {
-    rb_blocking_function_t *func;
+    void *(*func)(void *);
     void *arg;
 } adapter_arg_t;
 
@@ -36,7 +36,7 @@ static void __cdecl adapter(void *arg)
     free(aa);
 }
 
-int oci8_run_native_thread(rb_blocking_function_t func, void *arg)
+int oci8_run_native_thread(void *(*func)(void*), void *arg)
 {
     adapter_arg_t *aa = malloc(sizeof(adapter_arg_t));
     if (aa == NULL) {
@@ -63,7 +63,7 @@ static void *adapter(void *arg)
     return NULL;
 }
 
-int oci8_run_native_thread(rb_blocking_function_t func, void *arg)
+int oci8_run_native_thread(void *(*func)(void *), void *arg)
 {
     pthread_t thread;
     adapter_arg_t *aa = malloc(sizeof(adapter_arg_t));

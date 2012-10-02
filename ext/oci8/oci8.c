@@ -137,7 +137,7 @@ static void oci8_svcctx_init(oci8_base_t *base)
 
     svcctx->pid = getpid();
     svcctx->is_autocommit = 0;
-#ifdef HAVE_RB_THREAD_BLOCKING_REGION
+#ifdef NATIVE_THREAD_WITH_GVL
     svcctx->non_blocking = 1;
 #endif
     svcctx->long_read_len = INT2FIX(65535);
@@ -272,7 +272,7 @@ static void *simple_logoff_prepare(oci8_svcctx_t *svcctx)
     return sla;
 }
 
-static VALUE simple_logoff_execute(void *arg)
+static void *simple_logoff_execute(void *arg)
 {
     simple_logoff_arg_t *sla = (simple_logoff_arg_t *)arg;
     OCIError *errhp = oci8_errhp;
@@ -281,7 +281,7 @@ static VALUE simple_logoff_execute(void *arg)
     OCITransRollback(sla->svchp, errhp, OCI_DEFAULT);
     rv = OCILogoff(sla->svchp, errhp);
     xfree(sla);
-    return (VALUE)rv;
+    return (void*)(VALUE)rv;
 }
 
 static const oci8_logoff_strategy_t simple_logoff = {
@@ -313,7 +313,7 @@ static void *complex_logoff_prepare(oci8_svcctx_t *svcctx)
     return cla;
 }
 
-static VALUE complex_logoff_execute(void *arg)
+static void *complex_logoff_execute(void *arg)
 {
     complex_logoff_arg_t *cla = (complex_logoff_arg_t *)arg;
     OCIError *errhp = oci8_errhp;
@@ -339,7 +339,7 @@ static VALUE complex_logoff_execute(void *arg)
         OCIHandleFree(cla->svchp, OCI_HTYPE_SVCCTX);
     }
     xfree(cla);
-    return (VALUE)rv;
+    return (void*)(VALUE)rv;
 }
 
 static const oci8_logoff_strategy_t complex_logoff = {
@@ -536,7 +536,7 @@ static VALUE oci8_svcctx_logoff(VALUE self)
         void *data = strategy->prepare(svcctx);
         svcctx->base.type = 0;
         svcctx->logoff_strategy = NULL;
-        chker2(oci8_blocking_region(svcctx, strategy->execute, data), &svcctx->base);
+        chker2(oci8_call_without_gvl(svcctx, strategy->execute, data), &svcctx->base);
     }
     return Qtrue;
 }
@@ -579,7 +579,7 @@ static VALUE oci8_rollback(VALUE self)
 static VALUE oci8_non_blocking_p(VALUE self)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
-#ifdef HAVE_RB_THREAD_BLOCKING_REGION
+#ifdef NATIVE_THREAD_WITH_GVL
     return svcctx->non_blocking ? Qtrue : Qfalse;
 #else
     sb1 non_blocking;
@@ -629,7 +629,7 @@ static VALUE oci8_non_blocking_p(VALUE self)
 static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
 {
     oci8_svcctx_t *svcctx = DATA_PTR(self);
-#ifdef HAVE_RB_THREAD_BLOCKING_REGION
+#ifdef NATIVE_THREAD_WITH_GVL
     svcctx->non_blocking = RTEST(val);
 #else
     sb1 non_blocking;
@@ -723,7 +723,7 @@ static VALUE oci8_break(VALUE self)
     if (NIL_P(svcctx->executing_thread)) {
         return Qfalse;
     }
-#ifndef HAVE_RB_THREAD_BLOCKING_REGION
+#ifndef NATIVE_THREAD_WITH_GVL
     chker2(OCIBreak(svcctx->base.hp.ptr, oci8_errhp), &svcctx->base);
 #endif
     rb_thread_wakeup(svcctx->executing_thread);

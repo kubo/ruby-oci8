@@ -16,7 +16,7 @@ void Init_oci8_thread_util(void);
  * Don't call any ruby functions in the func.
  * The return value is errno.
  */
-int oci8_run_native_thread(rb_blocking_function_t func, void *arg);
+int oci8_run_native_thread(void *(*func)(void *), void *arg);
 
 #else
 

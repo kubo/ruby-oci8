@@ -4,6 +4,9 @@
  */
 
 #include "oci8.h"
+#ifdef HAVE_RUBY_THREAD_H
+#include <ruby/thread.h>
+#endif
 
 ID oci8_id_at_last_error;
 ID oci8_id_new;
@@ -199,41 +202,16 @@ void oci8_unlink_from_parent(oci8_base_t *base)
     base->parent = NULL;
 }
 
-#ifdef HAVE_RB_THREAD_BLOCKING_REGION
+#ifdef NATIVE_THREAD_WITH_GVL
 
-#if 0
-typedef struct {
-    dvoid *hndlp;
-    OCIError *errhp;
-} ocibreak_arg_t;
-
-static VALUE call_OCIBreak(void *user_data)
-{
-    ocibreak_arg_t *arg = (ocibreak_arg_t *)user_data;
-    OCIBreak(arg->hndlp, arg->errhp);
-    return Qnil;
-}
-
-static void oci8_unblock_func(void *user_data)
-{
-    oci8_svcctx_t *svcctx = (oci8_svcctx_t *)user_data;
-    if (svcctx->base.hp.ptr != NULL) {
-        ocibreak_arg_t arg;
-        arg.hndlp = svcctx->base.hp.ptr;
-        arg.errhp = oci8_errhp;
-        rb_thread_blocking_region(call_OCIBreak, &arg, NULL, NULL);
-    }
-}
-#else
 static void oci8_unblock_func(void *user_data)
 {
     oci8_svcctx_t *svcctx = (oci8_svcctx_t *)user_data;
     OCIBreak(svcctx->base.hp.ptr, oci8_errhp);
 }
-#endif
 
 /* ruby 1.9 */
-sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data)
+sword oci8_call_without_gvl(oci8_svcctx_t *svcctx, void *(*func)(void *), void *data)
 {
     if (svcctx->non_blocking) {
         sword rv;
@@ -243,7 +221,11 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
         }
         svcctx->executing_thread = rb_thread_current();
         /* Note: executing_thread is cleard at the end of the blocking function. */
-        rv = (sword)rb_thread_blocking_region(func, data, oci8_unblock_func, svcctx);
+#ifdef HAVE_RB_THREAD_CALL_WITHOUT_GVL
+        rv = (sword)(VALUE)rb_thread_call_without_gvl(func, data, oci8_unblock_func, svcctx);
+#else
+        rv = (sword)rb_thread_blocking_region(func, (rb_blocking_function_t)data, oci8_unblock_func, svcctx);
+#endif
         if (rv == OCI_ERROR) {
             if (oci8_get_error_code(oci8_errhp) == 1013) {
                 rb_raise(eOCIBreak, "Canceled by user request.");
@@ -251,10 +233,10 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
         }
         return rv;
     } else {
-        return (sword)func(data);
+        return (sword)(VALUE)func(data);
     }
 }
-#else /* HAVE_RB_THREAD_BLOCKING_REGION */
+#else /* NATIVE_THREAD_WITH_GVL */
 
 /* ruby 1.8 */
 typedef struct {
@@ -301,7 +283,7 @@ static VALUE blocking_function_ensure(oci8_svcctx_t *svcctx)
     return Qnil;
 }
 
-sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data)
+sword oci8_call_without_gvl(oci8_svcctx_t *svcctx, void *(*func)(void *), void *data)
 {
     blocking_region_arg_t arg;
 
@@ -313,7 +295,7 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
     }
     return (sword)rb_ensure(blocking_function_execute, (VALUE)&arg, blocking_function_ensure, (VALUE)svcctx);
 }
-#endif /* HAVE_RB_THREAD_BLOCKING_REGION */
+#endif /* NATIVE_THREAD_WITH_GVL */
 
 typedef struct {
     oci8_svcctx_t *svcctx;

@@ -135,9 +135,6 @@ typedef struct OCICPool OCICPool;
 #if !defined(HAVE_RB_ERRINFO) && defined(HAVE_RUBY_ERRINFO)
 #define rb_errinfo() ruby_errinfo
 #endif
-#if !defined HAVE_TYPE_RB_BLOCKING_FUNCTION_T_ && !defined HAVE_TYPE_RB_BLOCKING_FUNCTION_TP
-typedef VALUE rb_blocking_function_t(void *);
-#endif
 
 #ifndef HAVE_TYPE_RB_ENCODING
 #define rb_enc_associate(str, enc) do {} while(0)
@@ -160,7 +157,11 @@ typedef VALUE rb_blocking_function_t(void *);
 #endif
 #endif
 
-#if defined(HAVE_NATIVETHREAD) || defined(HAVE_RB_THREAD_BLOCKING_REGION)
+#if defined(HAVE_RB_THREAD_CALL_WITHOUT_GVL) || defined(HAVE_RB_THREAD_BLOCKING_REGION)
+#define NATIVE_THREAD_WITH_GVL 1
+#endif
+
+#if defined(HAVE_NATIVETHREAD) || NATIVE_THREAD_WITH_GVL
 /*
  * oci8_errhp is a thread local object in ruby 1.9, rubinius
  * and ruby 1.8 configured with --enable-pthread.
@@ -213,7 +214,7 @@ typedef VALUE rb_blocking_function_t(void *);
 #define oci8_tls_get(key)        pthread_getspecific(key)
 #define oci8_tls_set(key, val)   pthread_setspecific((key), (val))
 #endif
-#endif /* HAVE_RB_THREAD_BLOCKING_REGION */
+#endif /* USE_THREAD_LOCAL_ERRHP */
 
 /* utility macros
  */
@@ -350,7 +351,7 @@ typedef struct oci8_svcctx {
 
 struct oci8_logoff_strategy {
     void *(*prepare)(oci8_svcctx_t *svcctx);
-    rb_blocking_function_t *execute;
+    void *(*execute)(void *);
 };
 
 typedef struct {
@@ -448,7 +449,7 @@ VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_vtable_t 
 VALUE oci8_define_bind_class(const char *name, const oci8_bind_vtable_t *vptr);
 void oci8_link_to_parent(oci8_base_t *base, oci8_base_t *parent);
 void oci8_unlink_from_parent(oci8_base_t *base);
-sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data);
+sword oci8_call_without_gvl(oci8_svcctx_t *svcctx, void *(*func)(void *), void *data);
 sword oci8_exec_sql(oci8_svcctx_t *svcctx, const char *sql_text, ub4 num_define_vars, oci8_exec_sql_var_t *define_vars, ub4 num_bind_vars, oci8_exec_sql_var_t *bind_vars, int raise_on_error);
 #if defined RUNTIME_API_CHECK
 void *oci8_find_symbol(const char *symbol_name);

@@ -107,18 +107,20 @@ have_func("localtime_r")
 # ruby 1.8 headers
 have_header("intern.h")
 have_header("util.h")
-# ruby 1.9 headers
+# ruby 1.9.1 headers
 have_header("ruby/util.h")
 have_type('rb_encoding', ['ruby/ruby.h', 'ruby/encoding.h'])
+# ruby 2.0.0 headers
+have_header("ruby/thread.h")
 
 # $! in C API
 have_var("ruby_errinfo", "ruby.h") # ruby 1.8
 have_func("rb_errinfo", "ruby.h")  # ruby 1.9
 
-have_type("rb_blocking_function_t*", "ruby.h")
 have_func("rb_set_end_proc", "ruby.h")
 have_func("rb_class_superclass", "ruby.h")
 have_func("rb_thread_blocking_region", "ruby.h")
+have_func("rb_thread_call_without_gvl", "ruby.h")
 
 # replace files
 replace = {
@@ -135,7 +137,8 @@ so_basename = 'oci8lib_'
 if ruby_engine == 'ruby'
   # Config::CONFIG["ruby_version"] indicates the ruby API version.
   #  1.8   - ruby 1.8.x
-  #  1.9.1 - ruby 1.9.1, 1.9.2 and 2.0.0-dev at the present time.
+  #  1.9.1 - ruby 1.9.1, 1.9.2
+  #  2.0.0 - ruby 2.0.0
   so_basename += RbConfig::CONFIG["ruby_version"].gsub(/\W/, '')
 else
   so_basename += ruby_engine
