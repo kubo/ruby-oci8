@@ -1,4 +1,6 @@
 .yardopts
+COPYING
+COPYING_old
 ChangeLog
 Makefile
 NEWS
