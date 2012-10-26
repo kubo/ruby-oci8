@@ -246,6 +246,7 @@ sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, v
         svcctx->executing_thread = rb_thread_current();
         /* Note: executing_thread is cleard at the end of the blocking function. */
         rv = (sword)rb_thread_blocking_region(func, data, oci8_unblock_func, svcctx);
+        oci8_execute_pending_commands(svcctx);
         if (rv == OCI_ERROR) {
             if (oci8_get_error_code(oci8_errhp) == 1013) {
                 rb_raise(eOCIBreak, "Canceled by user request.");

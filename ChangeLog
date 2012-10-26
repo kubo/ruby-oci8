@@ -1,3 +1,7 @@
+2012-10-26  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c, ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c:
+	    Fix github issue #20
+
 2012-04-28  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 2.1.2 and 2.1.1
 	* VERSION: change the version to 2.1.2.

@@ -41,6 +41,13 @@ static VALUE cServer;
 static ID id_at_session_handle;
 static ID id_at_server_handle;
 
+struct oci8_command {
+    struct oci8_command *next;
+    void (*func)(oci8_svcctx_t *svcctx, void *arg1, void *arg2);
+    void *arg1;
+    void *arg2;
+};
+
 typedef struct oci8_svcctx_associate {
     oci8_base_t base;
     oci8_svcctx_t *svcctx;
@@ -1156,3 +1163,30 @@ void oci8_check_pid_consistency(oci8_svcctx_t *svcctx)
     }
 }
 
+void oci8_add_pending_command(oci8_svcctx_t *svcctx, void (*func)(oci8_svcctx_t *, void *, void *), void *arg1, void *arg2)
+{
+    oci8_command_t *cmd = ALLOC(oci8_command_t);
+#if 0
+    fprintf(stderr, "add pending_command %p\n", cmd);
+#endif
+    cmd->next = svcctx->pending_commands;
+    cmd->func = func;
+    cmd->arg1 = arg1;
+    cmd->arg2 = arg2;
+    svcctx->pending_commands = cmd;
+}
+
+void oci8_execute_pending_commands(oci8_svcctx_t *svcctx)
+{
+    oci8_command_t *cmd, *cmd_next;
+
+    for (cmd = svcctx->pending_commands; cmd != NULL; cmd = cmd_next) {
+#if 0
+        fprintf(stderr, "call pending_command %p\n", cmd);
+#endif
+        cmd_next = cmd->next;
+        cmd->func(svcctx, cmd->arg1, cmd->arg2);
+        xfree(cmd);
+    }
+    svcctx->pending_commands = NULL;
+}
