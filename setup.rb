@@ -72,8 +72,6 @@ unless File.respond_to?(:read)
   end
 end
 
-RbConfig = Config unless defined? RbConfig
-
 #
 # Application independent utilities
 #
@@ -100,6 +98,8 @@ if arg = ARGV.detect{|a| /\A--rbconfig=/ =~ a }
 else
   require 'rbconfig'
 end
+
+RbConfig = Config unless defined? RbConfig
 
 def multipackage_install?
   FileTest.directory?(File.dirname($0) + '/packages')

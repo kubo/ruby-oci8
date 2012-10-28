@@ -1,4 +1,11 @@
 2012-10-28  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb: Use rb_thread_call_without_gvl only when
+	    ruby/thread.h exists. rb_thread_call_without_gvl is an internal
+	    function in ruby 1.9.2 and 1.9.3.
+	* ext/oci8/oci8lib.c: fix compilation errors when ruby <= 1.9.1.
+	* setup.rb: fix uninitialized constant Config (NameError) on ruby 1.8.7.
+
+2012-10-28  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c, ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c:
 	    Fix SEGV when a temporary LOB is GCed while another LOB is read.
 	    (github issue #20 reported by techsplicer)

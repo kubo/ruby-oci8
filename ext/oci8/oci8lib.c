@@ -253,7 +253,7 @@ sword oci8_call_without_gvl(oci8_svcctx_t *svcctx, void *(*func)(void *), void *
 #ifdef HAVE_RB_THREAD_CALL_WITHOUT_GVL
             rv = (sword)(VALUE)rb_thread_call_without_gvl(free_temp_lob, &arg, oci8_unblock_func, svcctx);
 #else
-            rv = (sword)rb_thread_blocking_region(free_temp_lob, &arg, oci8_unblock_func, svcctx);
+            rv = (sword)rb_thread_blocking_region((VALUE(*)(void*))free_temp_lob, &arg, oci8_unblock_func, svcctx);
 #endif
             if (rv == OCI_ERROR) {
                 if (oci8_get_error_code(errhp) == 1013) {
@@ -277,7 +277,7 @@ sword oci8_call_without_gvl(oci8_svcctx_t *svcctx, void *(*func)(void *), void *
 #ifdef HAVE_RB_THREAD_CALL_WITHOUT_GVL
         rv = (sword)(VALUE)rb_thread_call_without_gvl(func, data, oci8_unblock_func, svcctx);
 #else
-        rv = (sword)rb_thread_blocking_region(func, (rb_blocking_function_t)data, oci8_unblock_func, svcctx);
+        rv = (sword)rb_thread_blocking_region((VALUE(*)(void*))func, data, oci8_unblock_func, svcctx);
 #endif
         if (rv == OCI_ERROR) {
             if (oci8_get_error_code(errhp) == 1013) {

@@ -348,7 +348,7 @@ typedef struct oci8_svcctx {
     rb_pid_t pid;
     unsigned char state;
     char is_autocommit;
-#ifdef HAVE_RB_THREAD_BLOCKING_REGION
+#ifdef NATIVE_THREAD_WITH_GVL
     char non_blocking;
 #endif
     VALUE long_read_len;
