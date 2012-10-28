@@ -332,7 +332,11 @@ struct oci8_bind {
 };
 
 typedef struct oci8_logoff_strategy oci8_logoff_strategy_t;
-typedef struct oci8_command oci8_command_t;
+
+typedef struct oci8_temp_lob {
+    struct oci8_temp_lob *next;
+    OCILobLocator *lob;
+} oci8_temp_lob_t;
 
 typedef struct oci8_svcctx {
     oci8_base_t base;
@@ -347,7 +351,7 @@ typedef struct oci8_svcctx {
     char non_blocking;
 #endif
     VALUE long_read_len;
-    oci8_command_t *pending_commands;
+    oci8_temp_lob_t *temp_lobs;
 } oci8_svcctx_t;
 
 struct oci8_logoff_strategy {
@@ -479,8 +483,6 @@ oci8_svcctx_t *oci8_get_svcctx(VALUE obj);
 OCISvcCtx *oci8_get_oci_svcctx(VALUE obj);
 OCISession *oci8_get_oci_session(VALUE obj);
 void oci8_check_pid_consistency(oci8_svcctx_t *svcctx);
-void oci8_add_pending_command(oci8_svcctx_t *svcctx, void (*)(oci8_svcctx_t *, void *, void *), void *, void *);
-void oci8_execute_pending_commands(oci8_svcctx_t *svcctx);
 #define TO_SVCCTX oci8_get_oci_svcctx
 #define TO_SESSION oci8_get_oci_session
 

@@ -98,18 +98,6 @@ static void oci8_lob_mark(oci8_base_t *base)
     rb_gc_mark(lob->svc);
 }
 
-#ifdef HAVE_RB_THREAD_BLOCKING_REGION
-static void oci8_lob_free_func(oci8_svcctx_t *svchp, void *arg1, void *arg2)
-{
-    OCIError *errhp = (OCIError*)arg1;
-    OCILobLocator *lob = (OCILobLocator*)arg1;
-
-    /* FIXME: This may stops all ruby threads. */
-    OCILobFreeTemporary(svchp->base.hp.svc, errhp, lob);
-    OCIHandleFree(errhp, OCI_HTYPE_ERROR);
-}
-#endif
-
 static void oci8_lob_free(oci8_base_t *base)
 {
     oci8_lob_t *lob = (oci8_lob_t *)base;
@@ -118,22 +106,19 @@ static void oci8_lob_free(oci8_base_t *base)
     if (lob->svchp != NULL
         && OCILobIsTemporary(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_temporary) == OCI_SUCCESS
         && is_temporary) {
+
+#ifdef HAVE_RB_THREAD_BLOCKING_REGION
         oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+        oci8_temp_lob_t *temp_lob = ALLOC(oci8_temp_lob_t);
 
-#ifdef HAVE_RB_THREAD_BLOCKING_REGION
-        if (NIL_P(svcctx->executing_thread)) {
-#endif
-            /* FIXME: This may stall the GC. */
-            OCILobFreeTemporary(lob->svchp, oci8_errhp, lob->base.hp.lob);
-#ifdef HAVE_RB_THREAD_BLOCKING_REGION
-        } else {
-            OCIError *errhp;
-            sword rv = OCIHandleAlloc(oci8_envhp, (void*)&errhp, OCI_HTYPE_ERROR, 0, 0);
-
-            if (rv != OCI_SUCCESS)
-                oci8_env_raise(oci8_envhp, rv);
-            oci8_add_pending_command(svcctx, oci8_lob_free_func, errhp, lob->base.hp.lob);
-        }
+        temp_lob->next = svcctx->temp_lobs;
+        temp_lob->lob = lob->base.hp.lob;
+        svcctx->temp_lobs = temp_lob;
+        lob->base.type = 0;
+        lob->base.hp.ptr = NULL;
+#else
+        /* FIXME: This may stall the GC. */
+        OCILobFreeTemporary(lob->svchp, oci8_errhp, lob->base.hp.lob);
 #endif
     }
     lob->svc = Qnil;

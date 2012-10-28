@@ -234,21 +234,69 @@ static void oci8_unblock_func(void *user_data)
 }
 #endif
 
+typedef struct free_temp_lob_arg_t {
+    oci8_svcctx_t *svcctx;
+    OCISvcCtx *svchp;
+    OCIError *errhp;
+    OCILobLocator *lob;
+} free_temp_lob_arg_t;
+
+static VALUE free_temp_lob(void *user_data)
+{
+    free_temp_lob_arg_t *data = (free_temp_lob_arg_t *)user_data;
+    sword rv = OCILobFreeTemporary(data->svchp, data->errhp, data->lob);
+
+    data->svcctx->executing_thread = Qnil;
+    return (VALUE)rv;
+}
+
 /* ruby 1.9 */
 sword oci8_blocking_region(oci8_svcctx_t *svcctx, rb_blocking_function_t func, void *data)
 {
+    oci8_temp_lob_t *lob;
+    OCIError *errhp = oci8_errhp;
+
+    if (!NIL_P(svcctx->executing_thread)) {
+        rb_raise(rb_eRuntimeError /* FIXME */, "executing in another thread");
+    }
+
+    lob = svcctx->temp_lobs;
+    while (lob != NULL) {
+        oci8_temp_lob_t *lob_next = lob->next;
+
+        if (svcctx->non_blocking) {
+            free_temp_lob_arg_t arg;
+            sword rv;
+
+            arg.svcctx = svcctx;
+            arg.svchp = svcctx->base.hp.svc;
+            arg.errhp = errhp;
+            arg.lob = lob->lob;
+
+            svcctx->executing_thread = rb_thread_current();
+            rv = (sword)rb_thread_blocking_region(free_temp_lob, &arg, oci8_unblock_func, svcctx);
+            if (rv == OCI_ERROR) {
+                if (oci8_get_error_code(errhp) == 1013) {
+                    rb_raise(eOCIBreak, "Canceled by user request.");
+                }
+            }
+        } else {
+            OCILobFreeTemporary(svcctx->base.hp.svc, errhp, lob->lob);
+        }
+        OCIDescriptorFree(lob->lob, OCI_DTYPE_LOB);
+
+        xfree(lob);
+        svcctx->temp_lobs = lob = lob_next;
+    }
+
     if (svcctx->non_blocking) {
         sword rv;
 
-        if (!NIL_P(svcctx->executing_thread)) {
-            rb_raise(rb_eRuntimeError /* FIXME */, "executing in another thread");
-        }
         svcctx->executing_thread = rb_thread_current();
         /* Note: executing_thread is cleard at the end of the blocking function. */
         rv = (sword)rb_thread_blocking_region(func, data, oci8_unblock_func, svcctx);
-        oci8_execute_pending_commands(svcctx);
         if (rv == OCI_ERROR) {
-            if (oci8_get_error_code(oci8_errhp) == 1013) {
+            if (oci8_get_error_code(errhp) == 1013) {
                 rb_raise(eOCIBreak, "Canceled by user request.");
             }
         }

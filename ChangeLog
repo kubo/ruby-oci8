@@ -1,3 +1,7 @@
+2012-10-28  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c, ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c:
+	    Revert The pervious commit and fix github issue #20 again.
+
 2012-10-26  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c, ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c:
 	    Fix github issue #20
