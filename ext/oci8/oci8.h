@@ -334,6 +334,11 @@ struct oci8_bind {
 
 typedef struct oci8_logoff_strategy oci8_logoff_strategy_t;
 
+typedef struct oci8_temp_lob {
+    struct oci8_temp_lob *next;
+    OCILobLocator *lob;
+} oci8_temp_lob_t;
+
 typedef struct oci8_svcctx {
     oci8_base_t base;
     volatile VALUE executing_thread;
@@ -347,6 +352,7 @@ typedef struct oci8_svcctx {
     char non_blocking;
 #endif
     VALUE long_read_len;
+    oci8_temp_lob_t *temp_lobs;
 } oci8_svcctx_t;
 
 struct oci8_logoff_strategy {

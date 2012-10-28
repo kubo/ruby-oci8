@@ -1,3 +1,8 @@
+2012-10-28  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c, ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c:
+	    Fix SEGV when a temporary LOB is GCed while another LOB is read.
+	    (github issue #20 reported by techsplicer)
+
 2012-10-02  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.c.tmpl, ext/oci8/connection_pool.c, ext/oci8/env.c,
 	  ext/oci8/extconf.rb, ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c,

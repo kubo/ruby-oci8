@@ -101,6 +101,18 @@ static void copy_server_handle(oci8_svcctx_t *svcctx)
 static void oci8_svcctx_free(oci8_base_t *base)
 {
     oci8_svcctx_t *svcctx = (oci8_svcctx_t *)base;
+    oci8_temp_lob_t *lob;
+
+    lob = svcctx->temp_lobs;
+    while (lob != NULL) {
+        oci8_temp_lob_t *lob_next = lob->next;
+
+        OCIDescriptorFree(lob->lob, OCI_DTYPE_LOB);
+        xfree(lob);
+        lob = lob_next;
+    }
+    svcctx->temp_lobs = NULL;
+
     if (svcctx->logoff_strategy != NULL) {
         const oci8_logoff_strategy_t *strategy = svcctx->logoff_strategy;
         void *data = strategy->prepare(svcctx);
