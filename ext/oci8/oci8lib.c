@@ -294,14 +294,14 @@ sword oci8_call_without_gvl(oci8_svcctx_t *svcctx, void *(*func)(void *), void *
 /* ruby 1.8 */
 typedef struct {
     oci8_svcctx_t *svcctx;
-    rb_blocking_function_t *func;
+    void *(*func)(void *);
     void *data;
 } blocking_region_arg_t;
 
 static VALUE blocking_function_execute(blocking_region_arg_t *arg)
 {
     oci8_svcctx_t *svcctx = arg->svcctx;
-    rb_blocking_function_t *func = arg->func;
+    void *(*func)(void *) = arg->func;
     void *data = arg->data;
     struct timeval tv;
     sword rv;
@@ -309,7 +309,7 @@ static VALUE blocking_function_execute(blocking_region_arg_t *arg)
     tv.tv_sec = 0;
     tv.tv_usec = 10000;
     svcctx->executing_thread = rb_thread_current();
-    while ((rv = func(data)) == OCI_STILL_EXECUTING) {
+    while ((rv = (sword)(VALUE)func(data)) == OCI_STILL_EXECUTING) {
         rb_thread_wait_for(tv);
         if (tv.tv_usec < 500000)
             tv.tv_usec <<= 1;

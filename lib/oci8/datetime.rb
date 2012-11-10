@@ -204,7 +204,7 @@ class OCI8
           usec = (nsec == 0) ? 0 : nsec.to_r / 1000
           begin
             if timezone
-              return ::Time.send(:timezone, year, month, day, hour, minute, sec, usec)
+              return ::Time.send(timezone, year, month, day, hour, minute, sec, usec)
             else
               if tz_hour == 0 and tz_min == 0
                 tm = ::Time.utc(year, month, day, hour, minute, sec, usec)

@@ -88,7 +88,24 @@ def convert_to_datetime(year, month, day, hour, minute, sec, subsec, timezone)
                else
                  Time.local(year, month, day, hour, minute, sec).utc_offset
                end
-  DateTime.civil(year, month, day, hour, minute, sec + subsec, utc_offset.to_r / 86400)
+  begin
+    DateTime.civil(year, month, day, hour, minute, sec + subsec, utc_offset.to_r / 86400)
+  rescue ArgumentError
+    raise $! if $!.to_s != 'invalid date'
+    # for ruby 1.8.6.
+    # convert to a DateTime via a String as a workaround.
+    if utc_offset >= 0
+      sign = ?+
+    else
+      sign = ?-
+      utc_offset = - utc_offset;
+    end
+    tz_min = utc_offset / 60
+    tz_hour, tz_min = tz_min.divmod 60
+    time_str = format("%04d-%02d-%02dT%02d:%02d:%02d.%09d%c%02d:%02d",
+                      year, month, day, hour, minute, sec, (subsec * 1000_000_000).to_i, sign, tz_hour, tz_min)
+    ::DateTime.parse(time_str)
+  end
 end
 
 module Test

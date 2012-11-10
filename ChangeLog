@@ -1,3 +1,12 @@
+2012-11-10  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8lib.c: fix compilation errors when ruby version is 1.8.x.
+	* ext/oci8/ocinumber.c: Don't use rb_Rational() when rbx-2.0.testing
+	    runs with ruby 1.8 mode.
+	* lib/oci8/datetime.rb: fix #<NoMethodError: undefined method `timezone' for Time:Class>
+	    when ruby is less than 1.9.2 and an object type's time attribute
+	    is accessed.
+	* test/config.rb, test/test_oci8.rb: for ruby 1.8.x.
+
 2012-10-28  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb: Use rb_thread_call_without_gvl only when
 	    ruby/thread.h exists. rb_thread_call_without_gvl is an internal

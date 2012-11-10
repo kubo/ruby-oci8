@@ -32,7 +32,7 @@ static ID id_denominator;
 static ID id_Rational;
 static ID id_BigDecimal;
 
-#ifndef T_RATIONAL
+#ifndef rb_Rational2
 static VALUE cRational;
 #endif
 static VALUE cBigDecimal;
@@ -51,7 +51,7 @@ static OCINumber const_mPI2; /* -PI/2 */
 #endif
 #define RBOCI8_T_ORANUMBER (T_MASK + 1)
 #define RBOCI8_T_BIGDECIMAL (T_MASK + 2)
-#ifdef T_RATIONAL
+#ifdef rb_Rational2
 #define RBOCI8_T_RATIONAL T_RATIONAL
 #else
 #define RBOCI8_T_RATIONAL (T_MASK + 3)
@@ -63,7 +63,7 @@ static int rboci8_type(VALUE obj)
     VALUE klass;
 
     switch (type) {
-#ifndef T_RATIONAL
+#ifndef rb_Rational2
     case T_OBJECT:
         klass = CLASS_OF(obj);
         if (cRational != 0) {
@@ -1435,7 +1435,7 @@ static VALUE onum_to_r(VALUE self)
     } else {
         y = rb_funcall(INT2FIX(10), rb_intern("**"), 1, INT2FIX(nshift));
     }
-#ifdef T_RATIONAL
+#ifdef rb_Rational2
     return rb_Rational(x, y);
 #else
     if (!cRational) {
