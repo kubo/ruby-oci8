@@ -62,7 +62,15 @@ class TestBreak < Test::Unit::TestCase
     expect = []
     expect[PLSQL_DONE] = TIME_IN_PLSQL
     expect[OCIBREAK]   = "Invalid status"
-    expect[SEND_BREAK] = TIME_IN_PLSQL + TIME_TO_BREAK
+    if defined? Rubinius and Rubinius::VERSION >= "2.0"
+      # Rubinius 2.0.0.
+      # DBMS_LOCK.SLEEP blocks ruby threads which try to call C-API.
+      expect[SEND_BREAK] = TIME_TO_BREAK
+    else
+      # MRI and Rubinius 1.2.4.
+      # DBMS_LOCK.SLEEP blocks all ruby threads.
+      expect[SEND_BREAK] = TIME_IN_PLSQL + TIME_TO_BREAK
+    end
     do_test_ocibreak(@conn, expect)
   end
 
@@ -91,7 +99,15 @@ class TestBreak < Test::Unit::TestCase
   def test_timeout
     @conn.non_blocking = true
     start_time = Time.now
-    assert_raise(Timeout::Error) do
+
+    if defined? Rubinius and Rubinius::VERSION < "2.0"
+      # Rubinius 1.2.4
+      expected = OCIBreak
+    else
+      # MRI and Rubinius 2.0.0
+      expected = Timeout::Error
+    end
+    assert_raise(expected) do
       Timeout.timeout(1) do
         @conn.exec("BEGIN DBMS_LOCK.SLEEP(5); END;")
       end

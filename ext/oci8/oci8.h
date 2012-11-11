@@ -126,7 +126,20 @@ typedef struct OCICPool OCICPool;
 #define STRINGIZE(name) #name
 #endif
 #ifndef RB_GC_GUARD
-#define RB_GC_GUARD(v) (*(volatile VALUE *)&(v))
+#ifdef __GNUC__
+#define RB_GC_GUARD_PTR(ptr) \
+    __extension__ ({volatile VALUE *rb_gc_guarded_ptr = (ptr); rb_gc_guarded_ptr;})
+#else
+#ifdef _MSC_VER
+#pragma optimize("", off)
+#endif
+static inline volatile VALUE *rb_gc_guarded_ptr(volatile VALUE *ptr) {return ptr;}
+#ifdef _MSC_VER
+#pragma optimize("", on)
+#endif
+#define RB_GC_GUARD_PTR(ptr) rb_gc_guarded_ptr(ptr)
+#endif
+#define RB_GC_GUARD(v) (*RB_GC_GUARD_PTR(&(v)))
 #endif
 
 /* new functions in ruby 1.9.

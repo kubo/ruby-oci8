@@ -1,3 +1,7 @@
+2012-11-11  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.h: update RB_GC_GUARD as ruby 1.9.2 defines.
+	* test/test_break.rb: fix tests for rubinius 1.2.4 and 2.0.0.
+
 2012-11-10  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8lib.c: fix compilation errors when ruby version is 1.8.x.
 	* ext/oci8/ocinumber.c: Don't use rb_Rational() when rbx-2.0.testing
