@@ -208,6 +208,8 @@ static VALUE oci8_s_set_property(VALUE klass, VALUE name, VALUE val)
  *   # When NLS_LANG is FRENCH_FRANCE.AL32UTF8
  *   OCI8.error_message(1) # => "ORA-00001: violation de contrainte unique (%s.%s)"
  *
+ * @param [Fixnum] message_no   Oracle error message number
+ * @return [String]             Oracle error message
  */
 static VALUE oci8_s_error_message(VALUE klass, VALUE msgid)
 {
@@ -763,11 +765,11 @@ static VALUE oci8_set_prefetch_rows(VALUE self, VALUE val)
  * call-seq:
  *   oracle_server_vernum -> an integer
  *
- * <b>(new in 2.0.1)</b>
- *
  * Returns a numerical format of the Oracle server version.
  *
  * See also: #oracle_server_version
+ *
+ * @since 2.0.1
  */
 static VALUE oci8_oracle_server_vernum(VALUE self)
 {
@@ -783,8 +785,6 @@ static VALUE oci8_oracle_server_vernum(VALUE self)
  * call-seq:
  *   ping -> true or false
  *
- * <b>(new in 2.0.2)</b>
- *
  * Makes a round trip call to the server to confirm that the connection and
  * the server are active.
  *
@@ -797,6 +797,8 @@ static VALUE oci8_oracle_server_vernum(VALUE self)
  *
  * === Oracle 10.1 client or lower
  * A simple PL/SQL block "BEGIN NULL; END;" is executed to make a round trip call.
+ *
+ * @since 2.0.2
  */
 static VALUE oci8_ping(VALUE self)
 {
@@ -816,8 +818,6 @@ static VALUE oci8_ping(VALUE self)
 /*
  * call-seq:
  *   client_identifier = string or nil
- *
- * <b>(new in 2.0.3)</b>
  *
  * Sets the client ID. This information is stored in the V$SESSION
  * view.
@@ -839,6 +839,7 @@ static VALUE oci8_ping(VALUE self)
  *
  * See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_sessio.htm#i996935]
  *
+ * @since 2.0.3
  */
 static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
 {
@@ -884,8 +885,6 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
  * call-seq:
  *   module = string or nil
  *
- * <b>(new in 2.0.3)</b>
- *
  * Sets the name of the current module. This information is
  * stored in the V$SESSION view and is also stored in the V$SQL view
  * and the V$SQLAREA view when a SQL statement is executed and the SQL
@@ -913,6 +912,7 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
  *
  * See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_appinf.htm#i999254]
  *
+ * @since 2.0.3
  */
 static VALUE oci8_set_module(VALUE self, VALUE val)
 {
@@ -958,8 +958,6 @@ static VALUE oci8_set_module(VALUE self, VALUE val)
  * call-seq:
  *   action = string or nil
  *
- * <b>(new in 2.0.3)</b>
- *
  * Sets the name of the current action within the current module.
  * This information is stored in the V$SESSION view and is also
  * stored in the V$SQL view and the V$SQLAREA view when a SQL
@@ -983,6 +981,7 @@ static VALUE oci8_set_module(VALUE self, VALUE val)
  *
  * See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_appinf.htm#i999254]
  *
+ * @since 2.0.3
  */
 static VALUE oci8_set_action(VALUE self, VALUE val)
 {
@@ -1025,8 +1024,6 @@ static VALUE oci8_set_action(VALUE self, VALUE val)
  * call-seq:
  *   client_info = string or nil
  *
- * <b>(new in 2.0.3)</b>
- *
  * Sets additional information about the client application.
  * This information is stored in the V$SESSION view.
  *
@@ -1046,6 +1043,8 @@ static VALUE oci8_set_action(VALUE self, VALUE val)
  *   END;
  *
  * See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_appinf.htm#CHEJCFGG]
+ *
+ * @since 2.0.3
  */
 static VALUE oci8_set_client_info(VALUE self, VALUE val)
 {
@@ -1084,11 +1083,11 @@ static VALUE oci8_set_client_info(VALUE self, VALUE val)
     return val;
 }
 
-VALUE Init_oci8(void)
+void Init_oci8(VALUE *out)
 {
     VALUE obj;
     oci8_base_t *base;
-#if 0
+#if /* for yard */ 0
     oci8_cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
     cOCI8 = rb_define_class("OCI8", oci8_cOCIHandle);
 #endif
@@ -1147,7 +1146,7 @@ VALUE Init_oci8(void)
     rb_define_method(cOCI8, "action=", oci8_set_action, 1);
     rb_define_method(cOCI8, "client_info=", oci8_set_client_info, 1);
     rb_define_attr(cOCI8, "last_error", 1, 1);
-    return cOCI8;
+    *out = cOCI8;
 }
 
 oci8_svcctx_t *oci8_get_svcctx(VALUE obj)

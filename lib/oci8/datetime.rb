@@ -4,24 +4,22 @@ class OCI8
 
   module BindType
 
-    # call-seq:
-    #   OCI8::BindType.default_timezone -> :local or :utc
-    #
     # Returns the default time zone when using Oracle 8.x client.
     # The value is unused when using Oracle 9i or upper client.
     #
     # See also: OCI8::BindType::Time
+    #
+    # @return [:local or :utc]
     def self.default_timezone
       OCI8::BindType::Util.default_timezone
     end
 
-    # call-seq:
-    #   OCI8::BindType.default_timezone = :local or :utc
-    #
     # Sets the default time zone when using Oracle 8.x client.
     # The value is unused when using Oracle 9i or upper client.
     #
     # See also: OCI8::BindType::Time
+    #
+    # @param [:local or :utc]  tz
     def self.default_timezone=(tz)
       OCI8::BindType::Util.default_timezone = tz
     end
@@ -538,22 +536,18 @@ class OCI8
       @@fsec = @@sec / 1000000000
       @@unit = :second
 
-      # call-seq:
-      #   OCI8::BindType::IntervalDS.unit -> :second or :day
-      #
-      # (new in 2.0.3)
-      #
       # Retrieves the unit of interval.
+      #
+      # @return [:second or :day]
+      # @since 2.0.3
       def self.unit
         @@unit
       end
 
-      # call-seq:
-      #   OCI8::BindType::IntervalDS.unit = :second or :day
-      #
-      # (new in 2.0.3)
-      #
       # Changes the unit of interval. :second is the default.
+      #
+      # @param [:second or :day] val
+      # @since 2.0.3
       def self.unit=(val)
         case val
         when :second, :day

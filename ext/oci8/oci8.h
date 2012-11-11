@@ -490,7 +490,7 @@ void oci8_check_error_(sword status, oci8_base_t *base, OCIStmt *stmthp, const c
 void Init_oci8_handle(void);
 
 /* oci8.c */
-VALUE Init_oci8(void);
+void Init_oci8(VALUE *out);
 void oci8_do_parse_connect_string(VALUE conn_str, VALUE *user, VALUE *pass, VALUE *dbname, VALUE *mode);
 oci8_svcctx_t *oci8_get_svcctx(VALUE obj);
 OCISvcCtx *oci8_get_oci_svcctx(VALUE obj);

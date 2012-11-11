@@ -30,8 +30,6 @@ rb_encoding *oci8_encoding;
  * call-seq:
  *   charset_id2name(charset_id) -> charset_name
  *
- * <b>(new in 2.0.0)</b>
- *
  * Returns the Oracle character set name from the specified
  * character set ID if it is valid. Otherwise, +nil+ is returned.
  *
@@ -48,6 +46,9 @@ rb_encoding *oci8_encoding;
  *     :name := nls_charset_name(:csid);
  *   END;
  *
+ * @param [Fixnum] charset_id   Oracle character set id
+ * @return [String]             Oracle character set name or nil
+ * @since 2.0.0
  */
 VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
 {
@@ -104,8 +105,6 @@ VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
  * call-seq:
  *   charset_name2id(charset_name) -> charset_id
  *
- * <b>(new in 2.0.0)</b>
- *
  * Returns the Oracle character set ID for the specified Oracle
  * character set name if it is valid. Othewise, +nil+ is returned.
  *
@@ -122,6 +121,9 @@ VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
  *     :csid := nls_charset_id(:name);
  *   END;
  *
+ * @param [String] charset_name   Oracle character set name
+ * @return [Fixnum]               Oracle character set id or nil
+ * @since 2.0.0
  */
 static VALUE oci8_charset_name2id(VALUE svc, VALUE name)
 {
@@ -176,12 +178,13 @@ static VALUE oci8_charset_name2id(VALUE svc, VALUE name)
  * call-seq:
  *   OCI8.nls_ratio -> integer
  *
- * <b>(new in 2.1.0)</b>
- *
  * Gets NLS ratio, maximum number of bytes per one character of the
  * current NLS chracter set. It is a factor to calculate the
  * internal buffer size of a string bind variable whose nls length
  * semantics is char.
+ *
+ * @return [Fixnum]  NLS ratio
+ * @since 2.1.0
  */
 static VALUE oci8_get_nls_ratio(VALUE klass)
 {
@@ -192,11 +195,12 @@ static VALUE oci8_get_nls_ratio(VALUE klass)
  * call-seq:
  *   OCI8.nls_ratio = integer
  *
- * <b>(new in 2.1.0)</b>
- *
  * Sets NLS ratio, maximum number of bytes per one character of the
  * current NLS chracter set. It is initialized in 'oci8/encoding-init.rb'
  * when oci8 is required. You have no need to set it explicitly.
+ *
+ * @param [Fixnum] integer  NLS ratio
+ * @since 2.1.0
  */
 static VALUE oci8_set_nls_ratio(VALUE klass, VALUE val)
 {
@@ -213,8 +217,6 @@ static VALUE oci8_set_nls_ratio(VALUE klass, VALUE val)
 /*
  * call-seq:
  *    OCI8.encoding -> enc
- *
- * <b>(new in 2.0.0 and ruby 1.9)</b>
  *
  * Returns the Oracle client encoding.
  *
@@ -238,6 +240,9 @@ static VALUE oci8_set_nls_ratio(VALUE klass, VALUE val)
  *
  * If +OCI8.encoding+ is ASCII-8BIT, no encoding conversions
  * are done.
+ *
+ * @return [Encoding]
+ * @since 2.0.0 and ruby 1.9
  */
 static VALUE oci8_get_encoding(VALUE klass)
 {
@@ -248,11 +253,12 @@ static VALUE oci8_get_encoding(VALUE klass)
  * call-seq:
  *   OCI8.encoding = enc or nil
  *
- * <b>(new in 2.0.0 and ruby 1.9)</b>
- *
  * Sets Oracle client encoding. You must not use this method.
  * You should set the environment variable NLS_LANG properly to
  * change +OCI8.encoding+.
+ *
+ * @param [Encoding]  enc
+ * @since 2.0.0 and ruby 1.9
  */
 static VALUE oci8_set_encoding(VALUE klass, VALUE encoding)
 {

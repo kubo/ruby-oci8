@@ -56,19 +56,24 @@ require 'oci8/encoding-init.rb'
 require 'oci8/oracle_version.rb'
 
 class OCI8
+  # @private
   ORAVER_8_0  = OCI8::OracleVersion.new(8, 0)
+  # @private
   ORAVER_8_1  = OCI8::OracleVersion.new(8, 1)
+  # @private
   ORAVER_9_0  = OCI8::OracleVersion.new(9, 0)
+  # @private
   ORAVER_9_2  = OCI8::OracleVersion.new(9, 2)
+  # @private
   ORAVER_10_1 = OCI8::OracleVersion.new(10, 1)
+  # @private
   ORAVER_10_2 = OCI8::OracleVersion.new(10, 2)
+  # @private
   ORAVER_11_1 = OCI8::OracleVersion.new(11, 1)
 
+  # @private
   @@oracle_client_version = OCI8::OracleVersion.new(self.oracle_client_vernum)
 
-  # :call-seq:
-  #   OCI8.oracle_client_version -> oraver
-  #
   # Returns an OCI8::OracleVersion of the Oracle client version.
   #
   # If this library is configured without '--with-runtime-check',
@@ -82,11 +87,14 @@ class OCI8
   #
   # Otherwise, it is the version retrieved from an OCI function
   # OCIClientVersion().
+  #
+  # @return [OCI8::OracleVersion] Oracle client version
   def self.oracle_client_version
     @@oracle_client_version
   end
 
   # defined for backward compatibility.
+  # @private
   CLIENT_VERSION = @@oracle_client_version.major.to_s +
     @@oracle_client_version.minor.to_s +
     @@oracle_client_version.update.to_s

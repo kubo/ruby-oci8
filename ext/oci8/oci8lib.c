@@ -101,7 +101,7 @@ Init_oci8lib()
     Init_oci8_handle();
 
     /* OCI8 class */
-    cOCI8 = Init_oci8();
+    Init_oci8(&cOCI8);
 
     /* OCI8::ConnectionPool class */
     Init_oci8_connection_pool(cOCI8);

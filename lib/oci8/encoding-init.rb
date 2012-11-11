@@ -35,6 +35,7 @@ class OCI8
     end
   else
     warn "Warning: NLS_LANG is not set. fallback to US7ASCII."
+    # @private
     @@client_charset_name = 'US7ASCII'
   end
 

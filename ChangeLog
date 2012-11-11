@@ -1,4 +1,13 @@
 2012-11-11  KUBO Takehiro  <kubo@jiubao.org>
+	* Makefile: add doc and copy-doc targets to generate document by yard command.
+	* ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c: change
+	    protoptype definition of Init_oci8 for yard command to parse it.
+	* ext/oci8/encoding.c, ext/oci8/oci8.c, ext/oci8/ocinumber.c,
+	  lib/oci8.rb.in, lib/oci8/connection_pool.rb, lib/oci8/datetime.rb,
+	  lib/oci8/encoding-init.rb, lib/oci8/metadata.rb, lib/oci8/object.rb,
+	  lib/oci8/oci8.rb: change comments for yard command.
+
+2012-11-11  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.h: update RB_GC_GUARD as ruby 1.9.2 defines.
 	* test/test_break.rb: fix tests for rubinius 1.2.4 and 2.0.0.
 

@@ -1,6 +1,5 @@
 VERSION = `cat VERSION`
 RUBY = ruby -w
-RDOC = rdoc
 
 all: build
 
@@ -29,10 +28,15 @@ format_c_source:
 	astyle --options=none --style=linux --indent=spaces=4 --brackets=linux --suffix=none ext/oci8/*.[ch]
 
 # internal use only
-.PHONY: rdoc run-rdoc
+.PHONY: dist dist-check doc copy-doc
 
-rdoc:
-	TZ= $(RDOC) -o rdoc -c us-ascii --threads=1 -W http://ruby-oci8.rubyforge.org/svn/trunk/ruby-oci8/ ext/oci8 lib
+doc:
+	rm -rf doc
+	TZ= yard
+	echo DirectoryIndex frames.html > doc/.htaccess
+
+copy-doc: doc
+	rsync -avz doc/ rubyforge.org:/var/www/gforge-projects/ruby-oci8/en
 
 dist:
 	-rm -rf ruby-oci8-$(VERSION)

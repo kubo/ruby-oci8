@@ -7,7 +7,7 @@ class OCI8
 
   # Returns the type descriptor object which correspond to the given class.
   #
-  # @param [class of an OCI8::Object::Base's subclass]
+  # @param [class of an OCI8::Object::Base's subclass] klass
   # @return [OCI8::TDO]
   #
   # @private
@@ -29,7 +29,7 @@ class OCI8
 
   # Returns the type descriptor object which correspond to the given metadata.
   #
-  # @param [OCI8::Metadata::Base's subclass]
+  # @param [OCI8::Metadata::Base's subclass] metadata
   # @return [OCI8::TDO]
   #
   # @private

@@ -1262,7 +1262,7 @@ static VALUE onum_round(int argc, VALUE *argv, VALUE self)
  *
  *  @param [Integer]
  *  @return [OraNumber]
- *  @todo returns {Integer} when <i>decplace</i> is not specified.
+ *  @todo returns <i>Integer</i> when <i>decplace</i> is not specified.
  */
 static VALUE onum_trunc(int argc, VALUE *argv, VALUE self)
 {

@@ -169,16 +169,18 @@ class OCI8
     @username = nil
   end
 
-  # call-seq:
-  #   parse(sql_text) -> an OCI8::Cursor
-  #
   # Returns a prepared SQL handle.
+  #
+  # @param [String]  sql  SQL statement
+  # @return [OCI8::Cursor]
   def parse(sql)
     @last_error = nil
     parse_internal(sql)
   end
 
   # same with OCI8#parse except that this doesn't reset OCI8#last_error.
+  #
+  # @private
   def parse_internal(sql)
     cursor = OCI8::Cursor.new(self, sql)
     cursor.prefetch_rows = @prefetch_rows if @prefetch_rows
@@ -276,6 +278,8 @@ class OCI8
   end
 
   # same with OCI8#exec except that this doesn't reset OCI8#last_error.
+  #
+  # @private
   def exec_internal(sql, *bindvars)
     begin
       cursor = parse(sql)
@@ -308,9 +312,11 @@ class OCI8
     end
   end # exec
 
-  # :call-seq:
-  #   select_one(sql, *bindvars) -> first_one_row
+  # Executes a SQL statement and fetches the first one row.
   #
+  # @param [String] sql        SQL statement
+  # @param [Object] bindvars   bind variables
+  # @return [Array] an array of first row.
   def select_one(sql, *bindvars)
     cursor = self.parse(sql)
     begin
@@ -335,12 +341,11 @@ class OCI8
     "#<OCI8:#{username}>"
   end
 
-  # :call-seq:
-  #   oracle_server_version -> oraver
-  #
   # Returns an OCI8::OracleVersion of the Oracle server version.
   #
   # See also: OCI8.oracle_client_version
+  #
+  # @return [OCI8::OracleVersion]
   def oracle_server_version
     unless defined? @oracle_server_version
       if vernum = oracle_server_vernum
@@ -360,22 +365,18 @@ class OCI8
     @oracle_server_version
   end
 
-  # :call-seq:
-  #   database_charset_name -> string
+  # Returns the Oracle database character set name.
   #
-  # (new in 2.1.0)
-  #
-  # Returns the database character set name.
+  # @since 2.1.0
+  # @return [String] Oracle database character set name
   def database_charset_name
     charset_id2name(@server_handle.send(:attr_get_ub2, OCI_ATTR_CHARSET_ID))
   end
 
-  # :call-seq:
-  #   OCI8.client_charset_name -> string
+  # Returns the client-side Oracle character set name.
   #
-  # (new in 2.1.0)
-  #
-  # Returns the client character set name.
+  # @since 2.1.0
+  # @return [String] client-side character set name
   def self.client_charset_name
     @@client_charset_name
   end
@@ -470,6 +471,8 @@ end
 
 class Numeric
   # Converts +self+ to {OraNumber}.
+  #
+  # @return [OraNumber]
   def to_onum
     OraNumber.new(self)
   end
@@ -478,7 +481,7 @@ end
 class String # :nodoc:
 
   # Converts +self+ to {OraNumber}.
-  # Optional <i>fmt</i> and <i>nlsparam</i> is used as
+  # Optional <i>format</i> and <i>nls_params</i> is used as
   # {http://docs.oracle.com/cd/E11882_01/server.112/e17118/functions211.htm Oracle SQL function TO_NUMBER}
   # does.
   #
@@ -487,8 +490,8 @@ class String # :nodoc:
   #   '123,456.789'.to_onum('999,999,999.999') # => #<OraNumber:123456.789>
   #   '123.456,789'.to_onum('999G999G999D999', "NLS_NUMERIC_CHARACTERS = ',.'") # => #<OraNumber:123456.789>
   #
-  # @param [String] fmt
-  # @param [String] nlsparam
+  # @param [String] format
+  # @param [String] nls_params
   # @return [OraNumber]
   def to_onum(format = nil, nls_params = nil)
     OraNumber.new(self, format, nls_params)
