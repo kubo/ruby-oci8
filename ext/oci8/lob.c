@@ -44,7 +44,7 @@ static VALUE oci8_make_lob(VALUE klass, oci8_svcctx_t *svcctx, OCILobLocator *s)
     /* If 's' is a temporary lob, use OCILobLocatorAssign instead. */
     chker2(OCILobIsTemporary(oci8_envhp, oci8_errhp, s, &is_temp), &svcctx->base);
     if (is_temp)
-        chker2(OCILobLocatorAssign(svcctx->base.hp.svc, oci8_errhp, s, &lob->base.hp.lob),
+        chker2(OCILobLocatorAssign_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, s, &lob->base.hp.lob),
                &svcctx->base);
     else
         chker2(OCILobAssign(oci8_envhp, oci8_errhp, s, &lob->base.hp.lob),

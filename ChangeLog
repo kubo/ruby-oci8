@@ -1,4 +1,8 @@
 2012-11-11  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c: use OCILobLocatorAssign_nb (non-blocking version)
+	    instead of OCILobLocatorAssign (blocking version).
+
+2012-11-11  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 2.1.3 and 2.1.2
 	* VERSION: change the version to 2.1.3.
 	* dist-files: append new files.
