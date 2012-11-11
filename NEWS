@@ -1,5 +1,63 @@
 # @markup markdown
 
+2.1.3
+=====
+
+New Features
+------------
+
+### {OCI8::Cursor#statement}
+
+It returns the text of the SQL statement prepared in the cursor.
+
+    cursor = conn.parse("select * from country where country_code = 'ja'")
+    cursor.statement # => "select * from country where country_code = 'ja'"
+
+See: [github issue #16](https://github.com/kubo/ruby-oci8/issues/16)
+
+Specification changes
+---------------------
+
+### License was changed to 2-clause BSD-style license.
+
+The former license was same with old ruby (<= 1.9.2) license.
+
+### Oracle object type's DATE field type
+
+Ruby-oci8 had returned a DateTime object when Oracle object type's DATE
+field type was accessed. Now it returns a Time object.
+
+Fixed Issues
+------------
+
+-   Fix to work with procedures and functions that return temporary lobs.
+    See: [github issue #13](https://github.com/kubo/ruby-oci8/issues/13)
+
+    (contributed by timon)
+
+-   Fix Oracle object type's DATE field tests.
+    See: [github issue #17](https://github.com/kubo/ruby-oci8/issues/17)
+
+    (reported by Yasuo Honda)
+
+-   Fix a sequence test failure on Oracle 11gR2.
+    See: [github issue #18](https://github.com/kubo/ruby-oci8/issues/18)
+
+    (reported by Yasuo Honda)
+
+-   Include COPYING files.
+    See: [github issue #19](https://github.com/kubo/ruby-oci8/issues/19)
+
+    (requested by Johannes Weberhofer)
+
+-   Fix SEGV when a temporary LOB is GCed while another LOB is read.
+    See: [github issue #20](https://github.com/kubo/ruby-oci8/issues/20)
+
+    (reported by techsplicer)
+
+-   Fix #<NoMethodError: undefined method `timezone' for Time:Class>
+    when ruby is less than 1.9.2 and an object type's time attribute is accessed.
+
 2.1.2
 =====
 
@@ -10,6 +68,7 @@ Specification changes
 
 This is workaround about a SIGSEGV issue.
 See: [oracle enhanced issue #162](https://github.com/rsim/oracle-enhanced/issues/162)
+
 Fixed Issues
 ------------
 
@@ -254,7 +313,7 @@ Fixed issues
     (reported by Hugo L. Borges)
 
 -   Fix a bug that a string is bound to RAW.
-    Its encoding had been convertd to {OCI.encoding} incorrectly.
+    Its encoding had been convertd to {OCI8.encoding} incorrectly.
 
 -   Fix memory leaks when temporary lobs are used.
 

@@ -34,6 +34,7 @@ EOS
   s.has_rdoc = 'yard'
   s.authors = ['KUBO Takehiro']
   s.platform = gem_platform
+  s.license = '2-clause BSD-style license'
   files = File.read('dist-files').split("\n")
   if gem_platform == Gem::Platform::RUBY
     s.extensions << 'ext/oci8/extconf.rb'
