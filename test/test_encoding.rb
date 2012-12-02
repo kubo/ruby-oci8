@@ -25,7 +25,7 @@ STORAGE (
    MAXEXTENTS UNLIMITED
    PCTINCREASE 0)
 EOS
-    ascii_8bit = Encoding.find('ASCII-8BIT')
+    ascii_8bit = "\xab\xcd".force_encoding('ASCII-8BIT')
     @conn.exec(<<EOS)
 INSERT INTO test_table VALUES ('abcd', 'abcd', 'abcd', 'abcd', 'abcd', 'abcd', 'abcd')
 EOS
@@ -34,16 +34,16 @@ EOS
       assert_equal(OCI8.encoding, row[0].encoding);
       assert_equal('abcd', row[1], 'VARCHAR2(10)')
       assert_equal(OCI8.encoding, row[1].encoding);
-      assert_equal("\xab\xcd", row[2], 'RAW(10)')
-      assert_equal(ascii_8bit, row[2].encoding);
-      assert_equal("\xab\xcd", row[3], 'LONG RAW')
-      assert_equal(ascii_8bit, row[3].encoding);
+      assert_equal(ascii_8bit, row[2], 'RAW(10)')
+      assert_equal(ascii_8bit.encoding, row[2].encoding);
+      assert_equal(ascii_8bit, row[3], 'LONG RAW')
+      assert_equal(ascii_8bit.encoding, row[3].encoding);
       assert_equal('abcd', (data = row[4].read), 'CLOB')
       assert_equal(OCI8.encoding, data.encoding);
       assert_equal('abcd', (data = row[5].read), 'NCLOB')
       assert_equal(OCI8.encoding, data.encoding);
-      assert_equal("\xab\xcd", (data = row[6].read), 'BLOB')
-      assert_equal(ascii_8bit, data.encoding);
+      assert_equal(ascii_8bit, (data = row[6].read), 'BLOB')
+      assert_equal(ascii_8bit.encoding, data.encoding);
 
       if OCI8.encoding.name == "UTF-8" and ['WE8ISO8859P1', 'WE8ISO8859P15', 'AL32UTF8', 'UTF8'].include? @conn.database_charset_name
         utf_8 = "\u00A1\u00A2\u00A3\u00A5\u00A7\u00A9"
