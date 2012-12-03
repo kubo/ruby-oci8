@@ -1,3 +1,7 @@
+2012-12-03  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: add a script encoding magic comment for ruby 2.0.0 preview2.
+	    (github issue #25 reported by aboltart)
+
 2012-12-02  KUBO Takehiro  <kubo@jiubao.org>
 	* test/test_encoding.rb: fix to pass tests with ruby 2.0.0 preview2.
 

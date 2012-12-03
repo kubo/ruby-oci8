@@ -1,3 +1,4 @@
+# coding: ascii
 require 'mkmf'
 
 # compatibility for ruby-1.9
