@@ -1,3 +1,9 @@
+2012-12-16  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, lib/oci8.rb.in: use RUBY_VERSION instead of
+	   RbConfig::CONFIG['ruby_version'] to know the ruby ABI version.
+	   The latter may be changed by the configure option --with-ruby-version.
+	   (github issue #24 reported by suhrawardi)
+
 2012-12-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: add a script encoding magic comment for ruby 2.0.0 preview2.
 	    (github issue #25 reported by aboltart)

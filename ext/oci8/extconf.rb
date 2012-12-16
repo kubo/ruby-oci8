@@ -135,11 +135,39 @@ ruby_engine = (defined? RUBY_ENGINE) ? RUBY_ENGINE : 'ruby'
 
 so_basename = 'oci8lib_'
 if ruby_engine == 'ruby'
-  # Config::CONFIG["ruby_version"] indicates the ruby API version.
-  #  1.8   - ruby 1.8.x
-  #  1.9.1 - ruby 1.9.1, 1.9.2
-  #  2.0.0 - ruby 2.0.0
-  so_basename += RbConfig::CONFIG["ruby_version"].gsub(/\W/, '')
+  # The extension library name includes the ruby ABI (application binary interface)
+  # version. It is for binary gems which contain more than one extension library
+  # and use correct one depending on the ABI version.
+  #
+  #  ruby version |  ABI version
+  # --------------+--------------
+  #    1.8.6      |   1.8
+  #    1.8.7      |   1.8
+  # --------------+--------------
+  #    1.9.0      |   1.9.0
+  #    1.9.1      |   1.9.1
+  #    1.9.2      |   1.9.1
+  #    1.9.3      |   1.9.1
+  # --------------+--------------
+  #    2.0.0      |   2.0.0
+  #    2.0.1      |   2.0.1  (See: [ruby-core:49578])
+  #     ...       |    ...
+  #
+  # Note: The ruby ABI version is same with RbConfig::CONFIG['ruby_version']
+  # if it wasn't explicitly changed by the configure option --with-ruby-version.
+  #
+  case RUBY_VERSION
+  when /^2\.0/
+    so_basename += RUBY_VERSION.gsub(/\W/, '')
+  when /^1\.9\.0/
+    raise 'unsupported ruby version: 1.9.0'
+  when /^1\.9/
+    so_basename += '191'
+  when /^1\.8/
+    so_basename += '18'
+  else
+    raise 'unsupported ruby version: ' + RUBY_VERSION
+  end
 else
   so_basename += ruby_engine
 end
