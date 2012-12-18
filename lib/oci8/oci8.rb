@@ -382,6 +382,63 @@ class OCI8
   end
 end
 
+class OCIError
+
+  # @overload initialize(message, error_code = nil, sql_stmt = nil, parse_error_offset = nil)
+  #   Creates a new OCIError object with specified parameters.
+  #
+  #   @param [String]   message    error message
+  #   @param [Integer]  error_code Oracle error code
+  #   @param [String]   sql_stmt   SQL statement
+  #   @param [Integer]  parse_error_offset
+  #
+  #   @example
+  #     OCIError.new("ORA-00001: unique constraint (%s.%s) violated", 1, 'insert into table_name values (1)', )
+  #     # => #<OCIError: ORA-00001: unique constraint (%s.%s) violated>
+  #     #<OCIError: ORA-00923: FROM keyword not found where expected>
+  #     "select sysdate"
+  #     923
+  #     14
+  #
+  # @overload initialize(error_code, *params)
+  #   Creates a new OCIError object with the error message which corresponds to the specified
+  #   Oracle error code.
+  #
+  #   @param [Integer]  error_code  Oracle error code
+  #   @param [String, ...] params   parameters which replace '%s'
+  #
+  #   @example
+  #     # without parameters
+  #     OCIError.new(4043)
+  #     # When NLS_LANG=american_america.AL32UTF8
+  #     # => #<OCIError: ORA-04043: object %s does not exist>
+  #     # When NLS_LANG=german_germany.AL32UTF8
+  #     # => #<OCIError: ORA-04043: Objekt %s ist nicht vorhanden>
+  #     
+  #     # with one parameter
+  #     OCIError.new(4043, 'table_name')
+  #     # When NLS_LANG=american_america.AL32UTF8
+  #     # => #<OCIError: ORA-04043: object table_name does not exist>
+  #     # When NLS_LANG=german_germany.AL32UTF8
+  #     # => #<OCIError: ORA-04043: Objekt table_name ist nicht vorhanden>
+  #
+  def initialize(*args)
+    if args.length > 0
+      if args[0].is_a? Fixnum
+        @code = args.shift
+        super(OCI8.error_message(@code).gsub('%s') {|s| args.empty? ? '%s' : args.shift})
+        @sql = nil
+        @parse_error_offset = nil
+      else
+        msg, @code, @sql, @parse_error_offset = args
+        super(msg)
+      end
+    else
+      super()
+    end
+  end
+end
+
 class OraDate
 
   # Returns a Time object which denotes self.

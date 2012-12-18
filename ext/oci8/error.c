@@ -160,31 +160,6 @@ static VALUE set_backtrace(VALUE exc, const char *file, int line)
     return exc;
 }
 
-/*
- * call-seq:
- *    initialize(message, code = nil, sql = nil, parse_error_offset = nil)
- *
- * Creates a new OCIError object.
- *
- * @example
- *   OCIError.new("ORA-00001: unique constraint (%s.%s) violated", 1)
- *   # => #<OCIError: ORA-00001: unique constraint (%s.%s) violated>
- */
-static VALUE oci8_error_initialize(int argc, VALUE *argv, VALUE self)
-{
-    VALUE msg;
-    VALUE code;
-    VALUE sql;
-    VALUE parse_error_offset;
-
-    rb_scan_args(argc, argv, "04", &msg, &code, &sql, &parse_error_offset);
-    rb_call_super(argc > 1 ? 1 : argc, argv);
-    rb_ivar_set(self, oci8_id_at_code, code);
-    rb_ivar_set(self, oci8_id_at_sql, sql);
-    rb_ivar_set(self, oci8_id_at_parse_error_offset, parse_error_offset);
-    return Qnil;
-}
-
 sb4 oci8_get_error_code(OCIError *errhp)
 {
     sb4 errcode = -1;
@@ -213,8 +188,6 @@ void Init_oci8_error(void)
     eOCIStillExecuting = rb_define_class("OCIStillExecuting", eOCIException);
     eOCIContinue = rb_define_class("OCIContinue", eOCIException);
     eOCISuccessWithInfo = rb_define_class("OCISuccessWithInfo", eOCIError);
-
-    rb_define_method(eOCIError, "initialize", oci8_error_initialize, -1);
 
     /*
      * @attr_reader [Integer] code  error code
