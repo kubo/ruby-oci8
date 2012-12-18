@@ -2007,15 +2007,19 @@ class OCI8
       __describe(table_name, OCI8::Metadata::Table, false)
     else
       # check tables, views, synonyms and public synonyms.
-      metadata = __describe(table_name, OCI8::Metadata::Unknown, true)
-      case metadata
-      when OCI8::Metadata::Table, OCI8::Metadata::View
-        metadata
-      when OCI8::Metadata::Synonym
-        describe_table(metadata.translated_name)
-      else
-        raise OCIError.new("ORA-04043: object #{table_name} does not exist", 4043)
+      recursive_level = 20
+      recursive_level.times do
+        metadata = __describe(table_name, OCI8::Metadata::Unknown, true)
+        case metadata
+        when OCI8::Metadata::Table, OCI8::Metadata::View
+          return metadata
+        when OCI8::Metadata::Synonym
+          table_name = metadata.translated_name
+        else
+          raise OCIError.new(4043, table_name) # ORA-04043: object %s does not exist
+        end
       end
+      raise OCIError.new(36, recursive_level) # ORA-00036: maximum number of recursive SQL levels (%s) exceeded
     end
   end
   # returns a OCI8::Metadata::View in the current schema.

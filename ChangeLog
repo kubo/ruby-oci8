@@ -2,6 +2,9 @@
 	* ext/oci8/error.c, lib/oci8/oci8.rb: change the OCIError constructor to
 	    accept an Oracle error code as the first parameter and create a message
 	    which depends on NLS_LANG.
+	* lib/oci8/metadata.rb: fix OCI8.describe_table not to follow synonyms
+	    until stack overflow. Now the recursive level is limited to 20.
+	    (github issue #26 reported by Brian Henderson)
 
 2012-12-16  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, lib/oci8.rb.in: use RUBY_VERSION instead of
