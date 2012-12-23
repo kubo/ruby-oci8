@@ -75,6 +75,15 @@ class TestCLob < Test::Unit::TestCase
     lob.close
   end
 
+  # https://github.com/kubo/ruby-oci8/issues/20
+  def test_github_issue_20
+    lob1 = OCI8::CLOB.new(@conn, ' '  * (1024 * 1024))
+    lob2 = OCI8::CLOB.new(@conn, ' '  * (128 * 1024 * 1024))
+
+    lob1 = nil  # lob1's value will be freed in GC.
+    lob2.read   # GC must run here to reproduce the issue.
+  end
+
   def teardown
     drop_table('test_table')
     @conn.logoff

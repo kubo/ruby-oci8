@@ -361,6 +361,7 @@ typedef struct oci8_svcctx {
     rb_pid_t pid;
     unsigned char state;
     char is_autocommit;
+    char suppress_free_temp_lobs;
 #ifdef NATIVE_THREAD_WITH_GVL
     char non_blocking;
 #endif

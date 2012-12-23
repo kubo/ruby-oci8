@@ -554,12 +554,24 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
         /* initialize buf in zeros everytime to check a nul characters. */
         memset(buf, 0, sizeof(buf));
         rv = OCILobRead_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, buf, sizeof(buf), NULL, NULL, 0, lob->csfrm);
-        if (rv == OCI_ERROR && oci8_get_error_code(oci8_errhp) == 22289) {
-            /* ORA-22289: cannot perform FILEREAD operation on an unopened file or LOB */
-            if (lob->state == S_BFILE_CLOSE)
-                continue;
-        }
-        if (rv != OCI_SUCCESS && rv != OCI_NEED_DATA) {
+        svcctx->suppress_free_temp_lobs = 0;
+        switch (rv) {
+        case OCI_SUCCESS:
+            break;
+        case OCI_NEED_DATA:
+            /* prevent OCILobFreeTemporary() from being called.
+             * See: https://github.com/kubo/ruby-oci8/issues/20
+             */
+            svcctx->suppress_free_temp_lobs = 1;
+            break;
+        case OCI_ERROR:
+            if (oci8_get_error_code(oci8_errhp) == 22289) {
+                /* ORA-22289: cannot perform FILEREAD operation on an unopened file or LOB */
+                if (lob->state == S_BFILE_CLOSE)
+                    continue;
+            }
+            /* FALLTHROUGH */
+        default:
             chker2(rv, &svcctx->base);
         }
 

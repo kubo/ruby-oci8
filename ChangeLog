@@ -1,3 +1,8 @@
+2012-12-23  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c, test/test_clob.rb:
+	    Fix SEGV when a temporary LOB is GCed during another LOB is partially read.
+	    (github issue #20 reported by Edgars Beigarts)
+
 2012-12-18  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/error.c, lib/oci8/oci8.rb: change the OCIError constructor to
 	    accept an Oracle error code as the first parameter and create a message
