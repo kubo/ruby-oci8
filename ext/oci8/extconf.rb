@@ -134,7 +134,8 @@ replace_keyword(File.dirname(__FILE__) + '/../../lib/oci8.rb.in', '../../lib/oci
 ruby_engine = (defined? RUBY_ENGINE) ? RUBY_ENGINE : 'ruby'
 
 so_basename = 'oci8lib_'
-if ruby_engine == 'ruby'
+case ruby_engine
+when 'ruby'
   # The extension library name includes the ruby ABI (application binary interface)
   # version. It is for binary gems which contain more than one extension library
   # and use correct one depending on the ABI version.
@@ -168,8 +169,22 @@ if ruby_engine == 'ruby'
   else
     raise 'unsupported ruby version: ' + RUBY_VERSION
   end
+when 'rbx'
+  # "rbx -X18" and "rbx -X19" use different C header files.
+  case RUBY_VERSION
+  when /^2\.0/
+    so_basename += 'rbx20'
+  when /^1\.9/
+    so_basename += 'rbx19'
+  when /^1\.8/
+    so_basename += 'rbx18'
+  else
+    raise 'unsupported language mode: ' + RUBY_VERSION
+  end
+when 'jruby'
+  raise "Ruby-oci8 doesn't support jruby because its C extension support is in development in jruby 1.6 and deprecated in jruby 1.7."
 else
-  so_basename += ruby_engine
+  raise 'unsupported ruby engine: ' + RUBY_ENGINE
 end
 
 $defs << "-DInit_oci8lib=Init_#{so_basename}"

@@ -1,4 +1,9 @@
 2013-01-03  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, lib/oci8.rb.in: add languange mode to the extension
+	    library name when ths ruby engine is rubinius and explicitly claim that
+	    jruby is not supported when it is jruby.
+
+2013-01-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/encoding.c, lib/oci8/encoding-init.rb: delete an internal method
 	    OCI8.nls_ratio= when the ruby is 1.9 or greater. nls_ratio is set by
 	    OCI8.encoding=.
