@@ -1,6 +1,11 @@
+2013-01-03  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/encoding.c, lib/oci8/encoding-init.rb: delete an internal method
+	    OCI8.nls_ratio= when the ruby is 1.9 or greater. nls_ratio is set by
+	    OCI8.encoding=.
+
 2012-12-23  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c, test/test_clob.rb:
-	    Fix SEGV when a temporary LOB is GCed during another LOB is partially read.
+	    fix SEGV when a temporary LOB is freed when OCILobRead returns OCI_NEED_DATA.
 	    (github issue #20 reported by Edgars Beigarts)
 
 2012-12-18  KUBO Takehiro  <kubo@jiubao.org>

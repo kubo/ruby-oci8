@@ -185,12 +185,14 @@ static VALUE oci8_charset_name2id(VALUE svc, VALUE name)
  *
  * @return [Fixnum]  NLS ratio
  * @since 2.1.0
+ * @private
  */
 static VALUE oci8_get_nls_ratio(VALUE klass)
 {
     return INT2NUM(oci8_nls_ratio);
 }
 
+#ifndef HAVE_TYPE_RB_ENCODING
 /*
  * call-seq:
  *   OCI8.nls_ratio = integer
@@ -201,6 +203,8 @@ static VALUE oci8_get_nls_ratio(VALUE klass)
  *
  * @param [Fixnum] integer  NLS ratio
  * @since 2.1.0
+ * @private
+ * @note ruby 1.8 only
  */
 static VALUE oci8_set_nls_ratio(VALUE klass, VALUE val)
 {
@@ -211,6 +215,7 @@ static VALUE oci8_set_nls_ratio(VALUE klass, VALUE val)
     oci8_nls_ratio = v;
     return val;
 }
+#endif
 
 #ifdef HAVE_TYPE_RB_ENCODING
 
@@ -243,6 +248,7 @@ static VALUE oci8_set_nls_ratio(VALUE klass, VALUE val)
  *
  * @return [Encoding]
  * @since 2.0.0 and ruby 1.9
+ * @private
  */
 static VALUE oci8_get_encoding(VALUE klass)
 {
@@ -259,13 +265,16 @@ static VALUE oci8_get_encoding(VALUE klass)
  *
  * @param [Encoding]  enc
  * @since 2.0.0 and ruby 1.9
+ * @private
  */
 static VALUE oci8_set_encoding(VALUE klass, VALUE encoding)
 {
     if (NIL_P(encoding)) {
         oci8_encoding = NULL;
+        oci8_nls_ratio = 1;
     } else {
         oci8_encoding = rb_to_encoding(encoding);
+        oci8_nls_ratio = rb_enc_mbmaxlen(oci8_encoding);
     }
     return encoding;
 }
@@ -287,7 +296,9 @@ void Init_oci8_encoding(VALUE cOCI8)
     rb_define_method(cOCI8, "charset_name2id", oci8_charset_name2id, 1);
     rb_define_method(cOCI8, "charset_id2name", oci8_charset_id2name, 1);
     rb_define_singleton_method(cOCI8, "nls_ratio", oci8_get_nls_ratio, 0);
+#ifndef HAVE_TYPE_RB_ENCODING
     rb_define_singleton_method(cOCI8, "nls_ratio=", oci8_set_nls_ratio, 1);
+#endif
 #ifdef HAVE_TYPE_RB_ENCODING
     rb_define_singleton_method(cOCI8, "encoding", oci8_get_encoding, 0);
     rb_define_singleton_method(cOCI8, "encoding=", oci8_set_encoding, 1);
