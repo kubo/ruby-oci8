@@ -2,7 +2,7 @@
 /*
  * oci8.c - part of ruby-oci8
  *
- * Copyright (C) 2002-2011 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2013 KUBO Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
@@ -171,25 +171,56 @@ static VALUE oci8_s_oracle_client_vernum(VALUE klass)
     return oracle_client_vernum;
 }
 
-static VALUE oci8_s_set_property(VALUE klass, VALUE name, VALUE val)
+/*
+ * call-seq:
+ *   OCI8.__get_prop(key)
+ *
+ * @param [Fixnum] key    1 or 2
+ *
+ * @private
+ */
+static VALUE oci8_s_get_prop(VALUE klass, VALUE key)
 {
-    const char *name_str;
-
-    Check_Type(name, T_SYMBOL);
-    name_str = rb_id2name(SYM2ID(name));
-    if (strcmp(name_str, "float_conversion_type") == 0) {
-        const char *val_str;
-        Check_Type(val, T_SYMBOL);
-        val_str = rb_id2name(SYM2ID(val));
-        if (strcmp(val_str, "ruby") == 0) {
-            oci8_float_conversion_type_is_ruby = 1;
-        } else if (strcmp(val_str, "oracle") == 0) {
-            oci8_float_conversion_type_is_ruby = 0;
-        } else {
-            rb_raise(rb_eArgError, "float_conversion_type's value should be either :ruby or :oracle.");
-        }
+    switch (NUM2INT(key)) {
+    case 1:
+        return oci8_float_conversion_type_is_ruby ? Qtrue : Qfalse;
+    case 2:
+        return UINT2NUM(oci8_env_mode);
+    default:
+        rb_raise(rb_eArgError, "Unknown prop %d", NUM2INT(key));
     }
-    return Qnil;
+}
+
+
+/*
+ * call-seq:
+ *   OCI8.__set_prop(key, value)
+ *
+ * @param [Fixnum] key    1 or 2
+ * @param [Object] value  depends on +key+.
+ *
+ * @private
+ */
+static VALUE oci8_s_set_prop(VALUE klass, VALUE key, VALUE val)
+{
+    switch (NUM2INT(key)) {
+    case 1:
+        oci8_float_conversion_type_is_ruby = RTEST(val) ? 1 : 0;
+        break;
+    case 2:
+        /*
+         * Changes the OCI environment mode which will be passed to the second
+         * argument of the OCI function OCIEnvCreate.
+         */
+        if (oci8_global_envhp != NULL) {
+            rb_raise(rb_eRuntimeError, "The OCI Environment has been alreadly initialized. It cannot be changed after even one OCI function is called.");
+        }
+        oci8_env_mode = NUM2UINT(val);
+        break;
+    default:
+        rb_raise(rb_eArgError, "Unknown prop %d", NUM2INT(key));
+    }
+    return klass;
 }
 
 /*
@@ -1121,7 +1152,8 @@ void Init_oci8(VALUE *out)
 
     rb_define_const(cOCI8, "VERSION", rb_obj_freeze(rb_usascii_str_new_cstr(OCI8LIB_VERSION)));
     rb_define_singleton_method_nodoc(cOCI8, "oracle_client_vernum", oci8_s_oracle_client_vernum, 0);
-    rb_define_singleton_method_nodoc(cOCI8, "__set_property", oci8_s_set_property, 2);
+    rb_define_singleton_method(cOCI8, "__get_prop", oci8_s_get_prop, 1);
+    rb_define_singleton_method(cOCI8, "__set_prop", oci8_s_set_prop, 2);
     rb_define_singleton_method(cOCI8, "error_message", oci8_s_error_message, 1);
     rb_define_private_method(cOCI8, "parse_connect_string", oci8_parse_connect_string, 1);
     rb_define_private_method(cOCI8, "logon2", oci8_logon2, 4);

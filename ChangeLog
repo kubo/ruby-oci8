@@ -1,4 +1,8 @@
 2013-01-03  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c, lib/oci8/properties.rb: add OCI8.properties[:events_mode]
+	    to support Fast Application Notification (FAN).
+
+2013-01-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, lib/oci8.rb.in: add languange mode to the extension
 	    library name when ths ruby engine is rubinius and explicitly claim that
 	    jruby is not supported when it is jruby.

@@ -1,6 +1,6 @@
 # properties.rb -- implements OCI8.properties
 #
-# Copyright (C) 2010-2012 KUBO Takehiro <kubo@jiubao.org>
+# Copyright (C) 2010-2013 KUBO Takehiro <kubo@jiubao.org>
 
 #
 class OCI8
@@ -8,8 +8,9 @@ class OCI8
   @@properties = {
     :length_semantics => :byte,
     :bind_string_as_nchar => false,
-    :float_conversion_type => :ruby,
+    :float_conversion_type => OCI8.__get_prop(1) ? :ruby : :oracle,
     :statement_cache_size => 0,
+    :events_mode => ((OCI8.__get_prop(2) & 4) != 0) # 4 <- OCI_EVENTS in oci.h
   }
 
   if OCI8.oracle_client_version < OCI8::ORAVER_9_2
@@ -31,23 +32,31 @@ class OCI8
     when :bind_string_as_nchar
       val = val ? true : false
     when :float_conversion_type
-      # handled by native code in oci8lib_xx.so.
-      OCI8.__set_property(name, val)
+      case val
+      when :ruby
+        OCI8.__set_prop(1, true)
+      when :oracle
+        OCI8.__set_prop(1, false)
+      else
+        raise ArgumentError, "float_conversion_type's value should be either :ruby or :oracle."
+      end
     when :statement_cache_size
       if OCI8.oracle_client_version < OCI8::ORAVER_9_2
         raise RuntimeError, ":statement_cache_size is disabled on Oracle 9iR1 client."
       end
       val = val.to_i
       raise ArgumentError, "The property value for :statement_cache_size must not be negative." if val < 0
+    when :events_mode
+      val = val ? true : false
+      if val
+        OCI8.__set_prop(2, OCI8.__get_prop(2) | 4) # set OCI_EVENTS
+      else
+        OCI8.__set_prop(2, OCI8.__get_prop(2) & ~4) # unset OCI_EVENTS
+      end
     end
     super(name, val)
   end
 
-  # call-seq:
-  #   OCI8.properties -> a customized Hash
-  #
-  # (new in 2.0.5)
-  #
   # Returns a Hash which ruby-oci8 global settings.
   # The hash's setter and getter methods are customized to check
   # property names and values.
@@ -63,19 +72,20 @@ class OCI8
   # Supported properties are listed below:
   #
   # [:length_semantics]
-  #     (new in 2.1.0)
   #     
   #     +:char+ when Oracle character length is counted by the number of characters.
   #     +:byte+ when it is counted by the number of bytes.
   #     The default setting is +:byte+ because +:char+ causes unexpected behaviour on
   #     Oracle 9i.
+  #     
+  #     *Since:* 2.1.0
   #
   # [:bind_string_as_nchar]
+  #     
   #     +true+ when string bind variables are bound as NCHAR,
   #     otherwise +false+. The default value is +false+.
   #
   # [:float_conversion_type]
-  #     (new in 2.1.0)
   #     
   #     +:ruby+ when Oracle decimal numbers are converted to ruby Float values
   #     same as Float#to_s does. (default)
@@ -85,14 +95,35 @@ class OCI8
   #     the Oracle function OCINumberToReal() makes a string representation
   #     15.700000000000001 by Float#to_s.
   #     See: http://rubyforge.org/forum/forum.php?thread_id=50030&forum_id=1078
+  #     
+  #     *Since:* 2.1.0
   #
   # [:statement_cache_size]
-  #     (new in 2.1.1)
   #     
   #     The statement cache size per each session. The default size is 0, which
   #     means no statement cache, since 2.1.2. It was 20 in 2.1.1.
   #     This feature is available on Oracle 9iR2 or later.
   #     See: http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/oci09adv.htm#i471377
+  #     
+  #     *Since:* 2.1.1
+  #
+  # [:events_mode]
+  #     
+  #     +true+ when Fast Application Notification (FAN) Support is enabled.
+  #     +false+ when it is disabled. The default value is +false+.
+  #     This corresponds to {http://php.net/manual/en/oci8.configuration.php#ini.oci8.events +oci8.events+ in PHP}.
+  #     
+  #     This parameter can be changed only when no OCI methods are called.
+  #     
+  #       require 'oci8'
+  #       OCI8.properties[:events_mode] = true # works fine.
+  #       ... call some OCI methods ...
+  #       OCI8.properties[:events_mode] = true # raises a runtime error.
+  #     
+  #     *Since:* 2.1.4
+  #
+  # @return [a customized Hash]
+  # @since 2.0.5
   #
   def self.properties
     @@properties
