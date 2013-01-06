@@ -123,6 +123,7 @@ class OCI8
   # OCIClientVersion().
   #
   # @return [OCI8::OracleVersion] Oracle client version
+  # @see OCI8#oracle_server_version
   def self.oracle_client_version
     @@oracle_client_version
   end

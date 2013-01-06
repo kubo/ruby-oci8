@@ -174,9 +174,9 @@ static VALUE oci8_cpool_reinitialize(VALUE self, VALUE conn_min, VALUE conn_max,
  * call-seq:
  *   pool_name -> string
  *
- * <b>internal use only</b>
- *
  * Retruns the pool name.
+ *
+ * @private
  */
 static VALUE oci8_cpool_pool_name(VALUE self)
 {

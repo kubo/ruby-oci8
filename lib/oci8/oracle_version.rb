@@ -122,7 +122,7 @@ class OCI8
     #   oraver = OCI8::OracleVersion.new('11.2.0.3')
     #   oraver.to_s          # => '11.2.0.3.0'
     #
-    # @return [Integer]
+    # @return [String]
     def to_s
       format('%d.%d.%d.%d.%d', @major, @minor, @update, @patch, @port_update)
     end

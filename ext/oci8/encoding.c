@@ -229,6 +229,7 @@ static VALUE oci8_set_nls_ratio(VALUE klass, VALUE val)
  * are passed to Oracle, they are converted to +OCI8.encoding+
  * in advance.
  *
+ * @example
  *   # When OCI8.encoding is ISO-8859-1,
  *   conn.exec('insert into country_code values(:1, :2, :3)',
  *             'AT', 'Austria', "\u00d6sterreichs")
@@ -249,6 +250,7 @@ static VALUE oci8_set_nls_ratio(VALUE klass, VALUE val)
  * @return [Encoding]
  * @since 2.0.0 and ruby 1.9
  * @private
+ * @see OCI8.client_charset_name
  */
 static VALUE oci8_get_encoding(VALUE klass)
 {

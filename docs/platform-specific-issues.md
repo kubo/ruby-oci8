@@ -71,15 +71,23 @@ Solaris
 =======
 
 You need a same compiler which is used to make ruby itself.
+For example, if the ruby is compiled by gcc, you need gcc. If it is compiled by Oracle Solaris Studio
+(formerly called as Sun Studio), you need Oracle Solaris Studio.
 
-There are two ruby packages.
+If ruby is compiled by gcc and "require 'oci8'" raises "OCI Library Initialization Error",
+you may need to recompile ruby as follows:
 
-* [Sunfreeware.com](http://www.sunfreeware.com/)
-* [Blastwave.org](http://www.blastwave.org/)
-
-The former is compiled by gcc. The latter is compiled by
-[Sun Studio](http://developers.sun.com/sunstudio/).
-The both compilers are freely available.
+    $ bzip2 -dc ruby-1.9.3-pxxx.tar.bz2 | tar xvf -
+    $ cd ruby-1.9.3-pxxx
+    $ vi main.c   # <- Add RUBY_FUNC_EXPORTED just before "int main(..)" as follows:
+    -------------
+    RUBY_FUNC_EXPORTED  /* Add this line */
+    int
+    main(int argc, char **argv)
+    -------------
+    $ ./configure
+    $ make
+    $ make install
 
 If you use Blastwave.org's ruby and want not to install Sun Studio,
 you can edit rbconfig.rb by your self. [(look at here)](http://forum.textdrive.com/viewtopic.php?id=12630)
@@ -91,8 +99,8 @@ If you use Sunfreeware.com's ruby and
 prints "yes", you may need to edit rbconfig.rb distributed with the ruby
 as follows:
 
-   from: CONFIG["LDFLAGS"] = "-L.  -Wl,-E"
-   to:   CONFIG["LDFLAGS"] = "-L. "
+    from: CONFIG["LDFLAGS"] = "-L.  -Wl,-E"
+    to:   CONFIG["LDFLAGS"] = "-L. "
 
 FreeBSD
 =======

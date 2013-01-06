@@ -26,8 +26,10 @@ require 'yaml'
 #              value_for_the_second_parameter)
 class OCI8
 
-  # call-seq:
-  #   new(username, password, dbname = nil, privilege = nil)
+  # @return [OCIError]
+  attr_accessor :last_error
+
+  # @overload initialize(username, password, dbname = nil, privilege = nil)
   #
   # Connects to an Oracle database server by +username+ and +password+
   # at +dbname+ as +privilege+.
@@ -337,14 +339,14 @@ class OCI8
     end
   end
 
+  # @private
   def inspect
     "#<OCI8:#{username}>"
   end
 
-  # Returns an OCI8::OracleVersion of the Oracle server version.
+  # Returns the Oracle server version.
   #
-  # See also: OCI8.oracle_client_version
-  #
+  # @see OCI8.oracle_client_version
   # @return [OCI8::OracleVersion]
   def oracle_server_version
     unless defined? @oracle_server_version
@@ -365,7 +367,7 @@ class OCI8
     @oracle_server_version
   end
 
-  # Returns the Oracle database character set name.
+  # Returns the Oracle database character set name such as AL32UTF8.
   #
   # @since 2.1.0
   # @return [String] Oracle database character set name
@@ -373,10 +375,12 @@ class OCI8
     charset_id2name(@server_handle.send(:attr_get_ub2, OCI_ATTR_CHARSET_ID))
   end
 
-  # Returns the client-side Oracle character set name.
+  # Returns the client-side Oracle character set name such as AL32UTF8.
   #
   # @since 2.1.0
   # @return [String] client-side character set name
+  # @private
+  # @see OCI8.encoding
   def self.client_charset_name
     @@client_charset_name
   end

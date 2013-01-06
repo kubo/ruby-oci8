@@ -78,8 +78,15 @@ class TestCLob < Test::Unit::TestCase
   # https://github.com/kubo/ruby-oci8/issues/20
   def test_github_issue_20
     lob1 = OCI8::CLOB.new(@conn, ' '  * (1024 * 1024))
-    lob2 = OCI8::CLOB.new(@conn, ' '  * (128 * 1024 * 1024))
-
+    begin
+      lob2 = OCI8::CLOB.new(@conn, ' '  * (128 * 1024 * 1024))
+    rescue OCIError
+      raise if $!.code != 24817
+      # ORA-24817: Unable to allocate the given chunk for current lob operation
+      GC.start
+      # allocate smaller size
+      lob2 = OCI8::CLOB.new(@conn, ' '  * (16 * 1024 * 1024))
+    end
     lob1 = nil  # lob1's value will be freed in GC.
     lob2.read   # GC must run here to reproduce the issue.
   end

@@ -1,5 +1,46 @@
 # @markup markdown
 
+2.1.4
+=====
+
+New Features
+------------
+
+### Fast Application Notification (FAN) support
+
+Look at {http://php.net/manual/en/oci8.connection.php} to know what is FAN.
+[oci8.events](http://php.net/manual/en/oci8.configuration.php#ini.oci8.events) in PHP
+corresponds to {OCI8.properties  OCI8.properties[:events_mode]} in ruby-oci8.
+
+Note: You need to set `OCI8.properties[:events_mode]` after `"require 'oci8'"` and before
+any methods which call Oracle OCI functions.
+
+Fixed Issues
+------------
+
+-   fix SEGV when a temporary LOB is freed when `OCILobRead` returns `OCI_NEED_DATA`.
+    See: [github issue #20](https://github.com/kubo/ruby-oci8/issues/20)
+
+    (reported by Edgars Beigarts)
+
+-   use `RUBY_VERSION` instead of `RbConfig::CONFIG['ruby_version']` to know the
+    ruby ABI version. The latter may be changed by the configure option
+    --with-ruby-version.
+    See: [github issue #24](https://github.com/kubo/ruby-oci8/issues/24)
+
+    (reported by suhrawardi)
+
+-   add a script encoding magic comment for ruby 2.0.0 preview2.
+    See: [github issue #25](https://github.com/kubo/ruby-oci8/issues/25)
+
+    (reported by aboltart)
+
+-   fix {OCI8#describe_table} not to follow synonyms until stack overflow.
+    Now the recursive level is limited to 20.
+    See: [github issue #26](https://github.com/kubo/ruby-oci8/issues/26)
+
+    (reported by Brian Henderson)
+
 2.1.3
 =====
 

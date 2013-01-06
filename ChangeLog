@@ -1,3 +1,13 @@
+2013-01-06  KUBO Takehiro  <kubo@jiubao.org>
+	* NEWS: add changes between 2.1.4 and 2.1.3
+	* VERSION: change the version to 2.1.4.
+	* docs/platform-specific-issues.md: update solaris-specific document.
+	* ext/oci8/connection_pool.c, ext/oci8/encoding.c, ext/oci8/metadata.c,
+	  ext/oci8/oci8.c,lib/oci8.rb.in, lib/oci8/metadata.rb, lib/oci8/oci8.rb,
+	  lib/oci8/oracle_version.rb, lib/oci8/properties.rb: update comments for yard.
+	* test/test_clob.rb: change a lob size when ORA-24817 is raised to
+	    pass tests on Windows.
+
 2013-01-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c, lib/oci8/properties.rb: add OCI8.properties[:events_mode]
 	    to support Fast Application Notification (FAN).

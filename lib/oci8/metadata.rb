@@ -1985,22 +1985,34 @@ class OCI8
 =end
   end # OCI8::Metadata
 
-  # return a subclass of OCI8::Metadata::Base
-  # which has information about _object_name_.
-  # OCI8::Metadata::Table, OCI8::Metadata::View,
-  # OCI8::Metadata::Procedure, OCI8::Metadata::Function,
-  # OCI8::Metadata::Package, OCI8::Metadata::Type,
-  # OCI8::Metadata::Synonym or OCI8::Metadata::Sequence
+  # Returns object information.
+  #
+  # The return type is depends on the object type.
+  #
+  # Oracle type:: Ruby type
+  # Table::       {OCI8::Metadata::Table}
+  # View::        {OCI8::Metadata::View}
+  # Procedure::   {OCI8::Metadata::Procedure}
+  # Function::    {OCI8::Metadata::Function}
+  # Package::     {OCI8::Metadata::Package}
+  # Type::        {OCI8::Metadata::Type}
+  # Synonym::     {OCI8::Metadata::Synonym}
+  # Sequence::    {OCI8::Metadata::Sequence}
+  #
+  # @param [String] object_name
+  # @return [a subclass of OCI8::Metadata::Base]
   def describe_any(object_name)
     __describe(object_name, OCI8::Metadata::Unknown, true)
   end
-  # returns a OCI8::Metadata::Table or a OCI8::Metadata::View. If the
-  # name is a current schema's synonym name or a public synonym name,
-  # it returns a OCI8::Metadata::Table or a OCI8::Metadata::View which
+  # Returns table or view information. If the name is a current schema's synonym
+  # name or a public synonym name, it returns table or view information which
   # the synonym refers.
   #
-  # If the second argument is true, this returns a
-  # OCI8::Metadata::Table in the current schema.
+  # If +table_only+ is true, it checks tables in the current schema.
+  #
+  # @param [String] table_name
+  # @param [Boolean] table_only (default: false)
+  # @return [OCI8::Metadata::Table or OCI8::Metadata::View]
   def describe_table(table_name, table_only = false)
     if table_only
       # check my own tables only.
@@ -2022,39 +2034,66 @@ class OCI8
       raise OCIError.new(36, recursive_level) # ORA-00036: maximum number of recursive SQL levels (%s) exceeded
     end
   end
-  # returns a OCI8::Metadata::View in the current schema.
+  # Returns view information
+  #
+  # @param [String] view_name
+  # @return [OCI8::Metadata::View]
   def describe_view(view_name)
     __describe(view_name, OCI8::Metadata::View, false)
   end
-  # returns a OCI8::Metadata::Procedure in the current schema.
+  # Returns procedure information
+  #
+  # @param [String] procedure_name
+  # @return [OCI8::Metadata::Procedure]
   def describe_procedure(procedure_name)
     __describe(procedure_name, OCI8::Metadata::Procedure, false)
   end
-  # returns a OCI8::Metadata::Function in the current schema.
+  # Returns function information
+  #
+  # @param [String] function_name
+  # @return [OCI8::Metadata::Function]
   def describe_function(function_name)
     __describe(function_name, OCI8::Metadata::Function, false)
   end
-  # returns a OCI8::Metadata::Package in the current schema.
+  # Returns package information
+  #
+  # @param [String] package_name
+  # @return [OCI8::Metadata::Package]
   def describe_package(package_name)
     __describe(package_name, OCI8::Metadata::Package, false)
   end
-  # returns a OCI8::Metadata::Type in the current schema.
+  # Returns type information
+  #
+  # @param [String] type_name
+  # @return [OCI8::Metadata::Type]
   def describe_type(type_name)
     __describe(type_name, OCI8::Metadata::Type, false)
   end
-  # returns a OCI8::Metadata::Synonym in the current schema.
+  # Returns synonym information
+  #
+  # @param [String] synonym_name
+  # @return [OCI8::Metadata::Synonym]
   def describe_synonym(synonym_name, check_public_also = true)
     __describe(synonym_name, OCI8::Metadata::Synonym, check_public_also)
   end
-  # returns a OCI8::Metadata::Sequence in the current schema.
+  # Returns sequence information
+  #
+  # @param [String] sequence_name
+  # @return [OCI8::Metadata::Sequence]
   def describe_sequence(sequence_name)
     __describe(sequence_name, OCI8::Metadata::Sequence, false)
   end
-  # returns a OCI8::Metadata::Schema in the database.
+  # Returns schema information
+  #
+  # @param [String] schema_name
+  # @return [OCI8::Metadata::Schema]
   def describe_schema(schema_name)
     __describe(schema_name, OCI8::Metadata::Schema, false)
   end
-  # returns a OCI8::Metadata::Database.
+  # Returns database information
+  #
+  # @param [String] database_name
+  # @return [OCI8::Metadata::Database]
   def describe_database(database_name)
     __describe(database_name, OCI8::Metadata::Database, false)
   end

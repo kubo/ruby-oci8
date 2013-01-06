@@ -285,6 +285,7 @@ void oci8_do_parse_connect_string(VALUE conn_str, VALUE *user, VALUE *pass, VALU
  *   "scott/tiger@oradb.example.com" -> ["scott", "tiger", "oradb.example.com", nil]
  *   "sys/change_on_install as sysdba" -> ["sys", "change_on_install", nil, :SYSDBA]
  *
+ * @private
  */
 static VALUE oci8_parse_connect_string(VALUE self, VALUE conn_str)
 {
@@ -396,9 +397,9 @@ static const oci8_logoff_strategy_t complex_logoff = {
  * call-seq:
  *   logon2(username, password, dbname, mode) -> connection
  *
- * <b>internal use only</b>
- *
  * Creates a simple logon session by the OCI function OCILogon2().
+ *
+ * @private
  */
 static VALUE oci8_logon2(VALUE self, VALUE username, VALUE password, VALUE dbname, VALUE mode)
 {
@@ -448,10 +449,10 @@ static VALUE oci8_logon2(VALUE self, VALUE username, VALUE password, VALUE dbnam
  * call-seq:
  *   allocate_handles()
  *
- * <b>internal use only</b>
- *
  * Allocates a service context handle, a session handle and a
  * server handle to use explicit attach and begin-session calls.
+ *
+ * @private
  */
 static VALUE oci8_allocate_handles(VALUE self)
 {
@@ -488,9 +489,9 @@ static VALUE oci8_allocate_handles(VALUE self)
  * call-seq:
  *   server_attach(dbname, mode)
  *
- * <b>internal use only</b>
- *
  * Attachs to the server by the OCI function OCIServerAttach().
+ *
+ * @private
  */
 static VALUE oci8_server_attach(VALUE self, VALUE dbname, VALUE attach_mode)
 {
@@ -530,9 +531,9 @@ static VALUE oci8_server_attach(VALUE self, VALUE dbname, VALUE attach_mode)
  * call-seq:
  *   session_begin(cred, mode)
  *
- * <b>internal use only</b>
- *
  * Begins the session by the OCI function OCISessionBegin().
+ *
+ * @private
  */
 static VALUE oci8_session_begin(VALUE self, VALUE cred, VALUE mode)
 {
@@ -798,9 +799,9 @@ static VALUE oci8_set_prefetch_rows(VALUE self, VALUE val)
  *
  * Returns a numerical format of the Oracle server version.
  *
- * See also: #oracle_server_version
- *
+ * @see OCI8#oracle_server_version
  * @since 2.0.1
+ * @private
  */
 static VALUE oci8_oracle_server_vernum(VALUE self)
 {
@@ -1177,7 +1178,6 @@ void Init_oci8(VALUE *out)
     rb_define_method(cOCI8, "module=", oci8_set_module, 1);
     rb_define_method(cOCI8, "action=", oci8_set_action, 1);
     rb_define_method(cOCI8, "client_info=", oci8_set_client_info, 1);
-    rb_define_attr(cOCI8, "last_error", 1, 1);
     *out = cOCI8;
 }
 

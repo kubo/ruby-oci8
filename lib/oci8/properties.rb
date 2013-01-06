@@ -5,6 +5,7 @@
 #
 class OCI8
 
+  # @private
   @@properties = {
     :length_semantics => :byte,
     :bind_string_as_nchar => false,
@@ -17,11 +18,13 @@ class OCI8
     @@properties[:statement_cache_size] = nil
   end
 
+  # @private
   def @@properties.[](name)
     raise IndexError, "No such property name: #{name}" unless @@properties.has_key?(name)
     super(name)
   end
 
+  # @private
   def @@properties.[]=(name, val)
     raise IndexError, "No such property name: #{name}" unless @@properties.has_key?(name)
     case name
