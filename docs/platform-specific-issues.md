@@ -74,20 +74,11 @@ You need a same compiler which is used to make ruby itself.
 For example, if the ruby is compiled by gcc, you need gcc. If it is compiled by Oracle Solaris Studio
 (formerly called as Sun Studio), you need Oracle Solaris Studio.
 
-If ruby is compiled by gcc and "require 'oci8'" raises "OCI Library Initialization Error",
-you may need to recompile ruby as follows:
+If "require 'oci8'" raises "OCI Library Initialization Error", ruby-oci8 version is 2.1.4 or lower,
+ruby version is 1.9.3 or upper, and ruby is compiled as an x86 32-bit executable by gcc, you may need
+to add the following code to ext/oci8/oci8lib.c to export a symbol `main`.
 
-    $ bzip2 -dc ruby-1.9.3-pxxx.tar.bz2 | tar xvf -
-    $ cd ruby-1.9.3-pxxx
-    $ vi main.c   # <- Add RUBY_FUNC_EXPORTED just before "int main(..)" as follows:
-    -------------
-    RUBY_FUNC_EXPORTED  /* Add this line */
-    int
-    main(int argc, char **argv)
-    -------------
-    $ ./configure
-    $ make
-    $ make install
+    int main() { return 0; }
 
 If you use Blastwave.org's ruby and want not to install Sun Studio,
 you can edit rbconfig.rb by your self. [(look at here)](http://forum.textdrive.com/viewtopic.php?id=12630)

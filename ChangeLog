@@ -1,3 +1,11 @@
+2013-01-12  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8lib.c: export a main function for Solaris x86 (32-bit).
+	    When a main function is invisible from Oracle instant client
+	    11.2.0.3 for Solaris x86 (32-bit), OCIEnvCreate() fails by
+	    unknown reasons.
+	* docs/platform-specific-issues.md: change the workaround for
+	    Solaris x86 (32-bit) instant client.
+
 2013-01-06  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 2.1.4 and 2.1.3
 	* VERSION: change the version to 2.1.4.

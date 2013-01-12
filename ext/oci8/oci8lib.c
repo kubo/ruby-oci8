@@ -22,6 +22,14 @@ ID oci8_id_div_op;
 int oci8_in_finalizer = 0;
 VALUE oci8_cOCIHandle;
 
+#if defined __sun && defined __i386 && defined __GNUC__
+/* When a main function is invisible from Oracle instant
+ * client 11.2.0.3 for Solaris x86 (32-bit), OCIEnvCreate()
+ * fails by unknown reasons. We export it from ruby-oci8 instead
+ * of ruby itself.
+ */
+int main() { return 0; }
+#endif
 
 static VALUE mOCI8BindType;
 static VALUE cOCI8BindTypeBase;
