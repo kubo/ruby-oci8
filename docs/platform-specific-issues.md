@@ -34,15 +34,10 @@ Note: "`" is a back quote.
 Mac OS X
 ========
 
-OS X 10.7 Lion
---------------
+OS X 10.7+
+----------
 
-64-bit instant client doesn't work. Use 32-bit ruby and instant client or jruby.
-
-See:
-
-* {http://rubyforge.org/forum/forum.php?thread\_id=49548&forum\_id=1078}
-* {https://forums.oracle.com/forums/thread.jspa?threadID=2187558}
+Use the latest 64-bit instant client. The older 64-bit (10.2.0.4) instant client [doesn't work](https://forums.oracle.com/forums/thread.jspa?threadID=2187558). The older 32-bit instant client will work but only with 32-bit ruby or jruby (using JDBC).
 
 Intel Mac (64-bit)
 ------------------
@@ -59,7 +54,7 @@ The Intel Instant client is for Mac OS X 10.5 Leopard. If you are using 10.4 Tig
 use one of the following workarounds.
 
 * compile ruby as ppc. (look at [How to setup Ruby and Oracle client on Intel Mac](http://blog.rayapps.com/2007/08/27/how-to-setup-ruby-and-oracle-client-on-intel-mac/))
-* use [ruby-odbc|http://www.ch-werner.de/rubyodbc/] and a third party ODBC driver ([Actual Technologies](http://www.actualtechnologies.com) or [OpenLink Software](http://uda.openlinksw.com/)).
+* use [ruby-odbc](http://www.ch-werner.de/rubyodbc/) and a third party ODBC driver ([Actual Technologies](http://www.actualtechnologies.com) or [OpenLink Software](http://uda.openlinksw.com/)).
 * use JRuby and Oracle JDBC driver.
 
 PowerPC Mac
