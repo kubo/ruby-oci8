@@ -5,6 +5,7 @@
 --exclude lib/oci8/compat.rb
 --exclude lib/dbd
 --hide-void-return
+--charset UTF-8
 -
 NEWS
 COPYING

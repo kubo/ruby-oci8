@@ -1,4 +1,8 @@
 2013-03-02  KUBO Takehiro  <kubo@jiubao.org>
+	* .yardopts, ext/oci8/object.c, lib/oci8/metadata.rb,
+	  lib/oci8/oracle_version.rb: update comments for rdoc/yard.
+
+2013-03-02  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocihandle.c: change arguments of internal methods
 	    OCIHandle#attr_get_*() to ignore "ORA-24328: illegal
 	    attribute value".

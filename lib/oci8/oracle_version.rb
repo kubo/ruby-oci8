@@ -1,6 +1,6 @@
 # oracle_version.rb implements OCI8::OracleVersion.
 #
-# Copyright (C) 2009 KUBO Takehiro <kubo@jiubao.org>
+# Copyright (C) 2009-2013 Kubo Takehiro <kubo@jiubao.org>
 
 #
 class OCI8
@@ -21,9 +21,9 @@ class OCI8
     attr_reader :minor
     # The third part of the Oracle version.
     attr_reader :update
-    # The fifth part of the Oracle version.
-    attr_reader :patch
     # The fourth part of the Oracle version.
+    attr_reader :patch
+    # The fifth part of the Oracle version.
     attr_reader :port_update
 
     # Creates an OCI8::OracleVersion object.

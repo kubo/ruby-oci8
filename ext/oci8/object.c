@@ -1,6 +1,6 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
- * Copyright (C) 2002-2009 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2013 Kubo Takehiro <kubo@jiubao.org>
  */
 
 /*
@@ -681,30 +681,54 @@ void Init_oci_object(VALUE cOCI8)
     /* OCI8::TDO */
     cOCI8TDO = oci8_define_class_under(cOCI8, "TDO", &oci8_tdo_vtable);
     rb_define_private_method(cOCI8TDO, "setup", oci8_tdo_setup, 2);
+    /* @private */
     rb_define_const(cOCI8TDO, "ATTR_STRING", INT2FIX(ATTR_STRING));
+    /* @private */
     rb_define_const(cOCI8TDO, "ATTR_RAW", INT2FIX(ATTR_RAW));
+    /* @private */
     rb_define_const(cOCI8TDO, "ATTR_OCINUMBER", INT2FIX(ATTR_OCINUMBER));
+    /* @private */
     rb_define_const(cOCI8TDO, "ATTR_FLOAT", INT2FIX(ATTR_FLOAT));
+    /* @private */
     rb_define_const(cOCI8TDO, "ATTR_INTEGER", INT2FIX(ATTR_INTEGER));
+    /* @private */
     rb_define_const(cOCI8TDO, "ATTR_OCIDATE", INT2FIX(ATTR_OCIDATE));
+    /* @private */
     rb_define_const(cOCI8TDO, "ATTR_BINARY_DOUBLE", INT2FIX(ATTR_BINARY_DOUBLE));
+    /* @private */
     rb_define_const(cOCI8TDO, "ATTR_BINARY_FLOAT", INT2FIX(ATTR_BINARY_FLOAT));
+    /* @private */
     rb_define_const(cOCI8TDO, "ATTR_NAMED_TYPE", INT2FIX(ATTR_NAMED_TYPE));
+    /* @private */
     rb_define_const(cOCI8TDO, "ATTR_NAMED_COLLECTION", INT2FIX(ATTR_NAMED_COLLECTION));
+    /* @private */
     rb_define_const(cOCI8TDO, "ATTR_CLOB", INT2FIX(ATTR_CLOB));
+    /* @private */
     rb_define_const(cOCI8TDO, "ATTR_NCLOB", INT2FIX(ATTR_NCLOB));
+    /* @private */
     rb_define_const(cOCI8TDO, "ATTR_BLOB", INT2FIX(ATTR_BLOB));
+    /* @private */
     rb_define_const(cOCI8TDO, "ATTR_BFILE", INT2FIX(ATTR_BFILE));
 #define ALIGNMENT_OF(type) (size_t)&(((struct {char c; type t;}*)0)->t)
+    /* @private */
     rb_define_const(cOCI8TDO, "SIZE_OF_POINTER", INT2FIX(sizeof(void *)));
+    /* @private */
     rb_define_const(cOCI8TDO, "ALIGNMENT_OF_POINTER", INT2FIX(ALIGNMENT_OF(void *)));
+    /* @private */
     rb_define_const(cOCI8TDO, "SIZE_OF_OCINUMBER", INT2FIX(sizeof(OCINumber)));
+    /* @private */
     rb_define_const(cOCI8TDO, "ALIGNMENT_OF_OCINUMBER", INT2FIX(ALIGNMENT_OF(OCINumber)));
+    /* @private */
     rb_define_const(cOCI8TDO, "SIZE_OF_OCIDATE", INT2FIX(sizeof(OCIDate)));
+    /* @private */
     rb_define_const(cOCI8TDO, "ALIGNMENT_OF_OCIDATE", INT2FIX(ALIGNMENT_OF(OCIDate)));
+    /* @private */
     rb_define_const(cOCI8TDO, "SIZE_OF_FLOAT", INT2FIX(sizeof(float)));
+    /* @private */
     rb_define_const(cOCI8TDO, "ALIGNMENT_OF_FLOAT", INT2FIX(ALIGNMENT_OF(float)));
+    /* @private */
     rb_define_const(cOCI8TDO, "SIZE_OF_DOUBLE", INT2FIX(sizeof(double)));
+    /* @private */
     rb_define_const(cOCI8TDO, "ALIGNMENT_OF_DOUBLE", INT2FIX(ALIGNMENT_OF(double)));
 
     /* OCI8::NamedType */

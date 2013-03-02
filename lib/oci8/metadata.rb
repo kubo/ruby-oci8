@@ -14,33 +14,33 @@ class OCI8
   # OCI8::Metadata::Base's subclass.
   #
   # List of methods which return OCI8::Metadata::Base.
-  # * OCI8#describe_any(object_name)
-  # * OCI8#describe_table(table_name, table_only = false)
-  # * OCI8#describe_view(view_name)
-  # * OCI8#describe_procedure(procedure_name)
-  # * OCI8#describe_function(function_name)
-  # * OCI8#describe_package(package_name)
-  # * OCI8#describe_type(type_name)
-  # * OCI8#describe_synonym(synonym_name, check_public_also = true)
-  # * OCI8#describe_sequence(sequence_name)
-  # * OCI8#describe_schema(schema_name)
-  # * OCI8#describe_database(database_name)
-  # * OCI8::Metadata::Type#map_method
-  # * OCI8::Metadata::Type#order_method
-  # * OCI8::Metadata::Type#collection_element
+  # * {OCI8#describe_any OCI8#describe_any(object_name)}
+  # * {OCI8#describe_table OCI8#describe_table(table_name, table_only = false)}
+  # * {OCI8#describe_view OCI8#describe_view(view_name)}
+  # * {OCI8#describe_procedure OCI8#describe_procedure(procedure_name)}
+  # * {OCI8#describe_function OCI8#describe_function(function_name)}
+  # * {OCI8#describe_package OCI8#describe_package(package_name)}
+  # * {OCI8#describe_type OCI8#describe_type(type_name)}
+  # * {OCI8#describe_synonym OCI8#describe_synonym(synonym_name, check_public_also = true)}
+  # * {OCI8#describe_sequence OCI8#describe_sequence(sequence_name)}
+  # * {OCI8#describe_schema OCI8#describe_schema(schema_name)}
+  # * {OCI8#describe_database OCI8#describe_database(database_name)}
+  # * {OCI8::Metadata::Type#map_method OCI8::Metadata::Type#map_method}
+  # * {OCI8::Metadata::Type#order_method OCI8::Metadata::Type#order_method}
+  # * {OCI8::Metadata::Type#collection_element OCI8::Metadata::Type#collection_element}
   #
   # List of methods which return an array of OCI8::Metadata::Base.
-  # * OCI8::Cursor#column_metadata
-  # * OCI8::Metadata::Database#schemas
-  # * OCI8::Metadata::Schema#all_objects
-  # * OCI8::Metadata::Schema#objects
-  # * OCI8::Metadata::Table#columns
-  # * OCI8::Metadata::Package#subprograms
-  # * OCI8::Metadata::Procedure#arguments
-  # * OCI8::Metadata::Function#arguments
-  # * OCI8::Metadata::Type#type_attrs
-  # * OCI8::Metadata::Type#type_methods
-  # * OCI8::Metadata::TypeMethod#arguments
+  # * {OCI8::Cursor#column_metadata OCI8::Cursor#column_metadata}
+  # * {OCI8::Metadata::Database#schemas OCI8::Metadata::Database#schemas}
+  # * {OCI8::Metadata::Schema#all_objects OCI8::Metadata::Schema#all_objects}
+  # * {OCI8::Metadata::Schema#objects OCI8::Metadata::Schema#objects}
+  # * {OCI8::Metadata::Table#columns OCI8::Metadata::Table#columns}
+  # * {OCI8::Metadata::Package#subprograms OCI8::Metadata::Package#subprograms}
+  # * {OCI8::Metadata::Subprogram#arguments OCI8::Metadata::Procedure#arguments}
+  # * {OCI8::Metadata::Subprogram#arguments OCI8::Metadata::Function#arguments}
+  # * {OCI8::Metadata::Type#type_attrs OCI8::Metadata::Type#type_attrs}
+  # * {OCI8::Metadata::Type#type_methods OCI8::Metadata::Type#type_methods}
+  # * {OCI8::Metadata::TypeMethod#arguments OCI8::Metadata::TypeMethod#arguments}
   #
   # Example:
   #   conn = OCI8.new('username/passord')
@@ -54,32 +54,29 @@ class OCI8
       # Table 6-1 Attributes Belonging to All Parameters
 
       # Returns the number of parameters.
-      def num_params # :nodoc:
+      def num_params
         attr_get_ub2(OCI_ATTR_NUM_PARAMS)
       end
       private :num_params
 
-      # Returns the object ID, which is the same as the value of the
-      # OBJECT_ID column from ALL_OBJECTS. It returns +nil+
-      # if the database object doesn't have ID.
+      # Returns the object ID which corresponds to the data dictionary
+      # view column ALL_OBJECTS.OBJECT_ID.
       #
       # @return [Integer or nil]
       def obj_id
         attr_get_ub4(OCI_ATTR_OBJ_ID, false)
       end
 
-      # Retruns the object name such as table name, view name,
-      # procedure name, and so on.
+      # Returns the object name which corresponds to the data dictionary view column ALL_OBJECTS.OBJECT_NAME.
       #
-      # @return [String]
+      # @return [String or nil] object name
       def obj_name
         attr_get_string(OCI_ATTR_OBJ_NAME, false)
       end
 
-      # Retruns the schema name. It returns +nil+
-      # if the database object is not defined just under a schema.
+      # Returns the schema name which corresponds to the data dictionary view column ALL_OBJECTS.OWNER.
       #
-      # @return [String]
+      # @return [String or nil] schema name
       def obj_schema
         attr_get_string(OCI_ATTR_OBJ_SCHEMA, false)
       end
@@ -92,7 +89,8 @@ class OCI8
       #  attr_get_oradate(OCI_ATTR_TIMESTAMP)
       #end
 
-      def inspect # :nodoc:
+      # @private
+      def inspect
         "#<#{self.class.name}:(#{obj_id}) #{obj_schema}.#{obj_name}>"
       end
       private
@@ -103,8 +101,9 @@ class OCI8
       alias __word attr_get_sb4
       def __anydata(idx); raise NotImplementedError; end
 
-      # SQLT values to name
-      DATA_TYPE_MAP = {} # :nodoc:
+      # Mapping from SQLT values to names
+      # @private
+      DATA_TYPE_MAP = {}
 
       # SQLT_CHR
       DATA_TYPE_MAP[1] = [:varchar2,
@@ -346,7 +345,7 @@ class OCI8
     # into other metadata classes.
     #
     # An instance of this class is returned by:
-    # * OCI8::Metadata::Schema#all_objects
+    # * {OCI8::Metadata::Schema#all_objects OCI8::Metadata::Schema#all_objects}
     class Unknown < Base
       register_ptype OCI_PTYPE_UNK
     end
@@ -354,14 +353,10 @@ class OCI8
     # Information about tables
     #
     # An instance of this class is returned by:
-    # * OCI8#describe_any(name)
-    # * OCI8#describe_table(name)
-    # * OCI8::Metadata::Schema#all_objects
-    # * OCI8::Metadata::Schema#objects
-    #
-    # See also:
-    # * OCI8::Metadata::Base#obj_name
-    # * OCI8::Metadata::Base#obj_schema
+    # * {OCI8#describe_any OCI8#describe_any(name)}
+    # * {OCI8#describe_table OCI8#describe_table(name)}
+    # * {OCI8::Metadata::Schema#all_objects OCI8::Metadata::Schema#all_objects}
+    # * {OCI8::Metadata::Schema#objects OCI8::Metadata::Schema#objects}
     class Table < Base
       register_ptype OCI_PTYPE_TABLE
 
@@ -464,15 +459,11 @@ class OCI8
     # Information about views
     #
     # An instance of this class is returned by:
-    # * OCI8#describe_any(name)
-    # * OCI8#describe_table(name, false)
-    # * OCI8#describe_view(name)
-    # * OCI8::Metadata::Schema#all_objects
-    # * OCI8::Metadata::Schema#objects
-    #
-    # See also:
-    # * OCI8::Metadata::Base#obj_name
-    # * OCI8::Metadata::Base#obj_schema
+    # * {OCI8#describe_any OCI8#describe_any(name)}
+    # * {OCI8#describe_table OCI8#describe_table(name, false)}
+    # * {OCI8#describe_view OCI8#describe_view(name)}
+    # * {OCI8::Metadata::Schema#all_objects OCI8::Metadata::Schema#all_objects}
+    # * {OCI8::Metadata::Schema#objects OCI8::Metadata::Schema#objects}
     class View < Base
       register_ptype OCI_PTYPE_VIEW
 
@@ -525,8 +516,8 @@ class OCI8
     # with a set of parameters. A subprogram can be either a procedure
     # or a function.
     #
-    # This is the abstract base class of OCI8::Metadata::Procedure and
-    # OCI8::Metadata::Function.
+    # This is the abstract base class of {OCI8::Metadata::Procedure OCI8::Metadata::Procedure} and
+    # {OCI8::Metadata::Function OCI8::Metadata::Function}.
     class Subprogram < Base
       ## Table 6-4 Attribute Belonging to Procedures or Functions
 
@@ -565,9 +556,9 @@ class OCI8
       alias name obj_name # :nodoc: for backward compatibility
 
       # Returns +nil+ for a standalone stored subprogram,
-      # positive integer for a
-      # {overloaded packaged subprogram}[http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28370/subprograms.htm#i12352].
-      # , otherwise zero.
+      # positive integer for an
+      # {overloaded packaged subprogram}[http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28370/subprograms.htm#i12352],
+      # otherwise zero.
       #
       # @return [Integer or nil]
       def overload_id
@@ -589,7 +580,8 @@ class OCI8
         @is_standalone
       end
 
-      def inspect # :nodoc:
+      # @private
+      def inspect
         "#<#{self.class.name}: #{name}>"
       end
     end
@@ -1230,7 +1222,7 @@ class OCI8
       end
 
       def inspect # :nodoc:
-        "#<#{self.class.name}:(#{obj_id}) #{obj_schema}.#{obj_name}>"
+        "#<#{self.class.name}:(#{obj_id}) #{obj_schema}.#{obj_name} FOR #{translated_name}>"
       end
     end
 
