@@ -8,15 +8,8 @@
 #
 require 'fileutils'
 
-build_args = if (defined? Gem::Command and Gem::Command.respond_to? :build_args)
-               Gem::Command.build_args
-             else
-               # for old rubygems
-               ARGV.include?("--") ? ARGV[(ARGV.index("--") + 1)...ARGV.size] : []
-             end
-
-if build_args.size > 0
-  gem_platform = build_args[0]
+if ARGV.include?("--") and ARGV[(ARGV.index("--") + 1)] == 'current'
+  gem_platform = 'current'
 else
   gem_platform = Gem::Platform::RUBY
 end
@@ -29,10 +22,10 @@ spec = Gem::Specification.new do |s|
   s.homepage = 'http://ruby-oci8.rubyforge.org'
   s.rubyforge_project = 'ruby-oci8'
   s.description = <<EOS
-ruby-oci8 is a ruby interface for Oracle using OCI8 API. It is available with Oracle8, Oracle8i, Oracle9i, Oracle10g and Oracle Instant Client.
+ruby-oci8 is a ruby interface for Oracle using OCI8 API. It is available with Oracle8i, Oracle9i, Oracle10g, Oracle11g and Oracle Instant Client.
 EOS
   s.has_rdoc = 'yard'
-  s.authors = ['KUBO Takehiro']
+  s.authors = ['Kubo Takehiro']
   s.platform = gem_platform
   s.license = '2-clause BSD-style license'
   files = File.read('dist-files').split("\n")
@@ -41,23 +34,35 @@ EOS
     s.required_ruby_version = '>= 1.8.0'
   else
     so_files = Dir.glob('ext/oci8/oci8lib_*.so')
-    has_1_8 = so_files.include? 'ext/oci8/oci8lib_18.so'
-    has_1_9_1 = so_files.include? 'ext/oci8/oci8lib_191.so'
-    if has_1_8 and has_1_9_1
-      puts 'Binary gem for ruby 1.8 and 1.9.1'
-      s.required_ruby_version = '>= 1.8.0'
-    elsif has_1_8 and !has_1_9_1
-      puts 'Binary gem for ruby 1.8'
-      s.required_ruby_version = '~> 1.8.0'
-    elsif !has_1_8 and has_1_9_1
-      puts 'Binary gem for ruby 1.9.1'
-      s.required_ruby_version = '~> 1.9.1'
-    else
-      raise "No compiled binary are found. Run make in advance."
-    end
+    so_vers = so_files.collect do |file|
+      $1 if /ext\/oci8\/oci8lib_(\S+).so/ =~ file
+    end.sort
+
     # add map files to analyze a core (minidump) file.
-    so_files << 'ext/oci8/oci8lib_18.map' if has_1_8 and File.exists? 'ext/oci8/oci8lib_18.map'
-    so_files << 'ext/oci8/oci8lib_191.map' if has_1_9_1 and File.exists? 'ext/oci8/oci8lib_191.map'
+    so_vers.each do |ver|
+      map_file = 'ext/oci8/oci8lib_#{ver}.map'
+      so_files << map_file if File.exists? map_file
+    end
+
+    # least version in so_vers
+    so_vermin = so_vers.collect do |ver|
+      "#$1.#$2.#{$3||'0'}" if /^(?:rbx)?(\d)(\d)(\d)?/ =~ ver
+    end.sort.first
+
+    case so_vers.length
+    when 0
+      raise "No compiled binary are found. Run make in advance."
+    when 1
+      puts "Binary gem for ruby #{so_vers.first}"
+      if so_vers[0] < '2.0.0'
+        s.required_ruby_version = "~> #{so_vermin}"
+      else
+        s.required_ruby_version = "= #{so_vermin}"
+      end
+    else
+      puts "Binary gem for ruby #{so_vers.join(', ')}"
+      s.required_ruby_version = ">= #{so_vermin}"
+    end
 
     FileUtils.copy so_files, 'lib', :preserve => true
     files.reject! do |fname|

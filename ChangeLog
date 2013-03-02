@@ -1,4 +1,7 @@
 2013-03-02  KUBO Takehiro  <kubo@jiubao.org>
+	* ruby-oci8.gemspec: fix for ruby 2.0.0 to make binary gems.
+
+2013-03-02  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: fix for compilation on Windows x64 by mingw64.
 
 2013-01-12  KUBO Takehiro  <kubo@jiubao.org>
