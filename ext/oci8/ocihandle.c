@@ -2,7 +2,7 @@
 /*
  * ocihandle.c
  *
- * Copyright (C) 2009-2012 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2009-2013 Kubo Takehiro <kubo@jiubao.org>
  *
  * implement OCIHandle
  *
@@ -103,243 +103,272 @@ static VALUE oci8_s_allocate(VALUE klass)
     return obj;
 }
 
+enum datatype {
+    DATATYPE_UB1,
+    DATATYPE_UB2,
+    DATATYPE_UB4,
+    DATATYPE_UB8,
+    DATATYPE_SB1,
+    DATATYPE_SB2,
+    DATATYPE_SB4,
+    DATATYPE_SB8,
+    DATATYPE_BOOLEAN,
+    DATATYPE_STRING,
+    DATATYPE_BINARY,
+    DATATYPE_INTEGER,
+    DATATYPE_ORADATE,
+};
+
+static VALUE attr_get_common(int argc, VALUE *argv, VALUE self, enum datatype datatype)
+{
+    oci8_base_t *base = DATA_PTR(self);
+    VALUE attr_type;
+    VALUE strict;
+    union {
+        ub1 ub1val;
+        ub2 ub2val;
+        ub4 ub4val;
+        ub8 ub8val;
+        sb1 sb1val;
+        sb2 sb2val;
+        sb4 sb4val;
+        sb8 sb8val;
+        boolean booleanval;
+        char *charptr;
+        ub1 *ub1ptr;
+    } v;
+    ub4 size = 0;
+    sword rv;
+
+    v.ub8val = MAGIC_NUMBER;
+    rb_scan_args(argc, argv, "11", &attr_type, &strict);
+    if (argc == 1) {
+        strict = Qtrue;
+    }
+    Check_Type(attr_type, T_FIXNUM);
+    rv = OCIAttrGet(base->hp.ptr, base->type, &v, &size, FIX2INT(attr_type), oci8_errhp);
+    if (!RTEST(strict)) {
+        if (rv == OCI_ERROR && oci8_get_error_code(oci8_errhp) == 24328) {
+			/* ignore ORA-24328: illegal attribute value */
+            return Qnil;
+        }
+    }
+    chker2(rv, base);
+    switch (datatype) {
+        OCINumber onum;
+        static VALUE cOraDate = Qnil;
+    case DATATYPE_UB1:
+        return INT2FIX(v.ub1val);
+    case DATATYPE_UB2:
+        return INT2FIX(v.ub2val);
+    case DATATYPE_UB4:
+        return UINT2NUM(v.ub4val);
+    case DATATYPE_UB8:
+        return ULL2NUM(v.ub8val);
+    case DATATYPE_SB1:
+        return INT2FIX(v.sb1val);
+    case DATATYPE_SB2:
+        return INT2FIX(v.sb2val);
+    case DATATYPE_SB4:
+        return INT2NUM(v.sb4val);
+    case DATATYPE_SB8:
+        return LL2NUM(v.sb8val);
+    case DATATYPE_BOOLEAN:
+        return v.booleanval ? Qtrue : Qfalse;
+    case DATATYPE_STRING:
+        if (size == 0 && !RTEST(strict)) {
+            return Qnil;
+        }
+        return rb_external_str_new_with_enc(v.charptr, size, oci8_encoding);
+    case DATATYPE_BINARY:
+        return rb_tainted_str_new(v.charptr, size);
+    case DATATYPE_INTEGER:
+        if (size > sizeof(onum.OCINumberPart) - 1) {
+            rb_raise(rb_eRuntimeError, "Too long size %u", size);
+        }
+        memset(&onum, 0, sizeof(onum));
+        onum.OCINumberPart[0] = size;
+        memcpy(&onum.OCINumberPart[1], v.ub1ptr, size);
+        return oci8_make_integer(&onum, oci8_errhp);
+    case DATATYPE_ORADATE:
+        if (NIL_P(cOraDate))
+            cOraDate = rb_eval_string("OraDate");
+        return rb_funcall(cOraDate, oci8_id_new, 6,
+                          INT2FIX((v.ub1ptr[0] - 100) * 100 + (v.ub1ptr[1] - 100)),
+                          INT2FIX(v.ub1ptr[2]),
+                          INT2FIX(v.ub1ptr[3]),
+                          INT2FIX(v.ub1ptr[4] - 1),
+                          INT2FIX(v.ub1ptr[5] - 1),
+                          INT2FIX(v.ub1ptr[6] - 1));
+    }
+    return Qnil;
+}
+
 /*
  * call-seq:
- *   attr_get_ub1(attr_type)
+ *   attr_get_ub1(attr_type, strict = true)
  *
  * Gets the value of an attribute as `ub1' datatype.
  *
  * @param [Fixnum] attr_type
+ * @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  * @return [Fixnum]
  *
  * @since 2.0.4
  * @private
  */
-static VALUE attr_get_ub1(VALUE self, VALUE attr_type)
+static VALUE attr_get_ub1(int argc, VALUE *argv, VALUE self)
 {
-    oci8_base_t *base = DATA_PTR(self);
-    union {
-        ub1 value;
-        ub8 dummy; /* padding for incorrect attrtype to protect the stack */
-    } v;
-
-    v.dummy = MAGIC_NUMBER;
-    Check_Type(attr_type, T_FIXNUM);
-    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
-    return INT2FIX(v.value);
+    return attr_get_common(argc, argv, self, DATATYPE_UB1);
 }
 
 /*
  * call-seq:
- *   attr_get_ub2(attr_type)
+ *   attr_get_ub2(attr_type, strict = true)
  *
  * Gets the value of an attribute as `ub2' datatype.
  *
  * @param [Fixnum] attr_type
+ * @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  * @return [Fixnum]
  *
  * @since 2.0.4
  * @private
  */
-static VALUE attr_get_ub2(VALUE self, VALUE attr_type)
+static VALUE attr_get_ub2(int argc, VALUE *argv, VALUE self)
 {
-    oci8_base_t *base = DATA_PTR(self);
-    union {
-        ub2 value;
-        ub8 dummy; /* padding for incorrect attrtype to protect the stack */
-    } v;
-
-    v.dummy = MAGIC_NUMBER;
-    Check_Type(attr_type, T_FIXNUM);
-    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
-    return INT2FIX(v.value);
+    return attr_get_common(argc, argv, self, DATATYPE_UB2);
 }
 
 /*
  * call-seq:
- *   attr_get_ub4(attr_type)
+ *   attr_get_ub4(attr_type, strict = true)
  *
  * Gets the value of an attribute as `ub4' datatype.
  *
  * @param [Fixnum] attr_type
+ * @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  * @return [Integer]
  *
  * @since 2.0.4
  * @private
  */
-static VALUE attr_get_ub4(VALUE self, VALUE attr_type)
+static VALUE attr_get_ub4(int argc, VALUE *argv, VALUE self)
 {
-    oci8_base_t *base = DATA_PTR(self);
-    union {
-        ub4 value;
-        ub8 dummy; /* padding for incorrect attrtype to protect the stack */
-    } v;
-
-    v.dummy = MAGIC_NUMBER;
-    Check_Type(attr_type, T_FIXNUM);
-    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
-    return UINT2NUM(v.value);
+    return attr_get_common(argc, argv, self, DATATYPE_UB4);
 }
 
 /*
  * call-seq:
- *   attr_get_ub8(attr_type)
+ *   attr_get_ub8(attr_type, strict = true)
  *
  * Gets the value of an attribute as `ub8' datatype.
  *
  * @param [Fixnum] attr_type
+ * @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  * @return [Integer]
  *
  * @since 2.0.4
  * @private
  */
-static VALUE attr_get_ub8(VALUE self, VALUE attr_type)
+static VALUE attr_get_ub8(int argc, VALUE *argv, VALUE self)
 {
-    oci8_base_t *base = DATA_PTR(self);
-    union {
-        ub8 value;
-        ub8 dummy;
-    } v;
-
-    v.dummy = MAGIC_NUMBER;
-    Check_Type(attr_type, T_FIXNUM);
-    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
-    return ULL2NUM(v.value);
+    return attr_get_common(argc, argv, self, DATATYPE_UB8);
 }
 
 /*
  * call-seq:
- *   attr_get_sb1(attr_type)
+ *   attr_get_sb1(attr_type, strict = true)
  *
  * Gets the value of an attribute as `sb1' datatype.
  *
  * @param [Fixnum] attr_type
+ * @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  * @return [Fixnum]
  *
  * @since 2.0.4
  * @private
  */
-static VALUE attr_get_sb1(VALUE self, VALUE attr_type)
+static VALUE attr_get_sb1(int argc, VALUE *argv, VALUE self)
 {
-    oci8_base_t *base = DATA_PTR(self);
-    union {
-        sb1 value;
-        ub8 dummy; /* padding for incorrect attrtype to protect the stack */
-    } v;
-
-    v.dummy = MAGIC_NUMBER;
-    Check_Type(attr_type, T_FIXNUM);
-    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
-    return INT2FIX(v.value);
+    return attr_get_common(argc, argv, self, DATATYPE_SB1);
 }
 
 /*
  * call-seq:
- *   attr_get_sb2(attr_type)
+ *   attr_get_sb2(attr_type, strict = true)
  *
  * Gets the value of an attribute as `sb2' datatype.
  *
  * @param [Fixnum] attr_type
+ * @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  * @return [Fixnum]
  *
  * @since 2.0.4
  * @private
  */
-static VALUE attr_get_sb2(VALUE self, VALUE attr_type)
+static VALUE attr_get_sb2(int argc, VALUE *argv, VALUE self)
 {
-    oci8_base_t *base = DATA_PTR(self);
-    union {
-        sb2 value;
-        ub8 dummy; /* padding for incorrect attrtype to protect the stack */
-    } v;
-
-    v.dummy = MAGIC_NUMBER;
-    Check_Type(attr_type, T_FIXNUM);
-    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
-    return INT2FIX(v.value);
+    return attr_get_common(argc, argv, self, DATATYPE_SB2);
 }
 
 /*
  * call-seq:
- *   attr_get_sb4(attr_type)
+ *   attr_get_sb4(attr_type, strict = true)
  *
  * Gets the value of an attribute as `sb4' datatype.
  *
  * @param [Fixnum] attr_type
+ * @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  * @return [Integer]
  *
  * @since 2.0.4
  * @private
  */
-static VALUE attr_get_sb4(VALUE self, VALUE attr_type)
+static VALUE attr_get_sb4(int argc, VALUE *argv, VALUE self)
 {
-    oci8_base_t *base = DATA_PTR(self);
-    union {
-        sb4 value;
-        ub8 dummy;
-    } v;
-
-    v.dummy = MAGIC_NUMBER;
-    Check_Type(attr_type, T_FIXNUM);
-    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
-    return INT2NUM(v.value);
+    return attr_get_common(argc, argv, self, DATATYPE_SB4);
 }
 
 /*
  * call-seq:
- *   attr_get_sb8(attr_type)
+ *   attr_get_sb8(attr_type, strict = true)
  *
  * Gets the value of an attribute as `sb8' datatype.
  *
  * @param [Fixnum] attr_type
+ * @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  * @return [Integer]
  *
  * @since 2.0.4
  * @private
  */
-static VALUE attr_get_sb8(VALUE self, VALUE attr_type)
+static VALUE attr_get_sb8(int argc, VALUE *argv, VALUE self)
 {
-    oci8_base_t *base = DATA_PTR(self);
-    union {
-        sb8 value;
-        ub8 dummy; /* padding for incorrect attrtype to protect the stack */
-    } v;
-
-    v.dummy = MAGIC_NUMBER;
-    Check_Type(attr_type, T_FIXNUM);
-    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
-    return LL2NUM(v.value);
+    return attr_get_common(argc, argv, self, DATATYPE_SB8);
 }
 
 /*
  * call-seq:
- *   attr_get_boolean(attr_type)
+ *   attr_get_boolean(attr_type, strict = true)
  *
  * Gets the value of an attribute as `boolean' datatype.
  *
  * @param [Fixnum] attr_type
+ * @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  * @return [true of false]
  *
  * @since 2.0.4
  * @private
  */
-static VALUE attr_get_boolean(VALUE self, VALUE attr_type)
+static VALUE attr_get_boolean(int argc, VALUE *argv, VALUE self)
 {
-    oci8_base_t *base = DATA_PTR(self);
-    union {
-        boolean value;
-        ub8 dummy; /* padding for incorrect attrtype to protect the stack */
-    } v;
-
-    v.dummy = MAGIC_NUMBER;
-    Check_Type(attr_type, T_FIXNUM);
-    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, NULL, FIX2INT(attr_type), oci8_errhp), base);
-    return v.value ? Qtrue : Qfalse;
+    return attr_get_common(argc, argv, self, DATATYPE_BOOLEAN);
 }
 
 /*
  * call-seq:
- *   attr_get_string(attr_type)
+ *   attr_get_string(attr_type, strict = true)
  *
  * Gets the value of an attribute as `oratext *' datatype.
  * The return value is converted to Encoding.default_internal or
@@ -349,29 +378,20 @@ static VALUE attr_get_boolean(VALUE self, VALUE attr_type)
  *   pointer type, it causes a segmentation fault.
  *
  * @param [Fixnum] attr_type
+ * @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  * @return [String]
  *
  * @since 2.0.4
  * @private
  */
-static VALUE attr_get_string(VALUE self, VALUE attr_type)
+static VALUE attr_get_string(int argc, VALUE *argv, VALUE self)
 {
-    oci8_base_t *base = DATA_PTR(self);
-    union {
-        char *value;
-        ub8 dummy; /* padding for incorrect attrtype to protect the stack */
-    } v;
-    ub4 size = 0;
-
-    v.dummy = MAGIC_NUMBER;
-    Check_Type(attr_type, T_FIXNUM);
-    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, &size, FIX2INT(attr_type), oci8_errhp), base);
-    return rb_external_str_new_with_enc(v.value, size, oci8_encoding);
+    return attr_get_common(argc, argv, self, DATATYPE_STRING);
 }
 
 /*
  * call-seq:
- *   attr_get_binary(attr_type)
+ *   attr_get_binary(attr_type, strict = true)
  *
  * Gets the value of an attribute as `ub1 *' datatype.
  * The return value is tagged with ASCII-8BIT when the ruby version is 1.9.
@@ -380,29 +400,20 @@ static VALUE attr_get_string(VALUE self, VALUE attr_type)
  *   pointer type, it causes a segmentation fault.
  *
  * @param [Fixnum] attr_type
+ * @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  * @return [String]
  *
  * @since 2.0.4
  * @private
  */
-static VALUE attr_get_binary(VALUE self, VALUE attr_type)
+static VALUE attr_get_binary(int argc, VALUE *argv, VALUE self)
 {
-    oci8_base_t *base = DATA_PTR(self);
-    union {
-        char *value;
-        ub8 dummy; /* padding for incorrect attrtype to protect the stack */
-    } v;
-    ub4 size = 0;
-
-    v.dummy = 0;
-    Check_Type(attr_type, T_FIXNUM);
-    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, &size, FIX2INT(attr_type), oci8_errhp), base);
-    return rb_tainted_str_new(v.value, size);
+    return attr_get_common(argc, argv, self, DATATYPE_BINARY);
 }
 
 /*
  * call-seq:
- *   attr_get_integer(attr_type) -> integer
+ *   attr_get_integer(attr_type, strict = true)
  *
  * Gets the value of an attribute as `ub1 *' datatype.
  * The return value is converted to Integer from internal Oracle NUMBER format.
@@ -411,34 +422,20 @@ static VALUE attr_get_binary(VALUE self, VALUE attr_type)
  *   pointer type, it causes a segmentation fault.
  *
  * @param [Fixnum] attr_type
+ * @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  * @return [Fixnum]
  *
  * @since 2.0.4
  * @private
  */
-static VALUE attr_get_integer(VALUE self, VALUE attr_type)
+static VALUE attr_get_integer(int argc, VALUE *argv, VALUE self)
 {
-    oci8_base_t *base = DATA_PTR(self);
-    OCINumber onum;
-    union {
-        void *value;
-        ub8 dummy; /* padding for incorrect attrtype to protect the stack */
-    } v;
-    ub4 size = 0;
-
-    v.dummy = 0;
-    Check_Type(attr_type, T_FIXNUM);
-    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, &size, FIX2INT(attr_type), oci8_errhp), base);
-
-    memset(&onum, 0, sizeof(onum));
-    onum.OCINumberPart[0] = size;
-    memcpy(&onum.OCINumberPart[1], v.value, size);
-    return oci8_make_integer(&onum, oci8_errhp);
+    return attr_get_common(argc, argv, self, DATATYPE_INTEGER);
 }
 
 /*
  * call-seq:
- *   attr_get_oradate(attr_type) -> an OraDate
+ *   attr_get_oradate(attr_type, strict = true)
  *
  * Gets the value of an attribute as `ub1 *' datatype.
  * The return value is converted to OraDate.
@@ -447,33 +444,15 @@ static VALUE attr_get_integer(VALUE self, VALUE attr_type)
  *   pointer type, it causes a segmentation fault.
  *
  * @param [Fixnum] attr_type
+ * @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  * @return [OraDate]
  *
  * @since 2.0.4
  * @private
  */
-static VALUE attr_get_oradate(VALUE self, VALUE attr_type)
+static VALUE attr_get_oradate(int argc, VALUE *argv, VALUE self)
 {
-    oci8_base_t *base = DATA_PTR(self);
-    union {
-        ub1 *value;
-        ub8 dummy; /* padding for incorrect attrtype to protect the stack */
-    } v;
-    ub4 size = 0;
-    static VALUE cOraDate = Qnil;
-
-    v.dummy = 0;
-    Check_Type(attr_type, T_FIXNUM);
-    chker2(OCIAttrGet(base->hp.ptr, base->type, &v.value, &size, FIX2INT(attr_type), oci8_errhp), base);
-    if (NIL_P(cOraDate))
-        cOraDate = rb_eval_string("OraDate");
-    return rb_funcall(cOraDate, oci8_id_new, 6,
-                      INT2FIX((v.value[0] - 100) * 100 + (v.value[1] - 100)),
-                      INT2FIX(v.value[2]),
-                      INT2FIX(v.value[3]),
-                      INT2FIX(v.value[4] - 1),
-                      INT2FIX(v.value[5] - 1),
-                      INT2FIX(v.value[6] - 1));
+    return attr_get_common(argc, argv, self, DATATYPE_ORADATE);
 }
 
 /*
@@ -836,19 +815,19 @@ void Init_oci8_handle(void)
     rb_ivar_set(oci8_cOCIHandle, oci8_id_oci8_vtable, obj);
 
     /* methods to get attributes */
-    rb_define_private_method(oci8_cOCIHandle, "attr_get_ub1", attr_get_ub1, 1);
-    rb_define_private_method(oci8_cOCIHandle, "attr_get_ub2", attr_get_ub2, 1);
-    rb_define_private_method(oci8_cOCIHandle, "attr_get_ub4", attr_get_ub4, 1);
-    rb_define_private_method(oci8_cOCIHandle, "attr_get_ub8", attr_get_ub8, 1);
-    rb_define_private_method(oci8_cOCIHandle, "attr_get_sb1", attr_get_sb1, 1);
-    rb_define_private_method(oci8_cOCIHandle, "attr_get_sb2", attr_get_sb2, 1);
-    rb_define_private_method(oci8_cOCIHandle, "attr_get_sb4", attr_get_sb4, 1);
-    rb_define_private_method(oci8_cOCIHandle, "attr_get_sb8", attr_get_sb8, 1);
-    rb_define_private_method(oci8_cOCIHandle, "attr_get_boolean", attr_get_boolean, 1);
-    rb_define_private_method(oci8_cOCIHandle, "attr_get_string", attr_get_string, 1);
-    rb_define_private_method(oci8_cOCIHandle, "attr_get_binary", attr_get_binary, 1);
-    rb_define_private_method(oci8_cOCIHandle, "attr_get_integer", attr_get_integer, 1);
-    rb_define_private_method(oci8_cOCIHandle, "attr_get_oradate", attr_get_oradate, 1);
+    rb_define_private_method(oci8_cOCIHandle, "attr_get_ub1", attr_get_ub1, -1);
+    rb_define_private_method(oci8_cOCIHandle, "attr_get_ub2", attr_get_ub2, -1);
+    rb_define_private_method(oci8_cOCIHandle, "attr_get_ub4", attr_get_ub4, -1);
+    rb_define_private_method(oci8_cOCIHandle, "attr_get_ub8", attr_get_ub8, -1);
+    rb_define_private_method(oci8_cOCIHandle, "attr_get_sb1", attr_get_sb1, -1);
+    rb_define_private_method(oci8_cOCIHandle, "attr_get_sb2", attr_get_sb2, -1);
+    rb_define_private_method(oci8_cOCIHandle, "attr_get_sb4", attr_get_sb4, -1);
+    rb_define_private_method(oci8_cOCIHandle, "attr_get_sb8", attr_get_sb8, -1);
+    rb_define_private_method(oci8_cOCIHandle, "attr_get_boolean", attr_get_boolean, -1);
+    rb_define_private_method(oci8_cOCIHandle, "attr_get_string", attr_get_string, -1);
+    rb_define_private_method(oci8_cOCIHandle, "attr_get_binary", attr_get_binary, -1);
+    rb_define_private_method(oci8_cOCIHandle, "attr_get_integer", attr_get_integer, -1);
+    rb_define_private_method(oci8_cOCIHandle, "attr_get_oradate", attr_get_oradate, -1);
 
     /* methods to set attributes */
     rb_define_private_method(oci8_cOCIHandle, "attr_set_ub1", attr_set_ub1, 2);

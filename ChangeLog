@@ -1,4 +1,12 @@
 2013-03-02  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/ocihandle.c: change arguments of internal methods
+	    OCIHandle#attr_get_*() to ignore "ORA-24328: illegal
+	    attribute value".
+	* lib/oci8/metadata.rb: change OCI8::Metadata::Base#obj_id,
+	    #obj_name and #obj_schema not to raise "ORA-24328:
+	    illegal attribute value".
+
+2013-03-02  KUBO Takehiro  <kubo@jiubao.org>
 	* ruby-oci8.gemspec: fix for ruby 2.0.0 to make binary gems.
 
 2013-03-02  KUBO Takehiro  <kubo@jiubao.org>

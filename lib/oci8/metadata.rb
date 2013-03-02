@@ -1,6 +1,6 @@
 # oci8.rb -- implements OCI8::Metadata.
 #
-# Copyright (C) 2006-2010 KUBO Takehiro <kubo@jiubao.org>
+# Copyright (C) 2006-2013 Kubo Takehiro <kubo@jiubao.org>
 #
 # See {'Describing Schema Metadata' in Oracle Call Interface Programmer's Guide}
 # [http://download-west.oracle.com/docs/cd/B19306_01/appdev.102/b14250/oci06des.htm]
@@ -65,7 +65,7 @@ class OCI8
       #
       # @return [Integer or nil]
       def obj_id
-        attr_get_ub4(OCI_ATTR_OBJ_ID)
+        attr_get_ub4(OCI_ATTR_OBJ_ID, false)
       end
 
       # Retruns the object name such as table name, view name,
@@ -73,7 +73,7 @@ class OCI8
       #
       # @return [String]
       def obj_name
-        attr_get_string(OCI_ATTR_OBJ_NAME)
+        attr_get_string(OCI_ATTR_OBJ_NAME, false)
       end
 
       # Retruns the schema name. It returns +nil+
@@ -81,7 +81,7 @@ class OCI8
       #
       # @return [String]
       def obj_schema
-        attr_get_string(OCI_ATTR_OBJ_SCHEMA)
+        attr_get_string(OCI_ATTR_OBJ_SCHEMA, false)
       end
 
       # The timestamp of the object
