@@ -1,3 +1,6 @@
+2013-03-02  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: fix for compilation on Windows x64 by mingw64.
+
 2013-01-12  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8lib.c: export a main function for Solaris x86 (32-bit).
 	    When a main function is invisible from Oracle instant client

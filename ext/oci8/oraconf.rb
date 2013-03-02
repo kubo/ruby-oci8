@@ -847,7 +847,7 @@ EOS
       unless File.exist?("#{@oracle_home}/OCI/INCLUDE/OCI.H")
         raise "'#{@oracle_home}/OCI/INCLUDE/OCI.H' does not exists. Please install 'Oracle Call Interface'."
       end
-      if RUBY_PLATFORM =~ /cygwin/
+      if RUBY_PLATFORM =~ /cygwin|mingw32/
         " \"-I#{@oracle_home}/OCI/INCLUDE\" -D_int64=\"long long\""
       else
         " \"-I#{@oracle_home}/OCI/INCLUDE\""
@@ -971,7 +971,7 @@ EOS
         raise 'failed'
       end
       @cflags = " \"-I#{inc_dir}\""
-      @cflags += " -D_int64=\"long long\"" if RUBY_PLATFORM =~ /cygwin/
+      @cflags += " -D_int64=\"long long\"" if RUBY_PLATFORM =~ /cygwin|mingw32/
       @libs = get_libs("#{ic_dir}/sdk/lib")
       ld_path = nil
     else
