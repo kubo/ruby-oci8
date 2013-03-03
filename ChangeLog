@@ -1,3 +1,7 @@
+2013-03-03  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c: fix segmentation fault when the process
+	    exits on rubinius.
+
 2013-03-02  KUBO Takehiro  <kubo@jiubao.org>
 	* .yardopts, ext/oci8/object.c, lib/oci8/metadata.rb,
 	  lib/oci8/oracle_version.rb: update comments for rdoc/yard.

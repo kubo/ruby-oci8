@@ -38,6 +38,8 @@ extern rb_pid_t rb_w32_getpid(void);
 static VALUE cOCI8;
 static VALUE cSession;
 static VALUE cServer;
+static VALUE cEnvironment;
+static VALUE cProcess;
 static ID id_at_session_handle;
 static ID id_at_server_handle;
 
@@ -48,7 +50,7 @@ static VALUE dummy_env_method_missing(int argc, VALUE *argv, VALUE self)
 
     if (self == obj) {
         oci8_base_t *base;
-        obj = rb_obj_alloc(oci8_cOCIHandle);
+        obj = rb_obj_alloc(cEnvironment);
         base = DATA_PTR(obj);
         base->type = OCI_HTYPE_ENV;
         base->hp.ptr = oci8_envhp;
@@ -61,21 +63,16 @@ static VALUE dummy_env_method_missing(int argc, VALUE *argv, VALUE self)
     return rb_apply(obj, SYM2ID(method_id), args);
 }
 
-typedef struct oci8_svcctx_associate {
-    oci8_base_t base;
-    oci8_svcctx_t *svcctx;
-} oci8_svcctx_associate_t;
-
-static void oci8_svcctx_associate_free(oci8_base_t *base)
+static void oci8_dont_free_handle_free(oci8_base_t *base)
 {
     base->type = 0;
     base->hp.ptr = NULL;
 }
 
-static oci8_base_vtable_t oci8_svcctx_associate_vtable = {
+static oci8_base_vtable_t oci8_dont_free_handle_vtable = {
     NULL,
-    oci8_svcctx_associate_free,
-    sizeof(oci8_svcctx_associate_t),
+    oci8_dont_free_handle_free,
+    sizeof(oci8_base_t),
 };
 
 static void copy_session_handle(oci8_svcctx_t *svcctx)
@@ -1124,8 +1121,10 @@ void Init_oci8(VALUE *out)
     cOCI8 = rb_define_class("OCI8", oci8_cOCIHandle);
 #endif
     cOCI8 = oci8_define_class("OCI8", &oci8_svcctx_vtable);
-    cSession = oci8_define_class_under(cOCI8, "Session", &oci8_svcctx_associate_vtable);
-    cServer = oci8_define_class_under(cOCI8, "Server", &oci8_svcctx_associate_vtable);
+    cSession = oci8_define_class_under(cOCI8, "Session", &oci8_dont_free_handle_vtable);
+    cServer = oci8_define_class_under(cOCI8, "Server", &oci8_dont_free_handle_vtable);
+    cEnvironment = oci8_define_class_under(cOCI8, "Environment", &oci8_dont_free_handle_vtable);
+    cProcess = oci8_define_class_under(cOCI8, "Process", &oci8_dont_free_handle_vtable);
     id_at_session_handle = rb_intern("@session_handle");
     id_at_server_handle = rb_intern("@server_handle");
 
@@ -1135,7 +1134,7 @@ void Init_oci8(VALUE *out)
     rb_cv_set(cOCI8, "@@environment_handle", obj);
 
     /* setup the process handle */
-    obj = rb_obj_alloc(oci8_cOCIHandle);
+    obj = rb_obj_alloc(cProcess);
     base = DATA_PTR(obj);
     base->type = OCI_HTYPE_PROC;
     base->self = Qnil;
