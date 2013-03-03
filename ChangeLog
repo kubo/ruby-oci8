@@ -1,4 +1,10 @@
 2013-03-03  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb, test/test_oci8.rb: set 'rubyoci8' as
+	    the driver name, which is displayed in
+	    V$SESSION_CONNECT_INFO.CLIENT_DRIVER.
+	    (require Oracle 11g or upper)
+
+2013-03-03  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8.rb.in: use RbConfig::CONFIG instead of obsolete
 	    constant Config::CONFIG.
 	* lib/oci8/object.rb, test/test_bind_time.rb, test/test_metadata.rb

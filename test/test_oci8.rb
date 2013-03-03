@@ -478,4 +478,12 @@ EOS
     # OCI_ATTR_MEMPOOL_SIZE
     assert_equal(0, OCI8.send(:class_variable_get, :@@process_handle).send(:attr_get_ub4, 88))
   end
+
+  def test_client_driver_name
+    if OCI8.oracle_client_version >= OCI8::ORAVER_11_1 and @conn.oracle_server_version >= OCI8::ORAVER_11_1
+      sid = @conn.select_one("select userenv('sid') from dual")[0].to_i
+      driver_name = @conn.select_one('select client_driver from v$session_connect_info where sid = :1', sid)[0]
+      assert_equal('rubyoci8', driver_name)
+    end
+  end
 end # TestOCI8

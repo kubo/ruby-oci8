@@ -1,6 +1,6 @@
 # oci8.rb -- OCI8
 #
-# Copyright (C) 2002-2012 KUBO Takehiro <kubo@jiubao.org>
+# Copyright (C) 2002-2013 Kubo Takehiro <kubo@jiubao.org>
 #
 # Original Copyright is:
 #   Oracle module for Ruby
@@ -123,48 +123,38 @@ class OCI8
     stmt_cache_size = OCI8.properties[:statement_cache_size]
     stmt_cache_size = nil if stmt_cache_size == 0
 
-    if mode.nil? and cred.nil?
-      # logon by the OCI function OCILogon2().
-      logon2_mode = 0
-      if dbname.is_a? OCI8::ConnectionPool
-        @pool = dbname # to prevent GC from freeing the connection pool.
-        dbname = dbname.send(:pool_name)
-        logon2_mode |= 0x0200 # OCI_LOGON2_CPOOL
-      end
-      if stmt_cache_size
-        # enable statement caching
-        logon2_mode |= 0x0004 # OCI_LOGON2_STMTCACHE
-      end
+    attach_mode = 0
+    if dbname.is_a? OCI8::ConnectionPool
+      @pool = dbname # to prevent GC from freeing the connection pool.
+      dbname = dbname.send(:pool_name)
+      attach_mode |= 0x0200 # OCI_CPOOL and OCI_LOGON2_CPOOL
+    end
+    if stmt_cache_size
+      # enable statement caching
+      attach_mode |= 0x0004 # OCI_STMT_CACHE and OCI_LOGON2_STMTCACHE
+    end
 
-      logon2(username, password, dbname, logon2_mode)
-
-      if stmt_cache_size
-        # set statement cache size
-        attr_set_ub4(176, stmt_cache_size) # 176: OCI_ATTR_STMTCACHESIZE
-      end
-    else
+    if true
       # logon by the OCI function OCISessionBegin().
-      attach_mode = 0
-      if dbname.is_a? OCI8::ConnectionPool
-        @pool = dbname # to prevent GC from freeing the connection pool.
-        dbname = dbname.send(:pool_name)
-        attach_mode |= 0x0200 # OCI_CPOOL
-      end
-      if stmt_cache_size
-        # enable statement caching
-        attach_mode |= 0x0004 # OCI_STMT_CACHE
-      end
-
       allocate_handles()
       @session_handle.send(:attr_set_string, OCI_ATTR_USERNAME, username) if username
       @session_handle.send(:attr_set_string, OCI_ATTR_PASSWORD, password) if password
+      if @@oracle_client_version >= ORAVER_11_1
+        # 'rubyoci8' is displayed in V$SESSION_CONNECT_INFO.CLIENT_DRIVER
+        # if both the client and the server are Oracle 11g or upper.
+        # 424: OCI_ATTR_DRIVER_NAME
+        @session_handle.send(:attr_set_string, 424, 'rubyoci8')
+      end
       server_attach(dbname, attach_mode)
       session_begin(cred ? cred : OCI_CRED_RDBMS, mode ? mode : OCI_DEFAULT)
+    else
+      # logon by the OCI function OCILogon2().
+      logon2(username, password, dbname, attach_mode)
+    end
 
-      if stmt_cache_size
-        # set statement cache size
-        attr_set_ub4(176, stmt_cache_size) # 176: OCI_ATTR_STMTCACHESIZE
-      end
+    if stmt_cache_size
+      # set statement cache size
+      attr_set_ub4(176, stmt_cache_size) # 176: OCI_ATTR_STMTCACHESIZE
     end
 
     @prefetch_rows = nil
