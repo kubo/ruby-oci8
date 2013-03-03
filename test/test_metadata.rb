@@ -894,7 +894,6 @@ EOS
     assert_equal(2, desc[0].arguments.length)
     assert_instance_of(OCI8::Metadata::Argument, desc[0].arguments[0])
 
-    descs = @conn.describe_package('test_pkg').subprograms
     assert_instance_of(OCI8::Metadata::Procedure, desc[1])
     assert_equal(nil, desc[1].obj_id)
     assert_equal('TEST_PROC', desc[1].obj_name)
@@ -994,7 +993,6 @@ EOS
     assert_equal(3, desc[0].arguments.length)
     assert_instance_of(OCI8::Metadata::Argument, desc[0].arguments[0])
 
-    descs = @conn.describe_package('test_pkg').subprograms
     assert_instance_of(OCI8::Metadata::Function, desc[1])
     assert_equal(nil, desc[1].obj_id)
     assert_equal('TEST_FUNC', desc[1].obj_name)

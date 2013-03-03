@@ -202,7 +202,7 @@ EOS
     plsql.bind_param(':cursor', nil, OCI8::Cursor)
     plsql.exec
     cursor = plsql[':cursor']
-    cursor.define(5, Time) # define 5th column as Time
+    cursor.define(5, DateTime) # define 5th column as DateTime
     cursor.define(6, Date) # define 6th column as Date
     cursor.define(7, Integer) # define 7th column as Integer
     cursor.define(8, Bignum) # define 8th column as Integer
@@ -221,7 +221,7 @@ EOS
         tm = Time.local(2000 + i, 8, 3, 23, 59, 59)
 	dt = Date.civil(2000 + i, 8, 3)
 	assert_equal(tm, rv[3])
-	assert_equal(tm, rv[4])
+	assert_equal(dttm, rv[4])
 	assert_equal(dt, rv[5])
       end
       assert_equal(i, rv[6])

@@ -1,4 +1,11 @@
 2013-03-03  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8.rb.in: use RbConfig::CONFIG instead of obsolete
+	    constant Config::CONFIG.
+	* lib/oci8/object.rb, test/test_bind_time.rb, test/test_metadata.rb
+	  test/test_object.rb, test/test_oci8.rb:
+	    suppress warning: assigned but unused variable
+
+2013-03-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c, ext/oci8/oci8.c, ext/oci8/oci8.h:
 	    refactor oci8_lob_t.
 

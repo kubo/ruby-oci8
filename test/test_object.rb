@@ -151,7 +151,6 @@ class TestObj1 < Test::Unit::TestCase
         @obj_ary_of_ary_val = []
 #        @date_array_val = []
         0.upto(2) do |i|
-          ival = @n.round
           val = (@n + i).to_s
           val = $` if /.0$/ =~ val
           @int_array_val[i] = @int_val + i

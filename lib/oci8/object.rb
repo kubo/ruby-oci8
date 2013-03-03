@@ -394,7 +394,6 @@ EOS
       @instance_methods = {}
       metadata.type_methods.each_with_index do |type_method, i|
         next if type_method.is_constructor? or type_method.is_destructor?
-        args = type_method.arguments
 
         result_type = nil
         if type_method.has_result?

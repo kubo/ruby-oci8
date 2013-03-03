@@ -83,8 +83,8 @@ class TestBindTime < Test::Unit::TestCase
 
   def test_get_day
     cursor = @conn.parse("BEGIN :time := TO_DATE('200101' || TO_CHAR(:day, 'FM00'), 'YYYYMMDD'); END;")
-    day_in = cursor.bind_param(:day, Fixnum)
-    time_out = cursor.bind_param(:time, Time)
+    cursor.bind_param(:day, Fixnum)
+    cursor.bind_param(:time, Time)
     DAY_CHECK_TARGET.each do |i|
       # set time via oracle.
       cursor[:day] = i;
