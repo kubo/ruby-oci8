@@ -2,7 +2,7 @@
 /*
  * oci8.h - part of ruby-oci8
  *
- * Copyright (C) 2002-2012 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2013 Kubo Takehiro <kubo@jiubao.org>
  */
 #ifndef _RUBY_OCI_H_
 #define _RUBY_OCI_H_ 1
@@ -494,10 +494,8 @@ void Init_oci8_handle(void);
 void Init_oci8(VALUE *out);
 void oci8_do_parse_connect_string(VALUE conn_str, VALUE *user, VALUE *pass, VALUE *dbname, VALUE *mode);
 oci8_svcctx_t *oci8_get_svcctx(VALUE obj);
-OCISvcCtx *oci8_get_oci_svcctx(VALUE obj);
 OCISession *oci8_get_oci_session(VALUE obj);
 void oci8_check_pid_consistency(oci8_svcctx_t *svcctx);
-#define TO_SVCCTX oci8_get_oci_svcctx
 #define TO_SESSION oci8_get_oci_session
 
 /* connection_pool.c */

@@ -1,4 +1,9 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
+/*
+ * lob.c - part of ruby-oci8
+ *
+ * Copyright (C) 2002-2013 Kubo Takehiro <kubo@jiubao.org>
+ */
 #include "oci8.h"
 
 static ID id_plus;
@@ -22,14 +27,22 @@ enum state {
 };
 typedef struct {
     oci8_base_t base;
-    VALUE svc;
-    OCISvcCtx *svchp;
+    oci8_svcctx_t *svcctx;
     ub4 pos;
     int char_width;
     ub1 csfrm;
     ub1 lobtype;
     enum state state;
 } oci8_lob_t;
+
+static oci8_svcctx_t *check_svcctx(oci8_lob_t *lob)
+{
+    oci8_svcctx_t *svcctx = lob->svcctx;
+    if (svcctx == NULL || svcctx->base.type != OCI_HTYPE_SVCCTX) {
+        rb_raise(rb_eRuntimeError, "Invalid Svcctx");
+    }
+    return svcctx;
+}
 
 static VALUE oci8_lob_write(VALUE self, VALUE data);
 
@@ -101,20 +114,22 @@ void oci8_assign_bfile(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
 static void oci8_lob_mark(oci8_base_t *base)
 {
     oci8_lob_t *lob = (oci8_lob_t *)base;
-    rb_gc_mark(lob->svc);
+    if (lob->svcctx != NULL) {
+        rb_gc_mark(lob->svcctx->base.self);
+    }
 }
 
 static void oci8_lob_free(oci8_base_t *base)
 {
     oci8_lob_t *lob = (oci8_lob_t *)base;
     boolean is_temporary;
+    oci8_svcctx_t *svcctx = lob->svcctx;
 
-    if (lob->svchp != NULL
+    if (svcctx != NULL
         && OCILobIsTemporary(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_temporary) == OCI_SUCCESS
         && is_temporary) {
 
 #ifdef HAVE_RB_THREAD_BLOCKING_REGION
-        oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
         oci8_temp_lob_t *temp_lob = ALLOC(oci8_temp_lob_t);
 
         temp_lob->next = svcctx->temp_lobs;
@@ -124,11 +139,10 @@ static void oci8_lob_free(oci8_base_t *base)
         lob->base.hp.ptr = NULL;
 #else
         /* FIXME: This may stall the GC. */
-        OCILobFreeTemporary(lob->svchp, oci8_errhp, lob->base.hp.lob);
+        OCILobFreeTemporary(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob);
 #endif
     }
-    lob->svc = Qnil;
-    lob->svchp = NULL;
+    lob->svcctx = NULL;
 }
 
 static oci8_base_vtable_t oci8_lob_vtable = {
@@ -139,7 +153,7 @@ static oci8_base_vtable_t oci8_lob_vtable = {
 
 static ub4 oci8_lob_get_length(oci8_lob_t *lob)
 {
-    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+    oci8_svcctx_t *svcctx = check_svcctx(lob);
     ub4 len;
 
     chker2(OCILobGetLength_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &len),
@@ -150,7 +164,7 @@ static ub4 oci8_lob_get_length(oci8_lob_t *lob)
 static void lob_open(oci8_lob_t *lob)
 {
     if (lob->state == S_CLOSE) {
-        oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+        oci8_svcctx_t *svcctx = check_svcctx(lob);
 
         chker2(OCILobOpen_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, OCI_DEFAULT),
                &svcctx->base);
@@ -161,7 +175,7 @@ static void lob_open(oci8_lob_t *lob)
 static void lob_close(oci8_lob_t *lob)
 {
     if (lob->state == S_OPEN) {
-        oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+        oci8_svcctx_t *svcctx = check_svcctx(lob);
 
         chker2(OCILobClose_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob),
                &svcctx->base);
@@ -172,7 +186,7 @@ static void lob_close(oci8_lob_t *lob)
 static void bfile_close(oci8_lob_t *lob)
 {
     if (lob->state == S_BFILE_OPEN) {
-        oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+        oci8_svcctx_t *svcctx = check_svcctx(lob);
 
         chker2(OCILobFileClose_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob),
                &svcctx->base);
@@ -228,28 +242,26 @@ static VALUE oci8_lob_do_initialize(int argc, VALUE *argv, VALUE self, ub1 csfrm
     oci8_lob_t *lob = DATA_PTR(self);
     VALUE svc;
     VALUE val;
+    oci8_svcctx_t *svcctx;
     sword rv;
 
     rb_scan_args(argc, argv, "11", &svc, &val);
-    TO_SVCCTX(svc); /* check argument type */
+    svcctx = oci8_get_svcctx(svc);
     rv = OCIDescriptorAlloc(oci8_envhp, &lob->base.hp.ptr, OCI_DTYPE_LOB, 0, NULL);
     if (rv != OCI_SUCCESS)
         oci8_env_raise(oci8_envhp, rv);
     lob->base.type = OCI_DTYPE_LOB;
-    lob->svc = svc;
-    lob->svchp = NULL;
     lob->pos = 0;
     lob->char_width = 1;
     lob->csfrm = csfrm;
     lob->lobtype = lobtype;
     lob->state = S_NO_OPEN_CLOSE;
     oci8_link_to_parent((oci8_base_t*)lob, (oci8_base_t*)DATA_PTR(svc));
+    lob->svcctx = svcctx;
     if (!NIL_P(val)) {
-        oci8_svcctx_t *svcctx = oci8_get_svcctx(svc);
         OCI8StringValue(val);
         chker2(OCILobCreateTemporary_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, 0, csfrm, lobtype, TRUE, OCI_DURATION_SESSION),
                &svcctx->base);
-        lob->svchp = oci8_get_oci_svcctx(svc);
         oci8_lob_write(self, val);
         lob->pos = 0; /* reset the position */
     }
@@ -461,7 +473,7 @@ static VALUE oci8_lob_rewind(VALUE self)
 static VALUE oci8_lob_truncate(VALUE self, VALUE len)
 {
     oci8_lob_t *lob = DATA_PTR(self);
-    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+    oci8_svcctx_t *svcctx = check_svcctx(lob);
 
     lob_open(lob);
     chker2(OCILobTrim_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, NUM2UINT(len)),
@@ -502,7 +514,7 @@ static VALUE oci8_lob_set_size(VALUE self, VALUE len)
 static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
-    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+    oci8_svcctx_t *svcctx = check_svcctx(lob);
     ub4 length;
     ub4 nchar;
     ub4 amt;
@@ -626,7 +638,7 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
 static VALUE oci8_lob_write(VALUE self, VALUE data)
 {
     oci8_lob_t *lob = DATA_PTR(self);
-    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+    oci8_svcctx_t *svcctx = check_svcctx(lob);
     ub4 amt;
 
     lob_open(lob);
@@ -695,7 +707,7 @@ static VALUE oci8_lob_flush(VALUE self)
 static VALUE oci8_lob_get_chunk_size(VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
-    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+    oci8_svcctx_t *svcctx = check_svcctx(lob);
     ub4 len;
 
     chker2(OCILobGetChunkSize_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &len),
@@ -710,11 +722,11 @@ static VALUE oci8_lob_clone(VALUE self)
     VALUE newobj;
     boolean is_temporary;
 
-    newobj = rb_funcall(CLASS_OF(self), oci8_id_new, 1, lob->svc);
+    newobj = rb_funcall(CLASS_OF(self), oci8_id_new, 1, lob->svcctx ? lob->svcctx->base.self : Qnil);
     newlob = DATA_PTR(newobj);
     if (OCILobIsTemporary(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_temporary) == OCI_SUCCESS
         && is_temporary) {
-        oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+        oci8_svcctx_t *svcctx = check_svcctx(lob);
         chker2(OCILobLocatorAssign_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &newlob->base.hp.lob),
                &svcctx->base);
     } else {
@@ -796,16 +808,16 @@ static VALUE oci8_bfile_initialize(int argc, VALUE *argv, VALUE self)
     VALUE svc;
     VALUE dir_alias;
     VALUE filename;
+    oci8_svcctx_t *svcctx;
     int rv;
 
     rb_scan_args(argc, argv, "12", &svc, &dir_alias, &filename);
-    TO_SVCCTX(svc); /* check argument type */
+    svcctx = oci8_get_svcctx(svc);
     rv = OCIDescriptorAlloc(oci8_envhp, &lob->base.hp.ptr, OCI_DTYPE_LOB, 0, NULL);
     if (rv != OCI_SUCCESS) {
         oci8_env_raise(oci8_envhp, rv);
     }
     lob->base.type = OCI_DTYPE_LOB;
-    lob->svc = svc;
     lob->pos = 0;
     lob->char_width = 1;
     lob->csfrm = SQLCS_IMPLICIT;
@@ -817,6 +829,7 @@ static VALUE oci8_bfile_initialize(int argc, VALUE *argv, VALUE self)
         oci8_bfile_set_name(self, dir_alias, filename);
     }
     oci8_link_to_parent((oci8_base_t*)lob, (oci8_base_t*)DATA_PTR(svc));
+    lob->svcctx = svcctx;
     return Qnil;
 }
 
@@ -892,7 +905,7 @@ static VALUE oci8_bfile_set_filename(VALUE self, VALUE filename)
 static VALUE oci8_bfile_exists_p(VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
-    oci8_svcctx_t *svcctx = oci8_get_svcctx(lob->svc);
+    oci8_svcctx_t *svcctx = check_svcctx(lob);
     boolean flag;
 
     chker2(OCILobFileExists_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &flag),

@@ -1,4 +1,8 @@
 2013-03-03  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c, ext/oci8/oci8.c, ext/oci8/oci8.h:
+	    refactor oci8_lob_t.
+
+2013-03-03  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c: fix segmentation fault when the process
 	    exits on rubinius.
 

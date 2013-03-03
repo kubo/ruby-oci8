@@ -1185,12 +1185,6 @@ oci8_svcctx_t *oci8_get_svcctx(VALUE obj)
     return (oci8_svcctx_t *)oci8_get_handle(obj, cOCI8);
 }
 
-OCISvcCtx *oci8_get_oci_svcctx(VALUE obj)
-{
-    oci8_svcctx_t *svcctx = oci8_get_svcctx(obj);
-    return svcctx->base.hp.svc;
-}
-
 OCISession *oci8_get_oci_session(VALUE obj)
 {
     oci8_svcctx_t *svcctx = oci8_get_svcctx(obj);
