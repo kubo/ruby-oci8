@@ -80,6 +80,7 @@ class OCI8
       @update = update || 0
       @patch = patch || 0
       @port_update = port_update || 0
+      @vernum = (@major << 24) | (@minor << 20) | (@update << 12) | (@patch << 8) | @port_update
     end
 
     # Compares +self+ and +other+.
@@ -89,15 +90,7 @@ class OCI8
     #
     # @return [-1, 0, +1]
     def <=>(other)
-      cmp = @major <=> other.major
-      return cmp if cmp != 0
-      cmp = @minor <=> other.minor
-      return cmp if cmp != 0
-      cmp = @update <=> other.update
-      return cmp if cmp != 0
-      cmp = @patch <=> other.patch
-      return cmp if cmp != 0
-      @port_update <=> other.port_update
+      @vernum <=> other.to_i
     end
 
     # Returns an integer number contains 5-digit Oracle version.
@@ -113,7 +106,7 @@ class OCI8
     #
     # @return [Integer]
     def to_i
-      (@major << 24) | (@minor << 20) | (@update << 12) | (@patch << 8) | @port_update
+      @vernum
     end
 
     # Returns a dotted version string of the Oracle version.
@@ -139,7 +132,7 @@ class OCI8
     #
     # @return [Integer]
     def hash
-      to_i
+      @vernum
     end
 
     # @private

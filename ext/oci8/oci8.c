@@ -160,8 +160,6 @@ static oci8_base_vtable_t oci8_svcctx_vtable = {
 };
 
 static VALUE oracle_client_vernum; /* Oracle client version number */
-static ID id_at_prefetch_rows;
-static ID id_set_prefetch_rows;
 
 static VALUE oci8_s_oracle_client_vernum(VALUE klass)
 {
@@ -775,23 +773,6 @@ static VALUE oci8_break(VALUE self)
 
 /*
  * call-seq:
- *   prefetch_rows = number
- *
- * Sets the prefetch rows size. The default value is one.
- * When a select statement is executed, the OCI library allocate
- * prefetch buffer to reduce the number of network round trips by
- * retrieving specified number of rows in one round trip.
- *
- * Note: Active record adaptors set 100 by default.
- */
-static VALUE oci8_set_prefetch_rows(VALUE self, VALUE val)
-{
-    rb_ivar_set(self, id_at_prefetch_rows, val);
-    return val;
-}
-
-/*
- * call-seq:
  *   oracle_server_vernum -> an integer
  *
  * Returns a numerical format of the Oracle server version.
@@ -1147,9 +1128,6 @@ void Init_oci8(VALUE *out)
         oracle_client_vernum = INT2FIX(ORAVERNUM(major, minor, update, patch, port_update));
     }
 
-    id_at_prefetch_rows = rb_intern("@prefetch_rows");
-    id_set_prefetch_rows = rb_intern("prefetch_rows=");
-
     rb_define_const(cOCI8, "VERSION", rb_obj_freeze(rb_usascii_str_new_cstr(OCI8LIB_VERSION)));
     rb_define_singleton_method_nodoc(cOCI8, "oracle_client_vernum", oci8_s_oracle_client_vernum, 0);
     rb_define_singleton_method(cOCI8, "__get_prop", oci8_s_get_prop, 1);
@@ -1170,7 +1148,6 @@ void Init_oci8(VALUE *out)
     rb_define_method(cOCI8, "long_read_len", oci8_long_read_len, 0);
     rb_define_method(cOCI8, "long_read_len=", oci8_set_long_read_len, 1);
     rb_define_method(cOCI8, "break", oci8_break, 0);
-    rb_define_method(cOCI8, "prefetch_rows=", oci8_set_prefetch_rows, 1);
     rb_define_private_method(cOCI8, "oracle_server_vernum", oci8_oracle_server_vernum, 0);
     rb_define_method(cOCI8, "ping", oci8_ping, 0);
     rb_define_method(cOCI8, "client_identifier=", oci8_set_client_identifier, 1);

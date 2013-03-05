@@ -329,6 +329,16 @@ class OCI8
     end
   end
 
+  # Sets the prefetch rows size. The default value is one.
+  # When a select statement is executed, the OCI library allocate
+  # prefetch buffer to reduce the number of network round trips by
+  # retrieving specified number of rows in one round trip.
+  #
+  # Note: Active record adaptors set 100 by default.
+  def prefetch_rows=(num)
+    @prefetch_rows = num
+  end
+
   # @private
   def inspect
     "#<OCI8:#{username}>"

@@ -1,3 +1,7 @@
+2013-03-05  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c, lib/oci8/oci8.rb, lib/oci8/oracle_version.rb:
+	    refactoring.
+
 2013-03-03  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/oci8.rb, test/test_oci8.rb: set 'rubyoci8' as
 	    the driver name, which is displayed in
