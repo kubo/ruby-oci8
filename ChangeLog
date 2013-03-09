@@ -1,4 +1,9 @@
 2013-03-09  KUBO Takehiro  <kubo@jiubao.org>
+	* ruby-oci8.gemspec: revert the previous commit because old
+	    rubygems doesn't support:
+	       required_ruby_version = ['>= 1.8.0', '<= 2.0.0']
+
+2013-03-09  KUBO Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 2.1.5 and 2.1.4
 	* VERSION: change the version to 2.1.5.
 	* docs/platform-specific-issues.md: remove obsolete description.
