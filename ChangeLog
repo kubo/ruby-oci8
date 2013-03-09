@@ -1,3 +1,14 @@
+2013-03-09  KUBO Takehiro  <kubo@jiubao.org>
+	* NEWS: add changes between 2.1.5 and 2.1.4
+	* VERSION: change the version to 2.1.5.
+	* docs/platform-specific-issues.md: remove obsolete description.
+	* ext/oci8/extconf.rb, ext/oci8/oraconf.rb: fix to compile for
+	    Windows x64 client.
+	* ruby-oci8.gemspec: change required_ruby_version range
+	    when a binary gem includes more than one compiled object.
+	* test/test_connection_pool.rb: fix to pass tests on slow
+	    machines.
+
 2013-03-05  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c, lib/oci8/oci8.rb, lib/oci8/oracle_version.rb:
 	    refactoring.

@@ -45,9 +45,9 @@ EOS
     end
 
     # least version in so_vers
-    so_vermin = so_vers.collect do |ver|
+    dotted_vers = so_vers.collect do |ver|
       "#$1.#$2.#{$3||'0'}" if /^(?:rbx)?(\d)(\d)(\d)?/ =~ ver
-    end.sort.first
+    end.sort
 
     case so_vers.length
     when 0
@@ -55,13 +55,18 @@ EOS
     when 1
       puts "Binary gem for ruby #{so_vers.first}"
       if so_vers[0] < '2.0.0'
-        s.required_ruby_version = "~> #{so_vermin}"
+        s.required_ruby_version = "~> #{dotted_vers.first}"
       else
-        s.required_ruby_version = "= #{so_vermin}"
+        s.required_ruby_version = "= #{dotted_vers.first}"
       end
     else
       puts "Binary gem for ruby #{so_vers.join(', ')}"
-      s.required_ruby_version = ">= #{so_vermin}"
+      s.required_ruby_version = [">= #{dotted_vers.first}",
+                                 case dotted_vers.last
+                                 when '1.9.0', '1.9.1' then '< 2.0.0'
+                                 else "<= #{dotted_vers.last}"
+                                 end
+                                ]
     end
 
     FileUtils.copy so_files, 'lib', :preserve => true

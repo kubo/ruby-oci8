@@ -394,6 +394,7 @@ EOS
       nls_data_basename = ['oraociei11', 'oraociicus11', 'oraociei10', 'oraociicus10']
       @@ld_envs = %w[PATH]
       so_ext = 'dll'
+      check_proc = make_proc_to_check_cpu(is_32bit ? :i386 : :x86_64)
     when /i.86-linux/
       check_proc = make_proc_to_check_cpu(:i386)
     when /ia64-linux/

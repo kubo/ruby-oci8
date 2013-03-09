@@ -76,7 +76,7 @@ class TestConnectionPool < Test::Unit::TestCase
     threads = []
     (min_cnt + 1).times do |n|
       threads << Thread.start do
-        conns[n].exec "BEGIN DBMS_LOCK.SLEEP(2); END;"
+        conns[n].exec "BEGIN DBMS_LOCK.SLEEP(5); END;"
       end
     end
     sleep(0.5)
@@ -86,7 +86,7 @@ class TestConnectionPool < Test::Unit::TestCase
     # Execute blocking SQL statements parallel up to maximum.
     (min_cnt + 1).upto(max_cnt - 1) do |n|
       threads << Thread.start do
-        conns[n].exec "BEGIN DBMS_LOCK.SLEEP(1); END;"
+        conns[n].exec "BEGIN DBMS_LOCK.SLEEP(4); END;"
       end
     end
     sleep(0.5)

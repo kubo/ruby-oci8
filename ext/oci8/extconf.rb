@@ -225,11 +225,12 @@ when /mingw32/
   if RbConfig::MAKEFILE_CONFIG["LDSHARED"].gsub!(/-s\b/, '')
     alias :oci8_configuration_orig :configuration
     def configuration(*args)
+      prefix = [nil].pack('P').size == 4 ? '_' : ''
       oci8_configuration_orig(*args) << <<EOS
 
 # Dirty hack to get the map file.
 all__: all
-	nm $(DLLIB) | grep ' [TtBb] _[A-Za-z]' > $(TARGET).map
+	nm $(DLLIB) | grep ' [TtBb] #{prefix}[A-Za-z]' > $(TARGET).map
 	strip -s $(DLLIB)
 EOS
     end

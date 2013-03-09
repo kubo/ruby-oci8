@@ -1,5 +1,26 @@
 # @markup markdown
 
+2.1.5
+=====
+
+New Features
+------------
+
+### V$SESSION_CONNECT_INFO.CLIENT_DRIVER.
+
+'rubyoci8' is set as the driver name, which is displayed in
+V$SESSION_CONNECT_INFO.CLIENT_DRIVER when both the client and
+the server are Oracle 11g or upper.
+
+Fixed Issues
+------------
+
+-   fix segmentation fault when the process exits on rubinius.
+
+-   fix "OCI Library Initialization Error" only when the Oracle
+    instant client is 11.2.0.3 for Solaris x86 32-bit, the ruby
+    version is 1.9.3 or upper and the ruby is compiled by gcc.
+
 2.1.4
 =====
 
