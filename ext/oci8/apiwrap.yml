@@ -1343,7 +1343,7 @@ OCINlsCharSetNameToId:
             - dvoid *envhp
             - const oratext *name
 
-OCIStmtPrepare2:
+OCIStmtPrepare2_nb:
   :version: 920
   :args:
             - OCISvcCtx *svchp

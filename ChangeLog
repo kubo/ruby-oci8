@@ -1,3 +1,9 @@
+2013-03-16  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml, ext/oci8/stmt.c: call OCIStmtPrepare2()
+	    without GVL to prevent OCI8#parse from blocking ruby itself
+	    while the connection is used by another thread even though
+	    non-blocking mode is set.
+
 2013-03-09  KUBO Takehiro  <kubo@jiubao.org>
 	* ruby-oci8.gemspec: revert the previous commit because old
 	    rubygems doesn't support:
