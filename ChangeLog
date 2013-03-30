@@ -1,3 +1,8 @@
+2013-03-30  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8lib.c: fix potential SEGV when one connection
+	    is used by more than two threads and temporary lobs are
+	    freed by GC.
+
 2013-03-16  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.yml, ext/oci8/stmt.c: call OCIStmtPrepare2()
 	    without GVL to prevent OCI8#parse from blocking ruby itself

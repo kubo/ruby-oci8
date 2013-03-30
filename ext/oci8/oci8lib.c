@@ -234,64 +234,83 @@ static void *free_temp_lob(void *user_data)
     return (void*)(VALUE)rv;
 }
 
+typedef struct protected_call_arg {
+    void *(*func)(void *);
+    void *data;
+    oci8_svcctx_t *svcctx;
+} protected_call_arg_t;
+
+static VALUE protected_call(VALUE data)
+{
+    struct protected_call_arg *parg = (struct protected_call_arg*)data;
+    VALUE rv;
+
+    if (!NIL_P(parg->svcctx->executing_thread)) {
+        rb_raise(rb_eRuntimeError, "executing in another thread");
+    }
+    parg->svcctx->executing_thread = rb_thread_current();
+#ifdef HAVE_RB_THREAD_CALL_WITHOUT_GVL
+    rv = (VALUE)rb_thread_call_without_gvl(parg->func, parg->data, oci8_unblock_func, parg->svcctx);
+#else
+    rv = rb_thread_blocking_region((VALUE(*)(void*))parg->func, parg->data, oci8_unblock_func, parg->svcctx);
+#endif
+    if ((sword)rv == OCI_ERROR) {
+        if (oci8_get_error_code(oci8_errhp) == 1013) {
+            rb_raise(eOCIBreak, "Canceled by user request.");
+        }
+    }
+    return rv;
+}
+
 /* ruby 1.9 */
 sword oci8_call_without_gvl(oci8_svcctx_t *svcctx, void *(*func)(void *), void *data)
 {
     OCIError *errhp = oci8_errhp;
+    protected_call_arg_t parg;
+    sword rv;
+    int state;
 
     if (!NIL_P(svcctx->executing_thread)) {
-        rb_raise(rb_eRuntimeError /* FIXME */, "executing in another thread");
+        rb_raise(rb_eRuntimeError, "executing in another thread");
     }
-
     if (!svcctx->suppress_free_temp_lobs) {
-        oci8_temp_lob_t *lob = svcctx->temp_lobs;
-        while (lob != NULL) {
-            oci8_temp_lob_t *lob_next = lob->next;
+        oci8_temp_lob_t *lob;
+        while ((lob = svcctx->temp_lobs) != NULL) {
+            svcctx->temp_lobs = lob->next;
 
             if (svcctx->non_blocking) {
                 free_temp_lob_arg_t arg;
-                sword rv;
 
                 arg.svcctx = svcctx;
                 arg.svchp = svcctx->base.hp.svc;
                 arg.errhp = errhp;
                 arg.lob = lob->lob;
 
-                svcctx->executing_thread = rb_thread_current();
-#ifdef HAVE_RB_THREAD_CALL_WITHOUT_GVL
-                rv = (sword)(VALUE)rb_thread_call_without_gvl(free_temp_lob, &arg, oci8_unblock_func, svcctx);
-#else
-                rv = (sword)rb_thread_blocking_region((VALUE(*)(void*))free_temp_lob, &arg, oci8_unblock_func, svcctx);
-#endif
-                if (rv == OCI_ERROR) {
-                    if (oci8_get_error_code(errhp) == 1013) {
-                        rb_raise(eOCIBreak, "Canceled by user request.");
-                    }
+                parg.svcctx = svcctx;
+                parg.func = free_temp_lob;
+                parg.data = &arg;
+
+                rb_protect(protected_call, (VALUE)&parg, &state);
+                if (state) {
+                    lob->next = svcctx->temp_lobs;
+                    svcctx->temp_lobs = lob;
+                    rb_jump_tag(state);
                 }
             } else {
                 OCILobFreeTemporary(svcctx->base.hp.svc, errhp, lob->lob);
             }
             OCIDescriptorFree(lob->lob, OCI_DTYPE_LOB);
-
             xfree(lob);
-            svcctx->temp_lobs = lob = lob_next;
         }
     }
 
     if (svcctx->non_blocking) {
-        sword rv;
-
-        svcctx->executing_thread = rb_thread_current();
-        /* Note: executing_thread is cleard at the end of the blocking function. */
-#ifdef HAVE_RB_THREAD_CALL_WITHOUT_GVL
-        rv = (sword)(VALUE)rb_thread_call_without_gvl(func, data, oci8_unblock_func, svcctx);
-#else
-        rv = (sword)rb_thread_blocking_region((VALUE(*)(void*))func, data, oci8_unblock_func, svcctx);
-#endif
-        if (rv == OCI_ERROR) {
-            if (oci8_get_error_code(errhp) == 1013) {
-                rb_raise(eOCIBreak, "Canceled by user request.");
-            }
+        parg.svcctx = svcctx;
+        parg.func = func;
+        parg.data = data;
+        rv = (sword)rb_protect(protected_call, (VALUE)&parg, &state);
+        if (state) {
+            rb_jump_tag(state);
         }
         return rv;
     } else {
