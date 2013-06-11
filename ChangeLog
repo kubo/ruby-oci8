@@ -1,3 +1,9 @@
+2013-06-11  KUBO Takehiro  <kubo@jiubao.org>
+	* ruby-oci8.gemspec: fix ruby version checking in binary gem.
+	    Gem::ruby_version of ruby 2.0.0p195 is 2.0.0.195, which
+	    doesn't match '= 2.0.0'.
+	    (github issue #36 reported by sodonnel)
+
 2013-03-30  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8lib.c: fix potential SEGV when one connection
 	    is used by more than two threads and temporary lobs are

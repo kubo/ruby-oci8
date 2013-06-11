@@ -57,7 +57,7 @@ EOS
       if so_vers[0] < '2.0.0'
         s.required_ruby_version = "~> #{so_vermin}"
       else
-        s.required_ruby_version = "= #{so_vermin}"
+        s.required_ruby_version = "~> #{so_vermin}.0"
       end
     else
       puts "Binary gem for ruby #{so_vers.join(', ')}"
