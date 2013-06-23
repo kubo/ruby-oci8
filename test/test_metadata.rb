@@ -1482,4 +1482,49 @@ EOS
     @conn.exec("DROP SEQUENCE TEST_SEQ_OCI8")
   end
 
+  def test_synonym_metadata
+    begin
+      @conn.exec("DROP SYNONYM test_synonym")
+    rescue OCIError
+      raise if $!.code != 1434 # ORA-01434: private synonym to be dropped does not exist
+    end
+
+    # private synonym
+    begin
+      @conn.exec("CREATE SYNONYM test_synonym FOR foo.bar@baz.quz")
+      [
+       @conn.describe_any('test_synonym'),
+       @conn.describe_synonym('Test_Synonym'),
+       @conn.describe_any(@conn.username + '.test_synonym'),
+       @conn.describe_synonym(@conn.username + '.Test_Synonym'),
+      ].each do |desc|
+        assert_equal(@conn.username, desc.obj_schema)
+        assert_equal('TEST_SYNONYM', desc.obj_name)
+        assert_equal('FOO', desc.schema_name)
+        assert_equal('BAR', desc.name)
+        assert_equal('BAZ.QUZ', desc.link)
+        assert_equal('FOO.BAR@BAZ.QUZ', desc.translated_name)
+      end
+      @conn.exec("DROP SYNONYM test_synonym")
+    rescue OCIError
+      raise if $!.code != 1031 # ORA-01031: insufficient privileges
+    end
+
+    # public synonym
+    [
+     @conn.describe_any('sdo_geometry'),
+     @conn.describe_synonym('sdo_geometry'),
+     @conn.describe_any('public.sdo_geometry'),
+     @conn.describe_synonym('PUBLIC.sdo_geometry'),
+    ].each do |desc|
+      assert_equal('PUBLIC', desc.obj_schema)
+      assert_equal('SDO_GEOMETRY', desc.obj_name)
+      assert_equal('MDSYS', desc.schema_name)
+      assert_equal('SDO_GEOMETRY', desc.name)
+      assert_equal(nil, desc.link)
+      assert_equal('MDSYS.SDO_GEOMETRY', desc.translated_name)
+    end
+
+  end
+
 end # TestMetadata

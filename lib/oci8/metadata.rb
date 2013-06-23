@@ -1994,7 +1994,13 @@ class OCI8
   # @param [String] object_name
   # @return [a subclass of OCI8::Metadata::Base]
   def describe_any(object_name)
-    __describe(object_name, OCI8::Metadata::Unknown, true)
+    if /^PUBLIC\.(.*)/i =~ object_name
+      md = __describe($1, OCI8::Metadata::Unknown, true)
+      raise OCIError.new(4043, object_name) if md.obj_schema != 'PUBLIC'
+      md
+    else
+      __describe(object_name, OCI8::Metadata::Unknown, true)
+    end
   end
   # Returns table or view information. If the name is a current schema's synonym
   # name or a public synonym name, it returns table or view information which
@@ -2066,7 +2072,13 @@ class OCI8
   # @param [String] synonym_name
   # @return [OCI8::Metadata::Synonym]
   def describe_synonym(synonym_name, check_public_also = true)
-    __describe(synonym_name, OCI8::Metadata::Synonym, check_public_also)
+    if /^PUBLIC\.(.*)/i =~ synonym_name
+      md = __describe($1, OCI8::Metadata::Synonym, true)
+      raise OCIError.new(4043, synonym_name) if md.obj_schema != 'PUBLIC'
+      md
+    else
+      __describe(synonym_name, OCI8::Metadata::Synonym, check_public_also)
+    end
   end
   # Returns sequence information
   #
