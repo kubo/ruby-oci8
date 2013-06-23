@@ -1,4 +1,10 @@
 2013-06-23  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/cursor.rb, lib/oci8/object.rb: fix to bind object types by
+	    name as OCI8::Cursor#bind_param(pos, val, :named_type, typename).
+	* test/test_object.rb: fix to test OCI8::Cursor#bind_param(pos, val,
+	    :named_type, typename).
+
+2013-06-23  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/metadata.rb: OCI8#describe_synonym and OCI8#describe_any
 	    accept 'PUBLIC.XXX' as a public synonym name.
 	* test/test_metadata.rb: add tests for OCI8#describe_synonym.

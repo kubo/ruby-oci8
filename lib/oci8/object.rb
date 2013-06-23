@@ -71,6 +71,29 @@ EOS
     OCI8::TDO.new(self, metadata, klass)
   end
 
+  # Returns the type descriptor object which correspond to the given type name.
+  #
+  # @param [String] typename
+  # @return [OCI8::TDO]
+  #
+  # @private
+  def get_tdo_by_typename(typename)
+    tdo = @name_to_tdo && @name_to_tdo[typename]
+    return tdo if tdo
+
+    metadata = describe_any(typename)
+    if metadata.is_a? OCI8::Metadata::Synonym
+      metadata = describe_any(metadata.translated_name)
+    end
+    unless metadata.is_a? OCI8::Metadata::Type
+      raise "unknown typename #{typename}"
+    end
+    tdo = get_tdo_by_metadata(metadata)
+
+    @name_to_tdo[typename] = tdo
+    tdo
+  end
+
   # A helper class to bind arguments.
   #
   # @private

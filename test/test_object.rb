@@ -447,7 +447,7 @@ BEGIN
 END;
 EOS
     [nil, [], [1, nil, 3]].each do |ary|
-      csr.bind_param(:in, ary, RbTestIntArray)
+      csr.bind_param(:in, ary, :named_type, 'rb_test_int_array')
       csr.bind_param(:cnt, nil, Integer)
       csr.bind_param(:out1, nil, Integer)
       csr.bind_param(:out2, nil, Integer)
