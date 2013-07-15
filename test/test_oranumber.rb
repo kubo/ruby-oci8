@@ -1,12 +1,11 @@
 # Low-level API
 require 'oci8'
-require 'test/unit'
 require File.dirname(__FILE__) + '/config'
 require 'yaml'
 require 'bigdecimal'
 require 'rational'
 
-class TestOraNumber < Test::Unit::TestCase
+class TestOraNumber < MiniTest::Unit::TestCase
 
   LARGE_RANGE_VALUES = [
     "12345678901234567890123456789012345678",
@@ -476,7 +475,7 @@ EOS
                           Proc.new {|x, y| x.round_prec(y)})
     else
       # Oracle 8.0 client
-      assert_raise NoMethodError do
+      assert_raises NoMethodError do
         OraNumber.new(1).round_prec(1)
       end
     end
@@ -491,7 +490,7 @@ EOS
                           Proc.new {|x, y| x.shift(y)})
     else
       # Oracle 8.0 client
-      assert_raise NoMethodError do
+      assert_raises NoMethodError do
         OraNumber.new(1).shift(1)
       end
     end
@@ -702,7 +701,7 @@ EOS
 
   def test_new_from_bigdecimal
     ["+Infinity", "-Infinity", "NaN"].each do |n|
-      assert_raise TypeError do
+      assert_raises TypeError do
         OraNumber.new(BigDecimal.new(n))
       end
     end

@@ -1,8 +1,7 @@
 require 'oci8'
-require 'test/unit'
 require File.dirname(__FILE__) + '/config'
 
-class TestAppInfo < Test::Unit::TestCase
+class TestAppInfo < MiniTest::Unit::TestCase
 
   def setup
     @conn = get_oci8_connection
@@ -14,7 +13,7 @@ class TestAppInfo < Test::Unit::TestCase
     @conn.client_identifier = client_id
     assert_equal(client_id, @conn.select_one("SELECT SYS_CONTEXT('USERENV', 'CLIENT_IDENTIFIER') FROM DUAL")[0]);
     # check the first character
-    assert_raise ArgumentError do
+    assert_raises ArgumentError do
       @conn.client_identifier = ':bad_identifier'
     end
 

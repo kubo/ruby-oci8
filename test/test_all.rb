@@ -1,7 +1,6 @@
 srcdir = File.dirname(__FILE__)
 
 require 'oci8'
-require 'test/unit'
 require "#{srcdir}/config"
 
 require "#{srcdir}/test_oradate"
@@ -46,9 +45,4 @@ unless dbi_not_found
   if $test_clob
     require "#{srcdir}/test_dbi_clob"
   end
-end
-
-#Test::Unit::AutoRunner.run(true, true)
-if defined? Test::Unit::AutoRunner
-  Test::Unit::AutoRunner.run()
 end

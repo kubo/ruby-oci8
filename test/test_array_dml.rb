@@ -1,8 +1,7 @@
 require 'oci8'
-require 'test/unit'
 require File.dirname(__FILE__) + '/config'
 
-class TestArrayDML < Test::Unit::TestCase
+class TestArrayDML < MiniTest::Unit::TestCase
   def setup
     @conn = get_oci8_connection
   end
@@ -131,7 +130,7 @@ EOS
       v_arr << i.to_s if i != max_array_size
     end
     cursor[1] = n_arr
-    assert_raise(RuntimeError) { cursor[2] = v_arr }
+    assert_raises(RuntimeError) { cursor[2] = v_arr }
     cursor.close
     
     drop_table('test_table')
@@ -154,9 +153,9 @@ EOS
     cursor.bind_param_array(1, [1, 2, 3])
     cursor.bind_param_array(2, ['happy', 'new', 'year'])
     cursor.bind_param_array(3, [Time.gm(1990,1,1), Time.gm(2000,1,1), Time.gm(2010,1,1)])
-    assert_nothing_raised() { cursor.exec_array }
+    cursor.exec_array
     cursor.max_array_size = 2
-    assert_raise(RuntimeError) { cursor.exec_array }
+    assert_raises(RuntimeError) { cursor.exec_array }
     drop_table('test_table')
   end
 
@@ -184,7 +183,7 @@ EOS
     end
     cursor[1] = n_arr
     cursor[2] = v_arr
-    assert_nothing_raised() { cursor.exec_array }
+    cursor.exec_array
     cursor.close
 
     cursor = @conn.parse("SELECT * FROM test_table ORDER BY N")
@@ -213,7 +212,7 @@ EOS
     cursor.max_array_size = max_array_size
     cursor.bind_param_array(1, nil, Fixnum)
     cursor.bind_param_array(2, nil, String)
-    assert_raise(RuntimeError) { cursor.exec_array }
+    assert_raises(RuntimeError) { cursor.exec_array }
     cursor.close
     drop_table('test_table')
   end

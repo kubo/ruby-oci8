@@ -1,8 +1,7 @@
 require 'oci8'
-require 'test/unit'
 require File.dirname(__FILE__) + '/config'
 
-class TestConnectionPool < Test::Unit::TestCase
+class TestConnectionPool < MiniTest::Unit::TestCase
 
   def create_pool(min, max, incr)
     OCI8::ConnectionPool.new(min, max, incr, $dbuser, $dbpass, $dbname)
@@ -48,7 +47,7 @@ class TestConnectionPool < Test::Unit::TestCase
       if cnt == 0
         unless conn.non_blocking?
           non_blocking = false
-          assert_raise(RuntimeError) do
+          assert_raises(RuntimeError) do
             # This should raise "Could not set non-blocking mode to a connection allocated from OCI8::ConnectionPool."
             conn.non_blocking = true
           end

@@ -1,8 +1,7 @@
 require 'oci8'
-require 'test/unit'
 require File.dirname(__FILE__) + '/config'
 
-class TestOracleVersion < Test::Unit::TestCase
+class TestOracleVersion < MiniTest::Unit::TestCase
 
   def test_init
     oraver = OCI8::OracleVersion.new('8.1.6.2.3')
@@ -67,4 +66,3 @@ class TestOracleVersion < Test::Unit::TestCase
   end
 end
 
-Test::Unit::AutoRunner.run() if $0 == __FILE__

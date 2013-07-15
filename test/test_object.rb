@@ -1,5 +1,4 @@
 require 'oci8'
-require 'test/unit'
 require File.dirname(__FILE__) + '/config'
 
 conn = OCI8.new($dbuser, $dbpass, $dbname)
@@ -49,7 +48,7 @@ EOS
 class RbTestIntArray < OCI8::Object::Base
 end
 
-class TestObj1 < Test::Unit::TestCase
+class TestObj1 < MiniTest::Unit::TestCase
   Delta = 0.00001
 
   def setup
@@ -71,7 +70,7 @@ class TestObj1 < Test::Unit::TestCase
   end
 
   class ExpectedVal
-    include Test::Unit::Assertions
+    include MiniTest::Assertions
 
     attr_reader :n
     attr_reader :int_val
@@ -97,8 +96,11 @@ class TestObj1 < Test::Unit::TestCase
     attr_reader :date_val
 #    attr_reader :date_array_val
 
+    attr_accessor :assertions
+
     def initialize
       @n = 0.0
+      @assertions = 0
     end
 
     def to_test_date(n)
@@ -303,9 +305,7 @@ class TestObj1 < Test::Unit::TestCase
     while expected_val.next
       obj = RbTestObj.new(expected_val.n)
       expected_val.should_be_equal(obj)
-      assert_nothing_raised do
-        obj.inspect
-      end
+      obj.inspect
     end
   end
 
@@ -318,10 +318,7 @@ class TestObj1 < Test::Unit::TestCase
   end
 
   def _test_implicit_constructor2 # TODO
-    obj = nil
-    assert_nothing_raised do
-      obj = RbTestObj.new(nil, nil, nil)
-    end
+    obj = RbTestObj.new(nil, nil, nil)
     assert_nil(obj.int_val)
     assert_nil(obj.flt_val)
     assert_nil(obj.str_val)

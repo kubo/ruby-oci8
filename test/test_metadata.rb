@@ -1,8 +1,7 @@
 require 'oci8'
-require 'test/unit'
 require File.dirname(__FILE__) + '/config'
 
-class TestMetadata < Test::Unit::TestCase
+class TestMetadata < MiniTest::Unit::TestCase
 
   def setup
     @conn = get_oci8_connection
@@ -653,8 +652,8 @@ EOS
       assert_equal(false, desc.is_temporary?)
       assert_equal(false, desc.is_typed?)
       assert_nil(desc.duration)
-      assert_not_nil(desc.dba)
-      assert_not_nil(desc.tablespace)
+      refute_nil(desc.dba)
+      refute_nil(desc.tablespace)
       assert_equal(false, desc.clustered?)
       assert_equal(false, desc.partitioned?)
       assert_equal(false, desc.index_only?)
@@ -682,8 +681,8 @@ EOS
       assert_equal(true, desc.is_temporary?)
       assert_equal(false, desc.is_typed?)
       assert_equal(:transaction, desc.duration)
-      assert_not_nil(desc.dba)
-      assert_not_nil(desc.tablespace)
+      refute_nil(desc.dba)
+      refute_nil(desc.tablespace)
       assert_equal(false, desc.clustered?)
       assert_equal(false, desc.partitioned?)
       assert_equal(false, desc.index_only?)
@@ -712,8 +711,8 @@ EOS
       assert_equal(true, desc.is_temporary?)
       assert_equal(false, desc.is_typed?)
       assert_equal(:session, desc.duration)
-      assert_not_nil(desc.dba)
-      assert_not_nil(desc.tablespace)
+      refute_nil(desc.dba)
+      refute_nil(desc.tablespace)
       assert_equal(false, desc.clustered?)
       assert_equal(false, desc.partitioned?)
       assert_equal(false, desc.index_only?)
@@ -744,8 +743,8 @@ EOS
       assert_equal(false, desc.is_temporary?)
       assert_equal(true, desc.is_typed?)
       assert_equal(nil, desc.duration)
-      assert_not_nil(desc.dba)
-      assert_not_nil(desc.tablespace)
+      refute_nil(desc.dba)
+      refute_nil(desc.tablespace)
       assert_equal(false, desc.clustered?)
       assert_equal(false, desc.partitioned?)
       assert_equal(false, desc.index_only?)
@@ -775,8 +774,8 @@ EOS
       assert_equal(false, desc.is_temporary?)
       assert_equal(false, desc.is_typed?)
       assert_equal(nil, desc.duration)
-      assert_not_nil(desc.dba)
-      assert_not_nil(desc.tablespace)
+      refute_nil(desc.dba)
+      refute_nil(desc.tablespace)
       assert_equal(false, desc.clustered?)
       assert_equal(false, desc.partitioned?)
       assert_equal(true, desc.index_only?)

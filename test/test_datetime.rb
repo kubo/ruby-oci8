@@ -1,9 +1,8 @@
 require 'oci8'
-require 'test/unit'
 require File.dirname(__FILE__) + '/config'
 require 'scanf'
 
-class TestDateTime < Test::Unit::TestCase
+class TestDateTime < MiniTest::Unit::TestCase
 
   def timezone_string(tzh, tzm)
     if tzh >= 0
@@ -247,7 +246,7 @@ EOS
   def test_timezone
     begin
       # temporarily change the mapping to test OCI8::BindType::Util.default_timezone.
-      assert_raise(ArgumentError) do
+      assert_raises(ArgumentError) do
         OCI8::BindType::Util.default_timezone = :invalid_value
       end
 

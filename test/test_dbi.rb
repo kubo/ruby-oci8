@@ -1,9 +1,8 @@
 require 'dbi'
 require 'oci8'
-require 'test/unit'
 require File.dirname(__FILE__) + '/config'
 
-class TestDBI < Test::Unit::TestCase
+class TestDBI < MiniTest::Unit::TestCase
 
   def setup
     @dbh = get_dbi_connection()

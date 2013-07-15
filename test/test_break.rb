@@ -1,10 +1,9 @@
 # High-level API
 require 'oci8'
-require 'test/unit'
 require 'timeout'
 require File.dirname(__FILE__) + '/config'
 
-class TestBreak < Test::Unit::TestCase
+class TestBreak < MiniTest::Unit::TestCase
 
   def setup
     @conn = get_oci8_connection
@@ -107,7 +106,7 @@ class TestBreak < Test::Unit::TestCase
       # MRI and Rubinius 2.0.0
       expected = Timeout::Error
     end
-    assert_raise(expected) do
+    assert_raises(expected) do
       Timeout.timeout(1) do
         @conn.exec("BEGIN DBMS_LOCK.SLEEP(5); END;")
       end

@@ -1,23 +1,23 @@
 require 'dbi'
 require 'oci8'
-require 'test/unit'
 require File.dirname(__FILE__) + '/config'
 
-class TestDbiCLob < Test::Unit::TestCase
+class TestDbiCLob < MiniTest::Unit::TestCase
 
   def setup
     @dbh = get_dbi_connection()
+    drop_table('test_table')
+    @dbh.execute('CREATE TABLE test_table (filename VARCHAR2(40), content CLOB)')
   end
 
   def test_insert
     filename = File.basename($lobfile)
-    @dbh.do("DELETE FROM test_clob WHERE filename = :1", filename)
 
     # insert an empty clob and get the rowid.
-    rowid = @dbh.execute("INSERT INTO test_clob(filename, content) VALUES (:1, EMPTY_CLOB())", filename) do |sth|
+    rowid = @dbh.execute("INSERT INTO test_table(filename, content) VALUES (:1, EMPTY_CLOB())", filename) do |sth|
       sth.func(:rowid)
     end
-    lob = @dbh.select_one("SELECT content FROM test_clob WHERE filename = :1 FOR UPDATE", filename)[0]
+    lob = @dbh.select_one("SELECT content FROM test_table WHERE filename = :1 FOR UPDATE", filename)[0]
     begin
       open($lobfile) do |f|
         while f.gets()
@@ -32,7 +32,7 @@ class TestDbiCLob < Test::Unit::TestCase
   def test_read
     filename = File.basename($lobfile)
     test_insert() # first insert data.
-    lob = @dbh.select_one("SELECT content FROM test_clob WHERE filename = :1 FOR UPDATE", filename)[0]
+    lob = @dbh.select_one("SELECT content FROM test_table WHERE filename = :1 FOR UPDATE", filename)[0]
     begin
       open($lobfile) do |f|
         while buf = lob.read($lobreadnum)

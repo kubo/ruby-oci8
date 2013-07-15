@@ -1,9 +1,8 @@
 # Low-level API
 require 'oci8'
-require 'test/unit'
 require File.dirname(__FILE__) + '/config'
 
-class TestCLob < Test::Unit::TestCase
+class TestCLob < MiniTest::Unit::TestCase
 
   def setup
     @conn = get_oci8_connection

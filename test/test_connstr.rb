@@ -1,8 +1,7 @@
 require 'oci8'
-require 'test/unit'
 require File.dirname(__FILE__) + '/config'
 
-class TestConnStr < Test::Unit::TestCase
+class TestConnStr < MiniTest::Unit::TestCase
   TEST_CASES =
     [
      # success cases:
@@ -77,5 +76,3 @@ class TestConnStr < Test::Unit::TestCase
     end
   end
 end
-
-Test::Unit::AutoRunner.run() if $0 == __FILE__

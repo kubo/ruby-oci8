@@ -1,10 +1,9 @@
 require 'oci8'
-require 'test/unit'
 require File.dirname(__FILE__) + '/config'
 require 'bigdecimal'
 require 'rational'
 
-class TestOCI8 < Test::Unit::TestCase
+class TestOCI8 < MiniTest::Unit::TestCase
 
   def setup
     @conn = get_oci8_connection
