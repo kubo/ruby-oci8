@@ -29,6 +29,10 @@ if OCI8.respond_to? :encoding
   require "#{srcdir}/test_encoding"
 end
 
+if $oracle_version >= OCI8::ORAVER_12_1
+  require "#{srcdir}/test_package_type"
+end
+
 # Ruby/DBI
 begin
   require 'dbi'

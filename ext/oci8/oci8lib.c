@@ -508,16 +508,19 @@ void *oci8_find_symbol(const char *symbol_name)
             "libclntsh.a(shr.o)",
 #elif defined(__hppa)
             /* HP-UX(PA-RISC) */
+            "libclntsh.sl.12.1",
             "libclntsh.sl.11.1",
             "libclntsh.sl.10.1",
             "libclntsh.sl.9.0",
             "libclntsh.sl.8.0",
 #elif defined(__APPLE__)
             /* Mac OS X */
+            "libclntsh.dylib.12.1",
             "libclntsh.dylib.11.1",
             "libclntsh.dylib.10.1",
 #else
             /* Linux, Solaris and HP-UX(IA64) */
+            "libclntsh.so.12.1",
             "libclntsh.so.11.1",
             "libclntsh.so.10.1",
             "libclntsh.so.9.0",

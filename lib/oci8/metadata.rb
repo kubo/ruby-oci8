@@ -248,6 +248,12 @@ class OCI8
                                 "TIMESTAMP(#{fsprecision}) WITH LOCAL TIME ZONE"
                               end
                             end]
+      DATA_TYPE_MAP[245] = [:record,
+                            Proc.new do |p|
+                              "#{p.schema_name}.#{p.type_name}"
+                            end]
+      DATA_TYPE_MAP[252] = [:boolean, "BOOLEAN"]
+      DATA_TYPE_MAP[266] = [:pls_integer, "PLS_INTEGER"]
 
       def __data_type # :nodoc:
         return @data_type if defined? @data_type
@@ -337,6 +343,9 @@ class OCI8
         #when 228; :sysfirst   # OCI_TYPECODE_SYSFIRST
         #when 235; :syslast    # OCI_TYPECODE_SYSLAST
         when 266; :pls_integer # OCI_TYPECODE_PLS_INTEGER
+        when 250; :record      # OCI_TYPECODE_RECORD
+        when 251; :itable      # OCI_TYPECODE_ITABLE
+        when 252; :boolean     # OCI_TYPECODE_BOOLEAN
         end
       end
     end
@@ -632,6 +641,12 @@ class OCI8
       end
       private :list_subprograms
 
+      # package type list
+      def list_types # :nodoc:
+        __param(137) # OCI_ATTR_LIST_PKG_TYPES
+      end
+      private :list_types
+
       # Returns +true+ if the package subprograms have
       # {invoker's rights}[http://download.oracle.com/docs/cd/B28359_01/appdev.111/b28370/subprograms.htm#i18574].
       # Otherwise, +false+.
@@ -645,6 +660,22 @@ class OCI8
       def subprograms
         @subprograms ||= list_subprograms.to_a.each do |prog|
           prog.instance_variable_set(:@is_standalone, false)
+        end
+      end
+
+      if OCI8.oracle_client_version < ORAVER_12_1
+        def types
+          raise "This version of the Oracle client does not support PL/SQL package type descriptions."
+        end
+      else
+        # Returns an array of types defined within the Package.
+        #
+        # @return [array of OCI8::Metadata::Type]
+        # @since 2.1.6
+        def types
+          @types ||= list_types.to_a.each do |type|
+            type.instance_variable_set(:@is_standalone, false)
+          end
         end
       end
     end
@@ -1648,8 +1679,9 @@ class OCI8
         #when OCI_LTYPE_TABLE_ALIAS;   offset = ?
         #when OCI_LTYPE_VARIABLE_TYPE; offset = ?
         #when OCI_LTYPE_NAME_VALUE;    offset = ?
+        when 15; offset = 0 # OCI_LTYPE_PACKAGE_TYPE
         else
-          raise NotImplementedError, "unsupported list type #{list.ltype}"
+          raise NotImplementedError, "unsupported list type #{ltype}"
         end
         ary = []
         0.upto(num_params - 1) do |i|

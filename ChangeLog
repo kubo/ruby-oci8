@@ -1,3 +1,12 @@
+2013-07-22  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8lib.c, lib/oci8.rb.in, lib/oci8/metadata.rb: Support
+	    package type description. It is a new feature of Oracle 12c.
+	* test/setup_test_package.sql, test/test_all.rb,
+	  test/test_package_type.rb: Add tests for package type description.
+
+2013-07-15  KUBO Takehiro  <kubo@jiubao.org>
+	* test/*.rb: Use MiniTest instead of Test::Unit.
+
 2013-06-23  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/cursor.rb, lib/oci8/object.rb: fix to bind object types by
 	    name as OCI8::Cursor#bind_param(pos, val, :named_type, typename).
