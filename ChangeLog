@@ -1,6 +1,12 @@
+2013-07-24  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/metadata.rb, test/test_package_type.rb:
+	    Add OCI8::Metadata::Type#package_name and
+	    OCI8::Metadata::ArgBase#has_default?.
+
 2013-07-22  KUBO Takehiro  <kubo@jiubao.org>
-	* ext/oci8/oci8lib.c, lib/oci8.rb.in, lib/oci8/metadata.rb: Support
-	    package type description. It is a new feature of Oracle 12c.
+	* ext/oci8/oci8lib.c, lib/oci8.rb.in, lib/oci8/metadata.rb: Add
+	    OCI8::Metadata::Package:types to support package type
+	    description. It is a new feature of Oracle 12c.
 	* test/setup_test_package.sql, test/test_all.rb,
 	  test/test_package_type.rb: Add tests for package type description.
 

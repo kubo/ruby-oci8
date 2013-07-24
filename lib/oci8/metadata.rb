@@ -882,6 +882,15 @@ class OCI8
         attr_get_string(OCI_ATTR_SUPERTYPE_NAME) if is_subtype?
       end
 
+      # Returns the package name if the type is a package type.
+      # Otherwise, +nil+.
+      #
+      # @return [String or nil]
+      # @since 2.1.6
+      def package_name
+        attr_get_string(12, false) # OCI_ATTR_PACKAGE_NAME
+      end
+
       # Returns attribute information of the type.
       #
       # @return [array of OCI8::Metadata::TypeAttr]
@@ -1518,8 +1527,19 @@ class OCI8
       end
 
       # Indicates whether an argument has a default
+      #
+      # @return [1 or 0]
+      # @deprecated
       def has_default
         attr_get_ub1(OCI_ATTR_HAS_DEFAULT)
+      end
+
+      # Indicates whether an argument has a default
+      #
+      # @return [true or false]
+      # @since 2.1.6
+      def has_default?
+        __boolean(OCI_ATTR_HAS_DEFAULT)
       end
 
       # The list of arguments at the next level (when the argument is
