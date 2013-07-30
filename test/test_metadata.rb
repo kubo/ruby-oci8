@@ -8,7 +8,7 @@ class TestMetadata < MiniTest::Unit::TestCase
   end
 
   def teardown
-    @conn.logoff
+    @conn.logoff if @conn
   end
 
   def drop_type(name, drop_body = false)
@@ -1524,6 +1524,13 @@ EOS
       assert_equal('MDSYS.SDO_GEOMETRY', desc.translated_name)
     end
 
+  end
+
+  def test_access_metadata_after_logoff
+    metadata = @conn.describe_any('MDSYS.SDO_GEOMETRY')
+    @conn.logoff
+    @conn = nil
+    metadata.inspect # This should not cause segmentation fault.
   end
 
 end # TestMetadata

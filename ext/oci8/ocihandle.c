@@ -140,6 +140,10 @@ static VALUE attr_get_common(int argc, VALUE *argv, VALUE self, enum datatype da
     ub4 size = 0;
     sword rv;
 
+    if (base->type == 0) {
+        return Qnil;
+    }
+
     v.ub8val = MAGIC_NUMBER;
     rb_scan_args(argc, argv, "11", &attr_type, &strict);
     if (argc == 1) {

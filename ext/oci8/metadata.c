@@ -154,6 +154,7 @@ static VALUE oci8_do_describe(VALUE self, void *objptr, ub4 objlen, ub1 objtype,
     chker2(OCIDescribeAny_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, objptr, objlen,
                              objtype, OCI_DEFAULT, (ub1)FIX2INT(type), desc->hp.dschp),
            &svcctx->base);
+    oci8_link_to_parent(desc, &svcctx->base);
     chker2(OCIAttrGet(desc->hp.dschp, OCI_HTYPE_DESCRIBE, &parmhp, 0, OCI_ATTR_PARAM, oci8_errhp),
            &svcctx->base);
     return oci8_metadata_create(parmhp, self, obj);
