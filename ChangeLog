@@ -1,3 +1,9 @@
+2013-08-03  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/metadata.rb: fix undefined method 'char_used?' when
+	    OCI8::Metadata::Argument#inspect is called.
+	* test/test_metadata.rb: refactor and add tests for #inspect methods.
+	* test/test_package_type.rb: add some test data.
+
 2013-07-30  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/metadata.c, ext/oci8/ocihandle.c, test/test_metadata.rb:
 	    Fix segmentation fault when metadata are accessed after the

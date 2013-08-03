@@ -110,7 +110,7 @@ class OCI8
                           Proc.new do |p|
                             if p.charset_form == :nchar
                               "NVARCHAR2(#{p.char_size})"
-                            elsif p.char_used?
+                            elsif p.respond_to?(:char_used?) && p.char_used?
                               "VARCHAR2(#{p.char_size} CHAR)"
                             else
                               "VARCHAR2(#{p.data_size})"

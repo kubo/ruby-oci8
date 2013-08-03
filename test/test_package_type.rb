@@ -68,9 +68,12 @@ class TestPackageType < MiniTest::Unit::TestCase
       :is_final_type? => true,
       :is_instantiable_type? => true,
       :is_subtype? => false,
+      :supertype_schema_name => nil,
+      :supertype_name => nil,
       :package_name => nil,
       :type_attrs => [],
       #:type_methods => [],
+      :inspect => '#<OCI8::Metadata::Type:(0) SYS.INTEGER>', # TODO: change to "INTEGER"
     }
 
     pls_integer_type_attrs = {
@@ -96,9 +99,12 @@ class TestPackageType < MiniTest::Unit::TestCase
       :is_final_type? => true,
       :is_instantiable_type? => true,
       :is_subtype? => false,
+      :supertype_schema_name => nil,
+      :supertype_name => nil,
       :package_name => nil,
       :type_attrs => [],
       #:type_methods => [],
+      :inspect => '#<OCI8::Metadata::Type:(0) SYS.PL/SQL PLS INTEGER>', # TODO: change to "PLS_INTEGER"
     }
 
     boolean_type_attrs = {
@@ -124,9 +130,12 @@ class TestPackageType < MiniTest::Unit::TestCase
       :is_final_type? => true,
       :is_instantiable_type? => true,
       :is_subtype? => false,
+      :supertype_schema_name => nil,
+      :supertype_name => nil,
       :package_name => nil,
       :type_attrs => [],
       #:type_methods => [],
+      :inspect => '#<OCI8::Metadata::Type:(0) SYS.PL/SQL BOOLEAN>', # TODO: change to "BOOLEAN"
     }
 
     varchar2_type_attrs = {
@@ -152,9 +161,12 @@ class TestPackageType < MiniTest::Unit::TestCase
       :is_final_type? => true,
       :is_instantiable_type? => true,
       :is_subtype? => false,
+      :supertype_schema_name => nil,
+      :supertype_name => nil,
       :package_name => nil,
       :type_attrs => [],
       #:type_methods => #[],
+      :inspect => '#<OCI8::Metadata::Type:(0) SYS.VARCHAR2>', # TODO: change to "VARCHAR2"
     }
 
     array_of_integer_type_attrs = {
@@ -180,6 +192,7 @@ class TestPackageType < MiniTest::Unit::TestCase
         :type_name => 'INTEGER',
         :schema_name => 'SYS',
         :type_metadata => integer_type_attrs,
+        :inspect => '#<OCI8::Metadata::Collection: NUMBER(38)>', # TODO: change to "INTEGER"
       },
       :num_type_attrs => 0,
       :num_type_methods => 0,
@@ -191,9 +204,12 @@ class TestPackageType < MiniTest::Unit::TestCase
       :is_final_type? => true,
       :is_instantiable_type? => true,
       :is_subtype? => false,
+      :supertype_schema_name => nil,
+      :supertype_name => nil,
       :package_name => 'RB_TEST_PKG',
       :type_attrs => [],
       :type_methods => [],
+      :inspect => "#<OCI8::Metadata::Type:(0) #{@conn.username}.ARRAY_OF_INTEGER>", # TODO: change to "#{@conn.username}.RB_TEST_PKG.ARRAY_OF_INTEGER"
     }
 
     table_of_pls_integer_type_attrs = {
@@ -219,6 +235,7 @@ class TestPackageType < MiniTest::Unit::TestCase
         :type_name => 'PL/SQL PLS INTEGER',
         :schema_name => 'SYS',
         :type_metadata => pls_integer_type_attrs,
+        :inspect => '#<OCI8::Metadata::Collection: PLS_INTEGER>',
       },
       :num_type_attrs => 0,
       :num_type_methods => 0,
@@ -230,9 +247,12 @@ class TestPackageType < MiniTest::Unit::TestCase
       :is_final_type? => true,
       :is_instantiable_type? => true,
       :is_subtype? => false,
+      :supertype_schema_name => nil,
+      :supertype_name => nil,
       :package_name => 'RB_TEST_PKG',
       :type_attrs => [],
       :type_methods => [],
+      :inspect => "#<OCI8::Metadata::Type:(0) #{@conn.username}.TABLE_OF_PLS_INTEGER>", # TODO: change to "#{@conn.username}.RB_TEST_PKG.TABLE_OF_PLS_INTEGER"
     }
 
     table_of_boolean_type_attrs = {
@@ -258,6 +278,7 @@ class TestPackageType < MiniTest::Unit::TestCase
         :type_name => 'PL/SQL BOOLEAN',
         :schema_name => 'SYS',
         :type_metadata => boolean_type_attrs,
+        :inspect => '#<OCI8::Metadata::Collection: BOOLEAN>',
       },
       :num_type_attrs => 0,
       :num_type_methods => 0,
@@ -269,9 +290,12 @@ class TestPackageType < MiniTest::Unit::TestCase
       :is_final_type? => true,
       :is_instantiable_type? => true,
       :is_subtype? => false,
+      :supertype_schema_name => nil,
+      :supertype_name => nil,
       :package_name => 'RB_TEST_PKG',
       :type_attrs => [],
       :type_methods => [],
+      :inspect => "#<OCI8::Metadata::Type:(0) #{@conn.username}.TABLE_OF_BOOLEAN>", # TODO: change to "#{@conn.username}.RB_TEST_PKG.TABLE_OF_BOOLEAN"
     }
 
     indexed_table_of_varchar2_type_attrs = {
@@ -297,6 +321,7 @@ class TestPackageType < MiniTest::Unit::TestCase
         :type_name => 'VARCHAR2',
         :schema_name => 'SYS',
         :type_metadata => varchar2_type_attrs,
+        :inspect => '#<OCI8::Metadata::Collection: VARCHAR2(10)>',
       },
       :num_type_attrs => 0,
       :num_type_methods => 0,
@@ -308,9 +333,12 @@ class TestPackageType < MiniTest::Unit::TestCase
       :is_final_type? => true,
       :is_instantiable_type? => true,
       :is_subtype? => false,
+      :supertype_schema_name => nil,
+      :supertype_name => nil,
       :package_name => 'RB_TEST_PKG',
       :type_attrs => [],
       :type_methods => [],
+      :inspect => "#<OCI8::Metadata::Type:(0) #{@conn.username}.INDEXED_TABLE_OF_VARCHAR2>", # TODO: change to "#{@conn.username}.RB_TEST_PKG.INDEXED_TABLE_OF_VARCHAR2"
     }
 
     rec1_type_attrs = {
@@ -336,6 +364,8 @@ class TestPackageType < MiniTest::Unit::TestCase
       :is_final_type? => true,
       :is_instantiable_type? => true,
       :is_subtype? => false,
+      :supertype_schema_name => nil,
+      :supertype_name => nil,
       :package_name => 'RB_TEST_PKG',
       :type_attrs => {
         :class => Array,
@@ -353,6 +383,7 @@ class TestPackageType < MiniTest::Unit::TestCase
           :fsprecision => 0,
           :lfprecision => 0,
           :type_metadata => pls_integer_type_attrs,
+          :inspect => '#<OCI8::Metadata::TypeAttr: I PLS_INTEGER>',
         },
         [1] => {
           :class => OCI8::Metadata::TypeAttr,
@@ -367,9 +398,11 @@ class TestPackageType < MiniTest::Unit::TestCase
           :fsprecision => 0,
           :lfprecision => 0,
           :type_metadata => integer_type_attrs,
+          :inspect => '#<OCI8::Metadata::TypeAttr: J NUMBER(38)>', # TODO: change to "INTEGER"
         },
       },
       :type_methods => [],
+      :inspect => "#<OCI8::Metadata::Type:(0) #{@conn.username}.REC1>", # TODO: change to "#{@conn.username}.RB_TEST_PKG.REC1"
     }
 
     rec2_type_attrs = {
@@ -395,6 +428,8 @@ class TestPackageType < MiniTest::Unit::TestCase
       :is_final_type? => true,
       :is_instantiable_type? => true,
       :is_subtype? => false,
+      :supertype_schema_name => nil,
+      :supertype_name => nil,
       :package_name => 'RB_TEST_PKG',
       :type_attrs => {
         :class => Array,
@@ -412,6 +447,7 @@ class TestPackageType < MiniTest::Unit::TestCase
           :fsprecision => 0,
           :lfprecision => 0,
           :type_metadata => boolean_type_attrs,
+          :inspect => '#<OCI8::Metadata::TypeAttr: B BOOLEAN>',
         },
         [1] => {
           :class => OCI8::Metadata::TypeAttr,
@@ -426,6 +462,7 @@ class TestPackageType < MiniTest::Unit::TestCase
           :fsprecision => 0,
           :lfprecision => 0,
           :type_metadata => indexed_table_of_varchar2_type_attrs,
+          :inspect => "#<OCI8::Metadata::TypeAttr: IT #{@conn.username}.INDEXED_TABLE_OF_VARCHAR2>", # TODO: change to "#{@conn.username}.RB_TEST_PKG.INDEXED_TABLE_OF_VARCHAR2"
         },
         [2] => {
           :class => OCI8::Metadata::TypeAttr,
@@ -440,9 +477,11 @@ class TestPackageType < MiniTest::Unit::TestCase
           :fsprecision => 0,
           :lfprecision => 0,
           :type_metadata => rec1_type_attrs,
+          :inspect => "#<OCI8::Metadata::TypeAttr: REC #{@conn.username}.REC1>", # TODO: change to "#{@conn.username}.RB_TEST_PKG.REC1"
         },
       },
       :type_methods => [],
+      :inspect => "#<OCI8::Metadata::Type:(0) #{@conn.username}.REC2>", # TODO: change to "#{@conn.username}.RB_TEST_PKG.REC2"
     }
 
     table_of_rec1_type_attrs = {
@@ -468,6 +507,7 @@ class TestPackageType < MiniTest::Unit::TestCase
         :type_name => 'REC1',
         :schema_name => @conn.username,
         :type_metadata => rec1_type_attrs,
+        :inspect => "#<OCI8::Metadata::Collection: #{@conn.username}.REC1>", # TODO: change to "#{@conn.username}.RB_TEST_PKG.REC1"
       },
       :num_type_attrs => 0,
       :num_type_methods => 0,
@@ -479,9 +519,12 @@ class TestPackageType < MiniTest::Unit::TestCase
       :is_final_type? => true,
       :is_instantiable_type? => true,
       :is_subtype? => false,
+      :supertype_schema_name => nil,
+      :supertype_name => nil,
       :package_name => 'RB_TEST_PKG',
       :type_attrs => [],
       :type_methods => [],
+      :inspect => "#<OCI8::Metadata::Type:(0) #{@conn.username}.TABLE_OF_REC1>", # TODO: change to "#{@conn.username}.RB_TEST_PKG.TABLE_OF_REC1"
     }
 
     table_of_rec2_type_attrs = {
@@ -507,6 +550,8 @@ class TestPackageType < MiniTest::Unit::TestCase
         :type_name => 'REC2',
         :schema_name => @conn.username,
         :type_metadata => rec2_type_attrs,
+        :inspect => "#<OCI8::Metadata::Collection: #{@conn.username}.REC2>",
+        #:inspect => "#<OCI8::Metadata::Collection: #{@conn.username}.RB_TEST_PKG.REC2>",
       },
       :num_type_attrs => 0,
       :num_type_methods => 0,
@@ -518,9 +563,12 @@ class TestPackageType < MiniTest::Unit::TestCase
       :is_final_type? => true,
       :is_instantiable_type? => true,
       :is_subtype? => false,
+      :supertype_schema_name => nil,
+      :supertype_name => nil,
       :package_name => 'RB_TEST_PKG',
       :type_attrs => [],
       :type_methods => [],
+      :inspect => "#<OCI8::Metadata::Type:(0) #{@conn.username}.TABLE_OF_REC2>", # TODO: change to "#{@conn.username}.RB_TEST_PKG.TABLE_OF_REC2"
     }
 
     type_metadata_attrs = {
@@ -566,6 +614,7 @@ class TestPackageType < MiniTest::Unit::TestCase
           :link => "",
           #:type_metadata => nil,
           :arguments => [],
+          :inspect => '#<OCI8::Metadata::Argument:  unknown(3)>', # TODO: change to "PLS_INTEGER"
         },
         [1] => {
           :class => OCI8::Metadata::Argument,
@@ -613,11 +662,14 @@ class TestPackageType < MiniTest::Unit::TestCase
               :link => "",
               #:type_metadata => nil,
               :arguments => [],
+              :inspect => '#<OCI8::Metadata::Argument:  unknown(3)>', # TODO: change to "PLS_INTEGER"
             },
           },
+          :inspect => "#<OCI8::Metadata::Argument: TBL #{@conn.username}.RB_TEST_PKG>", # TODO: change to "#{@conn.username}.RB_TEST_PKG.TABLE_OF_PLS_INTEGER"
         },
       },
       :is_standalone? => false,
+      :inspect => '#<OCI8::Metadata::Function: SUM_TABLE_OF_PLS_INTEGER>', # FIXME
     }
 
     add_rec1_values_subprogram_attrs = {
@@ -652,6 +704,7 @@ class TestPackageType < MiniTest::Unit::TestCase
           :link => "",
           #:type_metadata => nil,
           :arguments => [],
+          :inspect => '#<OCI8::Metadata::Argument:  unknown(3)>', # TODO: change to "PLS_INTEGER"
         },
         [1] => {
           :class => OCI8::Metadata::Argument,
@@ -723,6 +776,7 @@ class TestPackageType < MiniTest::Unit::TestCase
                   :link => "",
                   #:type_metadata => nil,
                   :arguments => [],
+                  :inspect => '#<OCI8::Metadata::Argument: I unknown(3)>', # TODO: change to "PLS_INTEGER"
                 },
                 [1] => {
                   :class => OCI8::Metadata::Argument,
@@ -746,13 +800,17 @@ class TestPackageType < MiniTest::Unit::TestCase
                   :link => "",
                   #:type_metadata => nil,
                   :arguments => [],
+                  :inspect => '#<OCI8::Metadata::Argument: J NUMBER(38)>', # TODO: change to "INTEGER"
                 },
               },
+              :inspect => '#<OCI8::Metadata::Argument:  unknown(250)>', # TODO: change to "#{@conn.username}.RB_TEST_PKG.REC1"
             },
           },
+          :inspect => "#<OCI8::Metadata::Argument: TBL #{@conn.username}.RB_TEST_PKG>", # TODO: change to "#{@conn.username}.RB_TEST_PKG.TABLE_OF_REC1"
         },
       },
       :is_standalone? => false,
+      :inspect => '#<OCI8::Metadata::Function: ADD_REC1_VALUES>', # TODO: change to "#{@conn.username}.RB_TEST_PKG.ADD_REC1_VALUES"
     }
 
     out_rec1_values_subprogram_attrs = {
@@ -835,6 +893,7 @@ class TestPackageType < MiniTest::Unit::TestCase
                   :link => "",
                   #:type_metadata => nil,
                   :arguments => [],
+                  :inspect => '#<OCI8::Metadata::Argument: I unknown(3)>', # TODO: change to "PLS_INTEGER"
                 },
                 [1] => {
                   :class => OCI8::Metadata::Argument,
@@ -858,13 +917,17 @@ class TestPackageType < MiniTest::Unit::TestCase
                   :link => "",
                   #:type_metadata => nil,
                   :arguments => [],
+                  :inspect => '#<OCI8::Metadata::Argument: J NUMBER(38)>', # TODO: change to "INTEGER"
                 },
               },
+              :inspect => '#<OCI8::Metadata::Argument:  unknown(250)>', # TODO: change to "#{@conn.username}.RB_TEST_PKG.REC1"
             },
           },
+          :inspect => "#<OCI8::Metadata::Argument: TBL #{@conn.username}.RB_TEST_PKG>", # TODO: change to "#{@conn.username}.RB_TEST_PKG.TABLE_OF_REC1"
         },
       },
       :is_standalone? => false,
+      :inspect => '#<OCI8::Metadata::Procedure: OUT_REC1_VALUES>', # TODO: change to "#{@conn.username}.RB_TEST_PKG.OUT_REC1_VALUES"
     }
 
     subprogram_metadata_attrs = {
