@@ -391,7 +391,7 @@ EOS
     when /mswin32|cygwin|mingw32|bccwin32/
       oci_basename = 'oci'
       oci_glob_postfix = ''
-      nls_data_basename = ['oraociei11', 'oraociicus11', 'oraociei10', 'oraociicus10']
+      nls_data_basename = ['oraociei*', 'oraociicus*']
       @@ld_envs = %w[PATH]
       so_ext = 'dll'
       check_proc = make_proc_to_check_cpu(is_32bit ? :i386 : :x86_64)
@@ -523,7 +523,7 @@ EOS
     if ld_path
       nls_data_ext ||= so_ext # nls_data_ext is same with so_ext by default.
       nls_data_basename.each do |basename|
-        if File.exist?(File.join(ld_path, "#{basename}.#{nls_data_ext}"))
+        if Dir.glob(File.join(ld_path, "#{basename}.#{nls_data_ext}")).size > 0
           puts "  #{file} looks like an instant client."
           return ld_path
         end

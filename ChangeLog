@@ -1,3 +1,8 @@
+2013-08-24  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: Use Dir.glob to find the Oracle instant client
+	    NLS data file. Its name depends on the Oracle major version on
+	    Windows.
+
 2013-08-03  KUBO Takehiro  <kubo@jiubao.org>
 	* lib/oci8/metadata.rb: fix undefined method 'char_used?' when
 	    OCI8::Metadata::Argument#inspect is called.
