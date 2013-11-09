@@ -50,8 +50,6 @@ when 'ruby'
   # if it wasn't explicitly changed by the configure option --with-ruby-version.
   #
   case RUBY_VERSION
-  when /^2\.0/
-    so_basename += RUBY_VERSION.gsub(/\W/, '')
   when /^1\.9\.0/
     raise 'unsupported ruby version: 1.9.0'
   when /^1\.9/
@@ -59,7 +57,7 @@ when 'ruby'
   when /^1\.8/
     so_basename += '18'
   else
-    raise 'unsupported ruby version: ' + RUBY_VERSION
+    so_basename += RUBY_VERSION.gsub(/\W/, '')
   end
 when 'rbx'
   # "rbx -X18" and "rbx -X19" use different C header files.

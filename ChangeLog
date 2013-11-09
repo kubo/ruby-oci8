@@ -1,3 +1,7 @@
+2013-11-09  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, lib/oci8.rb.in: support ruby 2.1.0-preview1.
+	    (requested by Yasuo Honda)
+
 2013-08-24  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: Use Dir.glob to find the Oracle instant client
 	    NLS data file. Its name depends on the Oracle major version on
