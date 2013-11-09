@@ -650,7 +650,7 @@ EOS
           f.puts("EXPORTS")
           open("|nm #{lib_dir}/MSVC/OCI.LIB") do |r|
             while line = r.gets
-              f.puts($') if line =~ / T _/
+              f.puts($1) if line =~ / T _(OCI\w+)/
             end
           end
         end

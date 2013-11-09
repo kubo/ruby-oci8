@@ -60,17 +60,7 @@ when 'ruby'
     so_basename += RUBY_VERSION.gsub(/\W/, '')
   end
 when 'rbx'
-  # "rbx -X18" and "rbx -X19" use different C header files.
-  case RUBY_VERSION
-  when /^2\.0/
-    so_basename += 'rbx20'
-  when /^1\.9/
-    so_basename += 'rbx19'
-  when /^1\.8/
-    so_basename += 'rbx18'
-  else
-    raise 'unsupported language mode: ' + RUBY_VERSION
-  end
+  so_basename += 'rbx'
 when 'jruby'
   raise "Ruby-oci8 doesn't support jruby because its C extension support is in development in jruby 1.6 and deprecated in jruby 1.7."
 else
