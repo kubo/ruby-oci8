@@ -1,4 +1,9 @@
 2013-11-09  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/error.c, ext/oci8/extconf.rb, ext/oci8/oci8.h:
+	    append the full path of the Oracle client library when OCIEnvCreate
+	    is failed such as "OCI Library Initialization Error - /path/to/libclntsh.so.12.1".
+
+2013-11-09  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, lib/oci8.rb.in: support rubinius 2.x whose
 	    RUBY_VERSION is 2.1.0.
 	* ext/oci8/oraconf.rb: reduce the size of libOCI.a created for cygwin.

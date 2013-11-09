@@ -150,13 +150,26 @@ static inline volatile VALUE *rb_gc_guarded_ptr(volatile VALUE *ptr) {return ptr
 #endif
 
 #ifndef HAVE_TYPE_RB_ENCODING
+/* ruby 1.8, rubinuis 1.2 */
 #define rb_enc_associate(str, enc) do {} while(0)
+#define rb_enc_str_buf_cat(str, ptr, len, enc) rb_str_buf_cat((str), (ptr), (len))
 #define rb_external_str_new_with_enc(ptr, len, enc) rb_tainted_str_new((ptr), (len))
 #define rb_locale_str_new_cstr(ptr)  rb_str_new2(ptr)
+#define rb_str_buf_cat_ascii(str, ptr) rb_str_buf_cat2((str), (ptr))
 #define rb_str_conv_enc(str, from, to) (str)
 #define rb_str_export_to_enc(str, enc) (str)
 #define rb_usascii_str_new(ptr, len) rb_str_new((ptr), (len))
 #define rb_usascii_str_new_cstr(ptr) rb_str_new2(ptr)
+#elif defined RBX_CAPI_RUBY_H
+/* rubinius 2.0 */
+#ifndef HAVE_RB_ENC_STR_BUF_CAT
+#define rb_enc_str_buf_cat(str, ptr, len, enc) \
+    rb_str_concat((str), rb_enc_str_new((ptr), (len), (enc)))
+#endif
+#ifndef HAVE_RB_STR_BUF_CAT_ASCII
+#define rb_str_buf_cat_ascii(str, ptr) \
+    rb_str_concat((str), rb_usascii_str_new_cstr(ptr))
+#endif
 #endif
 
 /* a new function in ruby 1.9.3.

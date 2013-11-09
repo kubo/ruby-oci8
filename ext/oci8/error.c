@@ -5,7 +5,17 @@
   Copyright (C) 2002-2012 KUBO Takehiro <kubo@jiubao.org>
 
 */
+#if defined __linux && !defined(_GNU_SOURCE)
+#define _GNU_SOURCE 1
+#endif
 #include "oci8.h"
+#ifdef HAVE_DLADDR
+#include <dlfcn.h>
+#endif
+#ifdef __CYGWIN__
+#undef boolean
+#include <windows.h>
+#endif
 
 #ifndef DLEXT
 #define DLEXT ".so"
@@ -211,8 +221,28 @@ void oci8_do_env_raise(OCIEnv *envhp, sword status, const char *file, int line)
 void oci8_do_raise_init_error(const char *file, int line)
 {
     VALUE msg = rb_usascii_str_new_cstr("OCI Library Initialization Error");
-    VALUE exc = rb_funcall(eOCIError, oci8_id_new, 2, msg, INT2FIX(-1));
-
+    VALUE exc;
+    const char *dll_path = NULL;
+#if defined _WIN32 || defined __CYGWIN__
+    HMODULE hMod = GetModuleHandleA("OCI.DLL");
+    char buf[MAX_PATH];
+    if (hMod != NULL) {
+        if (GetModuleFileName(hMod, buf, sizeof(buf))) {
+            dll_path = buf;
+        }
+    }
+#elif defined HAVE_DLADDR
+    void *addr = dlsym(RTLD_DEFAULT, "OCIEnvCreate");
+    Dl_info info;
+    if (addr != NULL && dladdr(addr, &info)) {
+        dll_path = info.dli_fname;
+    }
+#endif
+    if (dll_path != NULL) {
+        msg = rb_str_buf_cat_ascii(msg, " - ");
+        msg = rb_enc_str_buf_cat(msg, dll_path, strlen(dll_path), rb_filesystem_encoding());
+    }
+    exc = rb_funcall(eOCIError, oci8_id_new, 1, msg);
     rb_exc_raise(set_backtrace(exc, file, line));
 }
 
