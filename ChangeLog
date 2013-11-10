@@ -1,3 +1,8 @@
+2013-11-10  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/error.c, ext/oci8/lob.c, ext/oci8/object.c, ext/oci8/oci8.h,
+	  ext/oci8/oci8lib.c, ext/oci8/ocihandle.c, ext/oci8/stmt.c:
+	    use rb_class_new_instance() instead of rb_funcall() with rb_intern("new").
+
 2013-11-09  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/error.c, ext/oci8/extconf.rb, ext/oci8/oci8.h:
 	    append the full path of the Oracle client library when OCIEnvCreate

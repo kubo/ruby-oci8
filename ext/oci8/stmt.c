@@ -342,7 +342,7 @@ static void bind_stmt_init_elem(oci8_bind_t *obind, VALUE svc)
     ub4 idx = 0;
 
     do {
-        oho[idx].obj = rb_funcall(cOCIStmt, oci8_id_new, 1, svc);
+        oho[idx].obj = rb_class_new_instance(1, &svc, cOCIStmt);
         h = DATA_PTR(oho[idx].obj);
         oho[idx].hp = h->hp.ptr;
     } while (++idx < obind->maxar_sz);

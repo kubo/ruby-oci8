@@ -124,6 +124,7 @@ static VALUE attr_get_common(int argc, VALUE *argv, VALUE self, enum datatype da
     oci8_base_t *base = DATA_PTR(self);
     VALUE attr_type;
     VALUE strict;
+    VALUE args[6];
     union {
         ub1 ub1val;
         ub2 ub2val;
@@ -197,13 +198,13 @@ static VALUE attr_get_common(int argc, VALUE *argv, VALUE self, enum datatype da
     case DATATYPE_ORADATE:
         if (NIL_P(cOraDate))
             cOraDate = rb_eval_string("OraDate");
-        return rb_funcall(cOraDate, oci8_id_new, 6,
-                          INT2FIX((v.ub1ptr[0] - 100) * 100 + (v.ub1ptr[1] - 100)),
-                          INT2FIX(v.ub1ptr[2]),
-                          INT2FIX(v.ub1ptr[3]),
-                          INT2FIX(v.ub1ptr[4] - 1),
-                          INT2FIX(v.ub1ptr[5] - 1),
-                          INT2FIX(v.ub1ptr[6] - 1));
+        args[0] = INT2FIX((v.ub1ptr[0] - 100) * 100 + (v.ub1ptr[1] - 100));
+        args[1] = INT2FIX(v.ub1ptr[2]);
+        args[2] = INT2FIX(v.ub1ptr[3]);
+        args[3] = INT2FIX(v.ub1ptr[4] - 1);
+        args[4] = INT2FIX(v.ub1ptr[5] - 1);
+        args[5] = INT2FIX(v.ub1ptr[6] - 1);
+        return rb_class_new_instance(6, args, cOraDate);
     }
     return Qnil;
 }

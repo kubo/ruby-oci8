@@ -52,7 +52,7 @@ static VALUE oci8_make_lob(VALUE klass, oci8_svcctx_t *svcctx, OCILobLocator *s)
     boolean is_temp;
     VALUE lob_obj;
 
-    lob_obj = rb_funcall(klass, oci8_id_new, 1, svcctx->base.self);
+    lob_obj = rb_class_new_instance(1, &svcctx->base.self, klass);
     lob = DATA_PTR(lob_obj);
     /* If 's' is a temporary lob, use OCILobLocatorAssign instead. */
     chker2(OCILobIsTemporary(oci8_envhp, oci8_errhp, s, &is_temp), &svcctx->base);
@@ -719,10 +719,10 @@ static VALUE oci8_lob_clone(VALUE self)
 {
     oci8_lob_t *lob = DATA_PTR(self);
     oci8_lob_t *newlob;
-    VALUE newobj;
+    VALUE newobj = lob->svcctx ? lob->svcctx->base.self : Qnil;
     boolean is_temporary;
 
-    newobj = rb_funcall(CLASS_OF(self), oci8_id_new, 1, lob->svcctx ? lob->svcctx->base.self : Qnil);
+    newobj = rb_class_new_instance(1, &newobj, CLASS_OF(self));
     newlob = DATA_PTR(newobj);
     if (OCILobIsTemporary(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_temporary) == OCI_SUCCESS
         && is_temporary) {
@@ -992,7 +992,7 @@ static void bind_lob_init_elem(oci8_bind_t *obind, VALUE svc)
     ub4 idx = 0;
 
     do {
-        oho[idx].obj = rb_funcall(*vptr->klass, oci8_id_new, 1, svc);
+        oho[idx].obj = rb_class_new_instance(1, &svc, *vptr->klass);
         h = DATA_PTR(oho[idx].obj);
         oho[idx].hp = h->hp.ptr;
     } while (++idx < obind->maxar_sz);

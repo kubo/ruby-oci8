@@ -183,7 +183,7 @@ static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *dat
     case ATTR_NAMED_TYPE:
         Check_Object(typeinfo, cOCI8TDO);
         /* Be carefull. Don't use *tmp_obj* out of this function. */
-        tmp_obj = rb_funcall(cOCI8NamedType, oci8_id_new, 0);
+        tmp_obj = rb_class_new_instance(0, NULL, cOCI8NamedType);
         obj = DATA_PTR(tmp_obj);
         obj->tdo = typeinfo;
         obj->instancep = (char**)&data;
@@ -195,7 +195,7 @@ static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *dat
     case ATTR_NAMED_COLLECTION:
         Check_Object(typeinfo, cOCI8TDO);
         /* Be carefull. Don't use *tmp_obj* out of this function. */
-        tmp_obj = rb_funcall(cOCI8NamedCollection, oci8_id_new, 0);
+        tmp_obj = rb_class_new_instance(0, NULL, cOCI8NamedCollection);
         obj = DATA_PTR(tmp_obj);
         obj->tdo = typeinfo;
         obj->instancep = (char**)data;
@@ -506,7 +506,7 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
     case ATTR_NAMED_TYPE:
         Check_Object(typeinfo, cOCI8TDO);
         /* Be carefull. Don't use *tmp_obj* out of this function. */
-        tmp_obj = rb_funcall(cOCI8NamedType, oci8_id_new, 0);
+        tmp_obj = rb_class_new_instance(0, NULL, cOCI8NamedType);
         obj = DATA_PTR(tmp_obj);
         obj->tdo = typeinfo;
         obj->instancep = (char**)&data;
@@ -518,7 +518,7 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
     case ATTR_NAMED_COLLECTION:
         Check_Object(typeinfo, cOCI8TDO);
         /* Be carefull. Don't use *tmp_obj* out of this function. */
-        tmp_obj = rb_funcall(cOCI8NamedCollection, oci8_id_new, 0);
+        tmp_obj = rb_class_new_instance(0, NULL, cOCI8NamedCollection);
         obj = DATA_PTR(tmp_obj);
         obj->tdo = typeinfo;
         obj->instancep = (char**)data;
@@ -626,7 +626,7 @@ static void bind_named_type_init_elem(oci8_bind_t *obind, VALUE svc)
     }
     svcctx = oci8_get_svcctx(svc);
     do {
-        oho[idx].obj = rb_funcall(klass, oci8_id_new, 0);
+        oho[idx].obj = rb_class_new_instance(0, NULL, klass);
         obj = DATA_PTR(oho[idx].obj);
         obj->tdo = obind->tdo;
         obj->instancep = (char**)&oho[idx].hp;

@@ -459,7 +459,6 @@ void Init_oci8_env(void);
 
 /* oci8lib.c */
 extern ID oci8_id_at_last_error;
-extern ID oci8_id_new;
 extern ID oci8_id_get;
 extern ID oci8_id_set;
 extern ID oci8_id_oci8_vtable;

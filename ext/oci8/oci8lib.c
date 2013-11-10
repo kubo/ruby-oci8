@@ -9,7 +9,6 @@
 #endif
 
 ID oci8_id_at_last_error;
-ID oci8_id_new;
 ID oci8_id_get;
 ID oci8_id_set;
 ID oci8_id_oci8_vtable;
@@ -87,7 +86,6 @@ Init_oci8lib()
 #endif
 
     oci8_id_at_last_error = rb_intern("@last_error");
-    oci8_id_new = rb_intern("new");
     oci8_id_get = rb_intern("get");
     oci8_id_set = rb_intern("set");
     oci8_id_oci8_vtable = rb_intern("__oci8_vtable__");

@@ -94,6 +94,7 @@ static VALUE oci8_make_exc(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp
     VALUE parse_error_offset = Qnil;
     VALUE sql = Qnil;
     int rv;
+    VALUE args[4];
     int numarg = 1;
 
     switch (status) {
@@ -147,7 +148,11 @@ static VALUE oci8_make_exc(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp
             sql = rb_external_str_new_with_enc(TO_CHARPTR(text), size, oci8_encoding);
         }
     }
-    exc = rb_funcall(exc, oci8_id_new, numarg, msg, INT2FIX(errcode), sql, parse_error_offset);
+    args[0] = msg;
+    args[1] = INT2FIX(errcode);
+    args[2] = sql;
+    args[3] = parse_error_offset;
+    exc = rb_class_new_instance(numarg, args, exc);
     return set_backtrace(exc, file, line);
 }
 
@@ -242,7 +247,7 @@ void oci8_do_raise_init_error(const char *file, int line)
         msg = rb_str_buf_cat_ascii(msg, " - ");
         msg = rb_enc_str_buf_cat(msg, dll_path, strlen(dll_path), rb_filesystem_encoding());
     }
-    exc = rb_funcall(eOCIError, oci8_id_new, 1, msg);
+    exc = rb_class_new_instance(1, &msg, eOCIError);
     rb_exc_raise(set_backtrace(exc, file, line));
 }
 
@@ -276,9 +281,11 @@ VALUE oci8_get_error_message(ub4 msgno, const char *default_msg)
 void oci8_do_raise_by_msgno(ub4 msgno, const char *default_msg, const char *file, int line)
 {
     VALUE msg = oci8_get_error_message(msgno, default_msg);
-    VALUE exc = rb_funcall(eOCIError, oci8_id_new, 2, msg, INT2FIX(-1));
+    VALUE args[2];
+    args[0] = msg;
+    args[1] = INT2FIX(-1);
 
-    rb_exc_raise(set_backtrace(exc, file, line));
+    rb_exc_raise(set_backtrace(rb_class_new_instance(2, args, eOCIError), file, line));
 }
 
 void oci8_check_error_(sword status, oci8_base_t *base, OCIStmt *stmthp, const char *file, int line)
