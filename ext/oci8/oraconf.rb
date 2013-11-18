@@ -646,11 +646,12 @@ EOS
     def get_libs(lib_dir)
       case RUBY_PLATFORM
       when /cygwin/
+        regex = @lp64 ? / T (OCI\w+)/ : / T _(OCI\w+)/
         open("OCI.def", "w") do |f|
           f.puts("EXPORTS")
           open("|nm #{lib_dir}/MSVC/OCI.LIB") do |r|
             while line = r.gets
-              f.puts($1) if line =~ / T _(OCI\w+)/
+              f.puts($1) if regex =~ line
             end
           end
         end

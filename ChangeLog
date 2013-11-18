@@ -1,3 +1,6 @@
+2013-11-18  KUBO Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: support cygwin x86_64.
+
 2013-11-10  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/error.c, ext/oci8/lob.c, ext/oci8/object.c, ext/oci8/oci8.h,
 	  ext/oci8/oci8lib.c, ext/oci8/ocihandle.c, ext/oci8/stmt.c:
