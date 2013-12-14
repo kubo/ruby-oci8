@@ -2,7 +2,7 @@ require 'oci8'
 require File.dirname(__FILE__) + '/config'
 require 'scanf'
 
-class TestDateTime < MiniTest::Unit::TestCase
+class TestDateTime < Minitest::Test
 
   def timezone_string(tzh, tzm)
     if tzh >= 0

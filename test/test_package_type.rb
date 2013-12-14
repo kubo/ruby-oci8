@@ -24,7 +24,7 @@ You need to execute SQL statements in #{File.dirname(__FILE__)}/setup_test_packa
 
 EOS
 
-class TestPackageType < MiniTest::Unit::TestCase
+class TestPackageType < Minitest::Test
   def setup
     @conn = get_oci8_connection
   end

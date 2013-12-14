@@ -2,7 +2,7 @@
 require 'oci8'
 require File.dirname(__FILE__) + '/config'
 
-class TestOraDate < MiniTest::Unit::TestCase
+class TestOraDate < Minitest::Test
 
   YEAR_CHECK_TARGET = [-4712, -1, 1, 1192, 1868, 2002, 9999]
   MONTH_CHECK_TARGET = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]

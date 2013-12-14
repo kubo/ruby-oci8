@@ -3,7 +3,7 @@ require 'oci8'
 require 'timeout'
 require File.dirname(__FILE__) + '/config'
 
-class TestBreak < MiniTest::Unit::TestCase
+class TestBreak < Minitest::Test
 
   def setup
     @conn = get_oci8_connection

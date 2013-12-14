@@ -20,11 +20,13 @@ $lobreadnum = 256 # counts in charactors
 
 begin
   require 'minitest/autorun'
+  Minitest = MiniTest unless defined? Minitest
+  Minitest::Test = Minitest::Unit::TestCase unless defined? Minitest::Test
 rescue LoadError
   require 'test/unit'
-  MiniTest = Test
-  module Test
-    Assertions = Unit::Assertions
+  module Minitest
+    Test = ::Test::Unit::TestCase
+    Assertions = ::Test::Unit::Assertions
     module Assertions
       alias refute_nil assert_not_nil
     end
@@ -121,7 +123,7 @@ def convert_to_datetime(year, month, day, hour, minute, sec, subsec, timezone)
   end
 end
 
-class MiniTest::Unit::TestCase
+class Minitest::Test
 
   def get_oci8_connection()
     OCI8.new($dbuser, $dbpass, $dbname)

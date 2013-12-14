@@ -2,7 +2,7 @@
 require 'oci8'
 require File.dirname(__FILE__) + '/config'
 
-class TestBindRaw < MiniTest::Unit::TestCase
+class TestBindRaw < Minitest::Test
   CHECK_TARGET = [
     ["0123456789:;<=>?", "303132333435363738393A3B3C3D3E3F"],
     ["@ABCDEFGHIJKLMNO", "404142434445464748494A4B4C4D4E4F"],

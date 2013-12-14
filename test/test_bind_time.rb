@@ -1,7 +1,7 @@
 require 'oci8'
 require File.dirname(__FILE__) + '/config'
 
-class TestBindTime < MiniTest::Unit::TestCase
+class TestBindTime < Minitest::Test
 
   YEAR_CHECK_TARGET = [1971, 1989, 2002, 2037]
   MON_CHECK_TARGET = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]

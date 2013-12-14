@@ -48,7 +48,7 @@ EOS
 class RbTestIntArray < OCI8::Object::Base
 end
 
-class TestObj1 < MiniTest::Unit::TestCase
+class TestObj1 < Minitest::Test
   Delta = 0.00001
 
   def setup
@@ -70,7 +70,7 @@ class TestObj1 < MiniTest::Unit::TestCase
   end
 
   class ExpectedVal
-    include MiniTest::Assertions
+    include Minitest::Assertions
 
     attr_reader :n
     attr_reader :int_val

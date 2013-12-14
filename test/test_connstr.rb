@@ -1,7 +1,7 @@
 require 'oci8'
 require File.dirname(__FILE__) + '/config'
 
-class TestConnStr < MiniTest::Unit::TestCase
+class TestConnStr < Minitest::Test
   TEST_CASES =
     [
      # success cases:

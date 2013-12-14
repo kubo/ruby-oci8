@@ -1,7 +1,7 @@
 require 'oci8'
 require File.dirname(__FILE__) + '/config'
 
-class TestOracleVersion < MiniTest::Unit::TestCase
+class TestOracleVersion < Minitest::Test
 
   def test_init
     oraver = OCI8::OracleVersion.new('8.1.6.2.3')

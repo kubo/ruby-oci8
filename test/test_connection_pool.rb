@@ -1,7 +1,7 @@
 require 'oci8'
 require File.dirname(__FILE__) + '/config'
 
-class TestConnectionPool < MiniTest::Unit::TestCase
+class TestConnectionPool < Minitest::Test
 
   def create_pool(min, max, incr)
     OCI8::ConnectionPool.new(min, max, incr, $dbuser, $dbpass, $dbname)

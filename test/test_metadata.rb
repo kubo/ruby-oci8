@@ -1,7 +1,7 @@
 require 'oci8'
 require File.dirname(__FILE__) + '/config'
 
-class TestMetadata < MiniTest::Unit::TestCase
+class TestMetadata < Minitest::Test
 
   def setup
     @conn = get_oci8_connection
