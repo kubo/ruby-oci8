@@ -1895,12 +1895,12 @@ EOS
     # Get data_size of NCHAR(1) and that of CHAR(1 CHAR).
     # They depend on the database character set and the
     # client character set.
-    cursor = @conn.exec("select N'1' from dual")
-    # cfrm: data_size of NCHAR(1).
-    cfrm = cursor.column_metadata[0].data_size
-    # csem: data_size of CHAR(1 CHAR).
-    cursor = @conn.exec("select CAST('1' AS CHAR(1 char)) from dual")
-    csem = cursor.column_metadata[0].data_size
+    @conn.exec('CREATE TABLE test_table (nc NCHAR(1), c CHAR(1 CHAR))')
+    cursor = @conn.exec("select * from test_table")
+    cfrm = cursor.column_metadata[0].data_size # size of NCHAR(1) in bytes
+    csem = cursor.column_metadata[1].data_size # size of CHAR(1 CHAR) in bytes
+    cursor.close
+    drop_table('test_table')
 
     column_attrs_list = []
 

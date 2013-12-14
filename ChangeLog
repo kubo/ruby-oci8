@@ -1,3 +1,7 @@
+2013-12-14  KUBO Takehiro  <kubo@jiubao.org>
+	* test/test_metadata.rb: fix tests in an environment where
+	    the data size of "CAST('1' AS CHAR(1 char))" is wrong.
+
 2013-11-18  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: support cygwin x86_64.
 
