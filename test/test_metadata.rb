@@ -2563,28 +2563,78 @@ EOS
 
     # private synonym
     begin
-      attrs = {
-        :class => OCI8::Metadata::Synonym,
-        :obj_id => nil,
-        :obj_name => 'TEST_SYNONYM',
-        :obj_schema => @conn.username,
-        :schema_name => 'FOO',
-        :name => 'BAR',
-        :link => 'BAZ.QUZ',
-        :translated_name => 'FOO.BAR@BAZ.QUZ',
-        :inspect => /#<OCI8::Metadata::Synonym:\(\d+\) #{@conn.username}.TEST_SYNONYM FOR FOO.BAR@BAZ.QUZ>/,
-      }
-      @conn.exec("CREATE SYNONYM test_synonym FOR foo.bar@baz.quz")
       [
-       @conn.describe_any('test_synonym'),
-       @conn.describe_synonym('Test_Synonym'),
-       @conn.describe_any(@conn.username + '.test_synonym'),
-       @conn.describe_synonym(@conn.username + '.Test_Synonym'),
-      ].each do |desc|
-        attrs[:obj_id] = to_obj_id(@conn.username, 'TEST_SYNONYM')
-        check_attributes('private synonym', desc, attrs)
+       {
+         :synonym_name => 'FOO.BAR@BAZ.QUZ',
+         :attrs => {
+           :class => OCI8::Metadata::Synonym,
+           :obj_id => nil,
+           :obj_name => 'TEST_SYNONYM',
+           :obj_schema => @conn.username,
+           :schema_name => 'FOO',
+           :name => 'BAR',
+           :link => 'BAZ.QUZ',
+           :translated_name => 'FOO.BAR@BAZ.QUZ',
+           :inspect => /#<OCI8::Metadata::Synonym:\(\d+\) #{@conn.username}.TEST_SYNONYM FOR FOO.BAR@BAZ.QUZ>/,
+         },
+       },
+       {
+         :synonym_name => 'BAR@BAZ.QUZ',
+         :attrs => {
+           :class => OCI8::Metadata::Synonym,
+           :obj_id => nil,
+           :obj_name => 'TEST_SYNONYM',
+           :obj_schema => @conn.username,
+           :schema_name => nil,
+           :name => 'BAR',
+           :link => 'BAZ.QUZ',
+           :translated_name => 'BAR@BAZ.QUZ',
+           :inspect => /#<OCI8::Metadata::Synonym:\(\d+\) #{@conn.username}.TEST_SYNONYM FOR BAR@BAZ.QUZ>/,
+         },
+       },
+       {
+         :synonym_name => 'FOO.BAR',
+         :attrs => {
+           :class => OCI8::Metadata::Synonym,
+           :obj_id => nil,
+           :obj_name => 'TEST_SYNONYM',
+           :obj_schema => @conn.username,
+           :schema_name => 'FOO',
+           :name => 'BAR',
+           :link => nil,
+           :translated_name => 'FOO.BAR',
+           :inspect => /#<OCI8::Metadata::Synonym:\(\d+\) #{@conn.username}.TEST_SYNONYM FOR FOO.BAR>/,
+         },
+       },
+       {
+         :synonym_name => 'BAR',
+         :attrs => {
+           :class => OCI8::Metadata::Synonym,
+           :obj_id => nil,
+           :obj_name => 'TEST_SYNONYM',
+           :obj_schema => @conn.username,
+           :schema_name => @conn.username,
+           :name => 'BAR',
+           :link => nil,
+           :translated_name => "#{@conn.username}.BAR",
+           :inspect => /#<OCI8::Metadata::Synonym:\(\d+\) #{@conn.username}.TEST_SYNONYM FOR #{@conn.username}.BAR>/,
+         },
+       },
+      ].each do |test|
+        synonym_name = test[:synonym_name]
+        attrs = test[:attrs]
+        @conn.exec("CREATE SYNONYM test_synonym FOR #{synonym_name}")
+        [
+         @conn.describe_any('test_synonym'),
+         @conn.describe_synonym('Test_Synonym'),
+         @conn.describe_any(@conn.username + '.test_synonym'),
+         @conn.describe_synonym(@conn.username + '.Test_Synonym'),
+        ].each do |desc|
+          attrs[:obj_id] = to_obj_id(@conn.username, 'TEST_SYNONYM')
+          check_attributes("private synonym #{synonym_name}", desc, attrs)
+        end
+        @conn.exec("DROP SYNONYM test_synonym")
       end
-      @conn.exec("DROP SYNONYM test_synonym")
     rescue OCIError
       raise "grant create synonym privilege to user #{@conn.username} to pass tests." if $!.code == 1031 # ORA-01031: insufficient privileges
       raise

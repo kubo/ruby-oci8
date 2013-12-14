@@ -1,4 +1,9 @@
 2013-12-14  KUBO Takehiro  <kubo@jiubao.org>
+	* lib/oci8/metadata.rb, test/test_metadata.rb: fix
+	    OCI8::Metadata::Synonym#schema_name and #translated_name
+	    for synonyms with a database link and without schema_name.
+
+2013-12-14  KUBO Takehiro  <kubo@jiubao.org>
 	* test/*.rb: suppress warnings "MiniTest::Unit::TestCase is now Minitest::Test"
 	    when minitest gem is installed.
 

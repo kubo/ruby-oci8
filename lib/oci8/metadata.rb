@@ -1239,6 +1239,7 @@ class OCI8
       # schema name of the synonym translation
       def schema_name
         @schema_name ||= attr_get_string(OCI_ATTR_SCHEMA_NAME)
+        @schema_name.size == 0 ? nil : @schema_name
       end
 
       # object name of the synonym translation
@@ -1254,11 +1255,7 @@ class OCI8
 
       # full-qualified synonym translation name with schema, object and database link name.
       def translated_name
-        if link.nil?
-          schema_name + '.' + name
-        else
-          schema_name + '.' + name + '@' + link
-        end
+        (schema_name ? schema_name + '.' : '') + name + (link ? '@' + link : '')
       end
 
       def inspect # :nodoc:
