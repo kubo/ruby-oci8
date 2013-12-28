@@ -334,8 +334,9 @@ Backtrace:
   #{$!.backtrace.join("\n  ")}
 ---------------------------------------------------
 See:
- * http://ruby-oci8.rubyforge.org/#{lang}/HowToInstall.html
- * http://ruby-oci8.rubyforge.org/#{lang}/ReportInstallProblem.html
+ * http://ruby-oci8.rubyforge.org/en/file.install-full-client.html for Oracle full client
+ * http://ruby-oci8.rubyforge.org/en/file.install-instant-client.html for Oracle instant client
+ * http://ruby-oci8.rubyforge.org/en/file.report-installation-issue.html to report an issue.
 
 EOS
       exc = RuntimeError.new
@@ -645,8 +646,8 @@ EOS
 
     def get_libs(lib_dir)
       case RUBY_PLATFORM
-      when /cygwin/
-        regex = @lp64 ? / T (OCI\w+)/ : / T _(OCI\w+)/
+      when /cygwin|x64-mingw32/
+        regex = ([nil].pack('P').size == 8) ? / T (OCI\w+)/ : / T _(OCI\w+)/
         open("OCI.def", "w") do |f|
           f.puts("EXPORTS")
           open("|nm #{lib_dir}/MSVC/OCI.LIB") do |r|
