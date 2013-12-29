@@ -1,5 +1,46 @@
 # @markup markdown
 
+2.1.6
+=====
+
+New Features
+------------
+
+### Support ruby 2.1.0
+
+### Support cygwin x86_64
+
+### OCI8#describe_synonym and OCI8#describe_any accept 'PUBLIC.XXX' as a public synonym name.
+
+Fixed Issues
+------------
+
+-   fix wrong return valus of OCI8::Metadata::Synonym#schema_name
+    and #translated_name for synonyms with a database link but
+    without schema_name.
+
+-   fix ruby version checking in binary gem. Gem::ruby_version of
+    ruby 2.0.0p195 is 2.0.0.195, which doesn't match '= 2.0.0'.
+
+    (github issue #36 reported by sodonnel)
+
+-   fix SEGV when metadata are accessed after the session is disconnected.
+
+-   fix undefined method 'char_used?' when OCI8::Metadata::Argument#inspect is called.
+
+-   fix tests in an environment where the data size of "CAST('1' AS CHAR(1 char))"
+    is wrong.
+
+-   suppress warnings "MiniTest::Unit::TestCase is now Minitest::Test"
+    when minitest gem is installed.
+
+-   fix SEGV when oci8lib.so is compiled by mingw64 without runtime-check option.
+    Note that binary gems are compiled with runtime-check to check available Oracle
+    client features at runtime.
+
+-   fix SEGV when one connection is used by more than two threads and temporary
+    lobs are freed by GC.
+
 2.1.5
 =====
 

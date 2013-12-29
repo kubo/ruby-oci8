@@ -1,3 +1,7 @@
+2013-12-29  KUBO Takehiro  <kubo@jiubao.org>
+	* NEWS: add changes between 2.1.6 and 2.1.5.
+	* VERSION: change the version to 2.1.6.
+
 2013-12-28  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: fix for Windows x64. OCI.lib for MSVC doesn't
 	    work with mingw64 compilers. fix URL in the error message.
