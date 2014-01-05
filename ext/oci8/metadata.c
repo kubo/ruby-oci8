@@ -14,6 +14,7 @@ static VALUE mOCI8Metadata;
 VALUE cOCI8MetadataBase;
 static VALUE ptype_to_class;
 static VALUE class_to_ptype;
+static ID id_at_obj_link;
 
 typedef struct {
     oci8_base_t base;
@@ -175,11 +176,26 @@ static VALUE oci8_do_describe(VALUE self, void *objptr, ub4 objlen, ub1 objtype,
  */
 static VALUE oci8_describe(VALUE self, VALUE name, VALUE klass, VALUE check_public)
 {
+    char *str;
+    size_t idx, len;
+    VALUE metadata;
+    VALUE obj_link = Qnil;
+
     OCI8SafeStringValue(name);
     if (RSTRING_LEN(name) == 0) {
         rb_raise(rb_eArgError, "empty string is set.");
     }
-    return oci8_do_describe(self, RSTRING_PTR(name), RSTRING_LEN(name), OCI_OTYPE_NAME, klass, check_public);
+    str = RSTRING_PTR(name);
+    len = RSTRING_LEN(name);
+    for (idx = 0; idx < len; idx++) {
+        if (str[idx] == '@') {
+            obj_link = rb_enc_str_new(str + idx + 1, len - idx - 1, oci8_encoding);
+            break;
+        }
+    }
+    metadata = oci8_do_describe(self, str, len, OCI_OTYPE_NAME, klass, check_public);
+    rb_ivar_set(metadata, id_at_obj_link, obj_link);
+    return metadata;
 }
 
 static VALUE metadata_get_type_metadata(VALUE self, VALUE klass)
@@ -230,6 +246,7 @@ void Init_oci8_metadata(VALUE cOCI8)
     class_to_ptype = rb_hash_new();
     rb_global_variable(&ptype_to_class);
     rb_global_variable(&class_to_ptype);
+    id_at_obj_link = rb_intern("@obj_link");
 
     rb_define_singleton_method(cOCI8MetadataBase, "register_ptype", metadata_s_register_ptype, 1);
     rb_define_private_method(cOCI8MetadataBase, "__param", metadata_get_param, 1);

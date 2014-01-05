@@ -89,6 +89,15 @@ class OCI8
       #  attr_get_oradate(OCI_ATTR_TIMESTAMP)
       #end
 
+      # Returns the database link name if the object is at the remote host.
+      # Note that this is available only when the object is returned by OCI8#describe_* methods.
+      #
+      # @return [String or nil] database link name
+      # @since 2.1.7
+      def obj_link
+        @obj_link
+      end
+
       # @private
       def inspect
         "#<#{self.class.name}:(#{obj_id}) #{obj_schema}.#{obj_name}>"
@@ -2066,6 +2075,9 @@ class OCI8
       __describe(table_name, OCI8::Metadata::Table, false)
     else
       # check tables, views, synonyms and public synonyms.
+
+      # follow synonyms up to 20 times to prevent infinite loop
+      # caused by recursive synonyms.
       recursive_level = 20
       recursive_level.times do
         metadata = __describe(table_name, OCI8::Metadata::Unknown, true)
@@ -2074,6 +2086,11 @@ class OCI8
           return metadata
         when OCI8::Metadata::Synonym
           table_name = metadata.translated_name
+          if metadata.obj_link and metadata.link.nil?
+            # table_name is a synonym in a remote database for an object in the
+            # remote database itself.
+            table_name = "#{table_name}@#{metadata.obj_link}"
+          end
         else
           raise OCIError.new(4043, table_name) # ORA-04043: object %s does not exist
         end

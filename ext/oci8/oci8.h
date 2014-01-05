@@ -152,6 +152,7 @@ static inline volatile VALUE *rb_gc_guarded_ptr(volatile VALUE *ptr) {return ptr
 #ifndef HAVE_TYPE_RB_ENCODING
 /* ruby 1.8, rubinuis 1.2 */
 #define rb_enc_associate(str, enc) do {} while(0)
+#define rb_enc_str_new(str, len, enc) rb_str_new((str), (len))
 #define rb_enc_str_buf_cat(str, ptr, len, enc) rb_str_buf_cat((str), (ptr), (len))
 #define rb_external_str_new_with_enc(ptr, len, enc) rb_tainted_str_new((ptr), (len))
 #define rb_locale_str_new_cstr(ptr)  rb_str_new2(ptr)
