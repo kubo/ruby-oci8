@@ -334,8 +334,8 @@ Backtrace:
   #{$!.backtrace.join("\n  ")}
 ---------------------------------------------------
 See:
- * http://ruby-oci8.rubyforge.org/en/file.install-full-client.html for Oracle full client
- * http://ruby-oci8.rubyforge.org/en/file.install-instant-client.html for Oracle instant client
+ * http://rubydoc.info/gems/ruby-oci8/file/docs/install-full-client.md for Oracle full client
+ * http://rubydoc.info/gems/ruby-oci8/file/docs/install-instant-client.md for Oracle instant client
  * http://ruby-oci8.rubyforge.org/en/file.report-installation-issue.html to report an issue.
 
 EOS

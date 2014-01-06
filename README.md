@@ -21,20 +21,23 @@ Connect to scott/tiger, select `emp` and print as CSV format.
 
 If you install a ruby-oci8 gem package, you may need to add `-rubygems` before `-r oci8`.
 
-Documantation
+API Reference
 =============
 
-* [Reference Manual](http://ruby-oci8.rubyforge.org/en/)
-* {file:docs/install-full-client.md}
-* {file:docs/install-instant-client.md}
-* {file:docs/install-binary-package.md}
+* http://rubydoc.info/gems/ruby-oci8/frames/file/README.md
+
+Installation
+============
+
+* {file:docs/install-full-client.md Install for Oracle Full Client}
+* {file:docs/install-instant-client.md Install for Oracle Instant Client}
+* {file:docs/install-binary-package.md Install Binary Package}
 
 Report issues
 =============
 
 * {file:docs/report-installation-issue.md}
 * [The issues page on github](https://github.com/kubo/ruby-oci8/issues)
-* [The ruby-oci8 help forum on rubyforge](http://rubyforge.org/forum/forum.php?forum_id=1078)
 
 License
 =======

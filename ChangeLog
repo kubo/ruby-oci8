@@ -1,3 +1,8 @@
+2014-01-06  Kubo Takehiro  <kubo@jiubao.org>
+	* README.md, docs/install-full-client.md, docs/install-instant-client.md,
+	  docs/report-installation-issue.md, ext/oci8/oraconf.rb, ruby-oci8.gemspec:
+	    Move the project page and download URL to github.
+
 2014-01-05  KUBO Takehiro  <kubo@jiubao.org>
 	* ext/oci8/metadata.c, ext/oci8/oci8.h, lib/oci8/metadata.rb:
 	    Fix OCI8#describe_table to follow synonyms in a remote database.

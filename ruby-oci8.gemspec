@@ -19,7 +19,7 @@ spec = Gem::Specification.new do |s|
   s.version = File.read('VERSION').strip
   s.summary = 'Ruby interface for Oracle using OCI8 API'
   s.email = 'kubo@jiubao.org'
-  s.homepage = 'http://ruby-oci8.rubyforge.org'
+  s.homepage = 'https://github.com/kubo/ruby-oci8/'
   s.rubyforge_project = 'ruby-oci8'
   s.description = <<EOS
 ruby-oci8 is a ruby interface for Oracle using OCI8 API. It is available with Oracle8i, Oracle9i, Oracle10g, Oracle11g and Oracle Instant Client.

@@ -90,8 +90,7 @@ tar.gz package
 
 ### Download the source code
 
-Download the latest tar.gz package such as ruby-oci8 2.1.0.tar.gz,
-which is the latest version at the time of writing, from [rubyforge][].
+Download the latest tar.gz package from [download page][].
 
 ### Run make and install
 
@@ -113,4 +112,4 @@ note: If you use '`sudo`', use it only when running '`make install`'.
     nmake
     nmake install
 
-[rubyforge]: http://rubyforge.org/frs/?group_id=256
+[download page]: http://files.jiubao.org/ruby-oci8
