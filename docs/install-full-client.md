@@ -106,10 +106,9 @@ note: If you use '`sudo`', use it only when running '`make install`'.
 
 #### Windows(mswin32)
 
-
     gzip -dc ruby-oci8-VERSION.tar.gz | tar xvf -
     cd ruby-oci8-VERSION
     nmake
     nmake install
 
-[download page]: http://files.jiubao.org/ruby-oci8
+[download page]: https://bintray.com/kubo/generic/ruby-oci8

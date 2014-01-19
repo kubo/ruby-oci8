@@ -34,11 +34,11 @@ Unzip the packages as follows:
     unzip path/to/instantclient-sdk-OS-VERSION.zip
     unzip path/to/instantclient-sqlplus-OS-VERSION.zip
 
-If /opt/oracle/instantclient10_1/libclntsh.so is not found, make
+If /opt/oracle/instantclient12_1/libclntsh.so is not found, make
 a symbolic link to link the library.
 
-    cd /opt/oracle/instantclient10_1
-    ln -s libclntsh.so.10.1 libclntsh.so
+    cd /opt/oracle/instantclient12_1
+    ln -s libclntsh.so.12.1 libclntsh.so
 
 Note:
 
@@ -66,8 +66,14 @@ the installed directory.
 </table>
 
 For example:
-    $ LD_LIBRARY_PATH=/opt/oracle/instantclient_10_2
+
+    $ LD_LIBRARY_PATH=/opt/oracle/instantclient_12_1
     $ export LD_LIBRARY_PATH
+
+Though many instant client pages indicate that the environment varialbe
+`ORACLE_HOME` should be set, it isn't necessary unless Oracle Net
+configuration files such as `tnsnames.ora` and `sqlnet.ora` are in
+`$ORACLE_HOME/network/admin/`.
 
 Linux rpm packages
 ------------------
@@ -81,7 +87,8 @@ Install the downloaded packages as follows:
 Set LD_LIBRARY_PATH to point to the directory where libclntsh.so is installed.
 
 For example:
-    $ LD_LIBRARY_PATH=/usr/lib/oracle/10.2.0.3/client/lib
+
+    $ LD_LIBRARY_PATH=/usr/lib/oracle/12.1/client/lib
     $ export LD_LIBRARY_PATH
 
 Windows
@@ -157,10 +164,9 @@ note: If you use '`sudo`', use it only when running '`make install`'.
 
 #### Windows(mswin32)
 
-
     gzip -dc ruby-oci8-VERSION.tar.gz | tar xvf -
     cd ruby-oci8-VERSION
     nmake
     nmake install
 
-[download page]: http://files.jiubao.org/ruby-oci8
+[download page]: https://bintray.com/kubo/generic/ruby-oci8
