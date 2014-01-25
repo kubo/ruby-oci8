@@ -43,11 +43,12 @@ when 'ruby'
   #    1.9.3      |   1.9.1
   # --------------+--------------
   #    2.0.0      |   2.0.0
-  #    2.0.1      |   2.0.1  (See: [ruby-core:49578])
+  # --------------+--------------
+  #    2.1.0      |   2.1.0
   #     ...       |    ...
   #
-  # Note: The ruby ABI version is same with RbConfig::CONFIG['ruby_version']
-  # if it wasn't explicitly changed by the configure option --with-ruby-version.
+  # The ABI version of ruby 2.1.1 will be 2.1.0.
+  # See "ABI Compatibility" in <URL:http://www.ruby-lang.org/en/news/2013/12/21/semantic-versioning-after-2-1-0/>.
   #
   case RUBY_VERSION
   when /^1\.9\.0/
@@ -57,7 +58,7 @@ when 'ruby'
   when /^1\.8/
     so_basename += '18'
   else
-    so_basename += RUBY_VERSION.gsub(/\W/, '')
+    so_basename += RUBY_VERSION.gsub(/(\d+)\.(\d+).(.*)/, '\1\20')
   end
 when 'rbx'
   so_basename += 'rbx'
