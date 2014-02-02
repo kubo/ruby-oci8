@@ -1,5 +1,18 @@
 # @markup markdown
 
+2.1.7
+=====
+
+New Features
+------------
+
+### Add OCI8::Metadata::Base#obj_link.
+
+Fixed Issues
+------------
+
+-   Fix OCI8#describe_table to follow synonyms in a remote database.
+
 2.1.6
 =====
 
