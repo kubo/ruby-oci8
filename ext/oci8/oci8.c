@@ -754,6 +754,7 @@ static VALUE oci8_set_long_read_len(VALUE self, VALUE val)
  *   break
  *
  * Cancels the executing SQL.
+ * Note that this doesn't work if the Oracle server connected to is on Windows.
  *
  * See also #non_blocking=.
  */
