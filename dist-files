@@ -29,6 +29,7 @@ ext/oci8/encoding.c
 ext/oci8/env.c
 ext/oci8/error.c
 ext/oci8/extconf.rb
+ext/oci8/hook_funcs.c
 ext/oci8/lob.c
 ext/oci8/metadata.c
 ext/oci8/object.c
@@ -42,6 +43,9 @@ ext/oci8/oraconf.rb
 ext/oci8/oradate.c
 ext/oci8/oranumber_util.c
 ext/oci8/oranumber_util.h
+ext/oci8/plthook.c
+ext/oci8/plthook.h
+ext/oci8/plthook_win32.c
 ext/oci8/post-config.rb
 ext/oci8/stmt.c
 ext/oci8/thread_util.c
