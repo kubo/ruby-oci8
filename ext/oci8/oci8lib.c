@@ -58,6 +58,7 @@ void oci8_base_free(oci8_base_t *base)
 static void at_exit_func(VALUE val)
 {
     oci8_in_finalizer = 1;
+    oci8_cancel_read();
 }
 #endif
 

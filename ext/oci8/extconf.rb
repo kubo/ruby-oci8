@@ -97,6 +97,12 @@ if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/
   $objs << "win32.o"
 end
 
+if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/
+  $objs << "plthook_win32.o hook_funcs.o"
+else
+  $objs << "plthook.o hook_funcs.o"
+end
+
 # Checking gcc or not
 if oraconf.cc_is_gcc
   $CFLAGS += " -Wall"

@@ -515,6 +515,8 @@ static VALUE oci8_server_attach(VALUE self, VALUE dbname, VALUE attach_mode)
                       svcctx->srvhp, 0, OCI_ATTR_SERVER,
                       oci8_errhp),
            &svcctx->base);
+    oci8_hook_functions();
+
     svcctx->state |= OCI8_STATE_SERVER_ATTACH_WAS_CALLED;
     if (mode & OCI_CPOOL) {
         svcctx->state |= OCI8_STATE_CPOOL;
