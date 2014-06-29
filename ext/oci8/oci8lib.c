@@ -148,6 +148,7 @@ Init_oci8lib()
 #ifdef USE_WIN32_C
     Init_oci8_win32(cOCI8);
 #endif
+    oci8_install_hook_functions();
 }
 
 VALUE oci8_define_class(const char *name, oci8_base_vtable_t *vptr)

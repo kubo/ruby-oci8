@@ -19,6 +19,37 @@ typedef struct {
     void *old_func_addr;
 } hook_func_entry_t;
 
+static int replace_functions(const char * const *files, hook_func_entry_t *functions)
+{
+    int i;
+
+    for (i = 0; files[i] != NULL; i++) {
+        const char *file = files[i];
+        plthook_t *ph;
+        if (plthook_open(&ph, file) == 0) {
+            int j;
+            int rv = 0;
+
+            /* install hooks */
+            for (j = 0; functions[j].func_name != NULL ; j++) {
+                hook_func_entry_t *function = &functions[j];
+                rv = plthook_replace(ph, function->func_name, function->func_addr, &function->old_func_addr);
+                if (rv != 0) {
+                    while (--j >= 0) {
+                        /*restore hooked fuction address */
+                        plthook_replace(ph, functions[j].func_name, functions[j].old_func_addr, NULL);
+                    }
+                    plthook_close(ph);
+                    rb_raise(rb_eRuntimeError, "Could not replace function %s in %s", function->func_name, file);
+                }
+            }
+            plthook_close(ph);
+            return 0;
+        }
+    }
+    return -1;
+}
+
 #ifdef WIN32
 
 static WSAEVENT hCancelWSAEvent;
@@ -51,16 +82,12 @@ static BOOL WINAPI hook_ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfB
     return ReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
 }
 
-void oci8_cancel_read(void)
-{
-    WSASetEvent(hCancelWSAEvent);
-}
-
-static const char * const sock_func_files[] = {
+static const char * const tcp_func_files[] = {
     /* full client */
     "orantcp12.dll",
     "orantcp11.dll",
     "orantcp10.dll",
+    "orantcp9.dll",
     /* instant client basic */
     "oraociei12.dll",
     "oraociei11.dll",
@@ -72,7 +99,7 @@ static const char * const sock_func_files[] = {
     NULL,
 };
 
-static hook_func_entry_t sock_functions[] = {
+static hook_func_entry_t tcp_functions[] = {
     {"WSARecv", (void*)hook_WSARecv, NULL},
     {NULL, NULL, NULL},
 };
@@ -82,6 +109,7 @@ static const char * const beq_func_files[] = {
     "oranbeq12.dll",
     "oranbeq11.dll",
     "oranbeq10.dll",
+    "oranbeq9.dll",
     NULL,
 };
 
@@ -89,6 +117,32 @@ static hook_func_entry_t beq_functions[] = {
     {"ReadFile", (void*)hook_ReadFile, NULL},
     {NULL, NULL, NULL},
 };
+
+void oci8_install_hook_functions()
+{
+    hCancelWSAEvent = WSACreateEvent();
+
+    if (replace_functions(tcp_func_files, tcp_functions) != 0) {
+        rb_raise(rb_eRuntimeError, "No DLL is found to hook.");
+    }
+}
+
+void oci8_check_win32_beq_functions()
+{
+    BOOL beq_func_replaced = FALSE;
+
+    if (!beq_func_replaced) {
+        /* oranbeq??.dll is not loaded until a beq connection is used. */
+        if (replace_functions(beq_func_files, beq_functions) == 0) {
+            beq_func_replaced = TRUE;
+        }
+    }
+}
+
+void oci8_cancel_read(void)
+{
+    WSASetEvent(hCancelWSAEvent);
+}
 
 #else
 
@@ -112,18 +166,10 @@ static ssize_t hook_read(int fd, void *buf, size_t count)
         rv = select(nfd, &rfds, NULL, NULL, NULL);
     } while (rv == -1 && errno == EINTR);
     if (rv > 0 && FD_ISSET(pipefd[0], &rfds)) {
-        /* emulate EOF to stop the query. */
+        /* emulate EOF to cancel this read request. */
         return 0;
     }
     return read(fd, buf, count);
-}
-
-void oci8_cancel_read(void)
-{
-    static int write_len = 0;
-    if (write_len == 0) {
-        write_len = write(pipefd[1], "!", 1);
-    }
 }
 
 static const char * const files[] = {
@@ -139,69 +185,25 @@ static hook_func_entry_t functions[] = {
     {NULL, NULL, NULL},
 };
 
-#endif
-
-static int replace_functions(const char * const *files, hook_func_entry_t *functions)
+void oci8_install_hook_functions()
 {
-    int i;
-
-    for (i = 0; files[i] != NULL; i++) {
-        const char *file = files[i];
-        plthook_t *ph;
-        if (plthook_open(&ph, file) == 0) {
-            int j;
-            int rv = 0;
-
-            /* install hooks */
-            for (j = 0; functions[j].func_name != NULL ; j++) {
-                hook_func_entry_t *function = &functions[j];
-                rv = plthook_replace(ph, function->func_name, function->func_addr, &function->old_func_addr);
-                if (rv != 0) {
-                    while (--j >= 0) {
-                        /*restore hooked fuction address */
-                        plthook_replace(ph, function->func_name, function->old_func_addr, NULL);
-                    }
-                    plthook_close(ph);
-                    rb_raise(rb_eRuntimeError, "Could not replace function %s in %s", function->func_name, file);
-                }
-            }
-            plthook_close(ph);
-            return rv;
-        }
+    if (pipe(pipefd) != 0) {
+        rb_sys_fail("pipe");
     }
-    return -1;
+    if (replace_functions(files, functions) != 0) {
+        rb_raise(rb_eRuntimeError, "No shared library is found to hook.");
+    }
 }
 
-void oci8_hook_functions(void)
+/* This function is called on ruby process termination
+ * to cancel all read requests issued by libclntsh.so.
+ */
+void oci8_cancel_read(void)
 {
-#ifdef WIN32
-    static int initialized = 0;
-    static int sock_func_replaced = 0;
-    static int beq_func_replaced = 0;
-
-    if (!initialized) {
-        hCancelWSAEvent = WSACreateEvent();
-        initialized = 1;
+    static int write_len = 0;
+    if (write_len == 0) {
+        write_len = write(pipefd[1], "!", 1);
     }
-    if (!sock_func_replaced) {
-        if (replace_functions(sock_func_files, sock_functions) == 0) {
-            sock_func_replaced = 1;
-        }
-    }
-    if (!beq_func_replaced) {
-        if (replace_functions(beq_func_files, beq_functions) == 0) {
-            beq_func_replaced = 1;
-        }
-    }
-#else
-    static int initialized = 0;
-
-    if (!initialized) {
-        if (pipe(pipefd) != 0) {
-            rb_sys_fail("pipe");
-        }
-        replace_functions(files, functions);
-        initialized = 1;
-    }
-#endif
 }
+
+#endif

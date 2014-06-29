@@ -592,7 +592,8 @@ extern int oci8_nls_ratio;
 void Init_oci8_win32(VALUE cOCI8);
 
 /* hook_funcs.c */
-void oci8_hook_functions(void);
+void oci8_install_hook_functions(void);
+void oci8_check_win32_beq_functions(void);
 void oci8_cancel_read(void);
 
 #ifdef HAVE_TYPE_RB_ENCODING
