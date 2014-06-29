@@ -52,8 +52,76 @@ static int replace_functions(const char * const *files, hook_func_entry_t *funct
 
 #ifdef WIN32
 
+/* CancelIoEx is available in Windows Vista or later. */
+typedef BOOL (WINAPI *CancelIoEx_t)(HANDLE hFile, LPOVERLAPPED lpOverlapped);
+
+typedef struct list_entry {
+    struct list_entry *next;
+    struct list_entry *prev;
+    HANDLE hFile;
+} list_entry_t;
+
+#define NUM_ALLOC 20
+
+static CancelIoEx_t CancelIoEx_func;
+
+static CRITICAL_SECTION lock;
+
+static list_entry_t handles_in_use = {
+    &handles_in_use, &handles_in_use, NULL,
+};
+
+static list_entry_t *free_list;
+
 static WSAEVENT hCancelWSAEvent;
 
+static list_entry_t *get_list_entry(HANDLE hFile)
+{
+    list_entry_t *entry;
+
+    EnterCriticalSection(&lock);
+    /* get an entry from free_list */
+    entry = free_list;
+    if (entry != NULL) {
+        free_list = entry->next;
+    } else {
+        int i;
+        entry = (list_entry_t *)calloc(NUM_ALLOC, sizeof(list_entry_t));
+        if (entry == NULL) {
+            LeaveCriticalSection(&lock);
+            return NULL;
+        }
+        for (i = 1; i < NUM_ALLOC - 1; i++) {
+            entry[i].next = &entry[i + 1];
+        }
+        entry[NUM_ALLOC - 1].next = NULL;
+        free_list = entry + 1;
+    }
+    /* link to handles_in_use */
+    entry->next = handles_in_use.next;
+    entry->prev = &handles_in_use;
+    handles_in_use.next->prev = entry;
+    handles_in_use.next = entry;
+    entry->hFile = hFile;
+    LeaveCriticalSection(&lock);
+    return entry;
+}
+
+static void free_list_entry(list_entry_t *entry)
+{
+    if (entry != NULL) {
+        EnterCriticalSection(&lock);
+        /* unlink from handles_in_use */
+        entry->next->prev = entry->prev;
+        entry->prev->next = entry->next;
+        /* link to free_list */
+        entry->next = free_list;
+        free_list = entry;
+        LeaveCriticalSection(&lock);
+    }
+}
+
+/* WSARecv() is used for TCP connections */
 static int WSAAPI hook_WSARecv(SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount, LPDWORD lpNumberOfBytesRecvd, LPDWORD lpFlags, LPWSAOVERLAPPED lpOverlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine)
 {
     if (lpOverlapped == NULL) {
@@ -76,10 +144,15 @@ static int WSAAPI hook_WSARecv(SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount
     return WSARecv(s, lpBuffers, dwBufferCount, lpNumberOfBytesRecvd, lpFlags, lpOverlapped, lpCompletionRoutine);
 }
 
+/* ReadFile() is used for BEQ connections */
 static BOOL WINAPI hook_ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped)
 {
-    /* TODO: */
-    return ReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
+    list_entry_t *entry = get_list_entry(hFile);
+    BOOL ok;
+
+    ok = ReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
+    free_list_entry(entry);
+    return ok;
 }
 
 static const char * const tcp_func_files[] = {
@@ -120,7 +193,10 @@ static hook_func_entry_t beq_functions[] = {
 
 void oci8_install_hook_functions()
 {
+    InitializeCriticalSectionAndSpinCount(&lock, 4000);
     hCancelWSAEvent = WSACreateEvent();
+    /* CancelIoEx() is available in Windows Vista or later. */
+    CancelIoEx_func = (CancelIoEx_t)GetProcAddress(GetModuleHandle("KERNEL32.DLL"), "CancelIoEx");
 
     if (replace_functions(tcp_func_files, tcp_functions) != 0) {
         rb_raise(rb_eRuntimeError, "No DLL is found to hook.");
@@ -131,7 +207,7 @@ void oci8_check_win32_beq_functions()
 {
     BOOL beq_func_replaced = FALSE;
 
-    if (!beq_func_replaced) {
+    if (CancelIoEx_func != NULL && !beq_func_replaced) {
         /* oranbeq??.dll is not loaded until a beq connection is used. */
         if (replace_functions(beq_func_files, beq_functions) == 0) {
             beq_func_replaced = TRUE;
@@ -141,7 +217,14 @@ void oci8_check_win32_beq_functions()
 
 void oci8_cancel_read(void)
 {
+    list_entry_t *entry;
     WSASetEvent(hCancelWSAEvent);
+
+    EnterCriticalSection(&lock);
+    for (entry = handles_in_use.next; entry != &handles_in_use; entry = entry->next) {
+        CancelIoEx_func(entry->hFile, NULL);
+    }
+    LeaveCriticalSection(&lock);
 }
 
 #else
