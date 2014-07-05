@@ -97,12 +97,6 @@ if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/
   $objs << "win32.o"
 end
 
-if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/
-  $objs << "plthook_win32.o hook_funcs.o"
-else
-  $objs << "plthook.o hook_funcs.o"
-end
-
 # Checking gcc or not
 if oraconf.cc_is_gcc
   $CFLAGS += " -Wall"
@@ -185,6 +179,24 @@ when 'jruby'
   raise "Ruby-oci8 doesn't support jruby because its C extension support is in development in jruby 1.6 and deprecated in jruby 1.7."
 else
   raise 'unsupported ruby engine: ' + RUBY_ENGINE
+end
+
+case RUBY_PLATFORM
+when /mswin32|cygwin|mingw32|bccwin32/
+  plthook_src = "plthook_win32.c"
+else
+  plthook_src = "plthook.c"
+end
+
+print "checking for plt_hook... "
+STDOUT.flush
+if xsystem(cc_command("").gsub(CONFTEST_C, plthook_src))
+  puts "yes"
+  $objs << plthook_src.gsub(/\.c$/, '.o')
+  $objs << "hook_funcs.o"
+  $defs << "-DHAVE_PLT_HOOK"
+else
+  puts "no"
 end
 
 $defs << "-DInit_oci8lib=Init_#{so_basename}"

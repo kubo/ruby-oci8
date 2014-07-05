@@ -58,7 +58,9 @@ void oci8_base_free(oci8_base_t *base)
 static void at_exit_func(VALUE val)
 {
     oci8_in_finalizer = 1;
+#ifdef HAVE_PLT_HOOK
     oci8_cancel_read();
+#endif
 }
 #endif
 
@@ -148,7 +150,9 @@ Init_oci8lib()
 #ifdef USE_WIN32_C
     Init_oci8_win32(cOCI8);
 #endif
+#ifdef HAVE_PLT_HOOK
     oci8_install_hook_functions();
+#endif
 }
 
 VALUE oci8_define_class(const char *name, oci8_base_vtable_t *vptr)

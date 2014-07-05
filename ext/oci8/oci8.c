@@ -515,7 +515,7 @@ static VALUE oci8_server_attach(VALUE self, VALUE dbname, VALUE attach_mode)
                       svcctx->srvhp, 0, OCI_ATTR_SERVER,
                       oci8_errhp),
            &svcctx->base);
-#ifdef WIN32
+#if defined HAVE_PLT_HOOK && defined WIN32
     oci8_check_win32_beq_functions();
 #endif
 
