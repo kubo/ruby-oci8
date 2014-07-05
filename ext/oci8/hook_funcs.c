@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <errno.h>
+#include <unistd.h>
 #endif
 #include "oci8.h"
 #include "plthook.h"
@@ -256,10 +257,16 @@ static ssize_t hook_read(int fd, void *buf, size_t count)
 }
 
 static const char * const files[] = {
+#ifdef __APPLE__
+    "libclntsh.dylib.12.1",
+    "libclntsh.dylib.11.1",
+    "libclntsh.dylib.10.1",
+#else
     "libclntsh.so.12.1",
     "libclntsh.so.11.1",
     "libclntsh.so.10.1",
     "libclntsh.so.9.0",
+#endif
     NULL,
 };
 

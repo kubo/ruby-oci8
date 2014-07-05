@@ -184,8 +184,10 @@ end
 case RUBY_PLATFORM
 when /mswin32|cygwin|mingw32|bccwin32/
   plthook_src = "plthook_win32.c"
+when /darwin/
+  plthook_src = "plthook_osx.c"
 else
-  plthook_src = "plthook.c"
+  plthook_src = "plthook_elf.c"
 end
 
 print "checking for plt_hook... "
