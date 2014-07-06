@@ -754,9 +754,16 @@ static VALUE oci8_set_long_read_len(VALUE self, VALUE val)
  *   break
  *
  * Cancels the executing SQL.
- * Note that this doesn't work if the Oracle server connected to is on Windows.
  *
- * See also #non_blocking=.
+ * Note that this doesn't work in the following two cases.
+ *
+ * * The Oracle server runs on Windows.
+ * * Out-of-band packets are blocked by a firewall or by a VPN.
+ *
+ * In the latter case, create an sqlnet.ora file in the path specified
+ * by the TNS_ADMIN environment variable that sets {DISABLE_OOB=on}[http://www.orafaq.com/wiki/SQL*Net_FAQ#What_are_inband_and_out_of_band_breaks.3F].
+ *
+ * @see OCI8#non_blocking=
  */
 static VALUE oci8_break(VALUE self)
 {
