@@ -89,6 +89,10 @@ class OCI8
     #   cursor.exec()
     #   cursor.close()
     def bind_param(key, param, type = nil, length = nil)
+      if type.nil? and param.nil?
+        type = String
+        length = 1 unless length
+      end
       case param
       when Hash
       when Class
@@ -288,18 +292,19 @@ class OCI8
         raise "all binding arrays should be the same size." unless @actual_array_size.nil? || var_array.size == @actual_array_size
         @actual_array_size = var_array.size if @actual_array_size.nil?
       end
-      
+
       param = {:value => var_array, :type => type, :length => max_item_length, :max_array_size => @max_array_size}
       first_non_nil_elem = var_array.nil? ? nil : var_array.find{|x| x!= nil}
-      
+
       if type.nil?
         if first_non_nil_elem.nil?
-          raise "bind type is not given."
+          type = String #raise "bind type is not given."
+          max_item_length = 1 unless max_item_length
         else
           type = first_non_nil_elem.class
         end
       end
-      
+
       bindclass = OCI8::BindType::Mapping[type]
       if bindclass.nil? and type.is_a? Class
         bindclass = OCI8::BindType::Mapping[type.to_s]
