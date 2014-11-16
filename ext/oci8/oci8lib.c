@@ -51,6 +51,7 @@ void oci8_base_free(oci8_base_t *base)
         OCIHandleFree(base->hp.ptr, base->type);
     }
     base->type = 0;
+    base->closed = 1;
     base->hp.ptr = NULL;
 }
 
@@ -577,7 +578,7 @@ oci8_base_t *oci8_get_handle(VALUE obj, VALUE klass)
                  rb_obj_classname(obj), rb_class2name(klass));
     }
     Data_Get_Struct(obj, oci8_base_t, hp);
-    if (hp->type == 0) {
+    if (hp->closed) {
         rb_raise(eOCIException, "%s was already closed.",
                  rb_obj_classname(obj));
     }

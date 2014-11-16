@@ -16,6 +16,8 @@ static VALUE ptype_to_class;
 static VALUE class_to_ptype;
 static ID id_at_obj_link;
 
+#define TO_METADATA(obj) ((oci8_metadata_t *)oci8_get_handle((obj), cOCI8MetadataBase))
+
 typedef struct {
     oci8_base_t base;
     VALUE svc;
@@ -87,7 +89,7 @@ static VALUE metadata_s_register_ptype(VALUE klass, VALUE ptype)
  */
 static VALUE metadata_get_param(VALUE self, VALUE idx)
 {
-    oci8_metadata_t *md = DATA_PTR(self);
+    oci8_metadata_t *md = TO_METADATA(self);
     oci8_svcctx_t *svcctx = oci8_get_svcctx(md->svc);
     OCIParam *value;
     ub4 size = sizeof(value);
@@ -107,7 +109,7 @@ static VALUE metadata_get_param(VALUE self, VALUE idx)
 
 static VALUE metadata_get_param_at(VALUE self, VALUE idx)
 {
-    oci8_metadata_t *md = DATA_PTR(self);
+    oci8_metadata_t *md = TO_METADATA(self);
     OCIParam *value;
 
     chker2(OCIParamGet(md->base.hp.ptr, md->base.type, oci8_errhp, (dvoid *)&value, FIX2INT(idx)),
@@ -117,13 +119,13 @@ static VALUE metadata_get_param_at(VALUE self, VALUE idx)
 
 static VALUE metadata_get_con(VALUE self)
 {
-    oci8_metadata_t *md = DATA_PTR(self);
+    oci8_metadata_t *md = TO_METADATA(self);
     return md->svc;
 }
 
 static VALUE metadata_is_implicit_p(VALUE self)
 {
-    oci8_metadata_t *md = DATA_PTR(self);
+    oci8_metadata_t *md = TO_METADATA(self);
     return md->is_implicit ? Qtrue : Qfalse;
 }
 
@@ -200,7 +202,7 @@ static VALUE oci8_describe(VALUE self, VALUE name, VALUE klass, VALUE check_publ
 
 static VALUE metadata_get_type_metadata(VALUE self, VALUE klass)
 {
-    oci8_metadata_t *md = DATA_PTR(self);
+    oci8_metadata_t *md = TO_METADATA(self);
     oci8_svcctx_t *svcctx = oci8_get_svcctx(md->svc);
     OCIRef *ref = NULL;
 
@@ -212,7 +214,7 @@ static VALUE metadata_get_type_metadata(VALUE self, VALUE klass)
 
 static VALUE metadata_get_tdo_id(VALUE self)
 {
-    oci8_metadata_t *md = DATA_PTR(self);
+    oci8_metadata_t *md = TO_METADATA(self);
     oci8_svcctx_t *svcctx = oci8_get_svcctx(md->svc);
     OCIRef *tdo_ref = NULL;
     void *tdo;

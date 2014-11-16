@@ -52,7 +52,7 @@ static oci8_base_vtable_t oci8_stmt_vtable = {
  */
 static VALUE oci8_stmt_initialize(VALUE self, VALUE svc, VALUE sql)
 {
-    oci8_stmt_t *stmt = DATA_PTR(self);
+    oci8_stmt_t *stmt = TO_STMT(self);
     oci8_svcctx_t *svcctx;
     sword rv;
 
@@ -83,7 +83,7 @@ static VALUE oci8_stmt_initialize(VALUE self, VALUE svc, VALUE sql)
     }
     stmt->svc = svc;
 
-    oci8_link_to_parent((oci8_base_t*)stmt, (oci8_base_t*)DATA_PTR(svc));
+    oci8_link_to_parent(&stmt->base, &svcctx->base);
     return Qnil;
 }
 
@@ -321,11 +321,8 @@ VALUE oci8_stmt_get(oci8_bind_t *obind, void *data, void *null_struct)
 static void bind_stmt_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     oci8_hp_obj_t *oho = (oci8_hp_obj_t *)data;
-    oci8_base_t *h;
-    if (!rb_obj_is_instance_of(val, cOCIStmt))
-        rb_raise(rb_eArgError, "Invalid argument: %s (expect OCIStmt)", rb_class2name(CLASS_OF(val)));
-    h = DATA_PTR(val);
-    oho->hp = h->hp.ptr;
+    oci8_stmt_t *stmt = TO_STMT(val);
+    oho->hp = stmt->base.hp.ptr;
     oho->obj = val;
 }
 

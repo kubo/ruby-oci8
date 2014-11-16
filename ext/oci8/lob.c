@@ -18,6 +18,8 @@ static VALUE seek_set;
 static VALUE seek_cur;
 static VALUE seek_end;
 
+#define TO_LOB(obj) ((oci8_lob_t *)oci8_get_handle((obj), cOCI8LOB))
+
 enum state {
     S_NO_OPEN_CLOSE,
     S_OPEN,
@@ -53,7 +55,7 @@ static VALUE oci8_make_lob(VALUE klass, oci8_svcctx_t *svcctx, OCILobLocator *s)
     VALUE lob_obj;
 
     lob_obj = rb_class_new_instance(1, &svcctx->base.self, klass);
-    lob = DATA_PTR(lob_obj);
+    lob = TO_LOB(lob_obj);
     /* If 's' is a temporary lob, use OCILobLocatorAssign instead. */
     chker2(OCILobIsTemporary(oci8_envhp, oci8_errhp, s, &is_temp), &svcctx->base);
     if (is_temp)
@@ -231,15 +233,15 @@ static void bfile_close(oci8_lob_t *lob)
  */
 static VALUE oci8_lob_close(VALUE self)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     lob_close(lob);
-    oci8_base_free(DATA_PTR(self));
+    oci8_base_free(&lob->base);
     return self;
 }
 
 static VALUE oci8_lob_do_initialize(int argc, VALUE *argv, VALUE self, ub1 csfrm, ub1 lobtype)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     VALUE svc;
     VALUE val;
     oci8_svcctx_t *svcctx;
@@ -256,7 +258,7 @@ static VALUE oci8_lob_do_initialize(int argc, VALUE *argv, VALUE self, ub1 csfrm
     lob->csfrm = csfrm;
     lob->lobtype = lobtype;
     lob->state = S_NO_OPEN_CLOSE;
-    oci8_link_to_parent((oci8_base_t*)lob, (oci8_base_t*)DATA_PTR(svc));
+    oci8_link_to_parent(&lob->base, &svcctx->base);
     lob->svcctx = svcctx;
     if (!NIL_P(val)) {
         OCI8StringValue(val);
@@ -346,7 +348,7 @@ static VALUE oci8_blob_initialize(int argc, VALUE *argv, VALUE self)
  */
 static VALUE oci8_lob_set_char_width(VALUE self, VALUE vsize)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     int size;
 
     size = NUM2INT(vsize); /* 1 */
@@ -364,7 +366,7 @@ static VALUE oci8_lob_set_char_width(VALUE self, VALUE vsize)
  */
 static VALUE oci8_lob_available_p(VALUE self)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     boolean is_initialized;
 
     chker2(OCILobLocatorIsInit(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_initialized),
@@ -381,7 +383,7 @@ static VALUE oci8_lob_available_p(VALUE self)
  */
 static VALUE oci8_lob_get_size(VALUE self)
 {
-    return UB4_TO_NUM(oci8_lob_get_length(DATA_PTR(self)));
+    return UB4_TO_NUM(oci8_lob_get_length(TO_LOB(self)));
 }
 
 /*
@@ -393,7 +395,7 @@ static VALUE oci8_lob_get_size(VALUE self)
  */
 static VALUE oci8_lob_get_pos(VALUE self)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     return UB4_TO_NUM(lob->pos);
 }
 
@@ -404,7 +406,7 @@ static VALUE oci8_lob_get_pos(VALUE self)
  */
 static VALUE oci8_lob_eof_p(VALUE self)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     if (oci8_lob_get_length(lob) < lob->pos)
         return Qfalse;
     else
@@ -427,7 +429,7 @@ static VALUE oci8_lob_eof_p(VALUE self)
  */
 static VALUE oci8_lob_seek(int argc, VALUE *argv, VALUE self)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     VALUE position, whence;
 
     rb_scan_args(argc, argv, "11", &position, &whence);
@@ -456,7 +458,7 @@ static VALUE oci8_lob_seek(int argc, VALUE *argv, VALUE self)
  */
 static VALUE oci8_lob_rewind(VALUE self)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     lob->pos = 0;
     return self;
 }
@@ -472,7 +474,7 @@ static VALUE oci8_lob_rewind(VALUE self)
  */
 static VALUE oci8_lob_truncate(VALUE self, VALUE len)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     oci8_svcctx_t *svcctx = check_svcctx(lob);
 
     lob_open(lob);
@@ -513,7 +515,7 @@ static VALUE oci8_lob_set_size(VALUE self, VALUE len)
  */
 static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     oci8_svcctx_t *svcctx = check_svcctx(lob);
     ub4 length;
     ub4 nchar;
@@ -637,7 +639,7 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
  */
 static VALUE oci8_lob_write(VALUE self, VALUE data)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     oci8_svcctx_t *svcctx = check_svcctx(lob);
     ub4 amt;
 
@@ -666,7 +668,7 @@ static VALUE oci8_lob_write(VALUE self, VALUE data)
  */
 static VALUE oci8_lob_get_sync(VALUE self)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     return (lob->state == S_NO_OPEN_CLOSE) ? Qtrue : Qfalse;
 }
 
@@ -676,7 +678,7 @@ static VALUE oci8_lob_get_sync(VALUE self)
  */
 static VALUE oci8_lob_set_sync(VALUE self, VALUE b)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     if (RTEST(b)) {
         lob_close(lob);
         lob->state = S_NO_OPEN_CLOSE;
@@ -693,7 +695,7 @@ static VALUE oci8_lob_set_sync(VALUE self, VALUE b)
  */
 static VALUE oci8_lob_flush(VALUE self)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     lob_close(lob);
     return self;
 }
@@ -706,7 +708,7 @@ static VALUE oci8_lob_flush(VALUE self)
  */
 static VALUE oci8_lob_get_chunk_size(VALUE self)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     oci8_svcctx_t *svcctx = check_svcctx(lob);
     ub4 len;
 
@@ -717,7 +719,7 @@ static VALUE oci8_lob_get_chunk_size(VALUE self)
 
 static VALUE oci8_lob_clone(VALUE self)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     oci8_lob_t *newlob;
     VALUE newobj = lob->svcctx ? lob->svcctx->base.self : Qnil;
     boolean is_temporary;
@@ -749,7 +751,7 @@ static void oci8_bfile_get_name(VALUE self, VALUE *dir_alias_p, VALUE *filename_
             need_get = 1;
     }
     if (need_get) {
-        oci8_lob_t *lob = DATA_PTR(self);
+        oci8_lob_t *lob = TO_LOB(self);
         char d_buf[31];
         ub2 d_length = sizeof(d_buf);
         char f_buf[256];
@@ -774,7 +776,7 @@ static void oci8_bfile_get_name(VALUE self, VALUE *dir_alias_p, VALUE *filename_
 
 static void oci8_bfile_set_name(VALUE self, VALUE dir_alias, VALUE filename)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
 
     bfile_close(lob);
     if (RSTRING_LEN(dir_alias) > UB2MAXVAL) {
@@ -804,7 +806,7 @@ static void oci8_bfile_set_name(VALUE self, VALUE dir_alias, VALUE filename)
  */
 static VALUE oci8_bfile_initialize(int argc, VALUE *argv, VALUE self)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     VALUE svc;
     VALUE dir_alias;
     VALUE filename;
@@ -828,7 +830,7 @@ static VALUE oci8_bfile_initialize(int argc, VALUE *argv, VALUE self)
         OCI8SafeStringValue(filename);
         oci8_bfile_set_name(self, dir_alias, filename);
     }
-    oci8_link_to_parent((oci8_base_t*)lob, (oci8_base_t*)DATA_PTR(svc));
+    oci8_link_to_parent(&lob->base, &svcctx->base);
     lob->svcctx = svcctx;
     return Qnil;
 }
@@ -904,7 +906,7 @@ static VALUE oci8_bfile_set_filename(VALUE self, VALUE filename)
  */
 static VALUE oci8_bfile_exists_p(VALUE self)
 {
-    oci8_lob_t *lob = DATA_PTR(self);
+    oci8_lob_t *lob = TO_LOB(self);
     oci8_svcctx_t *svcctx = check_svcctx(lob);
     boolean flag;
 

@@ -9,6 +9,8 @@
  */
 #include "oci8.h"
 
+#define TO_HANDLE(obj) oci8_get_handle((obj), oci8_cOCIHandle)
+
 #ifdef _MSC_VER
 #define MAGIC_NUMBER 0xDEAFBEAFDEAFBEAFui64;
 #else
@@ -141,8 +143,23 @@ static VALUE attr_get_common(int argc, VALUE *argv, VALUE self, enum datatype da
     ub4 size = 0;
     sword rv;
 
-    if (base->type == 0) {
-        return Qnil;
+    if (base->closed) {
+        /* Returns nil when the backtrace includes `inspect'.
+         * Otherwise, raises an exception.
+         * IMO, `inspect' should not raise an exception.
+         */
+        volatile VALUE backtrace = rb_funcall(rb_cObject, rb_intern("caller"), 0);
+        if (TYPE(backtrace) == T_ARRAY) {
+            int i;
+            for (i = 0; i < RARRAY_LEN(backtrace); i++) {
+                volatile VALUE elem = RARRAY_PTR(backtrace)[i];
+                char *s = StringValueCStr(elem);
+                if (strstr(s, "inspect") != NULL) {
+                    return Qnil;
+                }
+            }
+        }
+        oci8_get_handle(self, oci8_cOCIHandle);
     }
 
     v.ub8val = MAGIC_NUMBER;
@@ -478,7 +495,7 @@ static VALUE attr_get_oradate(int argc, VALUE *argv, VALUE self)
  */
 static VALUE attr_set_ub1(VALUE self, VALUE attr_type, VALUE val)
 {
-    oci8_base_t *base = DATA_PTR(self);
+    oci8_base_t *base = TO_HANDLE(self);
     ub1 value;
 
     /* validate arguments */
@@ -507,7 +524,7 @@ static VALUE attr_set_ub1(VALUE self, VALUE attr_type, VALUE val)
  */
 static VALUE attr_set_ub2(VALUE self, VALUE attr_type, VALUE val)
 {
-    oci8_base_t *base = DATA_PTR(self);
+    oci8_base_t *base = TO_HANDLE(self);
     ub2 value;
 
     /* validate arguments */
@@ -536,7 +553,7 @@ static VALUE attr_set_ub2(VALUE self, VALUE attr_type, VALUE val)
  */
 static VALUE attr_set_ub4(VALUE self, VALUE attr_type, VALUE val)
 {
-    oci8_base_t *base = DATA_PTR(self);
+    oci8_base_t *base = TO_HANDLE(self);
     ub4 value;
 
     /* validate arguments */
@@ -565,7 +582,7 @@ static VALUE attr_set_ub4(VALUE self, VALUE attr_type, VALUE val)
  */
 static VALUE attr_set_ub8(VALUE self, VALUE attr_type, VALUE val)
 {
-    oci8_base_t *base = DATA_PTR(self);
+    oci8_base_t *base = TO_HANDLE(self);
     ub8 value;
 
     /* validate arguments */
@@ -594,7 +611,7 @@ static VALUE attr_set_ub8(VALUE self, VALUE attr_type, VALUE val)
  */
 static VALUE attr_set_sb1(VALUE self, VALUE attr_type, VALUE val)
 {
-    oci8_base_t *base = DATA_PTR(self);
+    oci8_base_t *base = TO_HANDLE(self);
     sb1 value;
 
     /* validate arguments */
@@ -623,7 +640,7 @@ static VALUE attr_set_sb1(VALUE self, VALUE attr_type, VALUE val)
  */
 static VALUE attr_set_sb2(VALUE self, VALUE attr_type, VALUE val)
 {
-    oci8_base_t *base = DATA_PTR(self);
+    oci8_base_t *base = TO_HANDLE(self);
     sb2 value;
 
     /* validate arguments */
@@ -652,7 +669,7 @@ static VALUE attr_set_sb2(VALUE self, VALUE attr_type, VALUE val)
  */
 static VALUE attr_set_sb4(VALUE self, VALUE attr_type, VALUE val)
 {
-    oci8_base_t *base = DATA_PTR(self);
+    oci8_base_t *base = TO_HANDLE(self);
     sb4 value;
 
     /* validate arguments */
@@ -681,7 +698,7 @@ static VALUE attr_set_sb4(VALUE self, VALUE attr_type, VALUE val)
  */
 static VALUE attr_set_sb8(VALUE self, VALUE attr_type, VALUE val)
 {
-    oci8_base_t *base = DATA_PTR(self);
+    oci8_base_t *base = TO_HANDLE(self);
     sb8 value;
 
     /* validate arguments */
@@ -710,7 +727,7 @@ static VALUE attr_set_sb8(VALUE self, VALUE attr_type, VALUE val)
  */
 static VALUE attr_set_boolean(VALUE self, VALUE attr_type, VALUE val)
 {
-    oci8_base_t *base = DATA_PTR(self);
+    oci8_base_t *base = TO_HANDLE(self);
     boolean value;
 
     /* validate arguments */
@@ -738,7 +755,7 @@ static VALUE attr_set_boolean(VALUE self, VALUE attr_type, VALUE val)
  */
 static VALUE attr_set_string(VALUE self, VALUE attr_type, VALUE val)
 {
-    oci8_base_t *base = DATA_PTR(self);
+    oci8_base_t *base = TO_HANDLE(self);
 
     /* validate arguments */
     Check_Type(attr_type, T_FIXNUM);
@@ -763,7 +780,7 @@ static VALUE attr_set_string(VALUE self, VALUE attr_type, VALUE val)
  */
 static VALUE attr_set_binary(VALUE self, VALUE attr_type, VALUE val)
 {
-    oci8_base_t *base = DATA_PTR(self);
+    oci8_base_t *base = TO_HANDLE(self);
 
     /* validate arguments */
     Check_Type(attr_type, T_FIXNUM);
@@ -790,7 +807,7 @@ static VALUE attr_set_binary(VALUE self, VALUE attr_type, VALUE val)
  */
 static VALUE attr_set_integer(VALUE self, VALUE attr_type, VALUE val)
 {
-    oci8_base_t *base = DATA_PTR(self);
+    oci8_base_t *base = TO_HANDLE(self);
     OCINumber value;
 
     /* validate arguments */

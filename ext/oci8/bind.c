@@ -194,7 +194,7 @@ static const oci8_bind_vtable_t bind_binary_double_vtable = {
 
 static VALUE oci8_bind_get(VALUE self)
 {
-    oci8_bind_t *obind = DATA_PTR(self);
+    oci8_bind_t *obind = oci8_get_bind(self);
     const oci8_bind_vtable_t *vptr = (const oci8_bind_vtable_t *)obind->base.vptr;
     ub4 idx = obind->curar_idx;
     void **null_structp = NULL;
@@ -208,7 +208,7 @@ static VALUE oci8_bind_get(VALUE self)
 
 static VALUE oci8_bind_get_data(VALUE self)
 {
-    oci8_bind_t *obind = DATA_PTR(self);
+    oci8_bind_t *obind = oci8_get_bind(self);
 
     if (obind->maxar_sz == 0) {
         obind->curar_idx = 0;
@@ -227,7 +227,7 @@ static VALUE oci8_bind_get_data(VALUE self)
 
 static VALUE oci8_bind_set(VALUE self, VALUE val)
 {
-    oci8_bind_t *obind = DATA_PTR(self);
+    oci8_bind_t *obind = oci8_get_bind(self);
     const oci8_bind_vtable_t *vptr = (const oci8_bind_vtable_t *)obind->base.vptr;
     ub4 idx = obind->curar_idx;
 
@@ -254,7 +254,7 @@ static VALUE oci8_bind_set(VALUE self, VALUE val)
 
 static VALUE oci8_bind_set_data(VALUE self, VALUE val)
 {
-    oci8_bind_t *obind = DATA_PTR(self);
+    oci8_bind_t *obind = oci8_get_bind(self);
 
     if (obind->maxar_sz == 0) {
         obind->curar_idx = 0;
@@ -279,7 +279,7 @@ static VALUE oci8_bind_set_data(VALUE self, VALUE val)
 
 static VALUE oci8_bind_initialize(VALUE self, VALUE svc, VALUE val, VALUE length, VALUE max_array_size)
 {
-    oci8_bind_t *obind = DATA_PTR(self);
+    oci8_bind_t *obind = oci8_get_bind(self);
     const oci8_bind_vtable_t *bind_class = (const oci8_bind_vtable_t *)obind->base.vptr;
     ub4 cnt = 1;
 
@@ -363,7 +363,5 @@ void Init_oci8_bind(VALUE klass)
 
 oci8_bind_t *oci8_get_bind(VALUE obj)
 {
-    oci8_base_t *base;
-    Check_Handle(obj, cOCI8BindTypeBase, base);
-    return (oci8_bind_t *)base;
+    return (oci8_bind_t *)oci8_get_handle(obj, cOCI8BindTypeBase);
 }

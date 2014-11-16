@@ -398,7 +398,7 @@ static const oci8_logoff_strategy_t complex_logoff = {
  */
 static VALUE oci8_logon2(VALUE self, VALUE username, VALUE password, VALUE dbname, VALUE mode)
 {
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
     ub4 logon2_mode;
 
     if (svcctx->logoff_strategy != NULL) {
@@ -451,7 +451,7 @@ static VALUE oci8_logon2(VALUE self, VALUE username, VALUE password, VALUE dbnam
  */
 static VALUE oci8_allocate_handles(VALUE self)
 {
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
     sword rv;
 
     if (svcctx->logoff_strategy != NULL) {
@@ -532,7 +532,7 @@ static VALUE oci8_server_attach(VALUE self, VALUE dbname, VALUE attach_mode)
  */
 static VALUE oci8_session_begin(VALUE self, VALUE cred, VALUE mode)
 {
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
 
     if (svcctx->logoff_strategy != &complex_logoff) {
         rb_raise(rb_eRuntimeError, "Use this method only for the service context handle created by OCI8#server_handle().");
@@ -567,7 +567,7 @@ static VALUE oci8_session_begin(VALUE self, VALUE cred, VALUE mode)
  */
 static VALUE oci8_svcctx_logoff(VALUE self)
 {
-    oci8_svcctx_t *svcctx = (oci8_svcctx_t *)DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
 
     while (svcctx->base.children != NULL) {
         oci8_base_free(svcctx->base.children);
@@ -590,7 +590,7 @@ static VALUE oci8_svcctx_logoff(VALUE self)
  */
 static VALUE oci8_commit(VALUE self)
 {
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
     chker2(OCITransCommit_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT), &svcctx->base);
     return self;
 }
@@ -603,7 +603,7 @@ static VALUE oci8_commit(VALUE self)
  */
 static VALUE oci8_rollback(VALUE self)
 {
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
     chker2(OCITransRollback_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT), &svcctx->base);
     return self;
 }
@@ -619,7 +619,7 @@ static VALUE oci8_rollback(VALUE self)
  */
 static VALUE oci8_non_blocking_p(VALUE self)
 {
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
 #ifdef NATIVE_THREAD_WITH_GVL
     return svcctx->non_blocking ? Qtrue : Qfalse;
 #else
@@ -669,7 +669,7 @@ static VALUE oci8_non_blocking_p(VALUE self)
  */
 static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
 {
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
 #ifdef NATIVE_THREAD_WITH_GVL
     svcctx->non_blocking = RTEST(val);
 #else
@@ -696,7 +696,7 @@ static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
  */
 static VALUE oci8_autocommit_p(VALUE self)
 {
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
     return svcctx->is_autocommit ? Qtrue : Qfalse;
 }
 
@@ -708,7 +708,7 @@ static VALUE oci8_autocommit_p(VALUE self)
  */
 static VALUE oci8_set_autocommit(VALUE self, VALUE val)
 {
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
     svcctx->is_autocommit = RTEST(val);
     return val;
 }
@@ -727,7 +727,7 @@ static VALUE oci8_set_autocommit(VALUE self, VALUE val)
  */
 static VALUE oci8_long_read_len(VALUE self)
 {
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
     return svcctx->long_read_len;
 }
 
@@ -743,7 +743,7 @@ static VALUE oci8_long_read_len(VALUE self)
  */
 static VALUE oci8_set_long_read_len(VALUE self, VALUE val)
 {
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
     Check_Type(val, T_FIXNUM);
     svcctx->long_read_len = val;
     return val;
@@ -767,7 +767,7 @@ static VALUE oci8_set_long_read_len(VALUE self, VALUE val)
  */
 static VALUE oci8_break(VALUE self)
 {
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
 
     if (NIL_P(svcctx->executing_thread)) {
         return Qfalse;
@@ -791,7 +791,7 @@ static VALUE oci8_break(VALUE self)
  */
 static VALUE oci8_oracle_server_vernum(VALUE self)
 {
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
     char buf[100];
     ub4 version;
 
@@ -861,6 +861,7 @@ static VALUE oci8_ping(VALUE self)
  */
 static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
 {
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
     const char *ptr;
     ub4 size;
 
@@ -877,9 +878,9 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
         if (size > 0 && ptr[0] == ':') {
             rb_raise(rb_eArgError, "client identifier should not start with ':'.");
         }
-        chker2(OCIAttrSet(oci8_get_oci_session(self), OCI_HTYPE_SESSION, (dvoid*)ptr,
+        chker2(OCIAttrSet(svcctx->usrhp, OCI_HTYPE_SESSION, (dvoid*)ptr,
                           size, OCI_ATTR_CLIENT_IDENTIFIER, oci8_errhp),
-               DATA_PTR(self));
+               &svcctx->base);
     } else {
         /* Workaround for Bug 2449486 */
         oci8_exec_sql_var_t bind_vars[1];
@@ -891,7 +892,7 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
         bind_vars[0].indp = NULL;
         bind_vars[0].alenp = NULL;
 
-        oci8_exec_sql(oci8_get_svcctx(self),
+        oci8_exec_sql(svcctx,
                       "BEGIN\n"
                       "  DBMS_SESSION.SET_IDENTIFIER(:client_id);\n"
                       "END;\n", 0, NULL, 1, bind_vars, 1);
@@ -934,6 +935,7 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
  */
 static VALUE oci8_set_module(VALUE self, VALUE val)
 {
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
     const char *ptr;
     ub4 size;
 
@@ -947,9 +949,9 @@ static VALUE oci8_set_module(VALUE self, VALUE val)
     }
     if (oracle_client_version >= ORAVER_10_1) {
         /* Oracle 10g or upper */
-        chker2(OCIAttrSet(oci8_get_oci_session(self), OCI_HTYPE_SESSION, (dvoid*)ptr,
+        chker2(OCIAttrSet(svcctx->usrhp, OCI_HTYPE_SESSION, (dvoid*)ptr,
                           size, OCI_ATTR_MODULE, oci8_errhp),
-               DATA_PTR(self));
+               &svcctx->base);
     } else {
         /* Oracle 9i or lower */
         oci8_exec_sql_var_t bind_vars[1];
@@ -961,7 +963,7 @@ static VALUE oci8_set_module(VALUE self, VALUE val)
         bind_vars[0].indp = NULL;
         bind_vars[0].alenp = NULL;
 
-        oci8_exec_sql(oci8_get_svcctx(self),
+        oci8_exec_sql(svcctx,
                       "DECLARE\n"
                       "  action VARCHAR2(32);\n"
                       "BEGIN\n"
@@ -1003,6 +1005,7 @@ static VALUE oci8_set_module(VALUE self, VALUE val)
  */
 static VALUE oci8_set_action(VALUE self, VALUE val)
 {
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
     const char *ptr;
     ub4 size;
 
@@ -1016,9 +1019,9 @@ static VALUE oci8_set_action(VALUE self, VALUE val)
     }
     if (oracle_client_version >= ORAVER_10_1) {
         /* Oracle 10g or upper */
-        chker2(OCIAttrSet(oci8_get_oci_session(self), OCI_HTYPE_SESSION, (dvoid*)ptr,
+        chker2(OCIAttrSet(svcctx->usrhp, OCI_HTYPE_SESSION, (dvoid*)ptr,
                           size, OCI_ATTR_ACTION, oci8_errhp),
-               DATA_PTR(self));
+               &svcctx->base);
     } else {
         /* Oracle 9i or lower */
         oci8_exec_sql_var_t bind_vars[1];
@@ -1030,7 +1033,7 @@ static VALUE oci8_set_action(VALUE self, VALUE val)
         bind_vars[0].indp = NULL;
         bind_vars[0].alenp = NULL;
 
-        oci8_exec_sql(oci8_get_svcctx(self),
+        oci8_exec_sql(svcctx,
                       "BEGIN\n"
                       "  DBMS_APPLICATION_INFO.SET_ACTION(:action);\n"
                       "END;\n", 0, NULL, 1, bind_vars, 1);
@@ -1066,6 +1069,7 @@ static VALUE oci8_set_action(VALUE self, VALUE val)
  */
 static VALUE oci8_set_client_info(VALUE self, VALUE val)
 {
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
     const char *ptr;
     ub4 size;
 
@@ -1079,9 +1083,9 @@ static VALUE oci8_set_client_info(VALUE self, VALUE val)
     }
     if (oracle_client_version >= ORAVER_10_1) {
         /* Oracle 10g or upper */
-        chker2(OCIAttrSet(oci8_get_oci_session(self), OCI_HTYPE_SESSION, (dvoid*)ptr,
+        chker2(OCIAttrSet(svcctx->usrhp, OCI_HTYPE_SESSION, (dvoid*)ptr,
                           size, OCI_ATTR_CLIENT_INFO, oci8_errhp),
-               DATA_PTR(self));
+               &svcctx->base);
     } else {
         /* Oracle 9i or lower */
         oci8_exec_sql_var_t bind_vars[1];
@@ -1093,7 +1097,7 @@ static VALUE oci8_set_client_info(VALUE self, VALUE val)
         bind_vars[0].indp = NULL;
         bind_vars[0].alenp = NULL;
 
-        oci8_exec_sql(oci8_get_svcctx(self), 
+        oci8_exec_sql(svcctx, 
                       "BEGIN\n"
                       "  DBMS_APPLICATION_INFO.SET_CLIENT_INFO(:client_info);\n"
                       "END;\n", 0, NULL, 1, bind_vars, 1);

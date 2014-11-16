@@ -317,6 +317,7 @@ struct oci8_bind_vtable {
 struct oci8_base {
     const oci8_base_vtable_t *vptr;
     ub4 type;
+    ub1 closed;
     union {
         dvoid *ptr;
         OCISvcCtx *svc;
@@ -580,7 +581,6 @@ VALUE oci8_make_interval_ds(OCIInterval *s);
 void Init_oci_object(VALUE mOCI);
 
 /* attr.c */
-VALUE oci8_get_ub2_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
 VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
 
 /* encoding.c */

@@ -9,6 +9,8 @@
 
 static VALUE cOCIConnectionPool;
 
+#define TO_CPOOL(obj) ((oci8_cpool_t *)oci8_get_handle((obj), cOCIConnectionPool))
+
 typedef struct {
     oci8_base_t base;
     VALUE pool_name;
@@ -89,9 +91,9 @@ static VALUE oci8_cpool_initialize(int argc, VALUE *argv, VALUE self)
     VALUE username;
     VALUE password;
     VALUE dbname;
-    oci8_cpool_t *cpool = DATA_PTR(self);
-    OraText *pool_name;
-    sb4 pool_name_len;
+    oci8_cpool_t *cpool = TO_CPOOL(self);
+    OraText *pool_name = NULL;
+    sb4 pool_name_len = 0;
     sword rv;
 
     /* check arguments */
@@ -152,7 +154,7 @@ static VALUE oci8_cpool_initialize(int argc, VALUE *argv, VALUE self)
  */
 static VALUE oci8_cpool_reinitialize(VALUE self, VALUE conn_min, VALUE conn_max, VALUE conn_incr)
 {
-    oci8_cpool_t *cpool = DATA_PTR(self);
+    oci8_cpool_t *cpool = TO_CPOOL(self);
     OraText *pool_name;
     sb4 pool_name_len;
 
@@ -180,7 +182,7 @@ static VALUE oci8_cpool_reinitialize(VALUE self, VALUE conn_min, VALUE conn_max,
  */
 static VALUE oci8_cpool_pool_name(VALUE self)
 {
-    oci8_cpool_t *cpool = DATA_PTR(self);
+    oci8_cpool_t *cpool = TO_CPOOL(self);
 
     return cpool->pool_name;
 }

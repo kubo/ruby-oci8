@@ -23,6 +23,8 @@ static VALUE cOCI8BindNamedType;
 static ID id_to_value;
 static ID id_set_attributes;
 
+#define TO_TDO(obj) oci8_get_handle((obj), cOCI8TDO)
+
 typedef struct {
     oci8_base_t base;
     VALUE tdo;
@@ -68,7 +70,7 @@ static void oci8_tdo_free(oci8_base_t *base)
 
 static VALUE oci8_tdo_setup(VALUE self, VALUE svc, VALUE md_obj)
 {
-    oci8_base_t *tdo = DATA_PTR(self);
+    oci8_base_t *tdo = TO_TDO(self);
     oci8_svcctx_t *svcctx = oci8_get_svcctx(svc);
     oci8_base_t *md;
     OCIRef *tdo_ref = NULL;

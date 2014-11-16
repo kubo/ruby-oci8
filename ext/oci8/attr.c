@@ -6,15 +6,6 @@
  */
 #include "oci8.h"
 
-VALUE oci8_get_ub2_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp)
-{
-    ub2 val;
-
-    chker3(OCIAttrGet(base->hp.ptr, base->type, &val, NULL, attrtype, oci8_errhp),
-           base, stmtp);
-    return INT2FIX(val);
-}
-
 #define MAX_ROWID_LEN 128
 
 typedef struct {
