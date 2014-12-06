@@ -66,6 +66,7 @@ static VALUE dummy_env_method_missing(int argc, VALUE *argv, VALUE self)
 static void oci8_dont_free_handle_free(oci8_base_t *base)
 {
     base->type = 0;
+    base->closed = 1;
     base->hp.ptr = NULL;
 }
 
@@ -115,6 +116,7 @@ static void oci8_svcctx_free(oci8_base_t *base)
         void *data = strategy->prepare(svcctx);
         int rv;
         svcctx->base.type = 0;
+        svcctx->base.closed = 1;
         svcctx->logoff_strategy = NULL;
         rv = oci8_run_native_thread(strategy->execute, data);
         if (rv != 0) {
@@ -127,6 +129,7 @@ static void oci8_svcctx_free(oci8_base_t *base)
         }
     }
     svcctx->base.type = 0;
+    svcctx->base.closed = 1;
 }
 
 static void oci8_svcctx_init(oci8_base_t *base)
@@ -576,6 +579,7 @@ static VALUE oci8_svcctx_logoff(VALUE self)
         const oci8_logoff_strategy_t *strategy = svcctx->logoff_strategy;
         void *data = strategy->prepare(svcctx);
         svcctx->base.type = 0;
+        svcctx->base.closed = 1;
         svcctx->logoff_strategy = NULL;
         chker2(oci8_call_without_gvl(svcctx, strategy->execute, data), &svcctx->base);
     }

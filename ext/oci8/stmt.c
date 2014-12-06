@@ -31,6 +31,7 @@ static void oci8_stmt_free(oci8_base_t *base)
     if (stmt->use_stmt_release) {
         OCIStmtRelease(base->hp.stmt, oci8_errhp, NULL, 0, OCI_DEFAULT);
         base->type = 0;
+        base->closed = 1;
         stmt->use_stmt_release = 0;
     }
 }

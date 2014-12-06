@@ -1,9 +1,19 @@
+2014-12-06  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/connection_pool.c, ext/oci8/lob.c, ext/oci8/oci8.c,
+	  ext/oci8/stmt.c: Fix "RuntimeError:executing in another thread"
+	    when a closed connection is used. This bug was introduced by
+	    the previous commit.
+	    (github issue #64 reported by Yasuo Honda)
+
 2014-11-16  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/attr.c, ext/oci8/bind.c, ext/oci8/connection_pool.c,
 	  ext/oci8/lob.c, ext/oci8/metadata.c, ext/oci8/object.c,
 	  ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c,
 	  ext/oci8/ocihandle.c, ext/oci8/stmt.c:
 	    Raises an exception when a closed OCI8 object is used.
+	    Using a closed cursor causes various problems such as segmentation
+	    fault, nil comparison error and so on.
+	    (github issue #61 and #62 reported by Mike Bourgeous)
 
 2014-02-02  Kubo Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 2.1.7 and 2.1.6.

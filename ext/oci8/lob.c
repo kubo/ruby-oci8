@@ -138,6 +138,7 @@ static void oci8_lob_free(oci8_base_t *base)
         temp_lob->lob = lob->base.hp.lob;
         svcctx->temp_lobs = temp_lob;
         lob->base.type = 0;
+        lob->base.closed = 1;
         lob->base.hp.ptr = NULL;
 #else
         /* FIXME: This may stall the GC. */

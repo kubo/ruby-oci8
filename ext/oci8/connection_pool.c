@@ -34,6 +34,7 @@ static void oci8_cpool_free(oci8_base_t *base)
 {
     oci8_run_native_thread(cpool_free_thread, base->hp.poolhp);
     base->type = 0;
+    base->closed = 1;
     base->hp.ptr = NULL;
 }
 
