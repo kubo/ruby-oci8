@@ -237,14 +237,14 @@ static int set_oci_number_from_num(OCINumber *result, VALUE num, int force, OCIE
     }
     if (rb_respond_to(num, id_split)) {
         /* BigDecimal */
-        VALUE split = rb_funcall(num, id_split, 0);
+        volatile VALUE split = rb_funcall(num, id_split, 0);
 
         if (TYPE(split) == T_ARRAY && RARRAY_LEN(split) == 4) {
             /*
              * sign, significant_digits, base, exponent = num.split
              * onum = sign * "0.#{significant_digits}".to_f * (base ** exponent)
              */
-            VALUE *ary = RARRAY_PTR(split);
+            const VALUE *ary = RARRAY_CONST_PTR(split);
             int sign;
             OCINumber digits;
             int exponent;
@@ -257,7 +257,9 @@ static int set_oci_number_from_num(OCINumber *result, VALUE num, int force, OCIE
             }
             sign = FIX2INT(ary[0]);
             /* check digits */
-            StringValue(ary[1]);
+            if (TYPE(ary[1]) != T_STRING) {
+                goto is_not_big_decimal;
+            }
             digits_len = RSTRING_LEN(ary[1]);
             set_oci_number_from_str(&digits, ary[1], Qnil, Qnil, errhp);
             /* check base */

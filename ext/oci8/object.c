@@ -413,10 +413,10 @@ static VALUE set_coll_element_func(set_coll_element_cb_data_t *cb_data)
     for (idx = 0; idx < RARRAY_LEN(val); idx++) {
         switch (FIX2INT(datatype)) {
         case ATTR_NAMED_TYPE:
-            set_attribute(self, datatype, typeinfo, cb_data->data.ptr, cb_data->indp, RARRAY_PTR(val)[idx]);
+            set_attribute(self, datatype, typeinfo, cb_data->data.ptr, cb_data->indp, RARRAY_AREF(val, idx));
             break;
         default:
-            set_attribute(self, datatype, typeinfo, (void*)&cb_data->data, cb_data->indp, RARRAY_PTR(val)[idx]);
+            set_attribute(self, datatype, typeinfo, (void*)&cb_data->data, cb_data->indp, RARRAY_AREF(val, idx));
             break;
         }
         switch (FIX2INT(datatype)) {

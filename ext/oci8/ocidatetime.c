@@ -27,37 +27,37 @@ OCIDate *oci8_set_ocidate(OCIDate *od, VALUE val)
         rb_raise(rb_eRuntimeError, "invalid array size %ld", RARRAY_LEN(val));
     }
     /* year */
-    year = NUM2LONG(RARRAY_PTR(val)[0]);
+    year = NUM2LONG(RARRAY_AREF(val, 0));
     if (year < -4712 || 9999 < year) {
         rb_raise(rb_eRuntimeError, "out of year range: %ld", year);
     }
     od->OCIDateYYYY = (sb2)year;
     /* month */
-    month = NUM2LONG(RARRAY_PTR(val)[1]);
+    month = NUM2LONG(RARRAY_AREF(val, 1));
     if (month < 0 || 12 < month) {
         rb_raise(rb_eRuntimeError, "out of month range: %ld", month);
     }
     od->OCIDateMM = (ub1)month;
     /* day */
-    day = NUM2LONG(RARRAY_PTR(val)[2]);
+    day = NUM2LONG(RARRAY_AREF(val, 2));
     if (day < 0 || 31 < day) {
         rb_raise(rb_eRuntimeError, "out of day range: %ld", day);
     }
     od->OCIDateDD = (ub1)day;
     /* hour */
-    hour = NUM2LONG(RARRAY_PTR(val)[3]);
+    hour = NUM2LONG(RARRAY_AREF(val, 3));
     if (hour < 0 || 23 < hour) {
         rb_raise(rb_eRuntimeError, "out of hour range: %ld", hour);
     }
     od->OCIDateTime.OCITimeHH = (ub1)hour;
     /* minute */
-    minute = NUM2LONG(RARRAY_PTR(val)[4]);
+    minute = NUM2LONG(RARRAY_AREF(val, 4));
     if (minute < 0 || 59 < minute) {
         rb_raise(rb_eRuntimeError, "out of minute range: %ld", minute);
     }
     od->OCIDateTime.OCITimeMI = (ub1)minute;
     /* second */
-    second = NUM2LONG(RARRAY_PTR(val)[5]);
+    second = NUM2LONG(RARRAY_AREF(val, 5));
     if (second < 0 || 59 < second) {
         rb_raise(rb_eRuntimeError, "out of second range: %ld", second);
     }
@@ -149,42 +149,42 @@ OCIDateTime *oci8_set_ocitimestamp_tz(OCIDateTime *dttm, VALUE val, VALUE svc)
         rb_raise(rb_eRuntimeError, "invalid array size %ld", RARRAY_LEN(val));
     }
     /* year */
-    year = NUM2LONG(RARRAY_PTR(val)[0]);
+    year = NUM2LONG(RARRAY_AREF(val, 0));
     if (year < -4712 || 9999 < year) {
         rb_raise(rb_eRuntimeError, "out of year range: %ld", year);
     }
     /* month */
-    month = NUM2LONG(RARRAY_PTR(val)[1]);
+    month = NUM2LONG(RARRAY_AREF(val, 1));
     if (month < 0 || 12 < month) {
         rb_raise(rb_eRuntimeError, "out of month range: %ld", month);
     }
     /* day */
-    day = NUM2LONG(RARRAY_PTR(val)[2]);
+    day = NUM2LONG(RARRAY_AREF(val, 2));
     if (day < 0 || 31 < day) {
         rb_raise(rb_eRuntimeError, "out of day range: %ld", day);
     }
     /* hour */
-    hour = NUM2LONG(RARRAY_PTR(val)[3]);
+    hour = NUM2LONG(RARRAY_AREF(val, 3));
     if (hour < 0 || 23 < hour) {
         rb_raise(rb_eRuntimeError, "out of hour range: %ld", hour);
     }
     /* minute */
-    minute = NUM2LONG(RARRAY_PTR(val)[4]);
+    minute = NUM2LONG(RARRAY_AREF(val, 4));
     if (minute < 0 || 60 < minute) {
         rb_raise(rb_eRuntimeError, "out of minute range: %ld", minute);
     }
     /* second */
-    sec = NUM2LONG(RARRAY_PTR(val)[5]);
+    sec = NUM2LONG(RARRAY_AREF(val, 5));
     if (sec < 0 || 60 < sec) {
         rb_raise(rb_eRuntimeError, "out of second range: %ld", sec);
     }
     /* sec_fraction */
-    fsec = NUM2LONG(RARRAY_PTR(val)[6]);
+    fsec = NUM2LONG(RARRAY_AREF(val, 6));
     if (fsec < 0 || 1000000000 < fsec) {
         rb_raise(rb_eRuntimeError, "out of sec_fraction range: %ld", fsec);
     }
     /* time zone */
-    if (NIL_P(RARRAY_PTR(val)[7]) && NIL_P(RARRAY_PTR(val)[8])) {
+    if (NIL_P(RARRAY_AREF(val, 7)) && NIL_P(RARRAY_AREF(val, 8))) {
         if (!NIL_P(svc)) {
             /* use session timezone. */
             seshp = oci8_get_oci_session(svc);
@@ -193,8 +193,8 @@ OCIDateTime *oci8_set_ocitimestamp_tz(OCIDateTime *dttm, VALUE val, VALUE svc)
         tzlen = 0;
     } else {
         snprintf(tz_str, sizeof(tz_str), "%+02ld:%02ld",
-                 NUM2LONG(RARRAY_PTR(val)[7]),
-                 NUM2LONG(RARRAY_PTR(val)[8]));
+                 NUM2LONG(RARRAY_AREF(val, 7)),
+                 NUM2LONG(RARRAY_AREF(val, 8)));
         tz_str[sizeof(tz_str) - 1] = '\0';
         tz = (OraText*)tz_str;
         tzlen = strlen(tz_str);
@@ -320,8 +320,8 @@ OCIInterval *oci8_set_ociinterval_ym(OCIInterval *intvl, VALUE val)
     if (RARRAY_LEN(val) != 2) {
         rb_raise(rb_eRuntimeError, "invalid array size %ld", RARRAY_LEN(val));
     }
-    year = NUM2INT(RARRAY_PTR(val)[0]);
-    month = NUM2INT(RARRAY_PTR(val)[1]);
+    year = NUM2INT(RARRAY_AREF(val, 0));
+    month = NUM2INT(RARRAY_AREF(val, 1));
     if (oracle_client_version >= ORAVERNUM(9, 2, 0, 3, 0)) {
         chkerr(OCIIntervalSetYearMonth(oci8_envhp, oci8_errhp,
                                        year, month, intvl));
@@ -372,11 +372,11 @@ OCIInterval *oci8_set_ociinterval_ds(OCIInterval *intvl, VALUE val)
     if (RARRAY_LEN(val) != 5) {
         rb_raise(rb_eRuntimeError, "invalid array size %ld", RARRAY_LEN(val));
     }
-    day = NUM2INT(RARRAY_PTR(val)[0]);
-    hour = NUM2INT(RARRAY_PTR(val)[1]);
-    minute = NUM2INT(RARRAY_PTR(val)[2]);
-    sec = NUM2INT(RARRAY_PTR(val)[3]);
-    fsec = NUM2INT(RARRAY_PTR(val)[4]);
+    day = NUM2INT(RARRAY_AREF(val, 0));
+    hour = NUM2INT(RARRAY_AREF(val, 1));
+    minute = NUM2INT(RARRAY_AREF(val, 2));
+    sec = NUM2INT(RARRAY_AREF(val, 3));
+    fsec = NUM2INT(RARRAY_AREF(val, 4));
     if (oracle_client_version >= ORAVERNUM(9, 2, 0, 3, 0)) {
         chkerr(OCIIntervalSetDaySecond(oci8_envhp, oci8_errhp,
                                        day, hour, minute, sec, fsec, intvl));

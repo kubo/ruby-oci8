@@ -270,7 +270,7 @@ static VALUE oci8_bind_set_data(VALUE self, VALUE val)
         }
         for (idx = 0; idx < size; idx++) {
             obind->curar_idx = idx;
-            rb_funcall(self, oci8_id_set, 1, RARRAY_PTR(val)[idx]);
+            rb_funcall(self, oci8_id_set, 1, RARRAY_AREF(val, idx));
         }
         obind->curar_sz = size;
     }

@@ -528,7 +528,7 @@ void *oci8_find_symbol(const char *symbol_name)
         };
 #define NUM_SONAMES (sizeof(sonames)/sizeof(sonames[0]))
         size_t idx;
-        VALUE err = rb_ary_new();
+        volatile VALUE err = rb_ary_new();
 
 #ifdef _AIX
 #define DLOPEN_FLAG (RTLD_LAZY|RTLD_GLOBAL|RTLD_MEMBER)
@@ -544,10 +544,11 @@ void *oci8_find_symbol(const char *symbol_name)
         }
         if (handle == NULL) {
             VALUE msg;
+            const char *ary = RARRAY_CONST_PTR(err);
 
             msg = rb_str_buf_new(NUM_SONAMES * 50);
             for (idx = 0; idx < NUM_SONAMES; idx++) {
-                const char *errmsg = RSTRING_PTR(RARRAY_PTR(err)[idx]);
+                const char *errmsg = RSTRING_PTR(arr[idx]);
                 if (idx != 0) {
                     rb_str_buf_cat2(msg, " ");
                 }
@@ -558,7 +559,7 @@ void *oci8_find_symbol(const char *symbol_name)
                     rb_str_buf_cat2(msg, sonames[idx]);
                     rb_str_buf_cat2(msg, ": ");
                 }
-                rb_str_buf_append(msg, RARRAY_PTR(err)[idx]);
+                rb_str_buf_append(msg, arr[idx]);
                 rb_str_buf_cat2(msg, ";");
             }
             rb_exc_raise(rb_exc_new3(rb_eLoadError, msg));

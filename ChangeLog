@@ -1,3 +1,8 @@
+2014-12-21  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/bind.c, ext/oci8/object.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c,
+	  ext/oci8/ocidatetime.c, ext/oci8/ocihandle.c, ext/oci8/ocinumber.c:
+	    Use RARRAY_AREF and RARRAY_CONST_PTR for Generational GC.
+
 2014-12-06  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/connection_pool.c, ext/oci8/lob.c, ext/oci8/oci8.c,
 	  ext/oci8/stmt.c: Fix "RuntimeError:executing in another thread"

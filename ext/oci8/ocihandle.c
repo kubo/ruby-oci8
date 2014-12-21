@@ -152,7 +152,7 @@ static VALUE attr_get_common(int argc, VALUE *argv, VALUE self, enum datatype da
         if (TYPE(backtrace) == T_ARRAY) {
             int i;
             for (i = 0; i < RARRAY_LEN(backtrace); i++) {
-                volatile VALUE elem = RARRAY_PTR(backtrace)[i];
+                volatile VALUE elem = RARRAY_AREF(backtrace, i);
                 char *s = StringValueCStr(elem);
                 if (strstr(s, "inspect") != NULL) {
                     return Qnil;

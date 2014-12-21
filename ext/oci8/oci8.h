@@ -184,6 +184,15 @@ static inline volatile VALUE *rb_gc_guarded_ptr(volatile VALUE *ptr) {return ptr
 #endif
 #endif
 
+/* new macros in ruby 2.1.0
+ */
+#ifndef RARRAY_AREF
+#define RARRAY_AREF(a, i)    (RARRAY_PTR(a)[i])
+#endif
+#ifndef RARRAY_CONST_PTR
+#define RARRAY_CONST_PTR(a)  RARRAY_PTR(a)
+#endif
+
 #if defined(HAVE_RB_THREAD_CALL_WITHOUT_GVL) || defined(HAVE_RB_THREAD_BLOCKING_REGION)
 #define NATIVE_THREAD_WITH_GVL 1
 #endif
