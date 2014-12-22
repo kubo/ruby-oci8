@@ -153,8 +153,17 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
         placeholder_ptr = NULL;
         placeholder_len = 0;
     } else if (SYMBOL_P(vplaceholder)) {
+#ifdef HAVE_RB_SYM2STR
+        /* Don't use SYM2ID on ruby 2.2.0 or later.
+         * Symbols passed to SYM2ID are not GC'ed.
+         */
+        VALUE symval = rb_sym2str(vplaceholder);
+        const char *symname = RSTRING_PTR(symval);
+        size_t len = RSTRING_LEN(symval);
+#else
         const char *symname = rb_id2name(SYM2ID(vplaceholder));
         size_t len = strlen(symname);
+#endif
         placeholder_ptr = ALLOCA_N(char, len + 1);
         placeholder_len = len + 1;
         placeholder_ptr[0] = ':';

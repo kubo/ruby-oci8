@@ -122,6 +122,7 @@ have_func("rb_set_end_proc", "ruby.h")
 have_func("rb_class_superclass", "ruby.h")
 have_func("rb_thread_blocking_region", "ruby.h")
 have_func("rb_thread_call_without_gvl", "ruby/thread.h")
+have_func("rb_sym2str", "ruby.h")
 if (defined? RUBY_ENGINE) && RUBY_ENGINE == 'rbx'
   have_func("rb_str_buf_cat_ascii", "ruby.h")
   have_func("rb_enc_str_buf_cat", "ruby.h")
