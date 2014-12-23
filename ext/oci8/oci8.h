@@ -173,6 +173,46 @@ static inline volatile VALUE *rb_gc_guarded_ptr(volatile VALUE *ptr) {return ptr
 #endif
 #endif
 
+/*
+ * Use TypedData on ruby 1.9.3 and later.
+ */
+#ifndef HAVE_RB_DATA_TYPE_T_FUNCTION
+
+/*
+ * Don't use TypedData even though ruby 1.9.2 has it because the
+ * definitions are slightly different from ruby 1.9.3 and later.
+ */
+#define rb_data_type_t oci8_data_type_t
+#undef TypedData_Make_Struct
+#undef TypedData_Wrap_Struct
+#undef TypedData_Get_Struct
+#undef RTYPEDDATA_DATA
+#undef RUBY_DEFAULT_FREE
+
+/*
+ * To pass compilation on ruby 1.9.2 and earlier.
+ */
+typedef struct oci8_data_type_struct rb_data_type_t;
+struct oci8_data_type_struct {
+    const char *wrap_struct_name;
+    struct {
+        void (*dmark)(void*);
+        void (*dfree)(void*);
+        size_t (*dsize)(const void *);
+    } function;
+    const rb_data_type_t *parent;
+    void *data;
+};
+#define TypedData_Make_Struct(klass, type, data_type, sval) \
+             Data_Make_Struct((klass), type, (data_type)->function.dmark, (data_type)->function.dfree, (sval))
+#define TypedData_Wrap_Struct(klass, data_type, sval) \
+             Data_Wrap_Struct((klass), (data_type)->function.dmark, (data_type)->function.dfree, (sval))
+#define TypedData_Get_Struct(obj, type, data_type, sval) \
+             Data_Get_Struct((obj), type, (sval))
+#define RTYPEDDATA_DATA(obj) DATA_PTR(obj)
+#define RUBY_DEFAULT_FREE xfree
+#endif
+
 /* a new function in ruby 1.9.3.
  * define a compatible macro for ruby 1.9.2 or lower.
  */
@@ -411,7 +451,7 @@ typedef struct {
     if (!rb_obj_is_kind_of(obj, klass)) { \
         rb_raise(rb_eTypeError, "invalid argument %s (expect %s)", rb_class2name(CLASS_OF(obj)), rb_class2name(klass)); \
     } \
-    Data_Get_Struct(obj, oci8_base_t, hp); \
+    TypedData_Get_Struct(obj, oci8_base_t, &oci8_base_data_type, hp); \
 } while (0)
 
 #define Check_Object(obj, klass) do {\
@@ -511,6 +551,8 @@ NORETURN(void oci8_do_raise_by_msgno(ub4 msgno, const char *default_msg, const c
 void oci8_check_error_(sword status, oci8_base_t *base, OCIStmt *stmthp, const char *file, int line);
 
 /* ocihandle.c */
+extern rb_data_type_t oci8_vtable_data_type;
+extern rb_data_type_t oci8_base_data_type;
 void Init_oci8_handle(void);
 
 /* oci8.c */

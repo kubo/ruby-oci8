@@ -44,7 +44,8 @@ static OCINumber const_m1;   /*  -1 */
 static OCINumber const_PI2;  /* +PI/2 */
 static OCINumber const_mPI2; /* -PI/2 */
 
-#define _NUMBER(val) ((OCINumber *)DATA_PTR(val)) /* dangerous macro */
+/* Dangerous macro! Don't use this if you are unsure that the val is an OCINumber. */
+#define _NUMBER(val) ((OCINumber *)RTYPEDDATA_DATA(val))
 
 #ifndef T_MASK
 #define T_MASK 0x100 /* TODO: rboci8_type() should be changed to be more portable. */
@@ -102,12 +103,25 @@ static VALUE onum_to_r(VALUE self);
 static VALUE onum_to_d(VALUE self);
 static VALUE onum_to_d_real(OCINumber *num, OCIError *errhp);
 
+static size_t onum_memsize(const void *ptr)
+{
+    return sizeof(OCINumber);
+}
+
+static const rb_data_type_t onum_data_type = {
+    "OraNumber",
+    {NULL, RUBY_DEFAULT_FREE, onum_memsize,},
+#ifdef RUBY_TYPED_FREE_IMMEDIATELY
+    NULL, NULL, RUBY_TYPED_FREE_IMMEDIATELY
+#endif
+};
+
 static VALUE onum_s_alloc(VALUE klass)
 {
     VALUE obj;
     OCINumber *d;
 
-    obj = Data_Make_Struct(klass, OCINumber, NULL, xfree, d);
+    obj = TypedData_Make_Struct(klass, OCINumber, &onum_data_type, d);
     OCINumberSetZero(oci8_errhp, d);
     return obj;
 }
@@ -120,7 +134,7 @@ VALUE oci8_make_ocinumber(OCINumber *s, OCIError *errhp)
     VALUE obj;
     OCINumber *d;
 
-    obj = Data_Make_Struct(cOCINumber, OCINumber, NULL, xfree, d);
+    obj = TypedData_Make_Struct(cOCINumber, OCINumber, &onum_data_type, d);
     chkerr(OCINumberAssign(errhp, s, d));
     return obj;
 }
@@ -232,7 +246,7 @@ static int set_oci_number_from_num(OCINumber *result, VALUE num, int force, OCIE
     }
     if (RTEST(rb_obj_is_instance_of(num, cOCINumber))) {
         /* OCI::Number */
-        chkerr(OCINumberAssign(errhp, DATA_PTR(num), result));
+        chkerr(OCINumberAssign(errhp, _NUMBER(num), result));
         return 1;
     }
     if (rb_respond_to(num, id_split)) {
@@ -1577,7 +1591,7 @@ static VALUE onum_dump(VALUE self)
  */
 static VALUE onum_hash(VALUE self)
 {
-    char *c  = DATA_PTR(self);
+    char *c  = RTYPEDDATA_DATA(self);
     int size = c[0] + 1;
     long i, hash;
 
@@ -1619,7 +1633,7 @@ static VALUE onum_inspect(VALUE self)
  */
 static VALUE onum__dump(int argc, VALUE *argv, VALUE self)
 {
-    char *c  = DATA_PTR(self);
+    char *c  = RTYPEDDATA_DATA(self);
     int size = c[0] + 1;
     VALUE dummy;
 

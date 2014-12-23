@@ -153,7 +153,7 @@ Init_oci8lib()
 VALUE oci8_define_class(const char *name, oci8_base_vtable_t *vptr)
 {
     VALUE klass = rb_define_class(name, oci8_cOCIHandle);
-    VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, vptr);
+    VALUE obj = TypedData_Wrap_Struct(rb_cObject, &oci8_vtable_data_type, vptr);
     rb_ivar_set(klass, oci8_id_oci8_vtable, obj);
     return klass;
 }
@@ -161,7 +161,7 @@ VALUE oci8_define_class(const char *name, oci8_base_vtable_t *vptr)
 VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_vtable_t *vptr)
 {
     VALUE klass = rb_define_class_under(outer, name, oci8_cOCIHandle);
-    VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, vptr);
+    VALUE obj = TypedData_Wrap_Struct(rb_cObject, &oci8_vtable_data_type, vptr);
     rb_ivar_set(klass, oci8_id_oci8_vtable, obj);
     return klass;
 }
@@ -169,7 +169,7 @@ VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_vtable_t 
 VALUE oci8_define_bind_class(const char *name, const oci8_bind_vtable_t *vptr)
 {
     VALUE klass = rb_define_class_under(mOCI8BindType, name, cOCI8BindTypeBase);
-    VALUE obj = Data_Wrap_Struct(rb_cObject, 0, 0, (void*)vptr);
+    VALUE obj = TypedData_Wrap_Struct(rb_cObject, &oci8_vtable_data_type, (void*)vptr);
     rb_ivar_set(klass, oci8_id_oci8_vtable, obj);
     return klass;
 }
@@ -578,7 +578,7 @@ oci8_base_t *oci8_get_handle(VALUE obj, VALUE klass)
         rb_raise(rb_eTypeError, "invalid argument %s (expect %s)",
                  rb_obj_classname(obj), rb_class2name(klass));
     }
-    Data_Get_Struct(obj, oci8_base_t, hp);
+    TypedData_Get_Struct(obj, oci8_base_t, &oci8_base_data_type, hp);
     if (hp->closed) {
         rb_raise(eOCIException, "%s was already closed.",
                  rb_obj_classname(obj));

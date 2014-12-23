@@ -1,3 +1,8 @@
+2014-12-23  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.h, ext/oci8/oci8lib.c, ext/oci8/ocihandle.c,
+	  ext/oci8/ocinumber.c, ext/oci8/oradate.c:
+	    Use TypedData on ruby 1.9.3 and later.
+
 2014-12-22  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, ext/oci8/stmt.c: Don't use SYM2ID on ruby 2.2.0
 	    or later. Symbols passed to SYM2ID are not GC'ed.

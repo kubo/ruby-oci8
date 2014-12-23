@@ -17,6 +17,28 @@
 #define MAGIC_NUMBER 0xDEAFBEAFDEAFBEAFull;
 #endif
 
+static void oci8_handle_mark(oci8_base_t *base);
+static void oci8_handle_cleanup(oci8_base_t *base);
+static size_t oci8_handle_size(const void *);
+
+rb_data_type_t oci8_vtable_data_type = {
+    "oci8_vtable",
+    {
+        NULL,
+        NULL,
+        NULL,
+    },
+};
+
+rb_data_type_t oci8_base_data_type = {
+    "oci8_base",
+    {
+        (RUBY_DATA_FUNC)oci8_handle_mark,
+        (RUBY_DATA_FUNC)oci8_handle_cleanup,
+        oci8_handle_size,
+    },
+};
+
 static long check_data_range(VALUE val, long min, long max, const char *type)
 {
     long lval = NUM2LONG(val);
@@ -73,6 +95,23 @@ static void oci8_handle_cleanup(oci8_base_t *base)
     xfree(base);
 }
 
+static size_t oci8_handle_size(const void *ptr)
+{
+    const oci8_base_t *base = (const oci8_base_t *)ptr;
+    const oci8_bind_t *bind = (const oci8_bind_t *)ptr;
+    size_t size = base->vptr->size;
+
+    if (base->hp.ptr != NULL) {
+        size += 256; /* I don't know the real size. Use 256 for now. */
+    }
+    switch (base->type) {
+    case OCI_HTYPE_DEFINE:
+    case OCI_HTYPE_BIND:
+        size += bind->alloc_sz * (bind->maxar_sz ? bind->maxar_sz : 1);
+    }
+    return size;
+}
+
 static VALUE oci8_s_allocate(VALUE klass)
 {
     oci8_base_t *base;
@@ -87,12 +126,12 @@ static VALUE oci8_s_allocate(VALUE klass)
             rb_raise(rb_eRuntimeError, "private method `new' called for %s:Class", rb_class2name(klass));
     }
     obj = rb_ivar_get(superklass, oci8_id_oci8_vtable);
-    vptr = DATA_PTR(obj);
+    TypedData_Get_Struct(obj, const oci8_base_vtable_t, &oci8_vtable_data_type, vptr);
 
     base = xmalloc(vptr->size);
     memset(base, 0, vptr->size);
 
-    obj = Data_Wrap_Struct(klass, oci8_handle_mark, oci8_handle_cleanup, base);
+    obj = TypedData_Wrap_Struct(klass, &oci8_base_data_type, base);
     base->self = obj;
     base->vptr = vptr;
     base->parent = NULL;
@@ -833,7 +872,7 @@ void Init_oci8_handle(void)
     rb_define_alloc_func(oci8_cOCIHandle, oci8_s_allocate);
     rb_define_method_nodoc(oci8_cOCIHandle, "initialize", oci8_handle_initialize, 0);
     rb_define_private_method(oci8_cOCIHandle, "free", oci8_handle_free, 0);
-    obj = Data_Wrap_Struct(rb_cObject, 0, 0, &oci8_base_vtable);
+    obj = TypedData_Wrap_Struct(rb_cObject, &oci8_vtable_data_type, &oci8_base_vtable);
     rb_ivar_set(oci8_cOCIHandle, oci8_id_oci8_vtable, obj);
 
     /* methods to get attributes */
