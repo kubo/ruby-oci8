@@ -82,7 +82,7 @@ static VALUE oci8_stmt_initialize(VALUE self, VALUE svc, VALUE sql)
             }
         }
     }
-    stmt->svc = svc;
+    RB_OBJ_WRITE(stmt->base.self, &stmt->svc, svc);
 
     oci8_link_to_parent(&stmt->base, &svcctx->base);
     return Qnil;

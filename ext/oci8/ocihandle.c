@@ -23,11 +23,13 @@ static size_t oci8_handle_size(const void *);
 
 rb_data_type_t oci8_vtable_data_type = {
     "oci8_vtable",
-    {
-        NULL,
-        NULL,
-        NULL,
-    },
+    {NULL, NULL, NULL,},
+#ifdef RUBY_TYPED_FREE_IMMEDIATELY
+    NULL, NULL, RUBY_TYPED_FREE_IMMEDIATELY
+#endif
+#ifdef RUBY_TYPED_WB_PROTECTED
+    | RUBY_TYPED_WB_PROTECTED
+#endif
 };
 
 rb_data_type_t oci8_base_data_type = {
@@ -37,6 +39,12 @@ rb_data_type_t oci8_base_data_type = {
         (RUBY_DATA_FUNC)oci8_handle_cleanup,
         oci8_handle_size,
     },
+#ifdef RUBY_TYPED_FREE_IMMEDIATELY
+    NULL, NULL, 0
+#endif
+#ifdef RUBY_TYPED_WB_PROTECTED
+    | RUBY_TYPED_WB_PROTECTED
+#endif
 };
 
 static long check_data_range(VALUE val, long min, long max, const char *type)

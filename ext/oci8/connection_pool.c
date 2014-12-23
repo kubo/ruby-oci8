@@ -141,7 +141,7 @@ static VALUE oci8_cpool_initialize(int argc, VALUE *argv, VALUE self)
                                    NIL_P(password) ? 0 : RSTRING_LEN(password),
                                    OCI_DEFAULT),
            &cpool->base);
-    cpool->pool_name = rb_str_new(TO_CHARPTR(pool_name), pool_name_len);
+    RB_OBJ_WRITE(cpool->base.self, &cpool->pool_name, rb_str_new(TO_CHARPTR(pool_name), pool_name_len));
     rb_str_freeze(cpool->pool_name);
     return Qnil;
 }

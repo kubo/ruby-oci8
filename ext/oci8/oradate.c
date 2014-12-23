@@ -72,6 +72,9 @@ static const rb_data_type_t odate_data_type = {
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
     NULL, NULL, RUBY_TYPED_FREE_IMMEDIATELY
 #endif
+#ifdef RUBY_TYPED_WB_PROTECTED
+    | RUBY_TYPED_WB_PROTECTED
+#endif
 };
 
 static void oci8_set_ora_date(ora_date_t *od, int year, int month, int day, int hour, int minute, int second)

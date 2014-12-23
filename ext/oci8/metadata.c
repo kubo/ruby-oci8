@@ -59,7 +59,7 @@ VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE parent)
     md = DATA_PTR(obj);
     md->base.type = OCI_DTYPE_PARAM;
     md->base.hp.prm = parmhp;
-    md->svc = svc;
+    RB_OBJ_WRITE(obj, &md->svc, svc);
 
     if (p->type == OCI_HTYPE_STMT) {
         md->is_implicit = 1;

@@ -200,8 +200,6 @@ struct oci8_data_type_struct {
         void (*dfree)(void*);
         size_t (*dsize)(const void *);
     } function;
-    const rb_data_type_t *parent;
-    void *data;
 };
 #define TypedData_Make_Struct(klass, type, data_type, sval) \
              Data_Make_Struct((klass), type, (data_type)->function.dmark, (data_type)->function.dfree, (sval))
@@ -231,6 +229,12 @@ struct oci8_data_type_struct {
 #endif
 #ifndef RARRAY_CONST_PTR
 #define RARRAY_CONST_PTR(a)  RARRAY_PTR(a)
+#endif
+#ifndef RB_OBJ_WRITE
+#define RB_OBJ_WRITE(a, slot, b)   do {*(slot) = (b);} while (0)
+#endif
+#ifndef RB_OBJ_WRITTEN
+#define RB_OBJ_WRITTEN(a, oldv, b) do {(void)oldv;} while (0)
 #endif
 
 #if defined(HAVE_RB_THREAD_CALL_WITHOUT_GVL) || defined(HAVE_RB_THREAD_BLOCKING_REGION)

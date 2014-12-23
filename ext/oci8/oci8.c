@@ -749,7 +749,7 @@ static VALUE oci8_set_long_read_len(VALUE self, VALUE val)
 {
     oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
     Check_Type(val, T_FIXNUM);
-    svcctx->long_read_len = val;
+    RB_OBJ_WRITE(self, &svcctx->long_read_len, val);
     return val;
 }
 

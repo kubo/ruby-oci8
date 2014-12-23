@@ -176,7 +176,10 @@ VALUE oci8_define_bind_class(const char *name, const oci8_bind_vtable_t *vptr)
 
 void oci8_link_to_parent(oci8_base_t *base, oci8_base_t *parent)
 {
+    VALUE old_parent = Qundef;
+
     if (base->parent != NULL) {
+        old_parent = base->parent->self;
         oci8_unlink_from_parent(base);
     }
     if (parent->children == NULL) {
@@ -188,6 +191,8 @@ void oci8_link_to_parent(oci8_base_t *base, oci8_base_t *parent)
         parent->children->prev = base;
     }
     base->parent = parent;
+    RB_OBJ_WRITTEN(parent->self, Qundef, base->self);
+    RB_OBJ_WRITTEN(base->self, old_parent, parent->self);
 }
 
 void oci8_unlink_from_parent(oci8_base_t *base)
@@ -247,7 +252,7 @@ static VALUE protected_call(VALUE data)
     if (!NIL_P(parg->svcctx->executing_thread)) {
         rb_raise(rb_eRuntimeError, "executing in another thread");
     }
-    parg->svcctx->executing_thread = rb_thread_current();
+    RB_OBJ_WRITE(parg->svcctx->base.self, &parg->svcctx->executing_thread, rb_thread_current());
 #ifdef HAVE_RB_THREAD_CALL_WITHOUT_GVL
     rv = (VALUE)rb_thread_call_without_gvl(parg->func, parg->data, oci8_unblock_func, parg->svcctx);
 #else

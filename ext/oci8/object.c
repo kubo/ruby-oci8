@@ -187,7 +187,7 @@ static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *dat
         /* Be carefull. Don't use *tmp_obj* out of this function. */
         tmp_obj = rb_class_new_instance(0, NULL, cOCI8NamedType);
         obj = DATA_PTR(tmp_obj);
-        obj->tdo = typeinfo;
+        RB_OBJ_WRITE(tmp_obj, &obj->tdo, typeinfo);
         obj->instancep = (char**)&data;
         obj->null_structp = (char**)&ind;
         oci8_link_to_parent(&obj->base, DATA_PTR(self));
@@ -199,7 +199,7 @@ static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *dat
         /* Be carefull. Don't use *tmp_obj* out of this function. */
         tmp_obj = rb_class_new_instance(0, NULL, cOCI8NamedCollection);
         obj = DATA_PTR(tmp_obj);
-        obj->tdo = typeinfo;
+        RB_OBJ_WRITE(tmp_obj, &obj->tdo, typeinfo);
         obj->instancep = (char**)data;
         obj->null_structp = (char**)&ind;
         oci8_link_to_parent(&obj->base, DATA_PTR(self));
@@ -510,7 +510,7 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
         /* Be carefull. Don't use *tmp_obj* out of this function. */
         tmp_obj = rb_class_new_instance(0, NULL, cOCI8NamedType);
         obj = DATA_PTR(tmp_obj);
-        obj->tdo = typeinfo;
+        RB_OBJ_WRITE(tmp_obj, &obj->tdo, typeinfo);
         obj->instancep = (char**)&data;
         obj->null_structp = (char**)&ind;
         oci8_link_to_parent(&obj->base, DATA_PTR(self));
@@ -522,7 +522,7 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
         /* Be carefull. Don't use *tmp_obj* out of this function. */
         tmp_obj = rb_class_new_instance(0, NULL, cOCI8NamedCollection);
         obj = DATA_PTR(tmp_obj);
-        obj->tdo = typeinfo;
+        RB_OBJ_WRITE(tmp_obj, &obj->tdo, typeinfo);
         obj->instancep = (char**)data;
         obj->null_structp = (char**)&ind;
         oci8_link_to_parent(&obj->base, DATA_PTR(self));
@@ -605,7 +605,7 @@ static void bind_named_type_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE
     obind->alloc_sz = sizeof(oci8_hp_obj_t);
 
     Check_Object(tdo_obj, cOCI8TDO);
-    obind->tdo = tdo_obj;
+    RB_OBJ_WRITE(obind->base.self, &obind->tdo, tdo_obj);
 }
 
 static void bind_named_type_init_elem(oci8_bind_t *obind, VALUE svc)
@@ -630,7 +630,7 @@ static void bind_named_type_init_elem(oci8_bind_t *obind, VALUE svc)
     do {
         oho[idx].obj = rb_class_new_instance(0, NULL, klass);
         obj = DATA_PTR(oho[idx].obj);
-        obj->tdo = obind->tdo;
+        RB_OBJ_WRITE(oho[idx].obj, &obj->tdo, obind->tdo);
         obj->instancep = (char**)&oho[idx].hp;
         obj->null_structp = (char**)&obind->u.null_structs[idx];
         oci8_link_to_parent(&obj->base, &obind->base);

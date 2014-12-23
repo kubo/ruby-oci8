@@ -1,4 +1,10 @@
 2014-12-23  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/connection_pool.c, ext/oci8/metadata.c, ext/oci8/object.c,
+	  ext/oci8/oci8.c, ext/oci8/oci8.h, ext/oci8/oci8lib.c, ext/oci8/ocihandle.c
+	  ext/oci8/ocinumber.c, ext/oci8/oradate.c, ext/oci8/stmt.c:
+	    Add write barriers to use generational GC.
+
+2014-12-23  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.h, ext/oci8/oci8lib.c, ext/oci8/ocihandle.c,
 	  ext/oci8/ocinumber.c, ext/oci8/oradate.c:
 	    Use TypedData on ruby 1.9.3 and later.
