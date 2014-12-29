@@ -148,8 +148,19 @@ static void oci8_lob_free(oci8_base_t *base)
     lob->svcctx = NULL;
 }
 
-static oci8_handle_data_type_t oci8_lob_data_type = {
-    oci8_lob_mark,
+static const oci8_handle_data_type_t oci8_lob_data_type = {
+    {
+        "OCI8::LOB",
+        {
+            (RUBY_DATA_FUNC)oci8_lob_mark,
+            oci8_handle_cleanup,
+            oci8_handle_size,
+        },
+        &oci8_handle_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+        RUBY_TYPED_WB_PROTECTED,
+#endif
+    },
     oci8_lob_free,
     sizeof(oci8_lob_t),
 };
@@ -1017,7 +1028,18 @@ static void bind_lob_post_bind_hook_for_nclob(oci8_bind_t *obind)
 static const oci8_bind_lob_data_type_t bind_clob_data_type = {
     {
         {
-            oci8_bind_hp_obj_mark,
+            {
+                "OCI8::BindType::CLOB",
+                {
+                    (RUBY_DATA_FUNC)oci8_bind_hp_obj_mark,
+                    oci8_handle_cleanup,
+                    oci8_handle_size,
+                },
+                &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+                RUBY_TYPED_WB_PROTECTED,
+#endif
+            },
             oci8_bind_free,
             sizeof(oci8_bind_t)
         },
@@ -1039,7 +1061,18 @@ static VALUE bind_clob_alloc(VALUE klass)
 static const oci8_bind_lob_data_type_t bind_nclob_data_type = {
     {
         {
-            oci8_bind_hp_obj_mark,
+            {
+                "OCI8::BindType::NCLOB",
+                {
+                    (RUBY_DATA_FUNC)oci8_bind_hp_obj_mark,
+                    oci8_handle_cleanup,
+                    oci8_handle_size,
+                },
+                &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+                RUBY_TYPED_WB_PROTECTED,
+#endif
+            },
             oci8_bind_free,
             sizeof(oci8_bind_t)
         },
@@ -1062,7 +1095,18 @@ static VALUE bind_nclob_alloc(VALUE klass)
 static const oci8_bind_lob_data_type_t bind_blob_data_type = {
     {
         {
-            oci8_bind_hp_obj_mark,
+            {
+                "OCI8::BindType::BLOB",
+                {
+                    (RUBY_DATA_FUNC)oci8_bind_hp_obj_mark,
+                    oci8_handle_cleanup,
+                    oci8_handle_size,
+                },
+                &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+                RUBY_TYPED_WB_PROTECTED,
+#endif
+            },
             oci8_bind_free,
             sizeof(oci8_bind_t)
         },
@@ -1084,7 +1128,18 @@ static VALUE bind_blob_alloc(VALUE klass)
 static const oci8_bind_lob_data_type_t bind_bfile_data_type = {
     {
         {
-            oci8_bind_hp_obj_mark,
+            {
+                "OCI8::BindType::BFILE",
+                {
+                    (RUBY_DATA_FUNC)oci8_bind_hp_obj_mark,
+                    oci8_handle_cleanup,
+                    oci8_handle_size,
+                },
+                &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+                RUBY_TYPED_WB_PROTECTED,
+#endif
+            },
             oci8_bind_free,
             sizeof(oci8_bind_t)
         },

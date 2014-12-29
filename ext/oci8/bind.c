@@ -25,6 +25,23 @@ typedef struct {
     ub1 csfrm;
 } oci8_bind_string_t;
 
+const oci8_handle_data_type_t oci8_bind_data_type = {
+    {
+        "OCI8::BindType::Base",
+        {
+            NULL,
+            oci8_handle_cleanup,
+            oci8_handle_size,
+        },
+        &oci8_handle_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+        RUBY_TYPED_WB_PROTECTED,
+#endif
+    },
+    NULL,
+    0,
+};
+
 /*
  * bind_string
  */
@@ -106,7 +123,18 @@ static void bind_string_post_bind_hook(oci8_bind_t *obind)
 
 static const oci8_bind_data_type_t bind_string_data_type = {
     {
-        NULL,
+        {
+            "OCI8::BindType::String",
+            {
+                NULL,
+                oci8_handle_cleanup,
+                oci8_handle_size,
+            },
+            &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+            RUBY_TYPED_WB_PROTECTED,
+#endif
+        },
         oci8_bind_free,
         sizeof(oci8_bind_string_t)
     },
@@ -148,7 +176,18 @@ static void bind_raw_set(oci8_bind_t *obind, void *data, void **null_structp, VA
 
 static const oci8_bind_data_type_t bind_raw_data_type = {
     {
-        NULL,
+        {
+            "OCI8::BindType::RAW",
+            {
+                NULL,
+                oci8_handle_cleanup,
+                oci8_handle_size,
+            },
+            &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+            RUBY_TYPED_WB_PROTECTED,
+#endif
+        },
         oci8_bind_free,
         sizeof(oci8_bind_string_t)
     },
@@ -190,7 +229,18 @@ static void bind_binary_double_init(oci8_bind_t *obind, VALUE svc, VALUE val, VA
 #endif
 static const oci8_bind_data_type_t bind_binary_double_data_type = {
     {
-        NULL,
+        {
+            "OCI8::BindType::BinaryDouble",
+            {
+                NULL,
+                oci8_handle_cleanup,
+                oci8_handle_size,
+            },
+            &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+            RUBY_TYPED_WB_PROTECTED,
+#endif
+        },
         oci8_bind_free,
         sizeof(oci8_bind_t)
     },

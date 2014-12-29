@@ -234,7 +234,18 @@ static void bind_ocitimestamp_free(oci8_base_t *base)
 
 static const oci8_bind_data_type_t bind_ocitimestamp_data_type = {
     {
-        NULL,
+        {
+            "OCI8::BindType::OCITimestamp",
+            {
+                NULL,
+                oci8_handle_cleanup,
+                oci8_handle_size,
+            },
+            &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+            RUBY_TYPED_WB_PROTECTED,
+#endif
+        },
         bind_ocitimestamp_free,
         sizeof(oci8_bind_t)
     },
@@ -295,7 +306,18 @@ static void bind_ocitimestamp_tz_free(oci8_base_t *base)
 
 static const oci8_bind_data_type_t bind_ocitimestamp_tz_data_type = {
     {
-        NULL,
+        {
+            "OCI8::BindType::OCITimestampTZ",
+            {
+                NULL,
+                oci8_handle_cleanup,
+                oci8_handle_size,
+            },
+            &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+            RUBY_TYPED_WB_PROTECTED,
+#endif
+        },
         bind_ocitimestamp_tz_free,
         sizeof(oci8_bind_t)
     },
@@ -459,7 +481,18 @@ static void bind_ociinterval_ds_free(oci8_base_t *base)
 
 static const oci8_bind_data_type_t bind_ociinterval_ym_data_type = {
     {
-        NULL,
+        {
+            "OCI8::BindType::OCIIntervalYM",
+            {
+                NULL,
+                oci8_handle_cleanup,
+                oci8_handle_size,
+            },
+            &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+            RUBY_TYPED_WB_PROTECTED,
+#endif
+        },
         bind_ociinterval_ym_free,
         sizeof(oci8_bind_t)
     },
@@ -478,7 +511,18 @@ static VALUE bind_ociinterval_ym_alloc(VALUE klass)
 
 static const oci8_bind_data_type_t bind_ociinterval_ds_data_type = {
     {
-        NULL,
+        {
+            "OCI8::BindType::OCIIntervalDS",
+            {
+                NULL,
+                oci8_handle_cleanup,
+                oci8_handle_size,
+            },
+            &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+            RUBY_TYPED_WB_PROTECTED,
+#endif
+        },
         bind_ociinterval_ds_free,
         sizeof(oci8_bind_t)
     },

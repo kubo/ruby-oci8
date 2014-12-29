@@ -61,6 +61,11 @@ static void at_exit_func(VALUE val)
 }
 #endif
 
+static VALUE bind_base_alloc(VALUE klass)
+{
+    rb_raise(rb_eNameError, "private method `new' called for %s:Class", rb_class2name(klass));
+}
+
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -114,7 +119,7 @@ Init_oci8lib()
     /* OCI8::BindType module */
     mOCI8BindType = rb_define_module_under(cOCI8, "BindType");
     /* OCI8::BindType::Base class */
-    cOCI8BindTypeBase = rb_define_class_under(mOCI8BindType, "Base", oci8_cOCIHandle);
+    cOCI8BindTypeBase = oci8_define_class_under(mOCI8BindType, "Base", &oci8_bind_data_type, bind_base_alloc);
 
     /* Handle */
     Init_oci8_bind(cOCI8BindTypeBase);
@@ -148,14 +153,14 @@ Init_oci8lib()
 #endif
 }
 
-VALUE oci8_define_class(const char *name, oci8_handle_data_type_t *data_type, VALUE (*alloc_func)(VALUE))
+VALUE oci8_define_class(const char *name, const oci8_handle_data_type_t *data_type, VALUE (*alloc_func)(VALUE))
 {
     VALUE klass = rb_define_class(name, oci8_cOCIHandle);
     rb_define_alloc_func(klass, alloc_func);
     return klass;
 }
 
-VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_handle_data_type_t *data_type, VALUE (*alloc_func)(VALUE))
+VALUE oci8_define_class_under(VALUE outer, const char *name, const oci8_handle_data_type_t *data_type, VALUE (*alloc_func)(VALUE))
 {
     VALUE klass = rb_define_class_under(outer, name, oci8_cOCIHandle);
     rb_define_alloc_func(klass, alloc_func);
@@ -578,7 +583,7 @@ oci8_base_t *oci8_get_handle(VALUE obj, VALUE klass)
         rb_raise(rb_eTypeError, "invalid argument %s (expect %s)",
                  rb_obj_classname(obj), rb_class2name(klass));
     }
-    TypedData_Get_Struct(obj, oci8_base_t, &oci8_base_data_type, hp);
+    TypedData_Get_Struct(obj, oci8_base_t, &oci8_handle_data_type.rb_data_type, hp);
     if (hp->closed) {
         rb_raise(eOCIException, "%s was already closed.",
                  rb_obj_classname(obj));

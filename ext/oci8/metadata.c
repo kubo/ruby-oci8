@@ -234,8 +234,19 @@ static VALUE metadata_get_tdo_id(VALUE self)
 #endif
 }
 
-oci8_handle_data_type_t oci8_metadata_data_type = {
-    oci8_metadata_mark,
+static const oci8_handle_data_type_t oci8_metadata_data_type = {
+    {
+        "OCI8::Metadata::Base",
+        {
+            (RUBY_DATA_FUNC)oci8_metadata_mark,
+            oci8_handle_cleanup,
+            oci8_handle_size,
+        },
+        &oci8_handle_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+        RUBY_TYPED_WB_PROTECTED,
+#endif
+    },
     oci8_metadata_free,
     sizeof(oci8_metadata_t),
 };

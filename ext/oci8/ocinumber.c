@@ -1733,7 +1733,18 @@ static void bind_ocinumber_init_elem(oci8_bind_t *obind, VALUE svc)
 
 static const oci8_bind_data_type_t bind_ocinumber_data_type = {
     {
-        NULL,
+        {
+            "OCI8::BindType::OraNumber",
+            {
+                NULL,
+                oci8_handle_cleanup,
+                oci8_handle_size,
+            },
+            &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+            RUBY_TYPED_WB_PROTECTED,
+#endif
+        },
         oci8_bind_free,
         sizeof(oci8_bind_t)
     },
@@ -1752,7 +1763,18 @@ static VALUE bind_ocinumber_alloc(VALUE klass)
 
 static const oci8_bind_data_type_t bind_integer_data_type = {
     {
-        NULL,
+        {
+            "OCI8::BindType::Integer",
+            {
+                NULL,
+                oci8_handle_cleanup,
+                oci8_handle_size,
+            },
+            &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+            RUBY_TYPED_WB_PROTECTED,
+#endif
+        },
         oci8_bind_free,
         sizeof(oci8_bind_t)
     },
@@ -1771,7 +1793,18 @@ static VALUE bind_integer_alloc(VALUE klass)
 
 static const oci8_bind_data_type_t bind_float_data_type = {
     {
-        NULL,
+        {
+            "OCI8::BindType::Float",
+            {
+                NULL,
+                oci8_handle_cleanup,
+                oci8_handle_size,
+            },
+            &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+            RUBY_TYPED_WB_PROTECTED,
+#endif
+        },
         oci8_bind_free,
         sizeof(oci8_bind_t)
     },

@@ -92,8 +92,19 @@ static VALUE oci8_tdo_setup(VALUE self, VALUE svc, VALUE md_obj)
     return self;
 }
 
-static oci8_handle_data_type_t oci8_tdo_data_type = {
-    oci8_tdo_mark,
+static const oci8_handle_data_type_t oci8_tdo_data_type = {
+    {
+        "OCI8::TDO",
+        {
+            (RUBY_DATA_FUNC)oci8_tdo_mark,
+            oci8_handle_cleanup,
+            oci8_handle_size,
+        },
+        &oci8_handle_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+        RUBY_TYPED_WB_PROTECTED,
+#endif
+    },
     oci8_tdo_free,
     sizeof(oci8_base_t)
 };
@@ -552,8 +563,36 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
     *ind = 0;
 }
 
-static oci8_handle_data_type_t oci8_named_type_data_type = {
-    oci8_named_type_mark,
+static const oci8_handle_data_type_t oci8_named_type_data_type = {
+    {
+        "OCI8::NamedType",
+        {
+            (RUBY_DATA_FUNC)oci8_named_type_mark,
+            oci8_handle_cleanup,
+            oci8_handle_size,
+        },
+        &oci8_handle_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+        RUBY_TYPED_WB_PROTECTED,
+#endif
+    },
+    oci8_named_type_free,
+    sizeof(oci8_named_type_t)
+};
+
+static const oci8_handle_data_type_t oci8_named_collection_data_type = {
+    {
+        "OCI8::NamedCollection",
+        {
+            (RUBY_DATA_FUNC)oci8_named_type_mark,
+            oci8_handle_cleanup,
+            oci8_handle_size,
+        },
+        &oci8_handle_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+        RUBY_TYPED_WB_PROTECTED,
+#endif
+    },
     oci8_named_type_free,
     sizeof(oci8_named_type_t)
 };
@@ -561,6 +600,11 @@ static oci8_handle_data_type_t oci8_named_type_data_type = {
 static VALUE oci8_named_type_alloc(VALUE klass)
 {
     return oci8_allocate_typeddata(klass, &oci8_named_type_data_type);
+}
+
+static VALUE oci8_named_collection_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &oci8_named_collection_data_type);
 }
 
 static void bind_named_type_mark(oci8_base_t *base)
@@ -672,7 +716,18 @@ static void bind_name_type_post_bind_hook(oci8_bind_t *obind)
 
 static const oci8_bind_data_type_t bind_named_type_data_type = {
     {
-        bind_named_type_mark,
+        {
+            "OCI8::BindType::NamedType",
+            {
+                (RUBY_DATA_FUNC)bind_named_type_mark,
+                oci8_handle_cleanup,
+                oci8_handle_size,
+            },
+            &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+            RUBY_TYPED_WB_PROTECTED,
+#endif
+        },
         bind_named_type_free,
         sizeof(oci8_bind_t)
     },
@@ -758,7 +813,7 @@ void Init_oci_object(VALUE cOCI8)
     rb_define_method(cOCI8NamedType, "null=", oci8_named_type_set_null, 1);
 
     /* OCI8::NamedCollection */
-    cOCI8NamedCollection = oci8_define_class_under(cOCI8, "NamedCollection", &oci8_named_type_data_type, oci8_named_type_alloc);
+    cOCI8NamedCollection = oci8_define_class_under(cOCI8, "NamedCollection", &oci8_named_collection_data_type, oci8_named_collection_alloc);
     rb_define_method(cOCI8NamedCollection, "initialize", oci8_named_type_initialize, 0);
     rb_define_method(cOCI8NamedCollection, "tdo", oci8_named_type_tdo, 0);
     rb_define_private_method(cOCI8NamedCollection, "get_coll_element", oci8_named_coll_get_coll_element, 2);

@@ -38,8 +38,19 @@ static void oci8_cpool_free(oci8_base_t *base)
     base->hp.ptr = NULL;
 }
 
-static oci8_handle_data_type_t oci8_cpool_data_type = {
-    oci8_cpool_mark,
+static const oci8_handle_data_type_t oci8_cpool_data_type = {
+    {
+        "OCI8::ConnectionPool",
+        {
+            (RUBY_DATA_FUNC)oci8_cpool_mark,
+            oci8_handle_cleanup,
+            oci8_handle_size,
+        },
+        &oci8_handle_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+        RUBY_TYPED_WB_PROTECTED,
+#endif
+    },
     oci8_cpool_free,
     sizeof(oci8_cpool_t),
 };

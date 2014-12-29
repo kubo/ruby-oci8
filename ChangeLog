@@ -3,6 +3,13 @@
 	  ext/oci8/metadata.c, ext/oci8/object.c, ext/oci8/oci8.c, ext/oci8/oci8.h
 	  ext/oci8/oci8lib.c, ext/oci8/ocidatetime.c, ext/oci8/ocihandle.c,
 	  ext/oci8/ocinumber.c, ext/oci8/oradate.c, ext/oci8/stmt.c:
+	    Use rb_data_type_t as the base type of oci8_handle_data_type_t.
+
+2014-12-29  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/bind.c, ext/oci8/connection_pool.c, ext/oci8/lob.c,
+	  ext/oci8/metadata.c, ext/oci8/object.c, ext/oci8/oci8.c, ext/oci8/oci8.h
+	  ext/oci8/oci8lib.c, ext/oci8/ocidatetime.c, ext/oci8/ocihandle.c,
+	  ext/oci8/ocinumber.c, ext/oci8/oradate.c, ext/oci8/stmt.c:
 	    Rename vtable and vptr to data_type.
 
 2014-12-29  Kubo Takehiro  <kubo@jiubao.org>

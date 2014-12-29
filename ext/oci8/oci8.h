@@ -200,6 +200,8 @@ struct oci8_data_type_struct {
         void (*dfree)(void*);
         size_t (*dsize)(const void *);
     } function;
+    const rb_data_type_t *parent;
+    void *data;
 };
 #define TypedData_Make_Struct(klass, type, data_type, sval) \
              Data_Make_Struct((klass), type, (data_type)->function.dmark, (data_type)->function.dfree, (sval))
@@ -343,7 +345,7 @@ typedef struct oci8_bind oci8_bind_t;
 
 /* The virtual method table of oci8_base_t */
 struct oci8_handle_data_type {
-    void (*mark)(oci8_base_t *base);
+    rb_data_type_t rb_data_type;
     void (*free)(oci8_base_t *base);
     size_t size;
 };
@@ -452,7 +454,7 @@ typedef struct {
     if (!rb_obj_is_kind_of(obj, klass)) { \
         rb_raise(rb_eTypeError, "invalid argument %s (expect %s)", rb_class2name(CLASS_OF(obj)), rb_class2name(klass)); \
     } \
-    TypedData_Get_Struct(obj, oci8_base_t, &oci8_base_data_type, hp); \
+    TypedData_Get_Struct(obj, oci8_base_t, &oci8_handle_data_type.rb_data_type, hp); \
 } while (0)
 
 #define Check_Object(obj, klass) do {\
@@ -527,8 +529,8 @@ extern ID oci8_id_div_op; /* ID of the division operator '/' */
 extern int oci8_in_finalizer;
 extern VALUE oci8_cOCIHandle;
 void oci8_base_free(oci8_base_t *base);
-VALUE oci8_define_class(const char *name, oci8_handle_data_type_t *data_type, VALUE (*alloc_func)(VALUE));
-VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_handle_data_type_t *data_type, VALUE (*alloc_func)(VALUE));
+VALUE oci8_define_class(const char *name, const oci8_handle_data_type_t *data_type, VALUE (*alloc_func)(VALUE));
+VALUE oci8_define_class_under(VALUE outer, const char *name, const oci8_handle_data_type_t *data_type, VALUE (*alloc_func)(VALUE));
 VALUE oci8_define_bind_class(const char *name, const oci8_bind_data_type_t *data_type, VALUE (*alloc_func)(VALUE));
 void oci8_link_to_parent(oci8_base_t *base, oci8_base_t *parent);
 void oci8_unlink_from_parent(oci8_base_t *base);
@@ -551,9 +553,11 @@ NORETURN(void oci8_do_raise_by_msgno(ub4 msgno, const char *default_msg, const c
 void oci8_check_error_(sword status, oci8_base_t *base, OCIStmt *stmthp, const char *file, int line);
 
 /* ocihandle.c */
-extern rb_data_type_t oci8_base_data_type;
+extern const oci8_handle_data_type_t oci8_handle_data_type;
 void Init_oci8_handle(void);
 VALUE oci8_allocate_typeddata(VALUE klass, const oci8_handle_data_type_t *data_type);
+void oci8_handle_cleanup(void *ptr);
+size_t oci8_handle_size(const void *ptr);
 
 /* oci8.c */
 void Init_oci8(VALUE *out);
@@ -575,6 +579,7 @@ typedef struct {
     void *hp;
     VALUE obj;
 } oci8_hp_obj_t;
+extern const oci8_handle_data_type_t oci8_bind_data_type;
 void oci8_bind_free(oci8_base_t *base);
 void oci8_bind_hp_obj_mark(oci8_base_t *base);
 void Init_oci8_bind(VALUE cOCI8BindTypeBase);

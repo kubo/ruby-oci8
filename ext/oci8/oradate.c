@@ -589,7 +589,18 @@ static void bind_oradate_init_elem(oci8_bind_t *obind, VALUE svc)
 
 static const oci8_bind_data_type_t bind_oradate_data_type = {
     {
-        NULL,
+        {
+            "OCI8::BindType::OraDate",
+            {
+                NULL,
+                oci8_handle_cleanup,
+                oci8_handle_size,
+            },
+            &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+            RUBY_TYPED_WB_PROTECTED,
+#endif
+        },
         oci8_bind_free,
         sizeof(oci8_bind_t)
     },

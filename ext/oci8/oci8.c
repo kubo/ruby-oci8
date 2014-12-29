@@ -70,8 +70,19 @@ static void oci8_dont_free_handle_free(oci8_base_t *base)
     base->hp.ptr = NULL;
 }
 
-static oci8_handle_data_type_t oci8_dont_free_handle_data_type = {
-    NULL,
+static const oci8_handle_data_type_t oci8_dont_free_handle_data_type = {
+    {
+        "OCIHandle",
+        {
+            NULL,
+            oci8_handle_cleanup,
+            oci8_handle_size,
+        },
+        &oci8_handle_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+        RUBY_TYPED_WB_PROTECTED,
+#endif
+    },
     oci8_dont_free_handle_free,
     sizeof(oci8_base_t),
 };
@@ -137,8 +148,19 @@ static void oci8_svcctx_free(oci8_base_t *base)
     svcctx->base.closed = 1;
 }
 
-static oci8_handle_data_type_t oci8_svcctx_data_type = {
-    NULL,
+static const oci8_handle_data_type_t oci8_svcctx_data_type = {
+    {
+        "OCI8",
+        {
+            NULL,
+            oci8_handle_cleanup,
+            oci8_handle_size,
+        },
+        &oci8_handle_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+        RUBY_TYPED_WB_PROTECTED,
+#endif
+    },
     oci8_svcctx_free,
     sizeof(oci8_svcctx_t),
 };

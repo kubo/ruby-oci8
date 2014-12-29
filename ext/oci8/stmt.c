@@ -36,8 +36,19 @@ static void oci8_stmt_free(oci8_base_t *base)
     }
 }
 
-static oci8_handle_data_type_t oci8_stmt_data_type = {
-    oci8_stmt_mark,
+static const oci8_handle_data_type_t oci8_stmt_data_type = {
+    {
+        "OCI8::Cursor",
+        {
+            (RUBY_DATA_FUNC)oci8_stmt_mark,
+            oci8_handle_cleanup,
+            oci8_handle_size,
+        },
+        &oci8_handle_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+        RUBY_TYPED_WB_PROTECTED,
+#endif
+    },
     oci8_stmt_free,
     sizeof(oci8_stmt_t),
 };
@@ -362,7 +373,18 @@ static void bind_stmt_init_elem(oci8_bind_t *obind, VALUE svc)
 
 static const oci8_bind_data_type_t bind_stmt_data_type = {
     {
-        oci8_bind_hp_obj_mark,
+        {
+            "OCI8::BindType::Cursor",
+            {
+                (RUBY_DATA_FUNC)oci8_bind_hp_obj_mark,
+                oci8_handle_cleanup,
+                oci8_handle_size,
+            },
+            &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+            RUBY_TYPED_WB_PROTECTED,
+#endif
+        },
         oci8_bind_free,
         sizeof(oci8_bind_t)
     },

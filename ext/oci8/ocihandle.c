@@ -17,25 +17,6 @@
 #define MAGIC_NUMBER 0xDEAFBEAFDEAFBEAFull;
 #endif
 
-static void oci8_handle_mark(oci8_base_t *base);
-static void oci8_handle_cleanup(oci8_base_t *base);
-static size_t oci8_handle_size(const void *);
-
-rb_data_type_t oci8_base_data_type = {
-    "oci8_base",
-    {
-        (RUBY_DATA_FUNC)oci8_handle_mark,
-        (RUBY_DATA_FUNC)oci8_handle_cleanup,
-        oci8_handle_size,
-    },
-#ifdef RUBY_TYPED_FREE_IMMEDIATELY
-    NULL, NULL, 0
-#endif
-#ifdef RUBY_TYPED_WB_PROTECTED
-    | RUBY_TYPED_WB_PROTECTED
-#endif
-};
-
 static long check_data_range(VALUE val, long min, long max, const char *type)
 {
     long lval = NUM2LONG(val);
@@ -46,9 +27,19 @@ static long check_data_range(VALUE val, long min, long max, const char *type)
     return lval;
 }
 
-
-static oci8_handle_data_type_t oci8_handle_data_type = {
-    NULL,
+const oci8_handle_data_type_t oci8_handle_data_type = {
+    {
+        "OCIHandle",
+        {
+            NULL,
+            oci8_handle_cleanup,
+            oci8_handle_size,
+        },
+        NULL, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+        RUBY_TYPED_WB_PROTECTED,
+#endif
+    },
     NULL,
     sizeof(oci8_base_t),
 };
@@ -72,14 +63,9 @@ static VALUE oci8_handle_free(VALUE self)
     return self;
 }
 
-static void oci8_handle_mark(oci8_base_t *base)
+void oci8_handle_cleanup(void *ptr)
 {
-    if (base->data_type->mark != NULL)
-        base->data_type->mark(base);
-}
-
-static void oci8_handle_cleanup(oci8_base_t *base)
-{
+    oci8_base_t *base = (oci8_base_t *)ptr;
     if (oci8_in_finalizer) {
         /* Do nothing when the program exits.
          * The first two words of memory addressed by VALUE datatype is
@@ -92,7 +78,7 @@ static void oci8_handle_cleanup(oci8_base_t *base)
     xfree(base);
 }
 
-static size_t oci8_handle_size(const void *ptr)
+size_t oci8_handle_size(const void *ptr)
 {
     const oci8_base_t *base = (const oci8_base_t *)ptr;
     const oci8_bind_t *bind = (const oci8_bind_t *)ptr;
@@ -122,7 +108,7 @@ VALUE oci8_allocate_typeddata(VALUE klass, const oci8_handle_data_type_t *data_t
     base = xmalloc(data_type->size);
     memset(base, 0, data_type->size);
 
-    obj = TypedData_Wrap_Struct(klass, &oci8_base_data_type, base);
+    obj = TypedData_Wrap_Struct(klass, &oci8_handle_data_type.rb_data_type, base);
     base->self = obj;
     base->data_type = data_type;
     base->parent = NULL;
