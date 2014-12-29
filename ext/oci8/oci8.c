@@ -76,6 +76,11 @@ static oci8_base_vtable_t oci8_dont_free_handle_vtable = {
     sizeof(oci8_base_t),
 };
 
+static VALUE oci8_alloc_handle(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &oci8_dont_free_handle_vtable);
+}
+
 static void copy_session_handle(oci8_svcctx_t *svcctx)
 {
     VALUE obj = rb_ivar_get(svcctx->base.self, id_at_session_handle);
@@ -132,20 +137,27 @@ static void oci8_svcctx_free(oci8_base_t *base)
     svcctx->base.closed = 1;
 }
 
-static void oci8_svcctx_init(oci8_base_t *base)
+static oci8_base_vtable_t oci8_svcctx_vtable = {
+    NULL,
+    oci8_svcctx_free,
+    sizeof(oci8_svcctx_t),
+};
+
+static VALUE oci8_svcctx_alloc(VALUE klass)
 {
-    oci8_svcctx_t *svcctx = (oci8_svcctx_t *)base;
+    VALUE self = oci8_allocate_typeddata(klass, &oci8_svcctx_vtable);
+    oci8_svcctx_t *svcctx = (oci8_svcctx_t *)RTYPEDDATA_DATA(self);
     VALUE obj;
 
     svcctx->executing_thread = Qnil;
     /* set session handle */
     obj = rb_obj_alloc(cSession);
-    rb_ivar_set(base->self, id_at_session_handle, obj);
-    oci8_link_to_parent(DATA_PTR(obj), base);
+    rb_ivar_set(self, id_at_session_handle, obj);
+    oci8_link_to_parent(DATA_PTR(obj), &svcctx->base);
     /* set server handle */
     obj = rb_obj_alloc(cServer);
-    rb_ivar_set(base->self, id_at_server_handle, obj);
-    oci8_link_to_parent(DATA_PTR(obj), base);
+    rb_ivar_set(self, id_at_server_handle, obj);
+    oci8_link_to_parent(DATA_PTR(obj), &svcctx->base);
 
     svcctx->pid = getpid();
     svcctx->is_autocommit = 0;
@@ -153,14 +165,8 @@ static void oci8_svcctx_init(oci8_base_t *base)
     svcctx->non_blocking = 1;
 #endif
     svcctx->long_read_len = INT2FIX(65535);
+    return self;
 }
-
-static oci8_base_vtable_t oci8_svcctx_vtable = {
-    NULL,
-    oci8_svcctx_free,
-    sizeof(oci8_svcctx_t),
-    oci8_svcctx_init,
-};
 
 static VALUE oracle_client_vernum; /* Oracle client version number */
 
@@ -1117,11 +1123,11 @@ void Init_oci8(VALUE *out)
     oci8_cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
     cOCI8 = rb_define_class("OCI8", oci8_cOCIHandle);
 #endif
-    cOCI8 = oci8_define_class("OCI8", &oci8_svcctx_vtable);
-    cSession = oci8_define_class_under(cOCI8, "Session", &oci8_dont_free_handle_vtable);
-    cServer = oci8_define_class_under(cOCI8, "Server", &oci8_dont_free_handle_vtable);
-    cEnvironment = oci8_define_class_under(cOCI8, "Environment", &oci8_dont_free_handle_vtable);
-    cProcess = oci8_define_class_under(cOCI8, "Process", &oci8_dont_free_handle_vtable);
+    cOCI8 = oci8_define_class("OCI8", &oci8_svcctx_vtable, oci8_svcctx_alloc);
+    cSession = oci8_define_class_under(cOCI8, "Session", &oci8_dont_free_handle_vtable, oci8_alloc_handle);
+    cServer = oci8_define_class_under(cOCI8, "Server", &oci8_dont_free_handle_vtable, oci8_alloc_handle);
+    cEnvironment = oci8_define_class_under(cOCI8, "Environment", &oci8_dont_free_handle_vtable, oci8_alloc_handle);
+    cProcess = oci8_define_class_under(cOCI8, "Process", &oci8_dont_free_handle_vtable, oci8_alloc_handle);
     id_at_session_handle = rb_intern("@session_handle");
     id_at_server_handle = rb_intern("@server_handle");
 

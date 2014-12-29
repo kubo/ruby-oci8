@@ -1745,6 +1745,11 @@ static const oci8_bind_vtable_t bind_ocinumber_vtable = {
     SQLT_VNU,
 };
 
+static VALUE bind_ocinumber_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_ocinumber_vtable.base);
+}
+
 static const oci8_bind_vtable_t bind_integer_vtable = {
     {
         NULL,
@@ -1759,6 +1764,11 @@ static const oci8_bind_vtable_t bind_integer_vtable = {
     SQLT_VNU,
 };
 
+static VALUE bind_integer_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_integer_vtable.base);
+}
+
 static const oci8_bind_vtable_t bind_float_vtable = {
     {
         NULL,
@@ -1772,6 +1782,11 @@ static const oci8_bind_vtable_t bind_float_vtable = {
     NULL,
     SQLT_VNU,
 };
+
+static VALUE bind_float_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_float_vtable.base);
+}
 
 void
 Init_oci_number(VALUE cOCI8, OCIError *errhp)
@@ -1886,9 +1901,9 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
     rb_define_method(cOCINumber, "_dump", onum__dump, -1);
     rb_define_singleton_method(cOCINumber, "_load", onum_s_load, 1);
 
-    oci8_define_bind_class("OraNumber", &bind_ocinumber_vtable);
-    oci8_define_bind_class("Integer", &bind_integer_vtable);
-    oci8_define_bind_class("Float", &bind_float_vtable);
+    oci8_define_bind_class("OraNumber", &bind_ocinumber_vtable, bind_ocinumber_alloc);
+    oci8_define_bind_class("Integer", &bind_integer_vtable, bind_integer_alloc);
+    oci8_define_bind_class("Float", &bind_float_vtable, bind_float_alloc);
 
 #if 0 /* for rdoc/yard */
     oci8_cOCIHandle = rb_define_class("OCIHandle", rb_cObject);

@@ -346,7 +346,6 @@ struct oci8_base_vtable {
     void (*mark)(oci8_base_t *base);
     void (*free)(oci8_base_t *base);
     size_t size;
-    void (*init)(oci8_base_t *base);
 };
 
 /* The virtual method table of oci8_bind_t */
@@ -516,7 +515,6 @@ void Init_oci8_env(void);
 extern ID oci8_id_at_last_error;
 extern ID oci8_id_get;
 extern ID oci8_id_set;
-extern ID oci8_id_oci8_vtable;
 #ifdef CHAR_IS_NOT_A_SHORTCUT_TO_ID
 extern ID oci8_id_add_op; /* ID of the addition operator '+' */
 extern ID oci8_id_sub_op; /* ID of the subtraction operator '-' */
@@ -531,9 +529,9 @@ extern ID oci8_id_div_op; /* ID of the division operator '/' */
 extern int oci8_in_finalizer;
 extern VALUE oci8_cOCIHandle;
 void oci8_base_free(oci8_base_t *base);
-VALUE oci8_define_class(const char *name, oci8_base_vtable_t *vptr);
-VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_vtable_t *vptr);
-VALUE oci8_define_bind_class(const char *name, const oci8_bind_vtable_t *vptr);
+VALUE oci8_define_class(const char *name, oci8_base_vtable_t *vptr, VALUE (*alloc_func)(VALUE));
+VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_vtable_t *vptr, VALUE (*alloc_func)(VALUE));
+VALUE oci8_define_bind_class(const char *name, const oci8_bind_vtable_t *vptr, VALUE (*alloc_func)(VALUE));
 void oci8_link_to_parent(oci8_base_t *base, oci8_base_t *parent);
 void oci8_unlink_from_parent(oci8_base_t *base);
 sword oci8_call_without_gvl(oci8_svcctx_t *svcctx, void *(*func)(void *), void *data);
@@ -555,9 +553,9 @@ NORETURN(void oci8_do_raise_by_msgno(ub4 msgno, const char *default_msg, const c
 void oci8_check_error_(sword status, oci8_base_t *base, OCIStmt *stmthp, const char *file, int line);
 
 /* ocihandle.c */
-extern rb_data_type_t oci8_vtable_data_type;
 extern rb_data_type_t oci8_base_data_type;
 void Init_oci8_handle(void);
+VALUE oci8_allocate_typeddata(VALUE klass, const oci8_base_vtable_t *vptr);
 
 /* oci8.c */
 void Init_oci8(VALUE *out);

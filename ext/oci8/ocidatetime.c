@@ -246,6 +246,11 @@ static const oci8_bind_vtable_t bind_ocitimestamp_vtable = {
     SQLT_TIMESTAMP
 };
 
+static VALUE bind_ocitimestamp_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_ocitimestamp_vtable.base);
+}
+
 static VALUE bind_ocitimestamp_tz_get(oci8_bind_t *obind, void *data, void *null_struct)
 {
     return oci8_make_ocitimestamp(*(OCIDateTime **)data, TRUE);
@@ -301,6 +306,11 @@ static const oci8_bind_vtable_t bind_ocitimestamp_tz_vtable = {
     NULL,
     SQLT_TIMESTAMP_TZ
 };
+
+static VALUE bind_ocitimestamp_tz_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_ocitimestamp_tz_vtable.base);
+}
 
 VALUE oci8_make_ociinterval_ym(OCIInterval *s)
 {
@@ -461,6 +471,11 @@ static const oci8_bind_vtable_t bind_ociinterval_ym_vtable = {
     SQLT_INTERVAL_YM
 };
 
+static VALUE bind_ociinterval_ym_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_ociinterval_ym_vtable.base);
+}
+
 static const oci8_bind_vtable_t bind_ociinterval_ds_vtable = {
     {
         NULL,
@@ -475,10 +490,15 @@ static const oci8_bind_vtable_t bind_ociinterval_ds_vtable = {
     SQLT_INTERVAL_DS
 };
 
+static VALUE bind_ociinterval_ds_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_ociinterval_ds_vtable.base);
+}
+
 void Init_oci_datetime(void)
 {
-    oci8_define_bind_class("OCITimestamp", &bind_ocitimestamp_vtable);
-    oci8_define_bind_class("OCITimestampTZ", &bind_ocitimestamp_tz_vtable);
-    oci8_define_bind_class("OCIIntervalYM", &bind_ociinterval_ym_vtable);
-    oci8_define_bind_class("OCIIntervalDS", &bind_ociinterval_ds_vtable);
+    oci8_define_bind_class("OCITimestamp", &bind_ocitimestamp_vtable, bind_ocitimestamp_alloc);
+    oci8_define_bind_class("OCITimestampTZ", &bind_ocitimestamp_tz_vtable, bind_ocitimestamp_tz_alloc);
+    oci8_define_bind_class("OCIIntervalYM", &bind_ociinterval_ym_vtable, bind_ociinterval_ym_alloc);
+    oci8_define_bind_class("OCIIntervalDS", &bind_ociinterval_ds_vtable, bind_ociinterval_ds_alloc);
 }

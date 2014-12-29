@@ -119,6 +119,11 @@ static const oci8_bind_vtable_t bind_string_vtable = {
     bind_string_post_bind_hook,
 };
 
+static VALUE bind_string_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_string_vtable.base);
+}
+
 /*
  * bind_raw
  */
@@ -154,6 +159,11 @@ static const oci8_bind_vtable_t bind_raw_vtable = {
     NULL,
     SQLT_LVB
 };
+
+static VALUE bind_raw_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_raw_vtable.base);
+}
 
 /*
  * bind_binary_double
@@ -191,6 +201,11 @@ static const oci8_bind_vtable_t bind_binary_double_vtable = {
     NULL,
     SQLT_BDOUBLE
 };
+
+static VALUE bind_binary_double_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_binary_double_vtable.base);
+}
 
 static VALUE oci8_bind_get(VALUE self)
 {
@@ -354,10 +369,10 @@ void Init_oci8_bind(VALUE klass)
     rb_define_private_method(cOCI8BindTypeBase, "set_data", oci8_bind_set_data, 1);
 
     /* register primitive data types. */
-    oci8_define_bind_class("String", &bind_string_vtable);
-    oci8_define_bind_class("RAW", &bind_raw_vtable);
+    oci8_define_bind_class("String", &bind_string_vtable, bind_string_alloc);
+    oci8_define_bind_class("RAW", &bind_raw_vtable, bind_raw_alloc);
     if (oracle_client_version >= ORAVER_10_1) {
-        oci8_define_bind_class("BinaryDouble", &bind_binary_double_vtable);
+        oci8_define_bind_class("BinaryDouble", &bind_binary_double_vtable, bind_binary_double_alloc);
     }
 }
 

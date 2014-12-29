@@ -11,7 +11,6 @@
 ID oci8_id_at_last_error;
 ID oci8_id_get;
 ID oci8_id_set;
-ID oci8_id_oci8_vtable;
 #ifdef CHAR_IS_NOT_A_SHORTCUT_TO_ID
 ID oci8_id_add_op;
 ID oci8_id_sub_op;
@@ -89,7 +88,6 @@ Init_oci8lib()
     oci8_id_at_last_error = rb_intern("@last_error");
     oci8_id_get = rb_intern("get");
     oci8_id_set = rb_intern("set");
-    oci8_id_oci8_vtable = rb_intern("__oci8_vtable__");
 #ifdef CHAR_IS_NOT_A_SHORTCUT_TO_ID
     oci8_id_add_op = rb_intern("+");
     oci8_id_sub_op = rb_intern("-");
@@ -150,27 +148,24 @@ Init_oci8lib()
 #endif
 }
 
-VALUE oci8_define_class(const char *name, oci8_base_vtable_t *vptr)
+VALUE oci8_define_class(const char *name, oci8_base_vtable_t *vptr, VALUE (*alloc_func)(VALUE))
 {
     VALUE klass = rb_define_class(name, oci8_cOCIHandle);
-    VALUE obj = TypedData_Wrap_Struct(rb_cObject, &oci8_vtable_data_type, vptr);
-    rb_ivar_set(klass, oci8_id_oci8_vtable, obj);
+    rb_define_alloc_func(klass, alloc_func);
     return klass;
 }
 
-VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_vtable_t *vptr)
+VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_vtable_t *vptr, VALUE (*alloc_func)(VALUE))
 {
     VALUE klass = rb_define_class_under(outer, name, oci8_cOCIHandle);
-    VALUE obj = TypedData_Wrap_Struct(rb_cObject, &oci8_vtable_data_type, vptr);
-    rb_ivar_set(klass, oci8_id_oci8_vtable, obj);
+    rb_define_alloc_func(klass, alloc_func);
     return klass;
 }
 
-VALUE oci8_define_bind_class(const char *name, const oci8_bind_vtable_t *vptr)
+VALUE oci8_define_bind_class(const char *name, const oci8_bind_vtable_t *vptr, VALUE (*alloc_func)(VALUE))
 {
     VALUE klass = rb_define_class_under(mOCI8BindType, name, cOCI8BindTypeBase);
-    VALUE obj = TypedData_Wrap_Struct(rb_cObject, &oci8_vtable_data_type, (void*)vptr);
-    rb_ivar_set(klass, oci8_id_oci8_vtable, obj);
+    rb_define_alloc_func(klass, alloc_func);
     return klass;
 }
 

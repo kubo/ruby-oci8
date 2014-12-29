@@ -240,10 +240,15 @@ oci8_base_vtable_t oci8_metadata_vtable = {
     sizeof(oci8_metadata_t),
 };
 
+static VALUE oci8_metadata_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &oci8_metadata_vtable);
+}
+
 void Init_oci8_metadata(VALUE cOCI8)
 {
     mOCI8Metadata = rb_define_module_under(cOCI8, "Metadata");
-    cOCI8MetadataBase = oci8_define_class_under(mOCI8Metadata, "Base", &oci8_metadata_vtable);
+    cOCI8MetadataBase = oci8_define_class_under(mOCI8Metadata, "Base", &oci8_metadata_vtable, oci8_metadata_alloc);
     ptype_to_class = rb_hash_new();
     class_to_ptype = rb_hash_new();
     rb_global_variable(&ptype_to_class);

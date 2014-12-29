@@ -154,6 +154,11 @@ static oci8_base_vtable_t oci8_lob_vtable = {
     sizeof(oci8_lob_t),
 };
 
+static VALUE oci8_lob_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &oci8_lob_vtable);
+}
+
 static ub4 oci8_lob_get_length(oci8_lob_t *lob)
 {
     oci8_svcctx_t *svcctx = check_svcctx(lob);
@@ -1026,6 +1031,11 @@ static const oci8_bind_lob_vtable_t bind_clob_vtable = {
     &cOCI8CLOB
 };
 
+static VALUE bind_clob_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_clob_vtable.bind.base);
+}
+
 static const oci8_bind_lob_vtable_t bind_nclob_vtable = {
     {
         {
@@ -1044,6 +1054,11 @@ static const oci8_bind_lob_vtable_t bind_nclob_vtable = {
     &cOCI8NCLOB
 };
 
+static VALUE bind_nclob_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_nclob_vtable.bind.base);
+}
+
 static const oci8_bind_lob_vtable_t bind_blob_vtable = {
     {
         {
@@ -1060,6 +1075,11 @@ static const oci8_bind_lob_vtable_t bind_blob_vtable = {
     },
     &cOCI8BLOB
 };
+
+static VALUE bind_blob_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_blob_vtable.bind.base);
+}
 
 static const oci8_bind_lob_vtable_t bind_bfile_vtable = {
     {
@@ -1078,6 +1098,11 @@ static const oci8_bind_lob_vtable_t bind_bfile_vtable = {
     &cOCI8BFILE
 };
 
+static VALUE bind_bfile_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_bfile_vtable.bind.base);
+}
+
 void Init_oci8_lob(VALUE cOCI8)
 {
     id_plus = rb_intern("+");
@@ -1093,7 +1118,7 @@ void Init_oci8_lob(VALUE cOCI8)
     cOCI8LOB = rb_define_class_under(cOCI8, "LOB", cOCIHandle);
 #endif
 
-    cOCI8LOB = oci8_define_class_under(cOCI8, "LOB", &oci8_lob_vtable);
+    cOCI8LOB = oci8_define_class_under(cOCI8, "LOB", &oci8_lob_vtable, oci8_lob_alloc);
     cOCI8CLOB = rb_define_class_under(cOCI8, "CLOB", cOCI8LOB);
     cOCI8NCLOB = rb_define_class_under(cOCI8, "NCLOB", cOCI8LOB);
     cOCI8BLOB = rb_define_class_under(cOCI8, "BLOB", cOCI8LOB);
@@ -1130,8 +1155,8 @@ void Init_oci8_lob(VALUE cOCI8)
     rb_define_method(cOCI8BFILE, "size=", oci8_bfile_error, 1);
     rb_define_method(cOCI8BFILE, "write", oci8_bfile_error, 1);
 
-    oci8_define_bind_class("CLOB", &bind_clob_vtable.bind);
-    oci8_define_bind_class("NCLOB", &bind_nclob_vtable.bind);
-    oci8_define_bind_class("BLOB", &bind_blob_vtable.bind);
-    oci8_define_bind_class("BFILE", &bind_bfile_vtable.bind);
+    oci8_define_bind_class("CLOB", &bind_clob_vtable.bind, bind_clob_alloc);
+    oci8_define_bind_class("NCLOB", &bind_nclob_vtable.bind, bind_nclob_alloc);
+    oci8_define_bind_class("BLOB", &bind_blob_vtable.bind, bind_blob_alloc);
+    oci8_define_bind_class("BFILE", &bind_bfile_vtable.bind, bind_bfile_alloc);
 }

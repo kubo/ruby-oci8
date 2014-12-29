@@ -38,19 +38,20 @@ static void oci8_cpool_free(oci8_base_t *base)
     base->hp.ptr = NULL;
 }
 
-static void oci8_cpool_init(oci8_base_t *base)
-{
-    oci8_cpool_t *cpool = (oci8_cpool_t *)base;
-
-    cpool->pool_name = Qnil;
-}
-
 static oci8_base_vtable_t oci8_cpool_vtable = {
     oci8_cpool_mark,
     oci8_cpool_free,
     sizeof(oci8_cpool_t),
-    oci8_cpool_init,
 };
+
+static VALUE oci8_cpool_alloc(VALUE klass)
+{
+    VALUE self = oci8_allocate_typeddata(klass, &oci8_cpool_vtable);
+    oci8_cpool_t *cpool = (oci8_cpool_t *)RTYPEDDATA_DATA(self);
+
+    cpool->pool_name = Qnil;
+    return self;
+}
 
 /*
  * call-seq:
@@ -196,7 +197,7 @@ void Init_oci8_connection_pool(VALUE cOCI8)
     cOCIConnectionPool = rb_define_class_under(cOCI8, "ConnectionPool", cOCIHandle);
 #endif
 
-    cOCIConnectionPool = oci8_define_class_under(cOCI8, "ConnectionPool", &oci8_cpool_vtable);
+    cOCIConnectionPool = oci8_define_class_under(cOCI8, "ConnectionPool", &oci8_cpool_vtable, oci8_cpool_alloc);
 
     rb_define_private_method(cOCIConnectionPool, "initialize", oci8_cpool_initialize, -1);
     rb_define_method(cOCIConnectionPool, "reinitialize", oci8_cpool_reinitialize, 3);

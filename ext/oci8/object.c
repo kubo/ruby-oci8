@@ -98,6 +98,11 @@ static oci8_base_vtable_t oci8_tdo_vtable = {
     sizeof(oci8_base_t)
 };
 
+static VALUE oci8_tdo_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &oci8_tdo_vtable);
+}
+
 static void oci8_named_type_mark(oci8_base_t *base)
 {
     if (base->parent != NULL) {
@@ -553,6 +558,11 @@ static oci8_base_vtable_t oci8_named_type_vtable = {
     sizeof(oci8_named_type_t)
 };
 
+static VALUE oci8_named_type_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &oci8_named_type_vtable);
+}
+
 static void bind_named_type_mark(oci8_base_t *base)
 {
     oci8_bind_t *obind = (oci8_bind_t *)base;
@@ -675,13 +685,18 @@ static const oci8_bind_vtable_t bind_named_type_vtable = {
     bind_name_type_post_bind_hook,
 };
 
+static VALUE bind_named_type_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_named_type_vtable.base);
+}
+
 void Init_oci_object(VALUE cOCI8)
 {
     id_to_value = rb_intern("to_value");
     id_set_attributes = rb_intern("attributes=");
 
     /* OCI8::TDO */
-    cOCI8TDO = oci8_define_class_under(cOCI8, "TDO", &oci8_tdo_vtable);
+    cOCI8TDO = oci8_define_class_under(cOCI8, "TDO", &oci8_tdo_vtable, oci8_tdo_alloc);
     rb_define_private_method(cOCI8TDO, "setup", oci8_tdo_setup, 2);
     /* @private */
     rb_define_const(cOCI8TDO, "ATTR_STRING", INT2FIX(ATTR_STRING));
@@ -734,7 +749,7 @@ void Init_oci_object(VALUE cOCI8)
     rb_define_const(cOCI8TDO, "ALIGNMENT_OF_DOUBLE", INT2FIX(ALIGNMENT_OF(double)));
 
     /* OCI8::NamedType */
-    cOCI8NamedType = oci8_define_class_under(cOCI8, "NamedType", &oci8_named_type_vtable);
+    cOCI8NamedType = oci8_define_class_under(cOCI8, "NamedType", &oci8_named_type_vtable, oci8_named_type_alloc);
     rb_define_method(cOCI8NamedType, "initialize", oci8_named_type_initialize, 0);
     rb_define_method(cOCI8NamedType, "tdo", oci8_named_type_tdo, 0);
     rb_define_private_method(cOCI8NamedType, "get_attribute", oci8_named_type_get_attribute, 4);
@@ -743,12 +758,12 @@ void Init_oci_object(VALUE cOCI8)
     rb_define_method(cOCI8NamedType, "null=", oci8_named_type_set_null, 1);
 
     /* OCI8::NamedCollection */
-    cOCI8NamedCollection = oci8_define_class_under(cOCI8, "NamedCollection", &oci8_named_type_vtable);
+    cOCI8NamedCollection = oci8_define_class_under(cOCI8, "NamedCollection", &oci8_named_type_vtable, oci8_named_type_alloc);
     rb_define_method(cOCI8NamedCollection, "initialize", oci8_named_type_initialize, 0);
     rb_define_method(cOCI8NamedCollection, "tdo", oci8_named_type_tdo, 0);
     rb_define_private_method(cOCI8NamedCollection, "get_coll_element", oci8_named_coll_get_coll_element, 2);
     rb_define_private_method(cOCI8NamedCollection, "set_coll_element", oci8_named_coll_set_coll_element, 3);
 
     /* OCI8::BindType::NamedType */
-    cOCI8BindNamedType = oci8_define_bind_class("NamedType", &bind_named_type_vtable);
+    cOCI8BindNamedType = oci8_define_bind_class("NamedType", &bind_named_type_vtable, bind_named_type_alloc);
 }

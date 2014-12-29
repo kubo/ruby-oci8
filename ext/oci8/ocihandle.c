@@ -21,17 +21,6 @@ static void oci8_handle_mark(oci8_base_t *base);
 static void oci8_handle_cleanup(oci8_base_t *base);
 static size_t oci8_handle_size(const void *);
 
-rb_data_type_t oci8_vtable_data_type = {
-    "oci8_vtable",
-    {NULL, NULL, NULL,},
-#ifdef RUBY_TYPED_FREE_IMMEDIATELY
-    NULL, NULL, RUBY_TYPED_FREE_IMMEDIATELY
-#endif
-#ifdef RUBY_TYPED_WB_PROTECTED
-    | RUBY_TYPED_WB_PROTECTED
-#endif
-};
-
 rb_data_type_t oci8_base_data_type = {
     "oci8_base",
     {
@@ -122,19 +111,13 @@ static size_t oci8_handle_size(const void *ptr)
 
 static VALUE oci8_s_allocate(VALUE klass)
 {
-    oci8_base_t *base;
-    const oci8_base_vtable_t *vptr;
-    VALUE superklass;
-    VALUE obj;
+    return oci8_allocate_typeddata(klass, &oci8_base_vtable);
+}
 
-    superklass = klass;
-    while (!RTEST(rb_ivar_defined(superklass, oci8_id_oci8_vtable))) {
-        superklass = rb_class_superclass(superklass);
-        if (superklass == rb_cObject)
-            rb_raise(rb_eRuntimeError, "private method `new' called for %s:Class", rb_class2name(klass));
-    }
-    obj = rb_ivar_get(superklass, oci8_id_oci8_vtable);
-    TypedData_Get_Struct(obj, const oci8_base_vtable_t, &oci8_vtable_data_type, vptr);
+VALUE oci8_allocate_typeddata(VALUE klass, const oci8_base_vtable_t *vptr)
+{
+    oci8_base_t *base;
+    VALUE obj;
 
     base = xmalloc(vptr->size);
     memset(base, 0, vptr->size);
@@ -146,9 +129,6 @@ static VALUE oci8_s_allocate(VALUE klass)
     base->next = base;
     base->prev = base;
     base->children = NULL;
-    if (vptr->init != NULL) {
-        vptr->init(base);
-    }
     return obj;
 }
 
@@ -867,8 +847,6 @@ static VALUE attr_set_integer(VALUE self, VALUE attr_type, VALUE val)
 
 void Init_oci8_handle(void)
 {
-    VALUE obj;
-
     /*
      * OCIHandle is the abstract base class of OCI handles and
      * OCI descriptors; opaque data types of Oracle Call Interface.
@@ -880,8 +858,6 @@ void Init_oci8_handle(void)
     rb_define_alloc_func(oci8_cOCIHandle, oci8_s_allocate);
     rb_define_method_nodoc(oci8_cOCIHandle, "initialize", oci8_handle_initialize, 0);
     rb_define_private_method(oci8_cOCIHandle, "free", oci8_handle_free, 0);
-    obj = TypedData_Wrap_Struct(rb_cObject, &oci8_vtable_data_type, &oci8_base_vtable);
-    rb_ivar_set(oci8_cOCIHandle, oci8_id_oci8_vtable, obj);
 
     /* methods to get attributes */
     rb_define_private_method(oci8_cOCIHandle, "attr_get_ub1", attr_get_ub1, -1);

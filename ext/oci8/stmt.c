@@ -42,6 +42,11 @@ static oci8_base_vtable_t oci8_stmt_vtable = {
     sizeof(oci8_stmt_t),
 };
 
+static VALUE oci8_stmt_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &oci8_stmt_vtable);
+}
+
 /*
  * call-seq:
  *   __initialize(connection, sql_statement)
@@ -369,6 +374,11 @@ static const oci8_bind_vtable_t bind_stmt_vtable = {
     SQLT_RSET
 };
 
+static VALUE bind_stmt_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_stmt_vtable.base);
+}
+
 void Init_oci8_stmt(VALUE cOCI8)
 {
 #if 0
@@ -376,7 +386,7 @@ void Init_oci8_stmt(VALUE cOCI8)
     cOCI8 = rb_define_class("OCI8", cOCIHandle);
     cOCIStmt = rb_define_class_under(cOCI8, "Cursor", cOCIHandle);
 #endif
-    cOCIStmt = oci8_define_class_under(cOCI8, "Cursor", &oci8_stmt_vtable);
+    cOCIStmt = oci8_define_class_under(cOCI8, "Cursor", &oci8_stmt_vtable, oci8_stmt_alloc);
 
     rb_define_private_method(cOCIStmt, "__initialize", oci8_stmt_initialize, 2);
     rb_define_private_method(cOCIStmt, "__define", oci8_define_by_pos, 2);
@@ -386,5 +396,5 @@ void Init_oci8_stmt(VALUE cOCI8)
     rb_define_private_method(cOCIStmt, "__paramGet", oci8_stmt_get_param, 1);
     rb_define_method(cOCIStmt, "rowid", oci8_stmt_get_rowid, 0);
 
-    oci8_define_bind_class("Cursor", &bind_stmt_vtable);
+    oci8_define_bind_class("Cursor", &bind_stmt_vtable, bind_stmt_alloc);
 }
