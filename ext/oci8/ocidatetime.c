@@ -2,7 +2,7 @@
 /*
  *  ocidatetime.c
  *
- * Copyright (C) 2005-2011 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2005-2014 Kubo Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
@@ -232,7 +232,7 @@ static void bind_ocitimestamp_free(oci8_base_t *base)
     bind_free_common(base, OCI_DTYPE_TIMESTAMP);
 }
 
-static const oci8_bind_vtable_t bind_ocitimestamp_vtable = {
+static const oci8_bind_data_type_t bind_ocitimestamp_data_type = {
     {
         NULL,
         bind_ocitimestamp_free,
@@ -248,7 +248,7 @@ static const oci8_bind_vtable_t bind_ocitimestamp_vtable = {
 
 static VALUE bind_ocitimestamp_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &bind_ocitimestamp_vtable.base);
+    return oci8_allocate_typeddata(klass, &bind_ocitimestamp_data_type.base);
 }
 
 static VALUE bind_ocitimestamp_tz_get(oci8_bind_t *obind, void *data, void *null_struct)
@@ -293,7 +293,7 @@ static void bind_ocitimestamp_tz_free(oci8_base_t *base)
     bind_free_common(base, OCI_DTYPE_TIMESTAMP_TZ);
 }
 
-static const oci8_bind_vtable_t bind_ocitimestamp_tz_vtable = {
+static const oci8_bind_data_type_t bind_ocitimestamp_tz_data_type = {
     {
         NULL,
         bind_ocitimestamp_tz_free,
@@ -309,7 +309,7 @@ static const oci8_bind_vtable_t bind_ocitimestamp_tz_vtable = {
 
 static VALUE bind_ocitimestamp_tz_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &bind_ocitimestamp_tz_vtable.base);
+    return oci8_allocate_typeddata(klass, &bind_ocitimestamp_tz_data_type.base);
 }
 
 VALUE oci8_make_ociinterval_ym(OCIInterval *s)
@@ -457,7 +457,7 @@ static void bind_ociinterval_ds_free(oci8_base_t *base)
     bind_free_common(base, OCI_DTYPE_INTERVAL_DS);
 }
 
-static const oci8_bind_vtable_t bind_ociinterval_ym_vtable = {
+static const oci8_bind_data_type_t bind_ociinterval_ym_data_type = {
     {
         NULL,
         bind_ociinterval_ym_free,
@@ -473,10 +473,10 @@ static const oci8_bind_vtable_t bind_ociinterval_ym_vtable = {
 
 static VALUE bind_ociinterval_ym_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &bind_ociinterval_ym_vtable.base);
+    return oci8_allocate_typeddata(klass, &bind_ociinterval_ym_data_type.base);
 }
 
-static const oci8_bind_vtable_t bind_ociinterval_ds_vtable = {
+static const oci8_bind_data_type_t bind_ociinterval_ds_data_type = {
     {
         NULL,
         bind_ociinterval_ds_free,
@@ -492,13 +492,13 @@ static const oci8_bind_vtable_t bind_ociinterval_ds_vtable = {
 
 static VALUE bind_ociinterval_ds_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &bind_ociinterval_ds_vtable.base);
+    return oci8_allocate_typeddata(klass, &bind_ociinterval_ds_data_type.base);
 }
 
 void Init_oci_datetime(void)
 {
-    oci8_define_bind_class("OCITimestamp", &bind_ocitimestamp_vtable, bind_ocitimestamp_alloc);
-    oci8_define_bind_class("OCITimestampTZ", &bind_ocitimestamp_tz_vtable, bind_ocitimestamp_tz_alloc);
-    oci8_define_bind_class("OCIIntervalYM", &bind_ociinterval_ym_vtable, bind_ociinterval_ym_alloc);
-    oci8_define_bind_class("OCIIntervalDS", &bind_ociinterval_ds_vtable, bind_ociinterval_ds_alloc);
+    oci8_define_bind_class("OCITimestamp", &bind_ocitimestamp_data_type, bind_ocitimestamp_alloc);
+    oci8_define_bind_class("OCITimestampTZ", &bind_ocitimestamp_tz_data_type, bind_ocitimestamp_tz_alloc);
+    oci8_define_bind_class("OCIIntervalYM", &bind_ociinterval_ym_data_type, bind_ociinterval_ym_alloc);
+    oci8_define_bind_class("OCIIntervalDS", &bind_ociinterval_ds_data_type, bind_ociinterval_ds_alloc);
 }

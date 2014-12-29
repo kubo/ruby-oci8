@@ -1,6 +1,6 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
- * Copyright (C) 2002-2012 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2014 Kubo Takehiro <kubo@jiubao.org>
  */
 
 #include "oci8.h"
@@ -38,8 +38,8 @@ void oci8_base_free(oci8_base_t *base)
         oci8_base_free(base->children);
     }
     oci8_unlink_from_parent(base);
-    if (base->vptr->free != NULL)
-        base->vptr->free(base);
+    if (base->data_type->free != NULL)
+        base->data_type->free(base);
     if (base->type >= OCI_DTYPE_FIRST) {
         OCIDescriptorFree(base->hp.ptr, base->type);
     } else if (base->type == OCI_HTYPE_BIND || base->type == OCI_HTYPE_DEFINE) {
@@ -148,21 +148,21 @@ Init_oci8lib()
 #endif
 }
 
-VALUE oci8_define_class(const char *name, oci8_base_vtable_t *vptr, VALUE (*alloc_func)(VALUE))
+VALUE oci8_define_class(const char *name, oci8_handle_data_type_t *data_type, VALUE (*alloc_func)(VALUE))
 {
     VALUE klass = rb_define_class(name, oci8_cOCIHandle);
     rb_define_alloc_func(klass, alloc_func);
     return klass;
 }
 
-VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_base_vtable_t *vptr, VALUE (*alloc_func)(VALUE))
+VALUE oci8_define_class_under(VALUE outer, const char *name, oci8_handle_data_type_t *data_type, VALUE (*alloc_func)(VALUE))
 {
     VALUE klass = rb_define_class_under(outer, name, oci8_cOCIHandle);
     rb_define_alloc_func(klass, alloc_func);
     return klass;
 }
 
-VALUE oci8_define_bind_class(const char *name, const oci8_bind_vtable_t *vptr, VALUE (*alloc_func)(VALUE))
+VALUE oci8_define_bind_class(const char *name, const oci8_bind_data_type_t *data_type, VALUE (*alloc_func)(VALUE))
 {
     VALUE klass = rb_define_class_under(mOCI8BindType, name, cOCI8BindTypeBase);
     rb_define_alloc_func(klass, alloc_func);

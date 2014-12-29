@@ -1,6 +1,6 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
- * Copyright (C) 2002-2013 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2014 Kubo Takehiro <kubo@jiubao.org>
  */
 
 /*
@@ -92,7 +92,7 @@ static VALUE oci8_tdo_setup(VALUE self, VALUE svc, VALUE md_obj)
     return self;
 }
 
-static oci8_base_vtable_t oci8_tdo_vtable = {
+static oci8_handle_data_type_t oci8_tdo_data_type = {
     oci8_tdo_mark,
     oci8_tdo_free,
     sizeof(oci8_base_t)
@@ -100,7 +100,7 @@ static oci8_base_vtable_t oci8_tdo_vtable = {
 
 static VALUE oci8_tdo_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &oci8_tdo_vtable);
+    return oci8_allocate_typeddata(klass, &oci8_tdo_data_type);
 }
 
 static void oci8_named_type_mark(oci8_base_t *base)
@@ -552,7 +552,7 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
     *ind = 0;
 }
 
-static oci8_base_vtable_t oci8_named_type_vtable = {
+static oci8_handle_data_type_t oci8_named_type_data_type = {
     oci8_named_type_mark,
     oci8_named_type_free,
     sizeof(oci8_named_type_t)
@@ -560,7 +560,7 @@ static oci8_base_vtable_t oci8_named_type_vtable = {
 
 static VALUE oci8_named_type_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &oci8_named_type_vtable);
+    return oci8_allocate_typeddata(klass, &oci8_named_type_data_type);
 }
 
 static void bind_named_type_mark(oci8_base_t *base)
@@ -670,7 +670,7 @@ static void bind_name_type_post_bind_hook(oci8_bind_t *obind)
     }
 }
 
-static const oci8_bind_vtable_t bind_named_type_vtable = {
+static const oci8_bind_data_type_t bind_named_type_data_type = {
     {
         bind_named_type_mark,
         bind_named_type_free,
@@ -687,7 +687,7 @@ static const oci8_bind_vtable_t bind_named_type_vtable = {
 
 static VALUE bind_named_type_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &bind_named_type_vtable.base);
+    return oci8_allocate_typeddata(klass, &bind_named_type_data_type.base);
 }
 
 void Init_oci_object(VALUE cOCI8)
@@ -696,7 +696,7 @@ void Init_oci_object(VALUE cOCI8)
     id_set_attributes = rb_intern("attributes=");
 
     /* OCI8::TDO */
-    cOCI8TDO = oci8_define_class_under(cOCI8, "TDO", &oci8_tdo_vtable, oci8_tdo_alloc);
+    cOCI8TDO = oci8_define_class_under(cOCI8, "TDO", &oci8_tdo_data_type, oci8_tdo_alloc);
     rb_define_private_method(cOCI8TDO, "setup", oci8_tdo_setup, 2);
     /* @private */
     rb_define_const(cOCI8TDO, "ATTR_STRING", INT2FIX(ATTR_STRING));
@@ -749,7 +749,7 @@ void Init_oci_object(VALUE cOCI8)
     rb_define_const(cOCI8TDO, "ALIGNMENT_OF_DOUBLE", INT2FIX(ALIGNMENT_OF(double)));
 
     /* OCI8::NamedType */
-    cOCI8NamedType = oci8_define_class_under(cOCI8, "NamedType", &oci8_named_type_vtable, oci8_named_type_alloc);
+    cOCI8NamedType = oci8_define_class_under(cOCI8, "NamedType", &oci8_named_type_data_type, oci8_named_type_alloc);
     rb_define_method(cOCI8NamedType, "initialize", oci8_named_type_initialize, 0);
     rb_define_method(cOCI8NamedType, "tdo", oci8_named_type_tdo, 0);
     rb_define_private_method(cOCI8NamedType, "get_attribute", oci8_named_type_get_attribute, 4);
@@ -758,12 +758,12 @@ void Init_oci_object(VALUE cOCI8)
     rb_define_method(cOCI8NamedType, "null=", oci8_named_type_set_null, 1);
 
     /* OCI8::NamedCollection */
-    cOCI8NamedCollection = oci8_define_class_under(cOCI8, "NamedCollection", &oci8_named_type_vtable, oci8_named_type_alloc);
+    cOCI8NamedCollection = oci8_define_class_under(cOCI8, "NamedCollection", &oci8_named_type_data_type, oci8_named_type_alloc);
     rb_define_method(cOCI8NamedCollection, "initialize", oci8_named_type_initialize, 0);
     rb_define_method(cOCI8NamedCollection, "tdo", oci8_named_type_tdo, 0);
     rb_define_private_method(cOCI8NamedCollection, "get_coll_element", oci8_named_coll_get_coll_element, 2);
     rb_define_private_method(cOCI8NamedCollection, "set_coll_element", oci8_named_coll_set_coll_element, 3);
 
     /* OCI8::BindType::NamedType */
-    cOCI8BindNamedType = oci8_define_bind_class("NamedType", &bind_named_type_vtable, bind_named_type_alloc);
+    cOCI8BindNamedType = oci8_define_bind_class("NamedType", &bind_named_type_data_type, bind_named_type_alloc);
 }

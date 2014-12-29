@@ -2,7 +2,7 @@
 /*
  * connection_pool.c - part of ruby-oci8
  *
- * Copyright (C) 2010 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2010-2014 Kubo Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
@@ -38,7 +38,7 @@ static void oci8_cpool_free(oci8_base_t *base)
     base->hp.ptr = NULL;
 }
 
-static oci8_base_vtable_t oci8_cpool_vtable = {
+static oci8_handle_data_type_t oci8_cpool_data_type = {
     oci8_cpool_mark,
     oci8_cpool_free,
     sizeof(oci8_cpool_t),
@@ -46,7 +46,7 @@ static oci8_base_vtable_t oci8_cpool_vtable = {
 
 static VALUE oci8_cpool_alloc(VALUE klass)
 {
-    VALUE self = oci8_allocate_typeddata(klass, &oci8_cpool_vtable);
+    VALUE self = oci8_allocate_typeddata(klass, &oci8_cpool_data_type);
     oci8_cpool_t *cpool = (oci8_cpool_t *)RTYPEDDATA_DATA(self);
 
     cpool->pool_name = Qnil;
@@ -197,7 +197,7 @@ void Init_oci8_connection_pool(VALUE cOCI8)
     cOCIConnectionPool = rb_define_class_under(cOCI8, "ConnectionPool", cOCIHandle);
 #endif
 
-    cOCIConnectionPool = oci8_define_class_under(cOCI8, "ConnectionPool", &oci8_cpool_vtable, oci8_cpool_alloc);
+    cOCIConnectionPool = oci8_define_class_under(cOCI8, "ConnectionPool", &oci8_cpool_data_type, oci8_cpool_alloc);
 
     rb_define_private_method(cOCIConnectionPool, "initialize", oci8_cpool_initialize, -1);
     rb_define_method(cOCIConnectionPool, "reinitialize", oci8_cpool_reinitialize, 3);

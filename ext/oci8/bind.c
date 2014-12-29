@@ -2,7 +2,7 @@
 /*
  * bind.c
  *
- * Copyright (C) 2002-2011 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2014 Kubo Takehiro <kubo@jiubao.org>
  */
 #include "oci8.h"
 
@@ -104,7 +104,7 @@ static void bind_string_post_bind_hook(oci8_bind_t *obind)
            &obind->base);
 }
 
-static const oci8_bind_vtable_t bind_string_vtable = {
+static const oci8_bind_data_type_t bind_string_data_type = {
     {
         NULL,
         oci8_bind_free,
@@ -121,7 +121,7 @@ static const oci8_bind_vtable_t bind_string_vtable = {
 
 static VALUE bind_string_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &bind_string_vtable.base);
+    return oci8_allocate_typeddata(klass, &bind_string_data_type.base);
 }
 
 /*
@@ -146,7 +146,7 @@ static void bind_raw_set(oci8_bind_t *obind, void *data, void **null_structp, VA
     vstr->size = RSTRING_LEN(val);
 }
 
-static const oci8_bind_vtable_t bind_raw_vtable = {
+static const oci8_bind_data_type_t bind_raw_data_type = {
     {
         NULL,
         oci8_bind_free,
@@ -162,7 +162,7 @@ static const oci8_bind_vtable_t bind_raw_vtable = {
 
 static VALUE bind_raw_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &bind_raw_vtable.base);
+    return oci8_allocate_typeddata(klass, &bind_raw_data_type.base);
 }
 
 /*
@@ -188,7 +188,7 @@ static void bind_binary_double_init(oci8_bind_t *obind, VALUE svc, VALUE val, VA
 #ifndef SQLT_BDOUBLE
 #define SQLT_BDOUBLE 22
 #endif
-static const oci8_bind_vtable_t bind_binary_double_vtable = {
+static const oci8_bind_data_type_t bind_binary_double_data_type = {
     {
         NULL,
         oci8_bind_free,
@@ -204,13 +204,13 @@ static const oci8_bind_vtable_t bind_binary_double_vtable = {
 
 static VALUE bind_binary_double_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &bind_binary_double_vtable.base);
+    return oci8_allocate_typeddata(klass, &bind_binary_double_data_type.base);
 }
 
 static VALUE oci8_bind_get(VALUE self)
 {
     oci8_bind_t *obind = oci8_get_bind(self);
-    const oci8_bind_vtable_t *vptr = (const oci8_bind_vtable_t *)obind->base.vptr;
+    const oci8_bind_data_type_t *data_type = (const oci8_bind_data_type_t *)obind->base.data_type;
     ub4 idx = obind->curar_idx;
     void **null_structp = NULL;
 
@@ -218,7 +218,7 @@ static VALUE oci8_bind_get(VALUE self)
         if (obind->u.inds[idx] != 0)
             return Qnil;
     }
-    return vptr->get(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_structp);
+    return data_type->get(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_structp);
 }
 
 static VALUE oci8_bind_get_data(VALUE self)
@@ -243,7 +243,7 @@ static VALUE oci8_bind_get_data(VALUE self)
 static VALUE oci8_bind_set(VALUE self, VALUE val)
 {
     oci8_bind_t *obind = oci8_get_bind(self);
-    const oci8_bind_vtable_t *vptr = (const oci8_bind_vtable_t *)obind->base.vptr;
+    const oci8_bind_data_type_t *data_type = (const oci8_bind_data_type_t *)obind->base.data_type;
     ub4 idx = obind->curar_idx;
 
     if (NIL_P(val)) {
@@ -262,7 +262,7 @@ static VALUE oci8_bind_set(VALUE self, VALUE val)
             null_structp = &obind->u.null_structs[idx];
             *(OCIInd*)obind->u.null_structs[idx] = 0;
         }
-        vptr->set(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_structp, val);
+        data_type->set(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_structp, val);
     }
     return self;
 }
@@ -295,7 +295,7 @@ static VALUE oci8_bind_set_data(VALUE self, VALUE val)
 static VALUE oci8_bind_initialize(VALUE self, VALUE svc, VALUE val, VALUE length, VALUE max_array_size)
 {
     oci8_bind_t *obind = oci8_get_bind(self);
-    const oci8_bind_vtable_t *bind_class = (const oci8_bind_vtable_t *)obind->base.vptr;
+    const oci8_bind_data_type_t *bind_class = (const oci8_bind_data_type_t *)obind->base.data_type;
     ub4 cnt = 1;
 
     obind->tdo = Qnil;
@@ -369,10 +369,10 @@ void Init_oci8_bind(VALUE klass)
     rb_define_private_method(cOCI8BindTypeBase, "set_data", oci8_bind_set_data, 1);
 
     /* register primitive data types. */
-    oci8_define_bind_class("String", &bind_string_vtable, bind_string_alloc);
-    oci8_define_bind_class("RAW", &bind_raw_vtable, bind_raw_alloc);
+    oci8_define_bind_class("String", &bind_string_data_type, bind_string_alloc);
+    oci8_define_bind_class("RAW", &bind_raw_data_type, bind_raw_alloc);
     if (oracle_client_version >= ORAVER_10_1) {
-        oci8_define_bind_class("BinaryDouble", &bind_binary_double_vtable, bind_binary_double_alloc);
+        oci8_define_bind_class("BinaryDouble", &bind_binary_double_data_type, bind_binary_double_alloc);
     }
 }
 

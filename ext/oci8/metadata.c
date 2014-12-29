@@ -2,7 +2,7 @@
 /*
  * metadata.c
  *
- * Copyright (C) 2006-2009 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2006-2014 Kubo Takehiro <kubo@jiubao.org>
  *
  * implement private methods of classes in OCI8::Metadata module.
  *
@@ -234,7 +234,7 @@ static VALUE metadata_get_tdo_id(VALUE self)
 #endif
 }
 
-oci8_base_vtable_t oci8_metadata_vtable = {
+oci8_handle_data_type_t oci8_metadata_data_type = {
     oci8_metadata_mark,
     oci8_metadata_free,
     sizeof(oci8_metadata_t),
@@ -242,13 +242,13 @@ oci8_base_vtable_t oci8_metadata_vtable = {
 
 static VALUE oci8_metadata_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &oci8_metadata_vtable);
+    return oci8_allocate_typeddata(klass, &oci8_metadata_data_type);
 }
 
 void Init_oci8_metadata(VALUE cOCI8)
 {
     mOCI8Metadata = rb_define_module_under(cOCI8, "Metadata");
-    cOCI8MetadataBase = oci8_define_class_under(mOCI8Metadata, "Base", &oci8_metadata_vtable, oci8_metadata_alloc);
+    cOCI8MetadataBase = oci8_define_class_under(mOCI8Metadata, "Base", &oci8_metadata_data_type, oci8_metadata_alloc);
     ptype_to_class = rb_hash_new();
     class_to_ptype = rb_hash_new();
     rb_global_variable(&ptype_to_class);

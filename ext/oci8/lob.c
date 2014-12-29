@@ -2,7 +2,7 @@
 /*
  * lob.c - part of ruby-oci8
  *
- * Copyright (C) 2002-2013 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2014 Kubo Takehiro <kubo@jiubao.org>
  */
 #include "oci8.h"
 
@@ -148,7 +148,7 @@ static void oci8_lob_free(oci8_base_t *base)
     lob->svcctx = NULL;
 }
 
-static oci8_base_vtable_t oci8_lob_vtable = {
+static oci8_handle_data_type_t oci8_lob_data_type = {
     oci8_lob_mark,
     oci8_lob_free,
     sizeof(oci8_lob_t),
@@ -156,7 +156,7 @@ static oci8_base_vtable_t oci8_lob_vtable = {
 
 static VALUE oci8_lob_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &oci8_lob_vtable);
+    return oci8_allocate_typeddata(klass, &oci8_lob_data_type);
 }
 
 static ub4 oci8_lob_get_length(oci8_lob_t *lob)
@@ -964,9 +964,9 @@ static VALUE oci8_bfile_error(VALUE self, VALUE dummy)
  */
 
 typedef struct {
-    oci8_bind_vtable_t bind;
+    oci8_bind_data_type_t bind;
     VALUE *klass;
-} oci8_bind_lob_vtable_t;
+} oci8_bind_lob_data_type_t;
 
 static VALUE bind_lob_get(oci8_bind_t *obind, void *data, void *null_struct)
 {
@@ -977,10 +977,10 @@ static VALUE bind_lob_get(oci8_bind_t *obind, void *data, void *null_struct)
 static void bind_lob_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     oci8_hp_obj_t *oho = (oci8_hp_obj_t *)data;
-    const oci8_bind_lob_vtable_t *vptr = (const oci8_bind_lob_vtable_t *)obind->base.vptr;
+    const oci8_bind_lob_data_type_t *data_type = (const oci8_bind_lob_data_type_t *)obind->base.data_type;
     oci8_base_t *h;
-    if (!rb_obj_is_kind_of(val, *vptr->klass))
-        rb_raise(rb_eArgError, "Invalid argument: %s (expect %s)", rb_class2name(CLASS_OF(val)), rb_class2name(*vptr->klass));
+    if (!rb_obj_is_kind_of(val, *data_type->klass))
+        rb_raise(rb_eArgError, "Invalid argument: %s (expect %s)", rb_class2name(CLASS_OF(val)), rb_class2name(*data_type->klass));
     h = DATA_PTR(val);
     oho->hp = h->hp.ptr;
     oho->obj = val;
@@ -994,13 +994,13 @@ static void bind_lob_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length
 
 static void bind_lob_init_elem(oci8_bind_t *obind, VALUE svc)
 {
-    const oci8_bind_lob_vtable_t *vptr = (const oci8_bind_lob_vtable_t *)obind->base.vptr;
+    const oci8_bind_lob_data_type_t *data_type = (const oci8_bind_lob_data_type_t *)obind->base.data_type;
     oci8_hp_obj_t *oho = (oci8_hp_obj_t *)obind->valuep;
     oci8_base_t *h;
     ub4 idx = 0;
 
     do {
-        oho[idx].obj = rb_class_new_instance(1, &svc, *vptr->klass);
+        oho[idx].obj = rb_class_new_instance(1, &svc, *data_type->klass);
         h = DATA_PTR(oho[idx].obj);
         oho[idx].hp = h->hp.ptr;
     } while (++idx < obind->maxar_sz);
@@ -1014,7 +1014,7 @@ static void bind_lob_post_bind_hook_for_nclob(oci8_bind_t *obind)
            &obind->base);
 }
 
-static const oci8_bind_lob_vtable_t bind_clob_vtable = {
+static const oci8_bind_lob_data_type_t bind_clob_data_type = {
     {
         {
             oci8_bind_hp_obj_mark,
@@ -1033,10 +1033,10 @@ static const oci8_bind_lob_vtable_t bind_clob_vtable = {
 
 static VALUE bind_clob_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &bind_clob_vtable.bind.base);
+    return oci8_allocate_typeddata(klass, &bind_clob_data_type.bind.base);
 }
 
-static const oci8_bind_lob_vtable_t bind_nclob_vtable = {
+static const oci8_bind_lob_data_type_t bind_nclob_data_type = {
     {
         {
             oci8_bind_hp_obj_mark,
@@ -1056,10 +1056,10 @@ static const oci8_bind_lob_vtable_t bind_nclob_vtable = {
 
 static VALUE bind_nclob_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &bind_nclob_vtable.bind.base);
+    return oci8_allocate_typeddata(klass, &bind_nclob_data_type.bind.base);
 }
 
-static const oci8_bind_lob_vtable_t bind_blob_vtable = {
+static const oci8_bind_lob_data_type_t bind_blob_data_type = {
     {
         {
             oci8_bind_hp_obj_mark,
@@ -1078,10 +1078,10 @@ static const oci8_bind_lob_vtable_t bind_blob_vtable = {
 
 static VALUE bind_blob_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &bind_blob_vtable.bind.base);
+    return oci8_allocate_typeddata(klass, &bind_blob_data_type.bind.base);
 }
 
-static const oci8_bind_lob_vtable_t bind_bfile_vtable = {
+static const oci8_bind_lob_data_type_t bind_bfile_data_type = {
     {
         {
             oci8_bind_hp_obj_mark,
@@ -1100,7 +1100,7 @@ static const oci8_bind_lob_vtable_t bind_bfile_vtable = {
 
 static VALUE bind_bfile_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &bind_bfile_vtable.bind.base);
+    return oci8_allocate_typeddata(klass, &bind_bfile_data_type.bind.base);
 }
 
 void Init_oci8_lob(VALUE cOCI8)
@@ -1118,7 +1118,7 @@ void Init_oci8_lob(VALUE cOCI8)
     cOCI8LOB = rb_define_class_under(cOCI8, "LOB", cOCIHandle);
 #endif
 
-    cOCI8LOB = oci8_define_class_under(cOCI8, "LOB", &oci8_lob_vtable, oci8_lob_alloc);
+    cOCI8LOB = oci8_define_class_under(cOCI8, "LOB", &oci8_lob_data_type, oci8_lob_alloc);
     cOCI8CLOB = rb_define_class_under(cOCI8, "CLOB", cOCI8LOB);
     cOCI8NCLOB = rb_define_class_under(cOCI8, "NCLOB", cOCI8LOB);
     cOCI8BLOB = rb_define_class_under(cOCI8, "BLOB", cOCI8LOB);
@@ -1155,8 +1155,8 @@ void Init_oci8_lob(VALUE cOCI8)
     rb_define_method(cOCI8BFILE, "size=", oci8_bfile_error, 1);
     rb_define_method(cOCI8BFILE, "write", oci8_bfile_error, 1);
 
-    oci8_define_bind_class("CLOB", &bind_clob_vtable.bind, bind_clob_alloc);
-    oci8_define_bind_class("NCLOB", &bind_nclob_vtable.bind, bind_nclob_alloc);
-    oci8_define_bind_class("BLOB", &bind_blob_vtable.bind, bind_blob_alloc);
-    oci8_define_bind_class("BFILE", &bind_bfile_vtable.bind, bind_bfile_alloc);
+    oci8_define_bind_class("CLOB", &bind_clob_data_type.bind, bind_clob_alloc);
+    oci8_define_bind_class("NCLOB", &bind_nclob_data_type.bind, bind_nclob_alloc);
+    oci8_define_bind_class("BLOB", &bind_blob_data_type.bind, bind_blob_alloc);
+    oci8_define_bind_class("BFILE", &bind_bfile_data_type.bind, bind_bfile_alloc);
 }

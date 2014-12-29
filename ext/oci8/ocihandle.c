@@ -2,7 +2,7 @@
 /*
  * ocihandle.c
  *
- * Copyright (C) 2009-2013 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2009-2014 Kubo Takehiro <kubo@jiubao.org>
  *
  * implement OCIHandle
  *
@@ -47,7 +47,7 @@ static long check_data_range(VALUE val, long min, long max, const char *type)
 }
 
 
-static oci8_base_vtable_t oci8_base_vtable = {
+static oci8_handle_data_type_t oci8_handle_data_type = {
     NULL,
     NULL,
     sizeof(oci8_base_t),
@@ -74,8 +74,8 @@ static VALUE oci8_handle_free(VALUE self)
 
 static void oci8_handle_mark(oci8_base_t *base)
 {
-    if (base->vptr->mark != NULL)
-        base->vptr->mark(base);
+    if (base->data_type->mark != NULL)
+        base->data_type->mark(base);
 }
 
 static void oci8_handle_cleanup(oci8_base_t *base)
@@ -96,7 +96,7 @@ static size_t oci8_handle_size(const void *ptr)
 {
     const oci8_base_t *base = (const oci8_base_t *)ptr;
     const oci8_bind_t *bind = (const oci8_bind_t *)ptr;
-    size_t size = base->vptr->size;
+    size_t size = base->data_type->size;
 
     if (base->hp.ptr != NULL) {
         size += 256; /* I don't know the real size. Use 256 for now. */
@@ -111,20 +111,20 @@ static size_t oci8_handle_size(const void *ptr)
 
 static VALUE oci8_s_allocate(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &oci8_base_vtable);
+    return oci8_allocate_typeddata(klass, &oci8_handle_data_type);
 }
 
-VALUE oci8_allocate_typeddata(VALUE klass, const oci8_base_vtable_t *vptr)
+VALUE oci8_allocate_typeddata(VALUE klass, const oci8_handle_data_type_t *data_type)
 {
     oci8_base_t *base;
     VALUE obj;
 
-    base = xmalloc(vptr->size);
-    memset(base, 0, vptr->size);
+    base = xmalloc(data_type->size);
+    memset(base, 0, data_type->size);
 
     obj = TypedData_Wrap_Struct(klass, &oci8_base_data_type, base);
     base->self = obj;
-    base->vptr = vptr;
+    base->data_type = data_type;
     base->parent = NULL;
     base->next = base;
     base->prev = base;

@@ -2,7 +2,7 @@
 /*
  *  oradate.c
  *
- * Copyright (C) 2002-2012 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2014 Kubo Takehiro <kubo@jiubao.org>
  *
  * date and time between 4712 B.C. and 9999 A.D.
  */
@@ -587,7 +587,7 @@ static void bind_oradate_init_elem(oci8_bind_t *obind, VALUE svc)
     } while (++idx < obind->maxar_sz);
 }
 
-static const oci8_bind_vtable_t bind_oradate_vtable = {
+static const oci8_bind_data_type_t bind_oradate_data_type = {
     {
         NULL,
         oci8_bind_free,
@@ -603,7 +603,7 @@ static const oci8_bind_vtable_t bind_oradate_vtable = {
 
 static VALUE bind_oradate_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &bind_oradate_vtable.base);
+    return oci8_allocate_typeddata(klass, &bind_oradate_data_type.base);
 }
 
 void Init_ora_date(void)
@@ -645,5 +645,5 @@ void Init_ora_date(void)
     rb_define_method(cOraDate, "_dump", ora_date_dump, -1);
     rb_define_singleton_method(cOraDate, "_load", ora_date_s_load, 1);
 
-    oci8_define_bind_class("OraDate", &bind_oradate_vtable, bind_oradate_alloc);
+    oci8_define_bind_class("OraDate", &bind_oradate_data_type, bind_oradate_alloc);
 }
