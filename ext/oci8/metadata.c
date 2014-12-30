@@ -11,12 +11,12 @@
 #include "oci8.h"
 
 static VALUE mOCI8Metadata;
-VALUE cOCI8MetadataBase;
+static VALUE cOCI8MetadataBase;
 static VALUE ptype_to_class;
 static VALUE class_to_ptype;
 static ID id_at_obj_link;
 
-#define TO_METADATA(obj) ((oci8_metadata_t *)oci8_get_handle((obj), cOCI8MetadataBase))
+#define TO_METADATA(obj) ((oci8_metadata_t *)oci8_check_typeddata((obj), &oci8_metadata_base_data_type, 1))
 
 typedef struct {
     oci8_base_t base;
@@ -37,16 +37,31 @@ static void oci8_metadata_free(oci8_base_t *base)
     base->type = 0; /* to prevent OCIDescriptorFree */
 }
 
+const oci8_handle_data_type_t oci8_metadata_base_data_type = {
+    {
+        "OCI8::Metadata::Base",
+        {
+            (RUBY_DATA_FUNC)oci8_metadata_mark,
+            oci8_handle_cleanup,
+            oci8_handle_size,
+        },
+        &oci8_handle_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+        RUBY_TYPED_WB_PROTECTED,
+#endif
+    },
+    oci8_metadata_free,
+    sizeof(oci8_metadata_t),
+};
+
 VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE parent)
 {
     oci8_metadata_t *md;
-    oci8_base_t *p;
+    oci8_base_t *p = oci8_check_typeddata(parent, &oci8_handle_data_type, 1);
     ub1 ptype;
     ub4 size;
     VALUE klass;
     VALUE obj;
-
-    p = oci8_get_handle(parent, oci8_cOCIHandle);
 
     chker2(OCIAttrGet(parmhp, OCI_DTYPE_PARAM, &ptype, &size, OCI_ATTR_PTYPE, oci8_errhp), p);
     klass = rb_hash_aref(ptype_to_class, INT2FIX(ptype));
@@ -56,7 +71,7 @@ VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE parent)
     if (!RTEST(rb_obj_is_kind_of(obj, cOCI8MetadataBase))) {
         rb_raise(rb_eRuntimeError, "invalid class in PTYPE_TO_CLASS");
     }
-    md = DATA_PTR(obj);
+    md = TO_METADATA(obj);
     md->base.type = OCI_DTYPE_PARAM;
     md->base.hp.prm = parmhp;
     RB_OBJ_WRITE(obj, &md->svc, svc);
@@ -132,7 +147,7 @@ static VALUE metadata_is_implicit_p(VALUE self)
 
 static VALUE oci8_do_describe(VALUE self, void *objptr, ub4 objlen, ub1 objtype, VALUE klass, VALUE check_public)
 {
-    oci8_svcctx_t *svcctx = DATA_PTR(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
     OCIParam *parmhp;
     VALUE type;
     VALUE obj;
@@ -235,32 +250,15 @@ static VALUE metadata_get_tdo_id(VALUE self)
 #endif
 }
 
-static const oci8_handle_data_type_t oci8_metadata_data_type = {
-    {
-        "OCI8::Metadata::Base",
-        {
-            (RUBY_DATA_FUNC)oci8_metadata_mark,
-            oci8_handle_cleanup,
-            oci8_handle_size,
-        },
-        &oci8_handle_data_type.rb_data_type, NULL,
-#ifdef RUBY_TYPED_WB_PROTECTED
-        RUBY_TYPED_WB_PROTECTED,
-#endif
-    },
-    oci8_metadata_free,
-    sizeof(oci8_metadata_t),
-};
-
 static VALUE oci8_metadata_alloc(VALUE klass)
 {
-    return oci8_allocate_typeddata(klass, &oci8_metadata_data_type);
+    return oci8_allocate_typeddata(klass, &oci8_metadata_base_data_type);
 }
 
 void Init_oci8_metadata(VALUE cOCI8)
 {
     mOCI8Metadata = rb_define_module_under(cOCI8, "Metadata");
-    cOCI8MetadataBase = oci8_define_class_under(mOCI8Metadata, "Base", &oci8_metadata_data_type, oci8_metadata_alloc);
+    cOCI8MetadataBase = oci8_define_class_under(mOCI8Metadata, "Base", &oci8_metadata_base_data_type, oci8_metadata_alloc);
     ptype_to_class = rb_hash_new();
     class_to_ptype = rb_hash_new();
     rb_global_variable(&ptype_to_class);

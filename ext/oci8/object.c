@@ -23,7 +23,8 @@ static VALUE cOCI8BindNamedType;
 static ID id_to_value;
 static ID id_set_attributes;
 
-#define TO_TDO(obj) oci8_get_handle((obj), cOCI8TDO)
+#define TO_TDO(obj) ((oci8_base_t *)oci8_check_typeddata((obj), &oci8_tdo_data_type, 1))
+#define CHECK_TDO(obj) ((void)oci8_check_typeddata((obj), &oci8_tdo_data_type, 1))
 
 typedef struct {
     oci8_base_t base;
@@ -68,31 +69,6 @@ static void oci8_tdo_free(oci8_base_t *base)
     }
 }
 
-static VALUE oci8_tdo_setup(VALUE self, VALUE svc, VALUE md_obj)
-{
-    oci8_base_t *tdo = TO_TDO(self);
-    oci8_svcctx_t *svcctx = oci8_get_svcctx(svc);
-    oci8_base_t *md;
-    OCIRef *tdo_ref = NULL;
-
-    Check_Object(md_obj, cOCI8MetadataBase);
-    md = DATA_PTR(md_obj);
-
-    if (tdo->hp.tdo != NULL) {
-        OCIObjectUnpin(oci8_envhp, oci8_errhp, tdo->hp.tdo);
-        tdo->hp.tdo = NULL;
-    }
-    chker2(OCIAttrGet(md->hp.ptr, OCI_DTYPE_PARAM, &tdo_ref, NULL, OCI_ATTR_REF_TDO, oci8_errhp),
-           &svcctx->base);
-    if (tdo_ref == NULL)
-        return Qnil;
-    chker2(OCIObjectPin_nb(svcctx, oci8_envhp, oci8_errhp, tdo_ref, 0, OCI_PIN_ANY, OCI_DURATION_SESSION, OCI_LOCK_NONE, &tdo->hp.ptr),
-           &svcctx->base);
-    oci8_link_to_parent(tdo, &svcctx->base);
-    RB_OBJ_WRITTEN(self, Qundef, svc);
-    return self;
-}
-
 static const oci8_handle_data_type_t oci8_tdo_data_type = {
     {
         "OCI8::TDO",
@@ -109,6 +85,28 @@ static const oci8_handle_data_type_t oci8_tdo_data_type = {
     oci8_tdo_free,
     sizeof(oci8_base_t)
 };
+
+static VALUE oci8_tdo_setup(VALUE self, VALUE svc, VALUE md_obj)
+{
+    oci8_base_t *tdo = TO_TDO(self);
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(svc);
+    oci8_base_t *md = oci8_check_typeddata(md_obj, &oci8_metadata_base_data_type, 1);
+    OCIRef *tdo_ref = NULL;
+
+    if (tdo->hp.tdo != NULL) {
+        OCIObjectUnpin(oci8_envhp, oci8_errhp, tdo->hp.tdo);
+        tdo->hp.tdo = NULL;
+    }
+    chker2(OCIAttrGet(md->hp.ptr, OCI_DTYPE_PARAM, &tdo_ref, NULL, OCI_ATTR_REF_TDO, oci8_errhp),
+           &svcctx->base);
+    if (tdo_ref == NULL)
+        return Qnil;
+    chker2(OCIObjectPin_nb(svcctx, oci8_envhp, oci8_errhp, tdo_ref, 0, OCI_PIN_ANY, OCI_DURATION_SESSION, OCI_LOCK_NONE, &tdo->hp.ptr),
+           &svcctx->base);
+    oci8_link_to_parent(tdo, &svcctx->base);
+    RB_OBJ_WRITTEN(self, Qundef, svc);
+    return self;
+}
 
 static VALUE oci8_tdo_alloc(VALUE klass)
 {
@@ -200,7 +198,7 @@ static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *dat
     case ATTR_BINARY_FLOAT:
         return rb_float_new((double)*(float*)data);
     case ATTR_NAMED_TYPE:
-        Check_Object(typeinfo, cOCI8TDO);
+        CHECK_TDO(typeinfo);
         /* Be carefull. Don't use *tmp_obj* out of this function. */
         tmp_obj = rb_class_new_instance(0, NULL, cOCI8NamedType);
         obj = DATA_PTR(tmp_obj);
@@ -214,7 +212,7 @@ static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *dat
         RB_OBJ_WRITTEN(tmp_obj, self, Qundef);
         return rv;
     case ATTR_NAMED_COLLECTION:
-        Check_Object(typeinfo, cOCI8TDO);
+        CHECK_TDO(typeinfo);
         /* Be carefull. Don't use *tmp_obj* out of this function. */
         tmp_obj = rb_class_new_instance(0, NULL, cOCI8NamedCollection);
         obj = DATA_PTR(tmp_obj);
@@ -382,16 +380,14 @@ static VALUE oci8_named_coll_set_coll_element(VALUE self, VALUE datatype, VALUE 
         cb_data.indp = &cb_data.ind;
         break;
     case ATTR_NAMED_TYPE:
-        Check_Object(typeinfo, cOCI8TDO);
-        tdo = DATA_PTR(typeinfo);
+        tdo = TO_TDO(typeinfo);
         chker2(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_OBJECT, tdo->hp.tdo, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr),
                svcctx);
         chker2(OCIObjectGetInd(oci8_envhp, oci8_errhp, cb_data.data.ptr, (dvoid**)&cb_data.indp),
                svcctx);
         break;
     case ATTR_NAMED_COLLECTION:
-        Check_Object(typeinfo, cOCI8TDO);
-        tdo = DATA_PTR(typeinfo);
+        tdo = TO_TDO(typeinfo);
         chker2(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_NAMEDCOLLECTION, tdo->hp.tdo, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr),
                svcctx);
         chker2(OCIObjectGetInd(oci8_envhp, oci8_errhp, cb_data.data.ptr, (dvoid**)&cb_data.indp),
@@ -527,7 +523,7 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
         *(float*)data = (float)NUM2DBL(val);
         break;
     case ATTR_NAMED_TYPE:
-        Check_Object(typeinfo, cOCI8TDO);
+        CHECK_TDO(typeinfo);
         /* Be carefull. Don't use *tmp_obj* out of this function. */
         tmp_obj = rb_class_new_instance(0, NULL, cOCI8NamedType);
         obj = DATA_PTR(tmp_obj);
@@ -541,7 +537,7 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
         RB_OBJ_WRITTEN(tmp_obj, self, Qundef);
         break;
     case ATTR_NAMED_COLLECTION:
-        Check_Object(typeinfo, cOCI8TDO);
+        CHECK_TDO(typeinfo);
         /* Be carefull. Don't use *tmp_obj* out of this function. */
         tmp_obj = rb_class_new_instance(0, NULL, cOCI8NamedCollection);
         obj = DATA_PTR(tmp_obj);
@@ -667,7 +663,7 @@ static void bind_named_type_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE
     obind->value_sz = sizeof(void*);
     obind->alloc_sz = sizeof(oci8_hp_obj_t);
 
-    Check_Object(tdo_obj, cOCI8TDO);
+    CHECK_TDO(tdo_obj);
     RB_OBJ_WRITE(obind->base.self, &obind->tdo, tdo_obj);
 }
 

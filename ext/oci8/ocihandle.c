@@ -9,7 +9,7 @@
  */
 #include "oci8.h"
 
-#define TO_HANDLE(obj) oci8_get_handle((obj), oci8_cOCIHandle)
+#define TO_HANDLE(obj) ((oci8_base_t*)oci8_check_typeddata((obj), &oci8_handle_data_type, 1))
 
 #ifdef _MSC_VER
 #define MAGIC_NUMBER 0xDEAFBEAFDEAFBEAFui64;
@@ -108,7 +108,7 @@ VALUE oci8_allocate_typeddata(VALUE klass, const oci8_handle_data_type_t *data_t
     base = xmalloc(data_type->size);
     memset(base, 0, data_type->size);
 
-    obj = TypedData_Wrap_Struct(klass, &oci8_handle_data_type.rb_data_type, base);
+    obj = TypedData_Wrap_Struct(klass, &data_type->rb_data_type, base);
     base->self = obj;
     base->data_type = data_type;
     base->parent = NULL;
@@ -136,7 +136,7 @@ enum datatype {
 
 static VALUE attr_get_common(int argc, VALUE *argv, VALUE self, enum datatype datatype)
 {
-    oci8_base_t *base = DATA_PTR(self);
+    oci8_base_t *base = oci8_check_typeddata(self, &oci8_handle_data_type, 0);
     VALUE attr_type;
     VALUE strict;
     VALUE args[6];
@@ -172,7 +172,8 @@ static VALUE attr_get_common(int argc, VALUE *argv, VALUE self, enum datatype da
                 }
             }
         }
-        oci8_get_handle(self, oci8_cOCIHandle);
+        /* check again just to raise an exception. */
+        oci8_check_typeddata(self, &oci8_handle_data_type, 1);
     }
 
     v.ub8val = MAGIC_NUMBER;

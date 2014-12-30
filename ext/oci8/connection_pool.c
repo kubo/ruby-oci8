@@ -9,7 +9,7 @@
 
 static VALUE cOCIConnectionPool;
 
-#define TO_CPOOL(obj) ((oci8_cpool_t *)oci8_get_handle((obj), cOCIConnectionPool))
+#define TO_CPOOL(obj) ((oci8_cpool_t *)oci8_check_typeddata((obj), &oci8_cpool_data_type, 1))
 
 typedef struct {
     oci8_base_t base;

@@ -325,6 +325,8 @@ static ALWAYS_INLINE char *to_charptr(OraText *c)
 #define RSTRING_ORATEXT(obj) TO_ORATEXT(RSTRING_PTR(obj))
 #define rb_str_new2_ora(str) rb_str_new2(TO_CHARPTR(str))
 
+#define TO_BIND(obj) ((oci8_bind_t *)oci8_check_typeddata((obj), &oci8_bind_data_type, 1))
+
 /*
  * prevent rdoc from gathering the specified method.
  */
@@ -450,19 +452,6 @@ typedef struct {
     ub2 *alenp;
 } oci8_exec_sql_var_t;
 
-#define Check_Handle(obj, klass, hp) do { \
-    if (!rb_obj_is_kind_of(obj, klass)) { \
-        rb_raise(rb_eTypeError, "invalid argument %s (expect %s)", rb_class2name(CLASS_OF(obj)), rb_class2name(klass)); \
-    } \
-    TypedData_Get_Struct(obj, oci8_base_t, &oci8_handle_data_type.rb_data_type, hp); \
-} while (0)
-
-#define Check_Object(obj, klass) do {\
-  if (!rb_obj_is_kind_of(obj, klass)) { \
-    rb_raise(rb_eTypeError, "invalid argument %s (expect %s)", rb_class2name(CLASS_OF(obj)), rb_class2name(klass)); \
-  } \
-} while (0)
-
 #define oci8_raise(err, status, stmt) oci8_do_raise(err, status, stmt, __FILE__, __LINE__)
 #define oci8_env_raise(err, status) oci8_do_env_raise(err, status, __FILE__, __LINE__)
 #define oci8_raise_init_error() oci8_do_raise_init_error(__FILE__, __LINE__)
@@ -539,7 +528,7 @@ sword oci8_exec_sql(oci8_svcctx_t *svcctx, const char *sql_text, ub4 num_define_
 #if defined RUNTIME_API_CHECK
 void *oci8_find_symbol(const char *symbol_name);
 #endif
-oci8_base_t *oci8_get_handle(VALUE obj, VALUE klass);
+void *oci8_check_typeddata(VALUE obj, const oci8_handle_data_type_t *data_type, int error_if_closed);
 
 /* error.c */
 extern VALUE eOCIException;
@@ -571,7 +560,6 @@ void oci8_check_pid_consistency(oci8_svcctx_t *svcctx);
 void Init_oci8_connection_pool(VALUE cOCI8);
 
 /* stmt.c */
-extern VALUE cOCIStmt;
 void Init_oci8_stmt(VALUE cOCI8);
 
 /* bind.c */
@@ -583,10 +571,9 @@ extern const oci8_handle_data_type_t oci8_bind_data_type;
 void oci8_bind_free(oci8_base_t *base);
 void oci8_bind_hp_obj_mark(oci8_base_t *base);
 void Init_oci8_bind(VALUE cOCI8BindTypeBase);
-oci8_bind_t *oci8_get_bind(VALUE obj);
 
 /* metadata.c */
-extern VALUE cOCI8MetadataBase;
+extern const oci8_handle_data_type_t oci8_metadata_base_data_type;
 void Init_oci8_metadata(VALUE cOCI8);
 VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE parent);
 

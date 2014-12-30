@@ -18,7 +18,7 @@ static VALUE seek_set;
 static VALUE seek_cur;
 static VALUE seek_end;
 
-#define TO_LOB(obj) ((oci8_lob_t *)oci8_get_handle((obj), cOCI8LOB))
+#define TO_LOB(obj) ((oci8_lob_t *)oci8_check_typeddata((obj), &oci8_lob_data_type, 1))
 
 enum state {
     S_NO_OPEN_CLOSE,
@@ -47,71 +47,6 @@ static oci8_svcctx_t *check_svcctx(oci8_lob_t *lob)
 }
 
 static VALUE oci8_lob_write(VALUE self, VALUE data);
-
-static VALUE oci8_make_lob(VALUE klass, oci8_svcctx_t *svcctx, OCILobLocator *s)
-{
-    oci8_lob_t *lob;
-    boolean is_temp;
-    VALUE lob_obj;
-
-    lob_obj = rb_class_new_instance(1, &svcctx->base.self, klass);
-    lob = TO_LOB(lob_obj);
-    /* If 's' is a temporary lob, use OCILobLocatorAssign instead. */
-    chker2(OCILobIsTemporary(oci8_envhp, oci8_errhp, s, &is_temp), &svcctx->base);
-    if (is_temp)
-        chker2(OCILobLocatorAssign_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, s, &lob->base.hp.lob),
-               &svcctx->base);
-    else
-        chker2(OCILobAssign(oci8_envhp, oci8_errhp, s, &lob->base.hp.lob),
-               &svcctx->base);
-    return lob_obj;
-}
-
-VALUE oci8_make_clob(oci8_svcctx_t *svcctx, OCILobLocator *s)
-{
-    return oci8_make_lob(cOCI8CLOB, svcctx, s);
-}
-
-VALUE oci8_make_nclob(oci8_svcctx_t *svcctx, OCILobLocator *s)
-{
-    return oci8_make_lob(cOCI8NCLOB, svcctx, s);
-}
-
-VALUE oci8_make_blob(oci8_svcctx_t *svcctx, OCILobLocator *s)
-{
-    return oci8_make_lob(cOCI8BLOB, svcctx, s);
-}
-
-VALUE oci8_make_bfile(oci8_svcctx_t *svcctx, OCILobLocator *s)
-{
-    return oci8_make_lob(cOCI8BFILE, svcctx, s);
-}
-
-static void oci8_assign_lob(VALUE klass, oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
-{
-    oci8_base_t *base = oci8_get_handle(lob, klass);
-    chker2(OCILobLocatorAssign_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, base->hp.lob, dest), base);
-}
-
-void oci8_assign_clob(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
-{
-    oci8_assign_lob(cOCI8CLOB, svcctx, lob, dest);
-}
-
-void oci8_assign_nclob(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
-{
-    oci8_assign_lob(cOCI8NCLOB, svcctx, lob, dest);
-}
-
-void oci8_assign_blob(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
-{
-    oci8_assign_lob(cOCI8BLOB, svcctx, lob, dest);
-}
-
-void oci8_assign_bfile(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
-{
-    oci8_assign_lob(cOCI8BFILE, svcctx, lob, dest);
-}
 
 static void oci8_lob_mark(oci8_base_t *base)
 {
@@ -164,6 +99,75 @@ static const oci8_handle_data_type_t oci8_lob_data_type = {
     oci8_lob_free,
     sizeof(oci8_lob_t),
 };
+
+static VALUE oci8_make_lob(VALUE klass, oci8_svcctx_t *svcctx, OCILobLocator *s)
+{
+    oci8_lob_t *lob;
+    boolean is_temp;
+    VALUE lob_obj;
+
+    lob_obj = rb_class_new_instance(1, &svcctx->base.self, klass);
+    lob = TO_LOB(lob_obj);
+    /* If 's' is a temporary lob, use OCILobLocatorAssign instead. */
+    chker2(OCILobIsTemporary(oci8_envhp, oci8_errhp, s, &is_temp), &svcctx->base);
+    if (is_temp)
+        chker2(OCILobLocatorAssign_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, s, &lob->base.hp.lob),
+               &svcctx->base);
+    else
+        chker2(OCILobAssign(oci8_envhp, oci8_errhp, s, &lob->base.hp.lob),
+               &svcctx->base);
+    return lob_obj;
+}
+
+VALUE oci8_make_clob(oci8_svcctx_t *svcctx, OCILobLocator *s)
+{
+    return oci8_make_lob(cOCI8CLOB, svcctx, s);
+}
+
+VALUE oci8_make_nclob(oci8_svcctx_t *svcctx, OCILobLocator *s)
+{
+    return oci8_make_lob(cOCI8NCLOB, svcctx, s);
+}
+
+VALUE oci8_make_blob(oci8_svcctx_t *svcctx, OCILobLocator *s)
+{
+    return oci8_make_lob(cOCI8BLOB, svcctx, s);
+}
+
+VALUE oci8_make_bfile(oci8_svcctx_t *svcctx, OCILobLocator *s)
+{
+    return oci8_make_lob(cOCI8BFILE, svcctx, s);
+}
+
+static void oci8_assign_lob(VALUE klass, oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
+{
+    oci8_base_t *base = oci8_check_typeddata(lob, &oci8_lob_data_type, 1);
+    if (!rb_obj_is_kind_of(lob, klass)) {
+        rb_raise(rb_eTypeError, "wrong argument %s (expect %s)",
+                 rb_obj_classname(lob), rb_class2name(klass));
+    }
+    chker2(OCILobLocatorAssign_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, base->hp.lob, dest), base);
+}
+
+void oci8_assign_clob(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
+{
+    oci8_assign_lob(cOCI8CLOB, svcctx, lob, dest);
+}
+
+void oci8_assign_nclob(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
+{
+    oci8_assign_lob(cOCI8NCLOB, svcctx, lob, dest);
+}
+
+void oci8_assign_blob(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
+{
+    oci8_assign_lob(cOCI8BLOB, svcctx, lob, dest);
+}
+
+void oci8_assign_bfile(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
+{
+    oci8_assign_lob(cOCI8BFILE, svcctx, lob, dest);
+}
 
 static VALUE oci8_lob_alloc(VALUE klass)
 {

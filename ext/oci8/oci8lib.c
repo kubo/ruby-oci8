@@ -575,16 +575,31 @@ void *oci8_find_symbol(const char *symbol_name)
 }
 #endif /* RUNTIME_API_CHECK */
 
-oci8_base_t *oci8_get_handle(VALUE obj, VALUE klass)
+void *oci8_check_typeddata(VALUE obj, const oci8_handle_data_type_t *data_type, int error_if_closed)
 {
+#ifdef HAVE_RB_DATA_TYPE_T_FUNCTION
+    oci8_base_t *hp = Check_TypedStruct(obj, &data_type->rb_data_type);
+#else
     oci8_base_t *hp;
+    const char *expected_type_name = data_type->rb_data_type.wrap_struct_name;
+    const rb_data_type_t *rb_data_type;
+    const rb_data_type_t *expected_rb_data_type = &data_type->rb_data_type;
 
-    if (!rb_obj_is_kind_of(obj, klass)) {
-        rb_raise(rb_eTypeError, "invalid argument %s (expect %s)",
-                 rb_obj_classname(obj), rb_class2name(klass));
+    if (TYPE(obj) != T_DATA || !rb_obj_is_kind_of(obj, oci8_cOCIHandle)) {
+        rb_raise(rb_eTypeError, "wrong argument type %s (expected %s)",
+                 rb_obj_classname(obj), expected_type_name);
     }
-    TypedData_Get_Struct(obj, oci8_base_t, &oci8_handle_data_type.rb_data_type, hp);
-    if (hp->closed) {
+    hp = DATA_PTR(obj);
+    rb_data_type = &hp->data_type->rb_data_type;
+    while (rb_data_type != expected_rb_data_type) {
+        if (rb_data_type == NULL) {
+            rb_raise(rb_eTypeError, "wrong argument type %s (expected %s)",
+                     rb_obj_classname(obj), expected_type_name);
+        }
+        rb_data_type = rb_data_type->parent;
+    }
+#endif
+    if (error_if_closed && hp->closed) {
         rb_raise(eOCIException, "%s was already closed.",
                  rb_obj_classname(obj));
     }

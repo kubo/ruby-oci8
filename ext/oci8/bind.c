@@ -259,7 +259,7 @@ static VALUE bind_binary_double_alloc(VALUE klass)
 
 static VALUE oci8_bind_get(VALUE self)
 {
-    oci8_bind_t *obind = oci8_get_bind(self);
+    oci8_bind_t *obind = TO_BIND(self);
     const oci8_bind_data_type_t *data_type = (const oci8_bind_data_type_t *)obind->base.data_type;
     ub4 idx = obind->curar_idx;
     void **null_structp = NULL;
@@ -273,7 +273,7 @@ static VALUE oci8_bind_get(VALUE self)
 
 static VALUE oci8_bind_get_data(VALUE self)
 {
-    oci8_bind_t *obind = oci8_get_bind(self);
+    oci8_bind_t *obind = TO_BIND(self);
 
     if (obind->maxar_sz == 0) {
         obind->curar_idx = 0;
@@ -292,7 +292,7 @@ static VALUE oci8_bind_get_data(VALUE self)
 
 static VALUE oci8_bind_set(VALUE self, VALUE val)
 {
-    oci8_bind_t *obind = oci8_get_bind(self);
+    oci8_bind_t *obind = TO_BIND(self);
     const oci8_bind_data_type_t *data_type = (const oci8_bind_data_type_t *)obind->base.data_type;
     ub4 idx = obind->curar_idx;
 
@@ -319,7 +319,7 @@ static VALUE oci8_bind_set(VALUE self, VALUE val)
 
 static VALUE oci8_bind_set_data(VALUE self, VALUE val)
 {
-    oci8_bind_t *obind = oci8_get_bind(self);
+    oci8_bind_t *obind = TO_BIND(self);
 
     if (obind->maxar_sz == 0) {
         obind->curar_idx = 0;
@@ -344,7 +344,7 @@ static VALUE oci8_bind_set_data(VALUE self, VALUE val)
 
 static VALUE oci8_bind_initialize(VALUE self, VALUE svc, VALUE val, VALUE length, VALUE max_array_size)
 {
-    oci8_bind_t *obind = oci8_get_bind(self);
+    oci8_bind_t *obind = TO_BIND(self);
     const oci8_bind_data_type_t *bind_class = (const oci8_bind_data_type_t *)obind->base.data_type;
     ub4 cnt = 1;
 
@@ -424,9 +424,4 @@ void Init_oci8_bind(VALUE klass)
     if (oracle_client_version >= ORAVER_10_1) {
         oci8_define_bind_class("BinaryDouble", &bind_binary_double_data_type, bind_binary_double_alloc);
     }
-}
-
-oci8_bind_t *oci8_get_bind(VALUE obj)
-{
-    return (oci8_bind_t *)oci8_get_handle(obj, cOCI8BindTypeBase);
 }

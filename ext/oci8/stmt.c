@@ -8,9 +8,9 @@
  */
 #include "oci8.h"
 
-VALUE cOCIStmt;
+static VALUE cOCIStmt;
 
-#define TO_STMT(obj) ((oci8_stmt_t *)oci8_get_handle((obj), cOCIStmt))
+#define TO_STMT(obj) ((oci8_stmt_t *)oci8_check_typeddata((obj), &oci8_stmt_data_type, 1))
 
 typedef struct {
     oci8_base_t base;
@@ -116,13 +116,11 @@ static VALUE oci8_stmt_initialize(VALUE self, VALUE svc, VALUE sql)
 static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
 {
     oci8_stmt_t *stmt = TO_STMT(self);
-    ub4 position;
-    oci8_bind_t *obind;
+    ub4 position = NUM2INT(vposition);
+    oci8_bind_t *obind = TO_BIND(vbindobj);
     const oci8_bind_data_type_t *data_type;
     sword status;
 
-    position = NUM2INT(vposition); /* 1 */
-    obind = oci8_get_bind(vbindobj); /* 2 */
     if (obind->base.hp.dfn != NULL) {
         oci8_base_free(&obind->base); /* TODO: OK? */
     }
@@ -191,7 +189,7 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
         placeholder_ptr = RSTRING_PTR(vplaceholder);
         placeholder_len = RSTRING_LEN(vplaceholder);
     }
-    obind = oci8_get_bind(vbindobj); /* 2 */
+    obind = TO_BIND(vbindobj); /* 2 */
     if (obind->base.hp.bnd != NULL) {
         oci8_base_free(&obind->base); /* TODO: OK? */
     }
@@ -330,7 +328,7 @@ static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
  */
 static VALUE oci8_stmt_get_rowid(VALUE self)
 {
-    oci8_base_t *base = oci8_get_handle(self, cOCIStmt);
+    oci8_base_t *base = oci8_check_typeddata(self, &oci8_stmt_data_type, 1);
     return oci8_get_rowid_attr(base, OCI_ATTR_ROWID, base->hp.stmt);
 }
 
