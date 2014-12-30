@@ -89,6 +89,7 @@ static VALUE oci8_tdo_setup(VALUE self, VALUE svc, VALUE md_obj)
     chker2(OCIObjectPin_nb(svcctx, oci8_envhp, oci8_errhp, tdo_ref, 0, OCI_PIN_ANY, OCI_DURATION_SESSION, OCI_LOCK_NONE, &tdo->hp.ptr),
            &svcctx->base);
     oci8_link_to_parent(tdo, &svcctx->base);
+    RB_OBJ_WRITTEN(self, Qundef, svc);
     return self;
 }
 
@@ -207,8 +208,10 @@ static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *dat
         obj->instancep = (char**)&data;
         obj->null_structp = (char**)&ind;
         oci8_link_to_parent(&obj->base, DATA_PTR(self));
+        RB_OBJ_WRITTEN(tmp_obj, Qundef, self);
         rv = rb_funcall(tmp_obj, id_to_value, 0);
         oci8_unlink_from_parent(&obj->base);
+        RB_OBJ_WRITTEN(tmp_obj, self, Qundef);
         return rv;
     case ATTR_NAMED_COLLECTION:
         Check_Object(typeinfo, cOCI8TDO);
@@ -219,8 +222,10 @@ static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *dat
         obj->instancep = (char**)data;
         obj->null_structp = (char**)&ind;
         oci8_link_to_parent(&obj->base, DATA_PTR(self));
+        RB_OBJ_WRITTEN(tmp_obj, Qundef, self);
         rv = rb_funcall(tmp_obj, id_to_value, 0);
         oci8_unlink_from_parent(&obj->base);
+        RB_OBJ_WRITTEN(tmp_obj, self, Qundef);
         return rv;
     case ATTR_CLOB:
         return oci8_make_clob(oci8_get_svcctx(typeinfo), *(OCILobLocator**)data);
@@ -530,8 +535,10 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
         obj->instancep = (char**)&data;
         obj->null_structp = (char**)&ind;
         oci8_link_to_parent(&obj->base, DATA_PTR(self));
+        RB_OBJ_WRITTEN(tmp_obj, Qundef, self);
         rb_funcall(tmp_obj, id_set_attributes, 1, val);
         oci8_unlink_from_parent(&obj->base);
+        RB_OBJ_WRITTEN(tmp_obj, self, Qundef);
         break;
     case ATTR_NAMED_COLLECTION:
         Check_Object(typeinfo, cOCI8TDO);
@@ -542,8 +549,10 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
         obj->instancep = (char**)data;
         obj->null_structp = (char**)&ind;
         oci8_link_to_parent(&obj->base, DATA_PTR(self));
+        RB_OBJ_WRITTEN(tmp_obj, Qundef, self);
         rb_funcall(tmp_obj, id_set_attributes, 1, val);
         oci8_unlink_from_parent(&obj->base);
+        RB_OBJ_WRITTEN(tmp_obj, self, Qundef);
         break;
     case ATTR_CLOB:
         oci8_assign_clob(oci8_get_svcctx(typeinfo), val, (OCILobLocator **)data);
@@ -683,11 +692,13 @@ static void bind_named_type_init_elem(oci8_bind_t *obind, VALUE svc)
     svcctx = oci8_get_svcctx(svc);
     do {
         oho[idx].obj = rb_class_new_instance(0, NULL, klass);
+        RB_OBJ_WRITTEN(obind->base.self, Qundef, oho[idx].obj);
         obj = DATA_PTR(oho[idx].obj);
         RB_OBJ_WRITE(oho[idx].obj, &obj->tdo, obind->tdo);
         obj->instancep = (char**)&oho[idx].hp;
         obj->null_structp = (char**)&obind->u.null_structs[idx];
         oci8_link_to_parent(&obj->base, &obind->base);
+        RB_OBJ_WRITTEN(oho[idx].obj, Qundef, obind->base.self);
 
         chker2(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->base.hp.svc, tc, tdo->hp.tdo, NULL, OCI_DURATION_SESSION, TRUE, (dvoid**)obj->instancep),
                &svcctx->base);

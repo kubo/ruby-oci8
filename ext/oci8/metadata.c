@@ -67,6 +67,7 @@ VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE parent)
         md->is_implicit = 0;
     }
     oci8_link_to_parent(&md->base, p);
+    RB_OBJ_WRITTEN(obj, Qundef, p->self);
     return obj;
 }
 

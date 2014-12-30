@@ -277,6 +277,7 @@ static VALUE oci8_lob_do_initialize(int argc, VALUE *argv, VALUE self, ub1 csfrm
     lob->state = S_NO_OPEN_CLOSE;
     oci8_link_to_parent(&lob->base, &svcctx->base);
     lob->svcctx = svcctx;
+    RB_OBJ_WRITTEN(self, Qundef, svc);
     if (!NIL_P(val)) {
         OCI8StringValue(val);
         chker2(OCILobCreateTemporary_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, 0, csfrm, lobtype, TRUE, OCI_DURATION_SESSION),
@@ -994,7 +995,7 @@ static void bind_lob_set(oci8_bind_t *obind, void *data, void **null_structp, VA
         rb_raise(rb_eArgError, "Invalid argument: %s (expect %s)", rb_class2name(CLASS_OF(val)), rb_class2name(*data_type->klass));
     h = DATA_PTR(val);
     oho->hp = h->hp.ptr;
-    oho->obj = val;
+    RB_OBJ_WRITE(obind->base.self, &oho->obj, val);
 }
 
 static void bind_lob_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
@@ -1012,6 +1013,7 @@ static void bind_lob_init_elem(oci8_bind_t *obind, VALUE svc)
 
     do {
         oho[idx].obj = rb_class_new_instance(1, &svc, *data_type->klass);
+        RB_OBJ_WRITTEN(obind->base.self, Qundef, oho[idx].obj);
         h = DATA_PTR(oho[idx].obj);
         oho[idx].hp = h->hp.ptr;
     } while (++idx < obind->maxar_sz);

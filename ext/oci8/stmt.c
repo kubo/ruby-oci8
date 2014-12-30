@@ -349,7 +349,7 @@ static void bind_stmt_set(oci8_bind_t *obind, void *data, void **null_structp, V
     oci8_hp_obj_t *oho = (oci8_hp_obj_t *)data;
     oci8_stmt_t *stmt = TO_STMT(val);
     oho->hp = stmt->base.hp.ptr;
-    oho->obj = val;
+    RB_OBJ_WRITE(obind->base.self, &oho->obj, val);
 }
 
 static void bind_stmt_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
@@ -366,6 +366,7 @@ static void bind_stmt_init_elem(oci8_bind_t *obind, VALUE svc)
 
     do {
         oho[idx].obj = rb_class_new_instance(1, &svc, cOCIStmt);
+        RB_OBJ_WRITTEN(obind->base.self, Qundef, oho[idx].obj);
         h = DATA_PTR(oho[idx].obj);
         oho[idx].hp = h->hp.ptr;
     } while (++idx < obind->maxar_sz);
