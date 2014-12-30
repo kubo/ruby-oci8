@@ -61,6 +61,19 @@ typedef struct ora_date ora_date_t;
     if (sec < 0 || 59 < sec) \
         rb_raise(rb_eRangeError, "Out of range for second %d (expect 0 .. 59)", sec)
 
+#ifdef HAVE_RB_DATA_TYPE_T_FUNCTION
+#define check_oradate(obj) ((ora_date_t*)Check_TypedStruct((obj), &odate_data_type))
+#else
+static ora_date_t *check_oradate(VALUE obj)
+{
+    if (!rb_obj_is_kind_of(obj, cOraDate)) {
+        rb_raise(rb_eTypeError, "wrong argument type %s (expected %s)",
+                 rb_obj_classname(obj), rb_class2name(cOraDate));
+    }
+    return DATA_PTR(obj);
+}
+#endif
+
 static size_t odate_memsize(const void *ptr)
 {
     return sizeof(ora_date_t);
@@ -107,7 +120,7 @@ static VALUE ora_date_s_allocate(VALUE klass)
 static VALUE ora_date_initialize(int argc, VALUE *argv, VALUE self)
 {
     VALUE vyear, vmonth, vday, vhour, vmin, vsec;
-    ora_date_t *od = DATA_PTR(self);
+    ora_date_t *od = check_oradate(self);
     int year, month, day, hour, min, sec;
 
     rb_scan_args(argc, argv, "06", &vyear, &vmonth, &vday, &vhour, &vmin, &vsec);
@@ -163,11 +176,10 @@ static VALUE ora_date_initialize(int argc, VALUE *argv, VALUE self)
  */
 static VALUE ora_date_initialize_copy(VALUE lhs, VALUE rhs)
 {
-    ora_date_t *l, *r;
+    ora_date_t *l = check_oradate(lhs);
+    ora_date_t *r = check_oradate(rhs);
 
     rb_call_super(1, &rhs);
-    TypedData_Get_Struct(lhs, ora_date_t, &odate_data_type, l);
-    TypedData_Get_Struct(rhs, ora_date_t, &odate_data_type, r);
     memcpy(l, r, sizeof(ora_date_t));
     return lhs;
 }
@@ -181,7 +193,7 @@ static VALUE ora_date_initialize_copy(VALUE lhs, VALUE rhs)
 static VALUE ora_date_s_now(int argc, VALUE *argv, VALUE klass)
 {
     VALUE obj = ora_date_s_allocate(klass);
-    ora_date_t *od = DATA_PTR(obj);
+    ora_date_t *od = check_oradate(obj);
     time_t tm = time(0);
     int year, month, day, hour, min, sec;
 #ifdef HAVE_LOCALTIME_R
@@ -211,10 +223,9 @@ static VALUE ora_date_s_now(int argc, VALUE *argv, VALUE klass)
  */
 static VALUE ora_date_to_s(VALUE self)
 {
-    ora_date_t *od;
+    ora_date_t *od = check_oradate(self);
     char buf[30];
 
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od);
     sprintf(buf, "%04d/%02d/%02d %02d:%02d:%02d", Get_year(od), Get_month(od),
             Get_day(od), Get_hour(od), Get_minute(od), Get_second(od));
     return rb_usascii_str_new_cstr(buf);
@@ -227,10 +238,9 @@ static VALUE ora_date_to_s(VALUE self)
  */
 static VALUE ora_date_to_a(VALUE self)
 {
-    ora_date_t *od;
+    ora_date_t *od = check_oradate(self);
     VALUE ary[6];
 
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od);
     ary[0] = INT2FIX(Get_year(od));
     ary[1] = INT2FIX(Get_month(od));
     ary[2] = INT2FIX(Get_day(od));
@@ -247,9 +257,8 @@ static VALUE ora_date_to_a(VALUE self)
  */
 static VALUE ora_date_year(VALUE self)
 {
-    ora_date_t *od;
+    ora_date_t *od = check_oradate(self);
 
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od);
     return INT2FIX(Get_year(od));
 }
 
@@ -263,12 +272,10 @@ static VALUE ora_date_year(VALUE self)
  */
 static VALUE ora_date_set_year(VALUE self, VALUE val)
 {
-    ora_date_t *od;
-    int v;
+    ora_date_t *od = check_oradate(self);
+    int v = NUM2INT(val);
 
-    v = NUM2INT(val);
     Check_year(v);
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od);
     Set_year(od, v);
     return self;
 }
@@ -281,9 +288,8 @@ static VALUE ora_date_set_year(VALUE self, VALUE val)
  */
 static VALUE ora_date_month(VALUE self)
 {
-    ora_date_t *od;
+    ora_date_t *od = check_oradate(self);
 
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od);
     return INT2FIX(Get_month(od));
 }
 
@@ -298,12 +304,10 @@ static VALUE ora_date_month(VALUE self)
  */
 static VALUE ora_date_set_month(VALUE self, VALUE val)
 {
-    ora_date_t *od;
-    int v;
+    ora_date_t *od = check_oradate(self);
+    int v = NUM2INT(val);
 
-    v = NUM2INT(val);
     Check_month(v);
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od);
     Set_month(od, v);
     return self;
 }
@@ -315,9 +319,8 @@ static VALUE ora_date_set_month(VALUE self, VALUE val)
  */
 static VALUE ora_date_day(VALUE self)
 {
-    ora_date_t *od;
+    ora_date_t *od = check_oradate(self);
 
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od);
     return INT2FIX(Get_day(od));
 }
 
@@ -331,12 +334,10 @@ static VALUE ora_date_day(VALUE self)
  */
 static VALUE ora_date_set_day(VALUE self, VALUE val)
 {
-    ora_date_t *od;
-    int v;
+    ora_date_t *od = check_oradate(self);
+    int v = NUM2INT(val);
 
-    v = NUM2INT(val);
     Check_day(v);
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od);
     Set_day(od, v);
     return self;
 }
@@ -348,9 +349,8 @@ static VALUE ora_date_set_day(VALUE self, VALUE val)
  */
 static VALUE ora_date_hour(VALUE self)
 {
-    ora_date_t *od;
+    ora_date_t *od = check_oradate(self);
 
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od);
     return INT2FIX(Get_hour(od));
 }
 
@@ -364,12 +364,10 @@ static VALUE ora_date_hour(VALUE self)
  */
 static VALUE ora_date_set_hour(VALUE self, VALUE val)
 {
-    ora_date_t *od;
-    int v;
+    ora_date_t *od = check_oradate(self);
+    int v = NUM2INT(val);
 
-    v = NUM2INT(val);
     Check_hour(v);
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od);
     Set_hour(od, v);
     return self;
 }
@@ -381,9 +379,8 @@ static VALUE ora_date_set_hour(VALUE self, VALUE val)
  */
 static VALUE ora_date_minute(VALUE self)
 {
-    ora_date_t *od;
+    ora_date_t *od = check_oradate(self);
 
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od);
     return INT2FIX(Get_minute(od));
 }
 
@@ -397,12 +394,10 @@ static VALUE ora_date_minute(VALUE self)
  */
 static VALUE ora_date_set_minute(VALUE self, VALUE val)
 {
-    ora_date_t *od;
-    int v;
+    ora_date_t *od = check_oradate(self);
+    int v = NUM2INT(val);
 
-    v = NUM2INT(val);
     Check_minute(v);
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od);
     Set_minute(od, v);
     return self;
 }
@@ -414,9 +409,8 @@ static VALUE ora_date_set_minute(VALUE self, VALUE val)
  */
 static VALUE ora_date_second(VALUE self)
 {
-    ora_date_t *od;
+    ora_date_t *od = check_oradate(self);
 
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od);
     return INT2FIX(Get_second(od));
 }
 
@@ -430,12 +424,11 @@ static VALUE ora_date_second(VALUE self)
  */
 static VALUE ora_date_set_second(VALUE self, VALUE val)
 {
-    ora_date_t *od;
+    ora_date_t *od = check_oradate(self);
     int v;
 
     v = NUM2INT(val);
     Check_second(v);
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od);
     Set_second(od, v);
     return self;
 }
@@ -451,9 +444,8 @@ static VALUE ora_date_set_second(VALUE self, VALUE val)
  */
 static VALUE ora_date_trunc(VALUE self)
 {
-    ora_date_t *od;
+    ora_date_t *od = check_oradate(self);
 
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od);
     od->hour = 1;
     od->minute = 1;
     od->second = 1;
@@ -469,10 +461,9 @@ static VALUE ora_date_trunc(VALUE self)
  */
 static VALUE ora_date_cmp(VALUE self, VALUE val)
 {
-    ora_date_t *od1, *od2;
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od1);
-    Check_Object(val, cOraDate);
-    TypedData_Get_Struct(val, ora_date_t, &odate_data_type, od2);
+    ora_date_t *od1 = check_oradate(self);
+    ora_date_t *od2 = check_oradate(val);
+
     if (od1->century < od2->century) return INT2FIX(-1);
     if (od1->century > od2->century) return INT2FIX(1);
     if (od1->year < od2->year) return INT2FIX(-1);
@@ -495,10 +486,9 @@ static VALUE ora_date_cmp(VALUE self, VALUE val)
  */
 static VALUE ora_date_hash(VALUE self)
 {
-    ora_date_t *od;
+    ora_date_t *od = check_oradate(self);
     unsigned int v;
 
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od);
     v = (od->century <<  8)
         + (od->year    << 15)
         + (od->month   << 22)
@@ -518,8 +508,8 @@ static VALUE ora_date_hash(VALUE self)
  */
 static VALUE ora_date_dump(int argc, VALUE *argv, VALUE self)
 {
-    ora_date_t *od;
-    TypedData_Get_Struct(self, ora_date_t, &odate_data_type, od);
+    ora_date_t *od = check_oradate(self);
+
     return rb_str_new((const char*)od, sizeof(ora_date_t)); /* ASCII-8BIT */
 }
 
@@ -565,10 +555,8 @@ static VALUE bind_oradate_get(oci8_bind_t *obind, void *data, void *null_struct)
 
 static void bind_oradate_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
-    ora_date_t *od;
+    ora_date_t *od = check_oradate(val);
 
-    Check_Object(val, cOraDate);
-    TypedData_Get_Struct(val, ora_date_t, &odate_data_type, od);
     memcpy(data, od, sizeof(ora_date_t));
 }
 

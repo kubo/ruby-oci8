@@ -1,4 +1,7 @@
 2014-12-30  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oradate.c: Add check_oradate() to check datatype.
+
+2014-12-30  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c, ext/oci8/metadata.c, ext/oci8/object.c, ext/oci8/stmt.c:
 	    Add more write barriers.
 
