@@ -1,4 +1,7 @@
 2014-12-30  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c, ext/oci8/oci8lib.c: Revise type checking of LOB.
+
+2014-12-30  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c, ext/oci8/connection_pool.c, ext/oci8/lob.c,
 	  ext/oci8/metadata.c, ext/oci8/object.c, ext/oci8/oci8.c, ext/oci8/oci8.h,
 	  ext/oci8/oci8lib.c, ext/oci8/ocihandle.c, ext/oci8/stmt.c:

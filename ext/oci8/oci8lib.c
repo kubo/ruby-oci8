@@ -155,21 +155,27 @@ Init_oci8lib()
 
 VALUE oci8_define_class(const char *name, const oci8_handle_data_type_t *data_type, VALUE (*alloc_func)(VALUE))
 {
-    VALUE klass = rb_define_class(name, oci8_cOCIHandle);
+    VALUE parent_class = rb_eval_string(data_type->rb_data_type.parent->wrap_struct_name);
+    VALUE klass = rb_define_class(name, parent_class);
+
     rb_define_alloc_func(klass, alloc_func);
     return klass;
 }
 
 VALUE oci8_define_class_under(VALUE outer, const char *name, const oci8_handle_data_type_t *data_type, VALUE (*alloc_func)(VALUE))
 {
-    VALUE klass = rb_define_class_under(outer, name, oci8_cOCIHandle);
+    VALUE parent_class = rb_eval_string(data_type->rb_data_type.parent->wrap_struct_name);
+    VALUE klass = rb_define_class_under(outer, name, parent_class);
+
     rb_define_alloc_func(klass, alloc_func);
     return klass;
 }
 
 VALUE oci8_define_bind_class(const char *name, const oci8_bind_data_type_t *data_type, VALUE (*alloc_func)(VALUE))
 {
-    VALUE klass = rb_define_class_under(mOCI8BindType, name, cOCI8BindTypeBase);
+    VALUE parent_class = rb_eval_string(data_type->base.rb_data_type.parent->wrap_struct_name);
+    VALUE klass = rb_define_class_under(mOCI8BindType, name, parent_class);
+
     rb_define_alloc_func(klass, alloc_func);
     return klass;
 }

@@ -87,11 +87,30 @@ static const oci8_handle_data_type_t oci8_lob_data_type = {
     {
         "OCI8::LOB",
         {
+            NULL,
+            NULL,
+            NULL,
+        },
+        &oci8_handle_data_type.rb_data_type, NULL,
+    },
+    NULL,
+    sizeof(oci8_lob_t),
+};
+
+static VALUE oci8_lob_alloc(VALUE klass)
+{
+    rb_raise(rb_eNameError, "private method `new' called for %s:Class", rb_class2name(klass));
+}
+
+static const oci8_handle_data_type_t oci8_clob_data_type = {
+    {
+        "OCI8::CLOB",
+        {
             (RUBY_DATA_FUNC)oci8_lob_mark,
             oci8_handle_cleanup,
             oci8_handle_size,
         },
-        &oci8_handle_data_type.rb_data_type, NULL,
+        &oci8_lob_data_type.rb_data_type, NULL,
 #ifdef RUBY_TYPED_WB_PROTECTED
         RUBY_TYPED_WB_PROTECTED,
 #endif
@@ -99,6 +118,77 @@ static const oci8_handle_data_type_t oci8_lob_data_type = {
     oci8_lob_free,
     sizeof(oci8_lob_t),
 };
+
+static VALUE oci8_clob_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &oci8_clob_data_type);
+}
+
+static const oci8_handle_data_type_t oci8_nclob_data_type = {
+    {
+        "OCI8::NCLOB",
+        {
+            (RUBY_DATA_FUNC)oci8_lob_mark,
+            oci8_handle_cleanup,
+            oci8_handle_size,
+        },
+        &oci8_lob_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+        RUBY_TYPED_WB_PROTECTED,
+#endif
+    },
+    oci8_lob_free,
+    sizeof(oci8_lob_t),
+};
+
+static VALUE oci8_nclob_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &oci8_nclob_data_type);
+}
+
+static const oci8_handle_data_type_t oci8_blob_data_type = {
+    {
+        "OCI8::BLOB",
+        {
+            (RUBY_DATA_FUNC)oci8_lob_mark,
+            oci8_handle_cleanup,
+            oci8_handle_size,
+        },
+        &oci8_lob_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+        RUBY_TYPED_WB_PROTECTED,
+#endif
+    },
+    oci8_lob_free,
+    sizeof(oci8_lob_t),
+};
+
+static VALUE oci8_blob_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &oci8_blob_data_type);
+}
+
+static const oci8_handle_data_type_t oci8_bfile_data_type = {
+    {
+        "OCI8::BFILE",
+        {
+            (RUBY_DATA_FUNC)oci8_lob_mark,
+            oci8_handle_cleanup,
+            oci8_handle_size,
+        },
+        &oci8_lob_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+        RUBY_TYPED_WB_PROTECTED,
+#endif
+    },
+    oci8_lob_free,
+    sizeof(oci8_lob_t),
+};
+
+static VALUE oci8_bfile_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &oci8_bfile_data_type);
+}
 
 static VALUE oci8_make_lob(VALUE klass, oci8_svcctx_t *svcctx, OCILobLocator *s)
 {
@@ -167,11 +257,6 @@ void oci8_assign_blob(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
 void oci8_assign_bfile(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
 {
     oci8_assign_lob(cOCI8BFILE, svcctx, lob, dest);
-}
-
-static VALUE oci8_lob_alloc(VALUE klass)
-{
-    return oci8_allocate_typeddata(klass, &oci8_lob_data_type);
 }
 
 static ub4 oci8_lob_get_length(oci8_lob_t *lob)
@@ -993,11 +1078,9 @@ static VALUE bind_lob_get(oci8_bind_t *obind, void *data, void *null_struct)
 static void bind_lob_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     oci8_hp_obj_t *oho = (oci8_hp_obj_t *)data;
-    const oci8_bind_lob_data_type_t *data_type = (const oci8_bind_lob_data_type_t *)obind->base.data_type;
-    oci8_base_t *h;
-    if (!rb_obj_is_kind_of(val, *data_type->klass))
-        rb_raise(rb_eArgError, "Invalid argument: %s (expect %s)", rb_class2name(CLASS_OF(val)), rb_class2name(*data_type->klass));
-    h = DATA_PTR(val);
+    const oci8_handle_data_type_t *bind_data_type = obind->base.data_type;
+    const oci8_handle_data_type_t *lob_data_type = bind_data_type->rb_data_type.data;
+    oci8_base_t *h = oci8_check_typeddata(val, lob_data_type, 1);
     oho->hp = h->hp.ptr;
     RB_OBJ_WRITE(obind->base.self, &oho->obj, val);
 }
@@ -1041,7 +1124,7 @@ static const oci8_bind_lob_data_type_t bind_clob_data_type = {
                     oci8_handle_cleanup,
                     oci8_handle_size,
                 },
-                &oci8_bind_data_type.rb_data_type, NULL,
+                &oci8_bind_data_type.rb_data_type, (void*)&oci8_clob_data_type,
 #ifdef RUBY_TYPED_WB_PROTECTED
                 RUBY_TYPED_WB_PROTECTED,
 #endif
@@ -1074,7 +1157,7 @@ static const oci8_bind_lob_data_type_t bind_nclob_data_type = {
                     oci8_handle_cleanup,
                     oci8_handle_size,
                 },
-                &oci8_bind_data_type.rb_data_type, NULL,
+                &oci8_bind_data_type.rb_data_type, (void*)&oci8_nclob_data_type,
 #ifdef RUBY_TYPED_WB_PROTECTED
                 RUBY_TYPED_WB_PROTECTED,
 #endif
@@ -1108,7 +1191,7 @@ static const oci8_bind_lob_data_type_t bind_blob_data_type = {
                     oci8_handle_cleanup,
                     oci8_handle_size,
                 },
-                &oci8_bind_data_type.rb_data_type, NULL,
+                &oci8_bind_data_type.rb_data_type, (void*)&oci8_blob_data_type,
 #ifdef RUBY_TYPED_WB_PROTECTED
                 RUBY_TYPED_WB_PROTECTED,
 #endif
@@ -1141,7 +1224,7 @@ static const oci8_bind_lob_data_type_t bind_bfile_data_type = {
                     oci8_handle_cleanup,
                     oci8_handle_size,
                 },
-                &oci8_bind_data_type.rb_data_type, NULL,
+                &oci8_bind_data_type.rb_data_type, (void*)&oci8_bfile_data_type,
 #ifdef RUBY_TYPED_WB_PROTECTED
                 RUBY_TYPED_WB_PROTECTED,
 #endif
@@ -1174,16 +1257,21 @@ void Init_oci8_lob(VALUE cOCI8)
     seek_end = rb_eval_string("::IO::SEEK_END");
 
 #if 0
+    /* for yard */
     cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
     cOCI8 = rb_define_class("OCI8", cOCIHandle);
     cOCI8LOB = rb_define_class_under(cOCI8, "LOB", cOCIHandle);
-#endif
-
-    cOCI8LOB = oci8_define_class_under(cOCI8, "LOB", &oci8_lob_data_type, oci8_lob_alloc);
     cOCI8CLOB = rb_define_class_under(cOCI8, "CLOB", cOCI8LOB);
     cOCI8NCLOB = rb_define_class_under(cOCI8, "NCLOB", cOCI8LOB);
     cOCI8BLOB = rb_define_class_under(cOCI8, "BLOB", cOCI8LOB);
     cOCI8BFILE = rb_define_class_under(cOCI8, "BFILE", cOCI8LOB);
+#endif
+
+    cOCI8LOB = oci8_define_class_under(cOCI8, "LOB", &oci8_lob_data_type, oci8_lob_alloc);
+    cOCI8CLOB = oci8_define_class_under(cOCI8, "CLOB", &oci8_clob_data_type, oci8_clob_alloc);
+    cOCI8NCLOB = oci8_define_class_under(cOCI8, "NCLOB", &oci8_nclob_data_type, oci8_nclob_alloc);
+    cOCI8BLOB = oci8_define_class_under(cOCI8, "BLOB", &oci8_blob_data_type, oci8_blob_alloc);
+    cOCI8BFILE = oci8_define_class_under(cOCI8, "BFILE", &oci8_bfile_data_type, oci8_bfile_alloc);
 
     rb_define_method(cOCI8CLOB, "initialize", oci8_clob_initialize, -1);
     rb_define_method(cOCI8NCLOB, "initialize", oci8_nclob_initialize, -1);
