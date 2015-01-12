@@ -1,3 +1,7 @@
+2015-01-12  Kubo Takehiro  <kubo@jiubao.org>
+	* README.md: Fix a broken link.
+	    (github issue #67 reported by Zloy)
+
 2014-12-30  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c, ext/oci8/oci8lib.c: Revise type checking of LOB.
 

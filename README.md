@@ -21,10 +21,10 @@ Connect to scott/tiger, select `emp` and print as CSV format.
 
 If you install a ruby-oci8 gem package, you may need to add `-rubygems` before `-r oci8`.
 
-API Reference
+Documentation
 =============
 
-* http://rubydoc.info/gems/ruby-oci8/frames/file/README.md
+* http://rubydoc.info/gems/ruby-oci8/
 
 Installation
 ============
