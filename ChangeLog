@@ -1,3 +1,12 @@
+2015-01-20  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, ext/oci8/hook_funcs.c, ext/oci8/oci8.c,
+	  ext/oci8/oci8.h, ext/oci8/oci8lib.c, ext/oci8/plthook.h,
+	  ext/oci8/plthook_elf.c, ext/oci8/plthook_osx.c,
+	  ext/oci8/plthook_win32.c: Cancel read system calls at exit
+	    not to block ruby process termination.
+	    This works on Linux, OSX and Windows Vista or upper.
+	    (github issue #56)
+
 2015-01-12  Kubo Takehiro  <kubo@jiubao.org>
 	* README.md: Fix a broken link.
 	    (github issue #67 reported by Zloy)

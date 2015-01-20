@@ -58,6 +58,9 @@ void oci8_base_free(oci8_base_t *base)
 static void at_exit_func(VALUE val)
 {
     oci8_in_finalizer = 1;
+#ifdef HAVE_PLTHOOK
+    oci8_shutdown_sockets();
+#endif
 }
 #endif
 
@@ -150,6 +153,9 @@ Init_oci8lib()
 
 #ifdef USE_WIN32_C
     Init_oci8_win32(cOCI8);
+#endif
+#ifdef HAVE_PLTHOOK
+    oci8_install_hook_functions();
 #endif
 }
 

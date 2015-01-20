@@ -182,6 +182,25 @@ else
   raise 'unsupported ruby engine: ' + RUBY_ENGINE
 end
 
+print "checking for plthook... "
+STDOUT.flush
+case RUBY_PLATFORM
+when /mswin32|cygwin|mingw32|bccwin32/
+  plthook_src = "plthook_win32.c"
+when /darwin/
+  plthook_src = "plthook_osx.c"
+else
+  plthook_src = "plthook_elf.c"
+end
+if xsystem(cc_command("").gsub(CONFTEST_C, File.dirname(__FILE__) + "/" + plthook_src))
+  puts plthook_src
+  $objs << plthook_src.gsub(/\.c$/, '.o')
+  $objs << "hook_funcs.o"
+  $defs << "-DHAVE_PLTHOOK"
+else
+  puts "no"
+end
+
 $defs << "-DInit_oci8lib=Init_#{so_basename}"
 $defs << "-Doci8lib=#{so_basename}"
 $defs << "-DOCI8LIB_VERSION=\\\"#{RUBY_OCI8_VERSION}\\\""

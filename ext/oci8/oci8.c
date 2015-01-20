@@ -606,6 +606,9 @@ static VALUE oci8_server_attach(VALUE self, VALUE dbname, VALUE attach_mode)
                               NIL_P(dbname) ? 0 : RSTRING_LEN(dbname),
                               mode),
            &svcctx->base);
+#if defined HAVE_PLTHOOK && defined WIN32
+    oci8_check_win32_beq_functions();
+#endif
     chker2(OCIAttrSet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX,
                       svcctx->srvhp, 0, OCI_ATTR_SERVER,
                       oci8_errhp),
