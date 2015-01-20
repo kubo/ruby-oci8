@@ -1,4 +1,8 @@
 2015-01-20  Kubo Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb: Add OCI8#send_timeout, OCI8#send_timeout=,
+	    OCI8#recv_timeout and OCI8#recv_timeout=.
+
+2015-01-20  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/hook_funcs.c, ext/oci8/oci8.c, ext/oci8/oci8.h:
 	    Fix for cancel_read_at_exit on Windows.
 

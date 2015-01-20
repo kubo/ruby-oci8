@@ -384,6 +384,77 @@ class OCI8
   def self.client_charset_name
     @@client_charset_name
   end
+
+  if OCI8.oracle_client_version >= OCI8::ORAVER_11_1
+    # Returns send timeout in seconds.
+    # Zero means no timeout.
+    # This is equivalent to {http://docs.oracle.com/database/121/NETRF/sqlnet.htm#NETRF228 SQLNET.SEND_TIMEOUT} in client-side sqlnet.ora.
+    #
+    # @return [Float] seconds
+    # @see #recv_timeout
+    # @since 2.1.8 and Oracle 11.1
+    def send_timeout
+      # OCI_ATTR_SEND_TIMEOUT = 435
+      @server_handle.send(:attr_get_ub4, 435).to_f / 1000
+    end
+
+    # Sets send timeout in seconds.
+    # Zero means no timeout.
+    # This is equivalent to {http://docs.oracle.com/database/121/NETRF/sqlnet.htm#NETRF228 SQLNET.SEND_TIMEOUT} in client-side sqlnet.ora.
+    #
+    # If you have trouble by setting this, don't use it because it uses
+    # {http://blog.jiubao.org/2015/01/undocumented-oci-handle-attributes.html an undocumented OCI handle attribute}.
+    #
+    # @param [Float] timeout
+    # @return [void]
+    # @see #recv_timeout=
+    # @since 2.1.8 and Oracle 11.1
+    def send_timeout=(timeout)
+      # OCI_ATTR_SEND_TIMEOUT = 435
+      @server_handle.send(:attr_set_ub4, 435, timeout * 1000)
+    end
+
+    # Returns receive timeout in seconds.
+    # Zero means no timeout.
+    # This is equivalent to {http://docs.oracle.com/database/121/NETRF/sqlnet.htm#NETRF227 SQLNET.RECV_TIMEOUT} in client-side sqlnet.ora.
+    #
+    # @return [Float] seconds
+    # @see #send_timeout
+    # @since 2.1.8 and Oracle 11.1
+    def recv_timeout
+      # OCI_ATTR_RECEIVE_TIMEOUT = 436
+      @server_handle.send(:attr_get_ub4, 436).to_f / 1000
+    end
+
+    # Sets receive timeout in seconds.
+    # Zero means no timeout.
+    # This is equivalent to {http://docs.oracle.com/database/121/NETRF/sqlnet.htm#NETRF227 SQLNET.RECV_TIMEOUT} in client-side sqlnet.ora.
+    #
+    # If you have trouble by setting this, don't use it because it uses
+    # {http://blog.jiubao.org/2015/01/undocumented-oci-handle-attributes.html an undocumented OCI handle attribute}.
+    #
+    # @param [Float] timeout
+    # @return [void]
+    # @see #send_timeout=
+    # @since 2.1.8 and Oracle 11.1
+    def recv_timeout=(timeout)
+      # OCI_ATTR_RECEIVE_TIMEOUT = 436
+      @server_handle.send(:attr_set_ub4, 436, timeout * 1000)
+    end
+  else
+    def send_timeout
+      raise NotImplementedError, 'send_timeout is unimplemented in this Oracle version'
+    end
+    def send_timeout=(timeout)
+      raise NotImplementedError, 'send_timeout= is unimplemented in this Oracle version'
+    end
+    def recv_timeout
+      raise NotImplementedError, 'recv_timeout is unimplemented in this Oracle version'
+    end
+    def recv_timeout=(timeout)
+      raise NotImplementedError, 'revc_timeout= is unimplemented in this Oracle version'
+    end
+  end
 end
 
 class OCIError
