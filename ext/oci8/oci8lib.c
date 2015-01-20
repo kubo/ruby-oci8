@@ -1,6 +1,6 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
- * Copyright (C) 2002-2014 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2015 Kubo Takehiro <kubo@jiubao.org>
  */
 
 #include "oci8.h"
@@ -153,9 +153,6 @@ Init_oci8lib()
 
 #ifdef USE_WIN32_C
     Init_oci8_win32(cOCI8);
-#endif
-#ifdef HAVE_PLTHOOK
-    oci8_install_hook_functions();
 #endif
 }
 

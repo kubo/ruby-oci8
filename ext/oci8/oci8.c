@@ -2,7 +2,7 @@
 /*
  * oci8.c - part of ruby-oci8
  *
- * Copyright (C) 2002-2014 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2015 Kubo Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
@@ -293,6 +293,9 @@ static VALUE oci8_s_get_prop(VALUE klass, VALUE key)
  */
 static VALUE oci8_s_set_prop(VALUE klass, VALUE key, VALUE val)
 {
+#ifdef HAVE_PLTHOOK
+    static int hook_functions_installed = 0;
+#endif
     switch (NUM2INT(key)) {
     case 1:
         oci8_float_conversion_type_is_ruby = RTEST(val) ? 1 : 0;
@@ -306,6 +309,16 @@ static VALUE oci8_s_set_prop(VALUE klass, VALUE key, VALUE val)
             rb_raise(rb_eRuntimeError, "The OCI Environment has been alreadly initialized. It cannot be changed after even one OCI function is called.");
         }
         oci8_env_mode = NUM2UINT(val);
+        break;
+    case 3:
+#ifdef HAVE_PLTHOOK
+        if (!hook_functions_installed) {
+            oci8_install_hook_functions();
+            hook_functions_installed = 1;
+        }
+#else
+        rb_raise(rb_eNotImpError, ":cancel_read_at_exit isn't implemented on this machine.");
+#endif
         break;
     default:
         rb_raise(rb_eArgError, "Unknown prop %d", NUM2INT(key));

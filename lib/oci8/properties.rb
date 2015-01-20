@@ -1,6 +1,6 @@
 # properties.rb -- implements OCI8.properties
 #
-# Copyright (C) 2010-2013 KUBO Takehiro <kubo@jiubao.org>
+# Copyright (C) 2010-2015 Kubo Takehiro <kubo@jiubao.org>
 
 #
 class OCI8
@@ -11,7 +11,8 @@ class OCI8
     :bind_string_as_nchar => false,
     :float_conversion_type => OCI8.__get_prop(1) ? :ruby : :oracle,
     :statement_cache_size => 0,
-    :events_mode => ((OCI8.__get_prop(2) & 4) != 0) # 4 <- OCI_EVENTS in oci.h
+    :events_mode => ((OCI8.__get_prop(2) & 4) != 0), # 4 <- OCI_EVENTS in oci.h
+    :cancel_read_at_exit => false,
   }
 
   if OCI8.oracle_client_version < OCI8::ORAVER_9_2
@@ -56,6 +57,9 @@ class OCI8
       else
         OCI8.__set_prop(2, OCI8.__get_prop(2) & ~4) # unset OCI_EVENTS
       end
+    when :cancel_read_at_exit
+      val = val ? true : false
+      OCI8.__set_prop(3, val)
     end
     super(name, val)
   end
@@ -124,6 +128,17 @@ class OCI8
   #       OCI8.properties[:events_mode] = true # raises a runtime error.
   #     
   #     *Since:* 2.1.4
+  #
+  # [:cancel_read_at_exit]
+  #
+  #     +true+ when read system calls are canceled at exit. Otherwise, +false+.
+  #     The default value is +false+ because it uses unusual technique which
+  #     hooks read system calls issued by Oracle client library and it works
+  #     only on Linux, OSX and Windows.
+  #     This feature is added not to block ruby process termination when
+  #     network quality is poor and packets are lost irregularly.
+  #
+  #     *Since:* 2.1.8
   #
   # @return [a customized Hash]
   # @since 2.0.5
