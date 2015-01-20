@@ -1,4 +1,8 @@
 2015-01-20  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/hook_funcs.c, ext/oci8/oci8.c, ext/oci8/oci8.h:
+	    Fix for cancel_read_at_exit on Windows.
+
+2015-01-20  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c, ext/oci8/oci8lib.c, lib/oci8/properties.rb:
 	    Add OCI8.properties[:cancel_read_at_exit].
 

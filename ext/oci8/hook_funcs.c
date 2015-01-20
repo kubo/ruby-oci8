@@ -2,7 +2,7 @@
 /*
  * hook.c
  *
- * Copyright (C) 2015 KUBO Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2015 Kubo Takehiro <kubo@jiubao.org>
  */
 #include "oci8.h"
 #include "plthook.h"
@@ -92,13 +92,9 @@ static int replace_functions(const char * const *files, hook_func_entry_t *funct
 
 #ifdef WIN32
 
-/* CancelIoEx is available in Windows Vista or later. */
-typedef BOOL (WINAPI *CancelIoEx_t)(HANDLE hFile, LPOVERLAPPED lpOverlapped);
-
-static CancelIoEx_t CancelIoEx_func;
+static int locK_is_initialized;
 
 static int WSAAPI hook_WSARecv(SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount, LPDWORD lpNumberOfBytesRecvd, LPDWORD lpFlags, LPWSAOVERLAPPED lpOverlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine);
-static BOOL WINAPI hook_ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped);
 
 static const char * const tcp_func_files[] = {
     /* full client */
@@ -134,62 +130,24 @@ static int WSAAPI hook_WSARecv(SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount
     return rv;
 }
 
-static const char * const beq_func_files[] = {
-    /* full client */
-    "oranbeq12.dll",
-    "oranbeq11.dll",
-    "oranbeq10.dll",
-    "oranbeq9.dll",
-    NULL,
-};
-
-static hook_func_entry_t beq_functions[] = {
-    {"ReadFile", (void*)hook_ReadFile, NULL},
-    {NULL, NULL, NULL},
-};
-
-/* ReadFile() is used for BEQ connections */
-static BOOL WINAPI hook_ReadFile(HANDLE hFile, LPVOID lpBuffer, DWORD nNumberOfBytesToRead, LPDWORD lpNumberOfBytesRead, LPOVERLAPPED lpOverlapped)
-{
-    socket_entry_t entry;
-    BOOL rv;
-
-    socket_entry_set(&entry, (SOCKET)hFile);
-    rv = ReadFile(hFile, lpBuffer, nNumberOfBytesToRead, lpNumberOfBytesRead, lpOverlapped);
-    socket_entry_clear(&entry);
-    return rv;
-}
-
 void oci8_install_hook_functions()
 {
     InitializeCriticalSectionAndSpinCount(&lock, 5000);
-    /* CancelIoEx() is available in Windows Vista or later. */
-    CancelIoEx_func = (CancelIoEx_t)GetProcAddress(GetModuleHandle("KERNEL32.DLL"), "CancelIoEx");
+    locK_is_initialized = 1;
+
     if (replace_functions(tcp_func_files, tcp_functions) != 0) {
         rb_raise(rb_eRuntimeError, "No DLL is found to hook.");
     }
 }
 
-void oci8_check_win32_beq_functions()
-{
-    static BOOL beq_func_replaced = FALSE;
-
-    if (CancelIoEx_func != NULL && !beq_func_replaced) {
-        /* oranbeq??.dll is not loaded until a beq connection is used. */
-        if (replace_functions(beq_func_files, beq_functions) == 0) {
-            beq_func_replaced = TRUE;
-        }
-    }
-}
-
 static void shutdown_socket(socket_entry_t *entry)
 {
-    if (CancelIoEx_func != NULL) {
-        /* Though MSDN doesn't say that CancelIoEx() can cancel WSARecv(),
-         * it works on Windows 7 x64 as far as I checked.
-         */
-        CancelIoEx_func((HANDLE)entry->sock, NULL);
-    }
+    /* This is dangerous. But I don't know how to cancel WSARecv().
+     * This technique is usable only at the process termination.
+     * Otherwise, Oracle client library may close sockets used by
+     * others.
+     */
+    closesocket(entry->sock);
 }
 
 #else
@@ -241,6 +199,12 @@ static void shutdown_socket(socket_entry_t *entry)
 void oci8_shutdown_sockets(void)
 {
     socket_entry_t *entry;
+
+#ifdef WIN32
+    if (!locK_is_initialized) {
+        return;
+    }
+#endif
 
     LOCK(&lock);
     for (entry = sockets_in_use.next; entry != &sockets_in_use; entry = entry->next) {
