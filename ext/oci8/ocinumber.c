@@ -2,7 +2,7 @@
 /*
  *  ocinumber.c
  *
- * Copyright (C) 2005-2014 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2005-2015 Kubo Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
@@ -412,8 +412,7 @@ OCINumber *oci8_dbl_to_onum(OCINumber *result, double dbl, OCIError *errhp)
  */
 
 /*
- *  call-seq:
- *    atan2(y, x)
+ * @overload atan2(y, x)
  *
  *  Computes the principal value of the arc tangent of <i>y/x</i>,
  *  using the signs of both arguments to determine the quadrant of the
@@ -453,8 +452,7 @@ static VALUE omath_atan2(VALUE self, VALUE Ycoordinate, VALUE Xcoordinate)
 }
 
 /*
- *  call-seq:
- *     cos(x)
+ * @overload cos(x)
  *
  *  Computes the cosine of <i>x</i>, measured in radians.
  *
@@ -472,8 +470,7 @@ static VALUE omath_cos(VALUE obj, VALUE radian)
 }
 
 /*
- *  call-seq:
- *     sin(x)
+ * @overload sin(x)
  *
  *  Computes the sine of <i>x</i>, measured in radians.
  *
@@ -491,8 +488,7 @@ static VALUE omath_sin(VALUE obj, VALUE radian)
 }
 
 /*
- *  call-seq:
- *     tan(x)
+ * @overload tan(x)
  *
  *  Computes the tangent of <i>x</i>, measured in radians.
  *
@@ -510,8 +506,7 @@ static VALUE omath_tan(VALUE obj, VALUE radian)
 }
 
 /*
- *  call-seq:
- *     acos(x)
+ * @overload acos(x)
  *
  *  Computes the principal value of the arc cosine of <i>x</i>.
  *
@@ -540,8 +535,7 @@ static VALUE omath_acos(VALUE obj, VALUE num)
 }
 
 /*
- *  call-seq:
- *     asin(x)
+ * @overload asin(x)
  *
  *  Computes the principal value of the arc sine of <i>x</i>.
  *
@@ -570,8 +564,7 @@ static VALUE omath_asin(VALUE obj, VALUE num)
 }
 
 /*
- *  call-seq:
- *     atan(x)
+ * @overload atan(x)
  *
  *  Computes the principal value of the arc tangent of their argument <i>x</i>.
  *
@@ -589,8 +582,7 @@ static VALUE omath_atan(VALUE obj, VALUE num)
 }
 
 /*
- *  call-seq:
- *     cosh(x)
+ * @overload cosh(x)
  *
  *  Computes the hyperbolic cosine of <i>x</i>.
  *
@@ -608,8 +600,7 @@ static VALUE omath_cosh(VALUE obj, VALUE num)
 }
 
 /*
- *  call-seq:
- *     sinh(x)
+ * @overload sinh(x)
  *
  *  Computes the hyperbolic sine of <i>x</i>.
  *
@@ -627,8 +618,7 @@ static VALUE omath_sinh(VALUE obj, VALUE num)
 }
 
 /*
- *  call-seq:
- *     tanh(x)
+ * @overload tanh(x)
  *
  *  Computes the hyperbolic tangent of <i>x</i>.
  *
@@ -646,8 +636,7 @@ static VALUE omath_tanh(VALUE obj, VALUE num)
 }
 
 /*
- *  call-seq:
- *     exp(x)
+ * @overload exp(x)
  *
  *  Computes the base- <i>e</i> exponential of <i>x</i>.
  *
@@ -665,20 +654,20 @@ static VALUE omath_exp(VALUE obj, VALUE num)
 }
 
 /*
- *  @overload log(x)
+ * @overload log(x)
  *
- *    Computes the natural logarithm of <i>x</i>.
+ *  Computes the natural logarithm of <i>x</i>.
  *
- *    @param [Numeric] x
- *    @return [OraNumber]
+ *  @param [Numeric] x
+ *  @return [OraNumber]
  *
- *  @overload log(x, y)
+ * @overload log(x, y)
  *
- *    Computes the base <i>y</I> logarithm of <i>x</i>.
+ *  Computes the base <i>y</I> logarithm of <i>x</i>.
  *
- *    @param [Numeric] x
- *    @param [Numeric] y
- *    @return [OraNumber]
+ *  @param [Numeric] x
+ *  @param [Numeric] y
+ *  @return [OraNumber]
  */
 static VALUE omath_log(int argc, VALUE *argv, VALUE obj)
 {
@@ -710,8 +699,7 @@ static VALUE omath_log(int argc, VALUE *argv, VALUE obj)
 }
 
 /*
- *  call-seq:
- *     log10(x)
+ * @overload log10(x)
  *
  *  Computes the base 10 logarithm of <i>x</i>.
  *
@@ -734,8 +722,7 @@ static VALUE omath_log10(VALUE obj, VALUE num)
 }
 
 /*
- *  call-seq:
- *     sqrt(x)
+ * @overload sqrt(x)
  *
  *  Computes the square root of <i>x</i>.
  *
@@ -764,17 +751,16 @@ static VALUE omath_sqrt(VALUE obj, VALUE num)
  *  Document-class: OraNumber
  *
  *  OraNumber is a ruby representation of
- *  {http://docs.oracle.com/cd/E11882_01/server.112/e17118/sql_elements001.htm#sthref118 Oracle NUMBER data type}.
+ *  {http://docs.oracle.com/database/121/SQLRF/sql_elements001.htm#SQLRF30020 Oracle NUMBER data type}.
  *  without precision and scale designators.
  */
 
 /*
- *  call-seq:
- *    OraNumber(expr = nil, fmt = nil, nlsparam = nil)
+ * @overload OraNumber(expr = nil, fmt = nil, nlsparam = nil)
  *
  *  Converts <i>expr</i> to a value of OraNumber. The <i>expr</i> can be a Numeric value
  *  or a String value. If it is a String value, optional <i>fmt</i> and <i>nlsparam</i>.
- *  is used as {http://docs.oracle.com/cd/E11882_01/server.112/e17118/functions211.htm Oracle SQL function TO_NUMBER}
+ *  is used as {http://docs.oracle.com/database/121/SQLRF/functions226.htm Oracle SQL function TO_NUMBER}
  *  does.
  *
  *  @example
@@ -802,12 +788,11 @@ static VALUE onum_f_new(int argc, VALUE *argv, VALUE self)
 }
 
 /*
- *  call-seq:
- *    initialize(expr = nil, fmt = nil, nlsparam = nil)
+ * @overload initialize(expr = nil, fmt = nil, nlsparam = nil)
  *
  *  Creates a value of OraNumber from <i>expr</i>. The <i>expr</i> can be a Numeric value
  *  or a String value. If it is a String value, optional <i>fmt</i> and <i>nlsparam</i>
- *  is used as {http://docs.oracle.com/cd/E11882_01/server.112/e17118/functions211.htm Oracle SQL function TO_NUMBER}
+ *  is used as {http://docs.oracle.com/database/121/SQLRF/functions226.htm Oracle SQL function TO_NUMBER}
  *  does.
  *
  *  @example
@@ -842,8 +827,7 @@ static VALUE onum_initialize(int argc, VALUE *argv, VALUE self)
 }
 
 /*
- *  call-seq:
- *    initialize_copy(obj)
+ * @overload initialize_copy(obj)
  *
  *  Replaces <i>self</i> with <i>obj</i>. <code>Object#clone</code> and <code>Object#dup</code>
  *  call this method to copy data unknown by the ruby interpreter.
@@ -909,8 +893,7 @@ static VALUE onum_neg(VALUE self)
 }
 
 /*
- *  call-seq:
- *    self + other
+ * @overload +(other)
  *
  *  Returns the sum of <i>self</i> and <i>other</i>.
  *  When <i>other</i>'s class is Integer, it returns an OraNumber value.
@@ -951,8 +934,7 @@ static VALUE onum_add(VALUE lhs, VALUE rhs)
 }
 
 /*
- *  call-seq:
- *    self - other
+ * @overload -(other)
  *
  *  Returns the difference of <i>self</i> and <i>other</i>.
  *  When <i>other</i>'s class is Integer, it returns an OraNumber value.
@@ -993,8 +975,7 @@ static VALUE onum_sub(VALUE lhs, VALUE rhs)
 }
 
 /*
- *  call-seq:
- *    self * other
+ * @overload *(other)
  *
  *  Returns the product of <i>self</i> and <i>other</i>.
  *  When <i>other</i>'s class is Integer, it returns an OraNumber value.
@@ -1035,8 +1016,7 @@ static VALUE onum_mul(VALUE lhs, VALUE rhs)
 }
 
 /*
- *  call-seq:
- *    self / other
+ * @overload /(other)
  *
  *  Returns the result of dividing <i>self</i> by <i>other</i>.
  *  When <i>other</i>'s class is Integer, it returns an OraNumber value.
@@ -1085,8 +1065,7 @@ static VALUE onum_div(VALUE lhs, VALUE rhs)
 }
 
 /*
- *  call-seq:
- *    self % other
+ * @overload %(other)
  *
  *  Returns the modulo after division of <i>self</i> by <i>other</i>.
  *
@@ -1118,8 +1097,7 @@ static VALUE onum_mod(VALUE lhs, VALUE rhs)
 }
 
 /*
- *  call-seq:
- *    self ** other
+ * @overload **(other)
  *
  *  Raises <i>self</i> to the power of <i>other</i>.
  *
@@ -1148,8 +1126,7 @@ static VALUE onum_power(VALUE lhs, VALUE rhs)
 }
 
 /*
- *  call-seq:
- *    self <=> other
+ * @overload <=>(other)
  *
  *  Returns -1, 0, or +1 depending on whether <i>self</i> is less than,
  *  equal to, or greater than <i>other</i>. This is the basis for the
@@ -1184,6 +1161,8 @@ static VALUE onum_cmp(VALUE lhs, VALUE rhs)
 }
 
 /*
+ * @overload floor
+ *
  *  Returns the largest <code>Integer</code> less than or equal to <i>self</i>.
  *
  *  @example
@@ -1203,6 +1182,8 @@ static VALUE onum_floor(VALUE self)
 }
 
 /*
+ * @overload ceil
+ *
  *  Returns the smallest <code>Integer</code> greater than or equal to <i>self</i>.
  *
  *  @example
@@ -1222,30 +1203,30 @@ static VALUE onum_ceil(VALUE self)
 }
 
 /*
- *  @overload round
+ * @overload round
  *
- *    Rounds <i>self</i> to the nearest <code>Integer</code>.
+ *  Rounds <i>self</i> to the nearest <code>Integer</code>.
  *
- *    @example
- *      OraNumber(1.49).round     # => 1
- *      OraNumber(1.5).round      # => 2
- *      OraNumber(-1.49).round    # => -1
- *      OraNumber(-1.5).round     # => -2
+ *  @example
+ *    OraNumber(1.49).round     # => 1
+ *    OraNumber(1.5).round      # => 2
+ *    OraNumber(-1.49).round    # => -1
+ *    OraNumber(-1.5).round     # => -2
  *
- *    @return [Integer]
+ *  @return [Integer]
  *
- *  @overload round(decplace)
+ * @overload round(decplace)
  *
- *    Rounds <i>onum</i> to a specified decimal place <i>decplace</i>.
+ *  Rounds <i>onum</i> to a specified decimal place <i>decplace</i>.
  *
- *    @example
- *      OraNumber(123.456).round(2)   # => #<OraNumber:123.46>
- *      OraNumber(123.456).round(1)   # => #<OraNumber:123.5>
- *      OraNumber(123.456).round(0)   # => #<OraNumber:123>
- *      OraNumber(123.456).round(-1)  # => #<OraNumber:120>
+ *  @example
+ *    OraNumber(123.456).round(2)   # => #<OraNumber:123.46>
+ *    OraNumber(123.456).round(1)   # => #<OraNumber:123.5>
+ *    OraNumber(123.456).round(0)   # => #<OraNumber:123>
+ *    OraNumber(123.456).round(-1)  # => #<OraNumber:120>
  *
- *    @param [Integer]
- *    @return [OraNumber]
+ *  @param [Integer] decplace
+ *  @return [OraNumber]
  */
 static VALUE onum_round(int argc, VALUE *argv, VALUE self)
 {
@@ -1263,8 +1244,7 @@ static VALUE onum_round(int argc, VALUE *argv, VALUE self)
 }
 
 /*
- *  call-seq:
- *    truncate(decplace = 0)
+ * @overload truncate(decplace = 0)
  *
  *  Truncates <i>self</i> to a specified decimal place <i>decplace</i>.
  *
@@ -1279,7 +1259,7 @@ static VALUE onum_round(int argc, VALUE *argv, VALUE self)
  *    OraNumber(-123.456).truncate(2)  # => #<OraNumber:-123.45>
  *    OraNumber(-123.456).truncate(-1) # => #<OraNumber:-120>
  *
- *  @param [Integer]
+ *  @param [Integer] decplace
  *  @return [OraNumber]
  *  @todo returns <i>Integer</i> when <i>decplace</i> is not specified.
  */
@@ -1295,8 +1275,7 @@ static VALUE onum_trunc(int argc, VALUE *argv, VALUE self)
 }
 
 /*
- *  call-seq:
- *     round_prec(digits)
+ * @overload round_prec(digits)
  *
  *  Rounds <i>self</i> to a specified number of decimal digits.
  *  This method is available on Oracle 8.1 client or upper.
@@ -1306,6 +1285,7 @@ static VALUE onum_trunc(int argc, VALUE *argv, VALUE self)
  *    OraNumber(12.34).round_prec(2) # => #<OraNumber:12>
  *    OraNumber(123.4).round_prec(2) # => #<OraNumber:120>
  *
+ *  @param [Integer] digits
  *  @return [OraNumber]
  */
 static VALUE onum_round_prec(VALUE self, VALUE ndigs)
@@ -1318,12 +1298,11 @@ static VALUE onum_round_prec(VALUE self, VALUE ndigs)
 }
 
 /*
- *  call-seq:
- *     onum.to_char(fmt = nil, nlsparam = nil)
+ * @overload onum.to_char(fmt = nil, nlsparam = nil)
  *
  *  Returns a string containing a representation of self.
  *  <i>fmt</i> and <i>nlsparam</i> are used as 
- *  {http://docs.oracle.com/cd/E11882_01/server.112/e17118/functions201.htm Oracle SQL function TO_CHAR(number)}
+ *  {http://docs.oracle.com/database/121/SQLRF/functions216.htm Oracle SQL function TO_CHAR(number)}
  *  does.
  *
  *  @example
@@ -1384,6 +1363,8 @@ static VALUE onum_to_char(int argc, VALUE *argv, VALUE self)
 }
 
 /*
+ * @overload to_s
+ *
  *  Returns a string containing a representation of self.
  *
  *  @return [String]
@@ -1396,6 +1377,8 @@ static VALUE onum_to_s(VALUE self)
 }
 
 /*
+ * @overload to_i
+ *
  *  Returns <i>self</i> truncated to an <code>Integer</code>.
  *
  *  @return [Integer]
@@ -1425,6 +1408,8 @@ static VALUE onum_to_f(VALUE self)
 }
 
 /*
+ * @overload to_r
+ *
  *  Returns <i>self</i> as a <code>Rational</code>.
  *
  *  @return [Rational]
@@ -1466,6 +1451,8 @@ static VALUE onum_to_r(VALUE self)
 }
 
 /*
+ * @overload to_d
+ *
  *  Returns <i>self</i> as a <code>BigDecimal</code>.
  *
  *  @return [BigDecimal]
@@ -1492,13 +1479,14 @@ static VALUE onum_to_d_real(OCINumber *num, OCIError *errhp)
 }
 
 /*
+ * @overload has_decimal_part?
+ *
  *  Returns <code>true</code> if <i>self</i> has a decimal part.
  *
  *  @example
  *    OraNumber(10).has_decimal_part?   # => false
  *    OraNumber(10.1).has_decimal_part? # => true
  *
- *  @return [true or false]
  *  @since 2.0.5
  */
 static VALUE onum_has_decimal_part_p(VALUE self)
@@ -1511,6 +1499,8 @@ static VALUE onum_has_decimal_part_p(VALUE self)
 }
 
 /*
+ * @overload to_onum
+ *
  *  Returns self.
  *
  *  @return [OraNumber]
@@ -1521,9 +1511,10 @@ static VALUE onum_to_onum(VALUE self)
 }
 
 /*
+ * @overload zero?
+ *
  *  Returns <code>true</code> if <i>self</i> is zero.
  *
- *  @return [true or false]
  */
 static VALUE onum_zero_p(VALUE self)
 {
@@ -1535,6 +1526,8 @@ static VALUE onum_zero_p(VALUE self)
 }
 
 /*
+ * @overload abs
+ *
  *  Returns the absolute value of <i>self</i>.
  *
  *  @return [OraNumber]
@@ -1549,8 +1542,7 @@ static VALUE onum_abs(VALUE self)
 }
 
 /*
- *  call-seq:
- *     shift(ndigits)
+ * @overload shift(ndigits)
  *
  *  Returns <i>self</i> shifted by <i>ndigits</i>
  *  This method is available on Oracle 8.1 client or upper.
@@ -1559,6 +1551,7 @@ static VALUE onum_abs(VALUE self)
  *     OraNumber(123).shift(3)  # => #<OraNumber:123000>
  *     OraNumber(123).shift(-3) # => #<OraNumber:0.123>
  *
+ *  @param [Integer] ndigits
  *  @return [OraNumber]
  */
 static VALUE onum_shift(VALUE self, VALUE exp)
@@ -1571,8 +1564,10 @@ static VALUE onum_shift(VALUE self, VALUE exp)
 }
 
 /*
+ * @overload dump
+ *
  *  Returns internal representation whose format is same with the return value of
- *  {http://docs.oracle.com/cd/E11882_01/server.112/e17118/functions055.htm Oracle SQL function DUMP}.
+ *  {http://docs.oracle.com/database/121/SQLRF/functions062.htm Oracle SQL function DUMP}.
  *
  *  @example
  *    OraNumber.new(100).dump  #=> "Typ=2 Len=2: 194,2"
@@ -1625,8 +1620,7 @@ static VALUE onum_inspect(VALUE self)
 }
 
 /*
- *  call-seq:
- *    _dump
+ * @overload _dump
  *
  *  Serializes <i>self</i>.
  *  This method is called by Marshal.dump().
@@ -1645,15 +1639,14 @@ static VALUE onum__dump(int argc, VALUE *argv, VALUE self)
 }
 
 /*
- *  call-seq:
- *    _load(bytes)
+ * @overload _load(bytes)
  *
  *  Restores a byte stream serialized by {OraNumber#_dump}.
  *  This method is called by Marshal.load() to deserialize a byte stream
  *  created by Marshal.dump().
  *
  *  @param [String] bytes a byte stream
- *  @return [OraNumber] an deserialized object
+ *  @return [OraNumber] a deserialized object
  */
 static VALUE
 onum_s_load(VALUE klass, VALUE str)

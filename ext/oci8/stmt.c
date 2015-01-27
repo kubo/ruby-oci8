@@ -3,7 +3,7 @@
  * stmt.c - part of ruby-oci8
  *         implement the methods of OCIStmt.
  *
- * Copyright (C) 2002-2014 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2015 Kubo Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
@@ -59,13 +59,12 @@ static VALUE oci8_stmt_alloc(VALUE klass)
 }
 
 /*
- * call-seq:
- *   __initialize(connection, sql_statement)
+ * @overload __initialize(connection, sql_statement)
  *
- * @param [OCI8] connection
- * @param [String] sql_statement
+ *  @param [OCI8] connection
+ *  @param [String] sql_statement
  *
- * @private
+ *  @private
  */
 static VALUE oci8_stmt_initialize(VALUE self, VALUE svc, VALUE sql)
 {
@@ -105,13 +104,12 @@ static VALUE oci8_stmt_initialize(VALUE self, VALUE svc, VALUE sql)
 }
 
 /*
- * call-seq:
- *   __define(position, bindobj)
+ * @overload __define(position, bindobj)
  *
- * @param [Integer] position
- * @param [OCI8::BindType::Base] bindobj
+ *  @param [Integer] position
+ *  @param [OCI8::BindType::Base] bindobj
  *
- * @private
+ *  @private
  */
 static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
 {
@@ -144,13 +142,12 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
 }
 
 /*
- * call-seq:
- *   __bind(placeholder, bindobj)
+ * @overload __bind(placeholder, bindobj)
  *
- * @param [Integer, String or Symbol] placeholder
- * @param [OCI8::BindType::Base] bindobj
+ *  @param [Integer, String or Symbol] placeholder
+ *  @param [OCI8::BindType::Base] bindobj
  *
- * @private
+ *  @private
  */
 static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
 {
@@ -237,12 +234,11 @@ static sword oci8_call_stmt_execute(oci8_svcctx_t *svcctx, oci8_stmt_t *stmt, ub
 }
 
 /*
- * call-seq:
- *   __execute(iteration_count)
+ * @overload __execute(iteration_count)
  *
- * @param [Integer] iteration_count
+ *  @param [Integer] iteration_count
  *
- * @private
+ *  @private
  */
 static VALUE oci8_stmt_execute(VALUE self, VALUE iteration_count)
 {
@@ -256,13 +252,15 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE iteration_count)
 }
 
 /*
- * call-seq:
- *   __fetch(connection)
+ * @overload __fetch(connection)
  *
- * @param [OCI8] connection
- * @return [true or false] true on success and false when all rows are fetched.
+ *  Fetches one row and set the result to <code>@define_handles</code>.
+ *  This is called by private methods of OCI8::Cursor.
  *
- * @private
+ *  @param [OCI8] connection
+ *  @return [true or false] true on success and false when all rows are fetched.
+ *
+ *  @private
  */
 static VALUE oci8_stmt_fetch(VALUE self, VALUE svc)
 {
@@ -293,13 +291,14 @@ static VALUE oci8_stmt_fetch(VALUE self, VALUE svc)
 }
 
 /*
- * call-seq:
- *   __paramGet(pos)
+ * @overload __paramGet(pos)
  *
- * @param [Fixnum] pos Column position which starts from one
- * @return [OCI8::Metadata::Base]
+ *  Returns the definition of column specified by <i>pos</i>
  *
- * @private
+ *  @param [Fixnum] pos Column position which starts from one
+ *  @return [OCI8::Metadata::Base]
+ *
+ *  @private
  */
 static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
 {
@@ -316,15 +315,15 @@ static VALUE oci8_stmt_get_param(VALUE self, VALUE pos)
 }
 
 /*
- * Get the rowid of the last inserted, updated or deleted row.
- * This cannot be used for select statements.
+ *  Gets the rowid of the last inserted, updated or deleted row.
+ *  This cannot be used for select statements.
  *
- * @example
- *   cursor = conn.parse('INSERT INTO foo_table values(:1, :2)', 1, 2)
- *   cursor.exec
- *   cursor.rowid # => "AAAFlLAAEAAAAG9AAA", the inserted row's rowid
+ *  @example
+ *    cursor = conn.parse('INSERT INTO foo_table values(:1, :2)', 1, 2)
+ *    cursor.exec
+ *    cursor.rowid # => "AAAFlLAAEAAAAG9AAA", the inserted row's rowid
  *
- * @return [String]
+ *  @return [String]
  */
 static VALUE oci8_stmt_get_rowid(VALUE self)
 {

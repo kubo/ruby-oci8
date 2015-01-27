@@ -1,3 +1,8 @@
+2015-01-27  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/ocihandle.c, ext/oci8/ocinumber.c, ext/oci8/oradate.c,
+	  ext/oci8/stmt.c: Suppreess warnings: "[warn]: @param tag has unknown parameter name: xxx"
+            by yard.
+
 2015-01-20  Kubo Takehiro  <kubo@jiubao.org>
 	* lib/oci8/oci8.rb: Add OCI8#send_timeout, OCI8#send_timeout=,
 	    OCI8#recv_timeout and OCI8#recv_timeout=.

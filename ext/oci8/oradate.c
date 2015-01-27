@@ -2,7 +2,7 @@
 /*
  *  oradate.c
  *
- * Copyright (C) 2002-2014 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2015 Kubo Takehiro <kubo@jiubao.org>
  *
  * date and time between 4712 B.C. and 9999 A.D.
  */
@@ -107,8 +107,7 @@ static VALUE ora_date_s_allocate(VALUE klass)
 }
 
 /*
- *  call-seq:
- *   initialize(year = 1, month = 1, day = 1, hour = 0, min = 0, sec = 0)
+ * @overload initialize(year = 1, month = 1, day = 1, hour = 0, min = 0, sec = 0)
  *
  *  Returns an <code>OraDate</code> object initialized to the specified date and time.
  *
@@ -116,6 +115,13 @@ static VALUE ora_date_s_allocate(VALUE klass)
  *    OraDate.new              # => 0001-01-01 00:00:00
  *    OraDate.new(2012)        # => 2012-01-01 00:00:00
  *    OraDate.new(2012, 3, 4)  # => 2012-03-04 00:00:00
+ *
+ *  @param [Fixnum] year year
+ *  @param [Fixnum] month month
+ *  @param [Fixnum] day  day of month
+ *  @param [Fixnum] hour hour
+ *  @param [Fixnum] min  minute
+ *  @param [Fixnum] sec  second
  */
 static VALUE ora_date_initialize(int argc, VALUE *argv, VALUE self)
 {
@@ -185,6 +191,8 @@ static VALUE ora_date_initialize_copy(VALUE lhs, VALUE rhs)
 }
 
 /*
+ * @overload now
+ *
  *  Returns an <code>OraDate</code> object initialized to the
  *  current local time.
  *
@@ -216,6 +224,8 @@ static VALUE ora_date_s_now(int argc, VALUE *argv, VALUE klass)
 }
 
 /*
+ * @overload to_s
+ *
  *  Returns a string representing <i>self</i>.
  *  The string format is 'yyyy/mm/dd hh:mi:ss'.
  *
@@ -232,6 +242,8 @@ static VALUE ora_date_to_s(VALUE self)
 }
 
 /*
+ * @overload to_a
+ *
  *  Returns a 6-element <i>array</i> of year, month, day, hour, minute and second.
  *
  *  @return [Array]
@@ -251,6 +263,8 @@ static VALUE ora_date_to_a(VALUE self)
 }
 
 /*
+ * @overload year
+ *
  *  Returns the year field of <i>self</i>.
  *
  *  @return [Fixnum]
@@ -263,12 +277,11 @@ static VALUE ora_date_year(VALUE self)
 }
 
 /*
- *  call-seq:
- *    year = num
+ * @overload year=num
  *
  *  Assigns <i>num</i> to the year field of <i>self</i>.
  *
- *  @param [Fixnum] number between -4712 and 9999
+ *  @param [Fixnum] num number between -4712 and 9999
  */
 static VALUE ora_date_set_year(VALUE self, VALUE val)
 {
@@ -281,6 +294,8 @@ static VALUE ora_date_set_year(VALUE self, VALUE val)
 }
 
 /*
+ * @overload month
+ *
  *  Returns the month field of <i>self</i>.
  *  The month starts with one.
  *
@@ -294,13 +309,12 @@ static VALUE ora_date_month(VALUE self)
 }
 
 /*
- *  call-seq:
- *    month = num
+ * @overload month=num
  *
  *  Assigns <i>num</i> to the month field of <i>self</i>.
  *  The month starts with one.
  *
- *  @param [Fixnum] number between 1 and 12
+ *  @param [Fixnum] num number between 1 and 12
  */
 static VALUE ora_date_set_month(VALUE self, VALUE val)
 {
@@ -313,6 +327,8 @@ static VALUE ora_date_set_month(VALUE self, VALUE val)
 }
 
 /*
+ * @overload day
+ *
  *  Returns the day of month field of <i>self</i>.
  *
  *  @return [Fixnum]
@@ -325,12 +341,11 @@ static VALUE ora_date_day(VALUE self)
 }
 
 /*
- *  call-seq:
- *    day = num
+ * @overload day=num
  *
  *  Assigns <i>num</i> to the day of month field of <i>self</i>.
  *
- *  @param [Fixnum] number between 1 and 31
+ *  @param [Fixnum] num number between 1 and 31
  */
 static VALUE ora_date_set_day(VALUE self, VALUE val)
 {
@@ -343,6 +358,8 @@ static VALUE ora_date_set_day(VALUE self, VALUE val)
 }
 
 /*
+ * @overload hour
+ *
  *  Returns the hour field of <i>self</i>.
  *
  *  @return [Fixnum]
@@ -355,12 +372,11 @@ static VALUE ora_date_hour(VALUE self)
 }
 
 /*
- *  call-seq:
- *    hour = num
+ * @overload hour=num
  *
  *  Assigns <i>num</i> to the hour field of <i>self</i>.
  *
- *  @param [Fixnum] number between 0 and 23
+ *  @param [Fixnum] num number between 0 and 23
  */
 static VALUE ora_date_set_hour(VALUE self, VALUE val)
 {
@@ -373,6 +389,8 @@ static VALUE ora_date_set_hour(VALUE self, VALUE val)
 }
 
 /*
+ * @overload minute
+ *
  *  Returns the minute field of <i>self</i>.
  *
  *  @return [Fixnum]
@@ -385,12 +403,11 @@ static VALUE ora_date_minute(VALUE self)
 }
 
 /*
- *  call-seq:
- *    minute = num
+ * @overload minute=num
  *
  *  Assigns <i>num</i> to the minute field of <i>self</i>.
  *
- *  @param [Fixnum] number between 0 and 59
+ *  @param [Fixnum] num number between 0 and 59
  */
 static VALUE ora_date_set_minute(VALUE self, VALUE val)
 {
@@ -403,6 +420,8 @@ static VALUE ora_date_set_minute(VALUE self, VALUE val)
 }
 
 /*
+ * @overload second
+ *
  *  Returns the second field of <i>self</i>.
  *
  *  @return [Fixnum]
@@ -415,12 +434,11 @@ static VALUE ora_date_second(VALUE self)
 }
 
 /*
- *  call-seq:
- *    second = num
+ * @overload second=num
  *
  *  Assigns <i>num</i> to the second field of <i>self</i>.
  *
- *  @param [Fixnum] number between 0 and 59
+ *  @param [Fixnum] num number between 0 and 59
  */
 static VALUE ora_date_set_second(VALUE self, VALUE val)
 {
@@ -434,6 +452,8 @@ static VALUE ora_date_set_second(VALUE self, VALUE val)
 }
 
 /*
+ * @overload trunc
+ *
  *  Truncates hour, minute and second fields to zero.
  *
  *  @example
@@ -453,11 +473,12 @@ static VALUE ora_date_trunc(VALUE self)
 }
 
 /*
- *  call-seq:
- *     self <=> other
+ * @overload <=>(other)
  *
  *  Returns -1, 0, or +1 depending on whether <i>self</i> is less than,
  *  equal to, or greater than <i>other</i>.
+ *
+ *  @return [-1, 0, +1]
  */
 static VALUE ora_date_cmp(VALUE self, VALUE val)
 {
@@ -500,6 +521,8 @@ static VALUE ora_date_hash(VALUE self)
 }
 
 /*
+ * @overload _dump
+ *
  *  Serializes <i>self</i>.
  *  This method is called by Marshal.dump().
  *
@@ -514,8 +537,7 @@ static VALUE ora_date_dump(int argc, VALUE *argv, VALUE self)
 }
 
 /*
- *  call-seq:
- *    _load(bytes)
+ * @overload _load(bytes)
  *
  *  Restores a byte stream serialized by {OraDate#_dump}.
  *  This method is called by Marshal.load() to deserialize a byte stream
