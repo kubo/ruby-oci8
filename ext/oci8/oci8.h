@@ -40,6 +40,7 @@ extern "C"
 #define ORAVER_10_1 ORAVERNUM(10, 1, 0, 0, 0)
 #define ORAVER_10_2 ORAVERNUM(10, 2, 0, 0, 0)
 #define ORAVER_11_1 ORAVERNUM(11, 1, 0, 0, 0)
+#define ORAVER_12_1 ORAVERNUM(12, 1, 0, 0, 0)
 
 #include "extconf.h"
 #ifdef HAVE_TYPE_RB_ENCODING

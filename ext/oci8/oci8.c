@@ -30,6 +30,9 @@ extern rb_pid_t rb_w32_getpid(void);
 #ifndef OCI_ATTR_CLIENT_INFO
 #define OCI_ATTR_CLIENT_INFO 368
 #endif
+#ifndef OCI_ATTR_TRANSACTION_IN_PROGRESS
+#define OCI_ATTR_TRANSACTION_IN_PROGRESS 484
+#endif
 
 #define OCI8_STATE_SESSION_BEGIN_WAS_CALLED 0x01
 #define OCI8_STATE_SERVER_ATTACH_WAS_CALLED 0x02
@@ -425,9 +428,15 @@ static void *simple_logoff_execute(void *arg)
 {
     simple_logoff_arg_t *sla = (simple_logoff_arg_t *)arg;
     OCIError *errhp = oci8_errhp;
+    boolean txn = TRUE;
     sword rv;
 
-    OCITransRollback(sla->svchp, errhp, OCI_DEFAULT);
+    if (oracle_client_version >= ORAVER_12_1) {
+        OCIAttrGet(sla->usrhp, OCI_HTYPE_SESSION, &txn, NULL, OCI_ATTR_TRANSACTION_IN_PROGRESS, errhp);
+    }
+    if (txn) {
+        OCITransRollback(sla->svchp, errhp, OCI_DEFAULT);
+    }
     rv = OCILogoff(sla->svchp, errhp);
     xfree(sla);
     return (void*)(VALUE)rv;
@@ -466,9 +475,15 @@ static void *complex_logoff_execute(void *arg)
 {
     complex_logoff_arg_t *cla = (complex_logoff_arg_t *)arg;
     OCIError *errhp = oci8_errhp;
+    boolean txn;
     sword rv = OCI_SUCCESS;
 
-    OCITransRollback(cla->svchp, errhp, OCI_DEFAULT);
+    if (oracle_client_version >= ORAVER_12_1) {
+        OCIAttrGet(cla->usrhp, OCI_HTYPE_SESSION, &txn, NULL, OCI_ATTR_TRANSACTION_IN_PROGRESS, errhp);
+    }
+    if (txn) {
+        OCITransRollback(cla->svchp, errhp, OCI_DEFAULT);
+    }
 
     if (cla->state & OCI8_STATE_SESSION_BEGIN_WAS_CALLED) {
         rv = OCISessionEnd(cla->svchp, oci8_errhp, cla->usrhp, OCI_DEFAULT);

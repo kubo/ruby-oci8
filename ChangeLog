@@ -1,3 +1,7 @@
+2015-03-01  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.c, ext/oci8/oci8.h: Rollback transactions on
+	    logoff only when the transactions are in progress.
+
 2015-01-27  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/ocihandle.c, ext/oci8/ocinumber.c, ext/oci8/oradate.c,
 	  ext/oci8/stmt.c: Suppreess warnings: "[warn]: @param tag has unknown parameter name: xxx"
