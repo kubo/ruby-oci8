@@ -55,7 +55,7 @@ class OCI8
     # example:
     #   cursor = conn.parse("SELECT * FROM emp WHERE ename = :ename")
     #   cursor.bind_param(1, 'SMITH') # bind by position
-    #     ...or...
+    #   # ...or...
     #   cursor.bind_param(':ename', 'SMITH') # bind by name
     #
     # To bind as number, Fixnum and Float are available, but Bignum is

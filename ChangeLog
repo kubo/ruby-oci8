@@ -1,4 +1,9 @@
 2015-03-01  Kubo Takehiro  <kubo@jiubao.org>
+	* lib/oci8/cursor.rb, lib/oci8/properties.rb:
+	    Fix errors while generating documents by yard such as
+	    "Exception occurred while generating 'OCI8/Cursor.html'."
+
+2015-03-01  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.c, ext/oci8/oci8.h: Rollback transactions on
 	    logoff only when the transactions are in progress.
 

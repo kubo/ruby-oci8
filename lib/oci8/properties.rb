@@ -124,7 +124,7 @@ class OCI8
   #     
   #       require 'oci8'
   #       OCI8.properties[:events_mode] = true # works fine.
-  #       ... call some OCI methods ...
+  #       # ... call some OCI methods ...
   #       OCI8.properties[:events_mode] = true # raises a runtime error.
   #     
   #     *Since:* 2.1.4
