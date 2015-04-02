@@ -1,3 +1,8 @@
+2015-04-02  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c: Fix SEGV when a temporary LOB is freed by GC
+	    while reading another lob and the ruby version is 2.0.0 or
+	    upper.
+
 2015-03-01  Kubo Takehiro  <kubo@jiubao.org>
 	* lib/oci8/cursor.rb, lib/oci8/properties.rb:
 	    Fix errors while generating documents by yard such as

@@ -66,7 +66,7 @@ static void oci8_lob_free(oci8_base_t *base)
         && OCILobIsTemporary(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_temporary) == OCI_SUCCESS
         && is_temporary) {
 
-#ifdef HAVE_RB_THREAD_BLOCKING_REGION
+#ifdef NATIVE_THREAD_WITH_GVL
         oci8_temp_lob_t *temp_lob = ALLOC(oci8_temp_lob_t);
 
         temp_lob->next = svcctx->temp_lobs;
