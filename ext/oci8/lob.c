@@ -661,9 +661,9 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
     oci8_svcctx_t *svcctx = check_svcctx(lob);
     ub4 length;
     ub4 nchar;
+    long nbyte;
     ub4 amt;
     sword rv;
-    char buf[8192];
     size_t buf_size_in_char;
     VALUE size;
     VALUE v = rb_ary_new();
@@ -683,9 +683,13 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
         if (nchar > length)
             nchar = length;
     }
+    nbyte = oci8_nls_ratio * (long)nchar;
     amt = nchar;
-    buf_size_in_char = sizeof(buf) / lob->char_width;
+    buf_size_in_char = nbyte / lob->char_width;
     do {
+        VALUE strbuf = rb_str_buf_new(nbyte);
+        char *buf = RSTRING_PTR(strbuf);
+
         if (lob->state == S_BFILE_CLOSE) {
             rv = OCILobFileOpen_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, OCI_FILE_READONLY);
             if (rv == OCI_ERROR && oci8_get_error_code(oci8_errhp) == 22290) {
@@ -708,8 +712,8 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
             lob->state = S_BFILE_OPEN;
         }
         /* initialize buf in zeros everytime to check a nul characters. */
-        memset(buf, 0, sizeof(buf));
-        rv = OCILobRead_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, buf, sizeof(buf), NULL, NULL, 0, lob->csfrm);
+        memset(buf, 0, nbyte);
+        rv = OCILobRead_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, buf, nbyte, NULL, NULL, 0, lob->csfrm);
         svcctx->suppress_free_temp_lobs = 0;
         switch (rv) {
         case OCI_SUCCESS:
@@ -738,7 +742,7 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
          * amt is increaded until a nul character to know the actually
          * read size.
          */
-        while (amt < sizeof(buf) && buf[amt] != '\0') {
+        while (amt < nbyte && buf[amt] != '\0') {
             amt++;
         }
 
@@ -748,17 +752,23 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
         if (amt > buf_size_in_char)
             rb_raise(eOCIException, "Too large buffer fetched or you set too large size of a character.");
         amt *= lob->char_width;
-        rb_ary_push(v, rb_str_new(buf, amt));
+        rb_str_set_len(strbuf, amt);
+        rb_ary_push(v, strbuf);
     } while (rv == OCI_NEED_DATA);
     lob->pos += nchar;
     if (nchar == length) {
         lob_close(lob);
         bfile_close(lob);
     }
-    if (RARRAY_LEN(v) == 0) {
+    switch (RARRAY_LEN(v)) {
+    case 0:
         return Qnil;
+    case 1:
+        v = RARRAY_PTR(v)[0];
+        break;
+    default:
+        v = rb_ary_join(v, Qnil);
     }
-    v = rb_ary_join(v, Qnil);
     OBJ_TAINT(v);
     if (lob->lobtype == OCI_TEMP_CLOB) {
         /* set encoding */
