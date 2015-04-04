@@ -1,5 +1,66 @@
 # @markup markdown
 
+2.1.8
+=====
+
+New Features
+------------
+
+### Send and receive timeouts
+
+New methods {OCI8#send_timeout}, {OCI8#send_timeout=}, {OCI8#recv_timeout} and {OCI8#recv_timeout=}
+were added. They are available on Oracle 11.1 or upper.
+
+Use them at your own risk because they use [undocumented OCI handle attributes](http://blog.jiubao.org/2015/01/undocumented-oci-handle-attributes.html).
+
+### Cancel read system calls not to prevent ruby process termination
+
+When network quality is poor and incoming packets are lost irregularly,
+the ruby process termination may be blocked until TCP keepalive time (2 hours).
+
+By setting [OCI8.properties[:cancel_read_at_exit]](OCI8.html#properties-class_method)
+true, read system calls, which may wait incoming packets, are canceled at exit.
+See: [github issue #56](https://github.com/kubo/ruby-oci8/issues/56)
+
+This feature is disabled by default because it uses [unusual technique](https://github.com/kubo/plthook)
+which hooks read system calls issued by Oracle client library and it works only on
+Linux, Windows and OSX.
+
+### RGenGC
+
+Object allocation code is rewritten to use [RGenGC](http://www.infoq.com/news/2013/12/ruby21).
+
+Fixed Issues
+------------
+
+-   Raises an exception when a closed OCI8 object is used.
+    Using a closed cursor causes various problems such as segmentation
+    fault, nil comparison error and so on.
+    See: [github issue #61](https://github.com/kubo/ruby-oci8/issues/61)
+    and [github issue #62](https://github.com/kubo/ruby-oci8/issues/62)
+
+    (reported by Mike Bourgeous)
+
+-   Fix "RuntimeError:executing in another thread"
+    when a closed connection is used. This bug was introduced by
+    the previously listed issue.
+    See: [github issue #64](https://github.com/kubo/ruby-oci8/issues/64)
+
+    (reported by Yasuo Honda)
+
+-   Fix SEGV when a temporary LOB is freed by GC while reading another
+    lob and the ruby version is 2.0.0 or upper.
+
+-   Skip rollback on logoff when no transactions are in progress.
+
+-   Fix a broken link in README.md.
+    See: [github issue #67](https://github.com/kubo/ruby-oci8/issues/67)
+
+    (reported by Zloy)
+
+-   Don't use SYM2ID on ruby 2.2.0 or later not to make symbols unGCable
+    by [Symbol GC](http://www.infoq.com/news/2014/12/ruby-2.2.0-released).
+
 2.1.7
 =====
 
