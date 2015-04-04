@@ -117,6 +117,13 @@ typedef struct OCICPool OCICPool;
 #define RARRAY_LEN(obj) RARRAY(obj)->len
 #endif
 
+#ifndef HAVE_RB_STR_SET_LEN
+#define rb_str_set_len(s, l) do { \
+    RSTRING(s)->len = (l); \
+    RSTRING(s)->ptr[l] = '\0'; \
+} while (0)
+#endif
+
 /* new macros in ruby 1.9.
  * define compatible macros for ruby 1.8 or lower.
  */

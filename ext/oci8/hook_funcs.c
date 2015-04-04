@@ -7,6 +7,7 @@
 #include "oci8.h"
 #include "plthook.h"
 #ifndef WIN32
+#include <unistd.h>
 #include <sys/socket.h>
 #endif
 

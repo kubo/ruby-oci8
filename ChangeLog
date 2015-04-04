@@ -1,4 +1,9 @@
-2015-04-04  KUBO Takehiro  <kubo@jiubao.org>
+2015-04-04  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, ext/oci8/oci8.h: Add a macro for old rubies which
+	    don't have rb_str_set_len().
+	* ext/oci8/hook_funcs.c: Suppress a warning.
+
+2015-04-04  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c: Increase the buffer size to read a LOB.
 
 2015-04-04  Kubo Takehiro  <kubo@jiubao.org>
