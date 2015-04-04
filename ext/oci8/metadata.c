@@ -2,7 +2,7 @@
 /*
  * metadata.c
  *
- * Copyright (C) 2006-2014 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2006-2015 Kubo Takehiro <kubo@jiubao.org>
  *
  * implement private methods of classes in OCI8::Metadata module.
  *
@@ -183,12 +183,12 @@ static VALUE oci8_do_describe(VALUE self, void *objptr, ub4 objlen, ub1 objtype,
  * call-seq:
  *   __describe(name, klass, check_public)
  *
- * @param [String] name  object name
- * @param [subclass of OCI8::Metadata::Base] klass
- * @param [Boolean] check_public  +true+ to look up the object as a public synonym when
- *                                the object does not exist in the current schema and
- *                                the name includes no dots.
- * @return [subclass of OCI8::Metadata::Base]
+ *  @param [String] name  object name
+ *  @param [subclass of OCI8::Metadata::Base] klass
+ *  @param [Boolean] check_public  +true+ to look up the object as a public synonym when
+ *                                 the object does not exist in the current schema and
+ *                                 the name includes no dots.
+ *  @return [subclass of OCI8::Metadata::Base]
  *
  * @private
  */

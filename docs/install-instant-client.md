@@ -45,6 +45,8 @@ Note:
 * use libclntsh.sl instead of libclntsh.so on HP-UX PA-RISC.
 * use libclntsh.dylib instead of libclntsh.so on Mac OS X.
 * skip this step for AIX.
+* run `yum install libaio` also on Redhat.
+* run `apt-get install libaio1` also on Ubuntu.
 
 Set the library search path, whose name depends on the OS, to point to
 the installed directory.

@@ -259,18 +259,38 @@ static VALUE oci8_svcctx_alloc(VALUE klass)
 
 static VALUE oracle_client_vernum; /* Oracle client version number */
 
+/*
+ * @overload oracle_client_vernum
+ *
+ *  Returns Oracle client version as <i>Integer</i>.
+ *  The Oracle version is encoded in 32-bit integer.
+ *  It is devided into 5 parts: 8, 4, 8, 4 and 8 bits.
+ *
+ *  @example
+ *    # Oracle 9.2.0.4
+ *    oracle_client_vernum # => 0x09200400
+ *                         # => 0x09 2 00 4 00
+ *                         # => 9.2.0.4.0
+ *
+ *    # Oracle 11.1.0.7.0
+ *    oracle_client_vernum # => 0x0b100700
+ *                         # => 0x0b 1 00 7 00
+ *                         # => 11.1.0.7.0
+ *
+ *  @return [Integer]
+ *  @private
+ */
 static VALUE oci8_s_oracle_client_vernum(VALUE klass)
 {
     return oracle_client_vernum;
 }
 
 /*
- * call-seq:
- *   OCI8.__get_prop(key)
+ * @overload OCI8.__get_prop(key)
  *
- * @param [Fixnum] key    1 or 2
- *
- * @private
+ *  @param [Fixnum] key    1, 2 or 3
+ *  @return [Object]       depends on +key+.
+ *  @private
  */
 static VALUE oci8_s_get_prop(VALUE klass, VALUE key)
 {
@@ -286,13 +306,12 @@ static VALUE oci8_s_get_prop(VALUE klass, VALUE key)
 
 
 /*
- * call-seq:
- *   OCI8.__set_prop(key, value)
+ * @overload OCI8.__set_prop(key, value)
  *
- * @param [Fixnum] key    1 or 2
- * @param [Object] value  depends on +key+.
+ *  @param [Fixnum] key    1, 2 or 3
+ *  @param [Object] value  depends on +key+.
  *
- * @private
+ *  @private
  */
 static VALUE oci8_s_set_prop(VALUE klass, VALUE key, VALUE val)
 {
@@ -330,23 +349,20 @@ static VALUE oci8_s_set_prop(VALUE klass, VALUE key, VALUE val)
 }
 
 /*
- * call-seq:
- *   OCI8.error_message(message_no) -> string
+ * @overload error_message(message_no)
  *
- * Get the Oracle error message specified by message_no.
- * Its language depends on NLS_LANGUAGE.
+ *  Get the Oracle error message specified by message_no.
+ *  Its language depends on NLS_LANGUAGE.
  *
- * Note: This method is unavailable if the Oracle client version is 8.0.
+ *  @example
+ *    # When NLS_LANG is AMERICAN_AMERICA.AL32UTF8
+ *    OCI8.error_message(1) # => "ORA-00001: unique constraint (%s.%s) violated"
  *
- * example:
- *   # When NLS_LANG is AMERICAN_AMERICA.AL32UTF8
- *   OCI8.error_message(1) # => "ORA-00001: unique constraint (%s.%s) violated"
- *   
- *   # When NLS_LANG is FRENCH_FRANCE.AL32UTF8
- *   OCI8.error_message(1) # => "ORA-00001: violation de contrainte unique (%s.%s)"
+ *    # When NLS_LANG is FRENCH_FRANCE.AL32UTF8
+ *    OCI8.error_message(1) # => "ORA-00001: violation de contrainte unique (%s.%s)"
  *
- * @param [Fixnum] message_no   Oracle error message number
- * @return [String]             Oracle error message
+ *  @param [Fixnum] message_no   Oracle error message number
+ *  @return [String]             Oracle error message
  */
 static VALUE oci8_s_error_message(VALUE klass, VALUE msgid)
 {
@@ -381,17 +397,18 @@ void oci8_do_parse_connect_string(VALUE conn_str, VALUE *user, VALUE *pass, VALU
 }
 
 /*
- * call-seq:
- *   parse_connect_string(string) -> [username, password, dbname, privilege]
+ * @overload parse_connect_string(connect_string)
  *
- * Extracts +username+, +password+, +dbname+ and +privilege+ from the specified +string+.
+ *  Extracts +username+, +password+, +dbname+ and +privilege+ from +connect_string+.
  *
- * example:
- *   "scott/tiger" -> ["scott", "tiger", nil, nil],
- *   "scott/tiger@oradb.example.com" -> ["scott", "tiger", "oradb.example.com", nil]
- *   "sys/change_on_install as sysdba" -> ["sys", "change_on_install", nil, :SYSDBA]
+ *  @example
+ *    "scott/tiger" -> ["scott", "tiger", nil, nil],
+ *    "scott/tiger@oradb.example.com" -> ["scott", "tiger", "oradb.example.com", nil]
+ *    "sys/change_on_install as sysdba" -> ["sys", "change_on_install", nil, :SYSDBA]
  *
- * @private
+ *  @param [String] connect_string
+ *  @return [Array] [username, password, dbname]
+ *  @private
  */
 static VALUE oci8_parse_connect_string(VALUE self, VALUE conn_str)
 {
@@ -475,7 +492,7 @@ static void *complex_logoff_execute(void *arg)
 {
     complex_logoff_arg_t *cla = (complex_logoff_arg_t *)arg;
     OCIError *errhp = oci8_errhp;
-    boolean txn;
+    boolean txn = TRUE;
     sword rv = OCI_SUCCESS;
 
     if (oracle_client_version >= ORAVER_12_1) {
@@ -512,12 +529,15 @@ static const oci8_logoff_strategy_t complex_logoff = {
 };
 
 /*
- * call-seq:
- *   logon2(username, password, dbname, mode) -> connection
+ * @overload logon2(username, password, dbname, mode)
  *
- * Creates a simple logon session by the OCI function OCILogon2().
+ *  Creates a simple logon session by the OCI function OCILogon2().
  *
- * @private
+ *  @param [String] username
+ *  @param [String] password
+ *  @param [String] dbname
+ *  @param [Integer] mode
+ *  @private
  */
 static VALUE oci8_logon2(VALUE self, VALUE username, VALUE password, VALUE dbname, VALUE mode)
 {
@@ -564,13 +584,12 @@ static VALUE oci8_logon2(VALUE self, VALUE username, VALUE password, VALUE dbnam
 }
 
 /*
- * call-seq:
- *   allocate_handles()
+ * @overload allocate_handles()
  *
- * Allocates a service context handle, a session handle and a
- * server handle to use explicit attach and begin-session calls.
+ *  Allocates a service context handle, a session handle and a
+ *  server handle to use explicit attach and begin-session calls.
  *
- * @private
+ *  @private
  */
 static VALUE oci8_allocate_handles(VALUE self)
 {
@@ -604,12 +623,13 @@ static VALUE oci8_allocate_handles(VALUE self)
 }
 
 /*
- * call-seq:
- *   server_attach(dbname, mode)
+ * @overload server_attach(dbname, mode)
  *
- * Attachs to the server by the OCI function OCIServerAttach().
+ *  Attachs to the server by the OCI function OCIServerAttach().
  *
- * @private
+ *  @param [String] dbname
+ *  @param [Integer] mode
+ *  @private
  */
 static VALUE oci8_server_attach(VALUE self, VALUE dbname, VALUE attach_mode)
 {
@@ -646,12 +666,13 @@ static VALUE oci8_server_attach(VALUE self, VALUE dbname, VALUE attach_mode)
 }
 
 /*
- * call-seq:
- *   session_begin(cred, mode)
+ * @overload session_begin(cred, mode)
  *
- * Begins the session by the OCI function OCISessionBegin().
+ *  Begins the session by the OCI function OCISessionBegin().
  *
- * @private
+ *  @param [Fixnum] cred
+ *  @param [Fixnum] mode
+ *  @private
  */
 static VALUE oci8_session_begin(VALUE self, VALUE cred, VALUE mode)
 {
@@ -682,11 +703,10 @@ static VALUE oci8_session_begin(VALUE self, VALUE cred, VALUE mode)
 }
 
 /*
- * call-seq:
- *   logoff
+ * @overload logoff
  *
- * Disconnects from the Oracle server. The uncommitted transaction is
- * rollbacked.
+ *  Disconnects from the Oracle server. The uncommitted transaction is
+ *  rollbacked.
  */
 static VALUE oci8_svcctx_logoff(VALUE self)
 {
@@ -707,10 +727,9 @@ static VALUE oci8_svcctx_logoff(VALUE self)
 }
 
 /*
- * call-seq:
- *   commit
+ * @overload commit
  *
- * Commits the transaction.
+ *  Commits the transaction.
  */
 static VALUE oci8_commit(VALUE self)
 {
@@ -720,10 +739,9 @@ static VALUE oci8_commit(VALUE self)
 }
 
 /*
- * call-seq:
- *   rollback
+ * @overload rollback
  *
- * Rollbacks the transaction.
+ *  Rollbacks the transaction.
  */
 static VALUE oci8_rollback(VALUE self)
 {
@@ -733,13 +751,12 @@ static VALUE oci8_rollback(VALUE self)
 }
 
 /*
- * call-seq:
- *   non_blocking? -> true or false
+ * @overload non_blocking?
  *
- * Returns +true+ if the connection is in non-blocking mode, +false+
- * otherwise.
+ *  Returns +true+ if the connection is in non-blocking mode, +false+
+ *  otherwise.
  *
- * See also #non_blocking=.
+ *  @see #non_blocking=
  */
 static VALUE oci8_non_blocking_p(VALUE self)
 {
@@ -755,41 +772,21 @@ static VALUE oci8_non_blocking_p(VALUE self)
 }
 
 /*
- * call-seq:
- *   non_blocking = true or false
+ * @overload non_blocking=(non_blocking_mode)
  *
- * Sets +true+ to enable non-blocking mode, +false+ otherwise.
- * The default setting depends on the ruby version and ruby-oci8
- * version.
+ *  Sets +true+ to enable non-blocking mode, +false+ otherwise.
+ *  The default value is +true+ except ruby 1.8.
  *
- * When the connection is in blocking mode (non_blocking = false),
- * SQL executions block not only the thread, but also the ruby
- * process. It makes the whole application stop while a SQL execution
- * needs long time.
+ *  When the connection is in non-blocking mode (non_blocking = true),
+ *  an SQL execution blocks the thread running the SQL.
+ *  It does't prevent other threads. The blocking thread can be canceled
+ *  by {OCI8#break}.
  *
- * When in non-blocking mode (non_blocking = true), SQL executions
- * block only the thread. It does't prevent other threads.
- * A SQL execution which blocks a thread can be canceled by
- * OCI8#break.
+ *  When in blocking mode (non_blocking = false), an SQL execution blocks
+ *  not only the thread, but also the ruby process itself. It makes the
+ *  whole application stop until the SQL finishes.
  *
- * === ruby 1.9
- * The default setting is +true+ if the ruby-oci8 version is 2.0.3 or
- * upper, +false+ otherwise.
- *
- * Ruby-oci8 makes the connection non-blocking by releasing ruby
- * interpreter's GVL (Global VM Lock or Giant VM Lock) while OCI
- * functions which may need more than one network round trips are in
- * execution.
- *
- * === ruby 1.8
- * The default setting is +false+.
- *
- * Ruby-oci8 makes the connection non-blocking by polling the return
- * values of OCI functions. When an OCI function returns
- * OCI_STILL_EXECUTING, the thread sleeps for 10 milli seconds to make
- * a time for other threads to run. The sleep time is doubled up to
- * 640 milli seconds as the function returns the same value.
- *
+ *  @param [Boolean] non_blocking_mode
  */
 static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
 {
@@ -812,11 +809,10 @@ static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
 }
 
 /*
- * call-seq:
- *   autocommit? -> true or false
+ * @overload autocommit?
  *
- * Returns +true+ if the connection is in autocommit mode, +false+
- * otherwise. The default value is +false+.
+ *  Returns +true+ if the connection is in autocommit mode, +false+
+ *  otherwise. The default value is +false+.
  */
 static VALUE oci8_autocommit_p(VALUE self)
 {
@@ -825,10 +821,11 @@ static VALUE oci8_autocommit_p(VALUE self)
 }
 
 /*
- * call-seq:
- *   autocommit = true or false
+ * @overload autocommit=(autocommit_mode)
  *
- * Sets the autocommit mode. The default value is +false+.
+ *  Sets the autocommit mode. The default value is +false+.
+ *
+ *  @param [Boolean] autocommit_mode
  */
 static VALUE oci8_set_autocommit(VALUE self, VALUE val)
 {
@@ -838,16 +835,19 @@ static VALUE oci8_set_autocommit(VALUE self, VALUE val)
 }
 
 /*
- * call-seq:
- *   long_read_len -> fixnum
+ * @overload long_read_len
  *
- * Gets the maximum length in bytes to fetch a LONG or LONG RAW
- * column. The default value is 65535.
+ *  Gets the maximum length in bytes to fetch a LONG or LONG RAW
+ *  column. The default value is 65535.
  *
- * If the actual data length is longer than long_read_len,
- * "ORA-01406: fetched column value was truncated" is raised.
+ *  If the actual data length is longer than long_read_len,
+ *  the fetched valud is truncated and the value of {OCI8#last_error}
+ *  become {OCISuccessWithInfo} whose message is "ORA-01406: fetched column value was truncated".
  *
- * Note: long_read_len is also used for XMLTYPE data type in 2.0.
+ *  Note: long_read_len is also used for maximum length of XMLTYPE data type.
+ *
+ *  @return [Integer]
+ *  @see #long_read_len=
  */
 static VALUE oci8_long_read_len(VALUE self)
 {
@@ -856,14 +856,13 @@ static VALUE oci8_long_read_len(VALUE self)
 }
 
 /*
- * call-seq:
- *   long_read_len = fixnum
+ * @overload long_read_len=(length)
  *
- * Sets the maximum length in bytes to fetch a LONG or LONG RAW
- * column.
+ *  Sets the maximum length in bytes to fetch a LONG or LONG RAW
+ *  column.
  *
- * See also #long_read_len
- *
+ *  @param [Integer] length
+ *  @see #long_read_len
  */
 static VALUE oci8_set_long_read_len(VALUE self, VALUE val)
 {
@@ -874,20 +873,19 @@ static VALUE oci8_set_long_read_len(VALUE self, VALUE val)
 }
 
 /*
- * call-seq:
- *   break
+ * @overload break
  *
- * Cancels the executing SQL.
+ *  Cancels the executing SQL.
  *
- * Note that this doesn't work in the following two cases.
+ *  Note that this doesn't work when the following cases.
  *
- * * The Oracle server runs on Windows.
- * * Out-of-band packets are blocked by a firewall or by a VPN.
+ *  * The Oracle server runs on Windows.
+ *  * {Out-of-band data}[http://en.wikipedia.org/wiki/Transmission_Control_Protocol#Out-of-band_data] are blocked by a firewall or by a VPN.
  *
- * In the latter case, create an sqlnet.ora file in the path specified
- * by the TNS_ADMIN environment variable that sets {DISABLE_OOB=on}[http://www.orafaq.com/wiki/SQL*Net_FAQ#What_are_inband_and_out_of_band_breaks.3F].
+ *  In the latter case, create an sqlnet.ora file in the path specified
+ *  by the TNS_ADMIN environment variable that sets {DISABLE_OOB=on}[http://www.orafaq.com/wiki/SQL*Net_FAQ#What_are_inband_and_out_of_band_breaks.3F].
  *
- * @see OCI8#non_blocking=
+ *  @see OCI8#non_blocking=
  */
 static VALUE oci8_break(VALUE self)
 {
@@ -904,14 +902,14 @@ static VALUE oci8_break(VALUE self)
 }
 
 /*
- * call-seq:
- *   oracle_server_vernum -> an integer
+ * @overload oracle_server_vernum
  *
- * Returns a numerical format of the Oracle server version.
+ *  Returns a numerical format of the Oracle server version.
  *
- * @see OCI8#oracle_server_version
- * @since 2.0.1
- * @private
+ *  @return [Integer]
+ *  @see OCI8#oracle_server_version
+ *  @since 2.0.1
+ *  @private
  */
 static VALUE oci8_oracle_server_vernum(VALUE self)
 {
@@ -924,23 +922,23 @@ static VALUE oci8_oracle_server_vernum(VALUE self)
 }
 
 /*
- * call-seq:
- *   ping -> true or false
+ * @overload ping
  *
- * Makes a round trip call to the server to confirm that the connection and
- * the server are active.
+ *  Makes a round trip call to the server to confirm that the connection and
+ *  the server are active.
  *
- * OCI8#ping also can be used to flush all the pending OCI client-side calls
- * to the server if any exist.
+ *  This also flushes all the pending OCI client-side calls such as {OCI8#action=},
+ *  {OCI8#client_identifier=}, {OCI8#client_info=} and {OCI8#module=}.
  *
- * === Oracle 10.2 client or upper
- * A dummy round trip call is made by a newly added OCI function
- * OCIPing[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14250/oci16msc007.htm#sthref3540] in Oracle 10.2.
+ *  === Oracle 10.2 client or upper
+ *  A dummy round trip call is made by the OCI function
+ *  OCIPing[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14250/oci16msc007.htm#sthref3540] added in Oracle 10.2.
  *
- * === Oracle 10.1 client or lower
- * A simple PL/SQL block "BEGIN NULL; END;" is executed to make a round trip call.
+ *  === Oracle 10.1 client or lower
+ *  A simple PL/SQL block "BEGIN NULL; END;" is executed to make a round trip call.
  *
- * @since 2.0.2
+ *  @return [Boolean]
+ *  @since 2.0.2
  */
 static VALUE oci8_ping(VALUE self)
 {
@@ -958,30 +956,27 @@ static VALUE oci8_ping(VALUE self)
 }
 
 /*
- * call-seq:
- *   client_identifier = string or nil
+ * @overload client_identifier=(client_identifier)
  *
- * Sets the client ID. This information is stored in the V$SESSION
- * view.
+ *  Sets the specified value to {V$SESSION.CLIENT_IDENTIFIER}[http://docs.oracle.com/database/121/REFRN/refrn30223.htm#r62c1-t21].
  *
- * === Oracle 9i client or upper
+ *  === Oracle 9i client or upper
  *
- * This doesn't perform network round trips. The change is reflected
- * to the server by the next round trip such as OCI8#exec, OCI8#ping,
- * etc.
+ *  The specified value is sent to the server by piggybacking on the next network
+ *  round trip issued by {OCI8#exec}, {OCI8#ping} and so on.
  *
- * === Oracle 8i client or lower
+ *  === Oracle 8i client or lower
  *
- * This executes the following PL/SQL block internally.
- * The change is reflected immediately by a network round trip.
+ *  This executes the following PL/SQL block internally.
  *
- *   BEGIN
- *     DBMS_SESSION.SET_IDENTIFIER(:client_id);
- *   END;
+ *    BEGIN
+ *      DBMS_SESSION.SET_IDENTIFIER(:client_id);
+ *    END;
  *
- * See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_sessio.htm#i996935]
+ *  See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_sessio.htm#i996935]
  *
- * @since 2.0.3
+ *  @param [String] client_identifier
+ *  @since 2.0.3
  */
 static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
 {
@@ -1025,37 +1020,35 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
 }
 
 /*
- * call-seq:
- *   module = string or nil
+ * @overload module=(module)
  *
- * Sets the name of the current module. This information is
- * stored in the V$SESSION view and is also stored in the V$SQL view
- * and the V$SQLAREA view when a SQL statement is executed and the SQL
- * statement is first parsed in the Oracle server.
+ *  Sets the specified value to {V$SESSION.MODULE}[http://docs.oracle.com/database/121/REFRN/refrn30223.htm#r40c1-t21].
+ *  This is also stored in {V$SQL.MODULE}[http://docs.oracle.com/database/121/REFRN/refrn30246.htm#r49c1-t58]
+ *  and {V$SQLAREA.MODULE}[http://docs.oracle.com/database/121/REFRN/refrn30259.htm#r46c1-t94]
+ *  when an SQL statement is first parsed in the Oracle server.
  *
- * === Oracle 10g client or upper
+ *  === Oracle 10g client or upper
  *
- * This doesn't perform network round trips. The change is reflected
- * to the server by the next round trip such as OCI8#exec, OCI8#ping,
- * etc.
+ *  The specified value is sent to the server by piggybacking on the next network
+ *  round trip issued by {OCI8#exec}, {OCI8#ping} and so on.
  *
- * === Oracle 9i client or lower
+ *  === Oracle 9i client or lower
  *
- * This executes the following PL/SQL block internally.
- * The change is reflected immediately by a network round trip.
+ *  This executes the following PL/SQL block internally.
  *
- *   DECLARE
- *     action VARCHAR2(32);
- *   BEGIN
- *     -- retrieve action name.
- *     SELECT SYS_CONTEXT('USERENV','ACTION') INTO action FROM DUAL;
- *     -- change module name without modifying the action name.
- *     DBMS_APPLICATION_INFO.SET_MODULE(:module, action);
- *   END;
+ *    DECLARE
+ *      action VARCHAR2(32);
+ *    BEGIN
+ *      -- retrieve action name.
+ *      SELECT SYS_CONTEXT('USERENV','ACTION') INTO action FROM DUAL;
+ *      -- change module name without modifying the action name.
+ *      DBMS_APPLICATION_INFO.SET_MODULE(:module, action);
+ *    END;
  *
- * See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_appinf.htm#i999254]
+ *  See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_appinf.htm#i999254]
  *
- * @since 2.0.3
+ *  @param [String] module
+ *  @since 2.0.3
  */
 static VALUE oci8_set_module(VALUE self, VALUE val)
 {
@@ -1099,33 +1092,30 @@ static VALUE oci8_set_module(VALUE self, VALUE val)
 }
 
 /*
- * call-seq:
- *   action = string or nil
+ * @overload action=(action)
  *
- * Sets the name of the current action within the current module.
- * This information is stored in the V$SESSION view and is also
- * stored in the V$SQL view and the V$SQLAREA view when a SQL
- * statement is executed and the SQL statement is first parsed
- * in the Oracle server.
+ *  Sets the specified value to {V$SESSION.ACTION}[http://docs.oracle.com/database/121/REFRN/refrn30223.htm#r42c1-t21].
+ *  This is also stored in {V$SQL.ACTION}[http://docs.oracle.com/database/121/REFRN/refrn30246.htm#r51c1-t58]
+ *  and {V$SQLAREA.ACTION}[http://docs.oracle.com/database/121/REFRN/refrn30259.htm#r48c1-t94]
+ *  when an SQL statement is first parsed in the Oracle server.
  *
- * === Oracle 10g client or upper
+ *  === Oracle 10g client or upper
  *
- * This doesn't perform network round trips. The change is reflected
- * to the server by the next round trip such as OCI8#exec, OCI8#ping,
- * etc.
+ *  The specified value is sent to the server by piggybacking on the next network
+ *  round trip issued by {OCI8#exec}, {OCI8#ping} and so on.
  *
- * === Oracle 9i client or lower
+ *  === Oracle 9i client or lower
  *
- * This executes the following PL/SQL block internally.
- * The change is reflected immediately by a network round trip.
+ *  This executes the following PL/SQL block internally.
  *
- *   BEGIN
- *     DBMS_APPLICATION_INFO.SET_ACTION(:action);
- *   END;
+ *    BEGIN
+ *      DBMS_APPLICATION_INFO.SET_ACTION(:action);
+ *    END;
  *
- * See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_appinf.htm#i999254]
+ *  See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_appinf.htm#i999254]
  *
- * @since 2.0.3
+ *  @param [String] action
+ *  @since 2.0.3
  */
 static VALUE oci8_set_action(VALUE self, VALUE val)
 {
@@ -1166,30 +1156,27 @@ static VALUE oci8_set_action(VALUE self, VALUE val)
 }
 
 /*
- * call-seq:
- *   client_info = string or nil
+ * @overload client_info=(client_info)
  *
- * Sets additional information about the client application.
- * This information is stored in the V$SESSION view.
+ *  Sets the specified value to {V$SESSION.CLIENT_INFO}[http://docs.oracle.com/database/121/REFRN/refrn30223.htm#r44c1-t21].
  *
- * === Oracle 10g client or upper
+ *  === Oracle 10g client or upper
  *
- * This doesn't perform network round trips. The change is reflected
- * to the server by the next round trip such as OCI8#exec, OCI8#ping,
- * etc.
+ *  The specified value is sent to the server by piggybacking on the next network
+ *  round trip issued by {OCI8#exec}, {OCI8#ping} and so on.
  *
- * === Oracle 9i client or lower
+ *  === Oracle 9i client or lower
  *
- * This executes the following PL/SQL block internally.
- * The change is reflected immediately by a network round trip.
+ *  This executes the following PL/SQL block internally.
  *
- *   BEGIN
- *     DBMS_APPLICATION_INFO.SET_CLIENT_INFO(:client_info);
- *   END;
+ *    BEGIN
+ *      DBMS_APPLICATION_INFO.SET_CLIENT_INFO(:client_info);
+ *    END;
  *
- * See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_appinf.htm#CHEJCFGG]
+ *  See {Oracle Manual: Oracle Database PL/SQL Packages and Types Reference}[http://download.oracle.com/docs/cd/B19306_01/appdev.102/b14258/d_appinf.htm#CHEJCFGG]
  *
- * @since 2.0.3
+ *  @param [String] client_info
+ *  @since 2.0.3
  */
 static VALUE oci8_set_client_info(VALUE self, VALUE val)
 {
@@ -1266,8 +1253,8 @@ void Init_oci8(VALUE *out)
 
     rb_define_const(cOCI8, "VERSION", rb_obj_freeze(rb_usascii_str_new_cstr(OCI8LIB_VERSION)));
     rb_define_singleton_method_nodoc(cOCI8, "oracle_client_vernum", oci8_s_oracle_client_vernum, 0);
-    rb_define_singleton_method(cOCI8, "__get_prop", oci8_s_get_prop, 1);
-    rb_define_singleton_method(cOCI8, "__set_prop", oci8_s_set_prop, 2);
+    rb_define_singleton_method_nodoc(cOCI8, "__get_prop", oci8_s_get_prop, 1);
+    rb_define_singleton_method_nodoc(cOCI8, "__set_prop", oci8_s_set_prop, 2);
     rb_define_singleton_method(cOCI8, "error_message", oci8_s_error_message, 1);
     rb_define_private_method(cOCI8, "parse_connect_string", oci8_parse_connect_string, 1);
     rb_define_private_method(cOCI8, "logon2", oci8_logon2, 4);

@@ -2,7 +2,7 @@
 /*
  * lob.c - part of ruby-oci8
  *
- * Copyright (C) 2002-2014 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2015 Kubo Takehiro <kubo@jiubao.org>
  */
 #include "oci8.h"
 
@@ -305,31 +305,58 @@ static void bfile_close(oci8_lob_t *lob)
 /*
  *  Document-class: OCI8::LOB
  *
- *  This is the abstract base class of large-object data types; BFILE, BLOB, CLOB and NCLOB.
+ *  This is the abstract base class of large-object data types; {BFILE}, {BLOB}, {CLOB} and {NCLOB}.
  *
  */
 
 /*
  *  Document-class: OCI8::CLOB
  *
+ *  This class is a ruby-side class of {Oracle NCLOB datatype}[http://docs.oracle.com/database/121/SQLRF/sql_elements001.htm#sthref175].
  */
 
 /*
  *  Document-class: OCI8::NCLOB
  *
+ *  This class is a ruby-side class of {Oracle CLOB datatype}[http://docs.oracle.com/database/121/SQLRF/sql_elements001.htm#sthref172].
  */
 
 /*
  *  Document-class: OCI8::BLOB
+ *
+ *  This class is a ruby-side class of {Oracle BLOB datatype}[http://docs.oracle.com/database/121/SQLRF/sql_elements001.htm#sthref168].
  *
  */
 
 /*
  *  Document-class: OCI8::BFILE
  *
- *  @method truncate(length)
- *  @method size = length
- *  @method write(data)
+ *  This class is a ruby-side class of {Oracle BFILE datatype}[http://docs.oracle.com/database/121/SQLRF/sql_elements001.htm#sthref164].
+ *  It is a read-only {LOB}. You cannot change the contents.
+ *
+ *  You can read files on the server-side as follows:
+ *
+ *  1. Connect to the Oracle server as a user who has CREATE DIRECTORY privilege.
+ *
+ *       # create a directory object on the Oracle server.
+ *       CREATE DIRECTORY file_storage_dir AS '/opt/file_storage';
+ *       # grant a privilege to read files on file_storage_dir directory to a user.
+ *       GRANT READ ON DIRECTORY file_storage_dir TO username;
+ *
+ *  2. Create a file 'hello_world.txt' in the directory '/opt/file_storage' on the server filesystem.
+ *
+ *       echo 'Hello World!' > /opt/file_storage/hello_world.txt
+ *
+ *  3. Read the file by ruby-oci8.
+ *
+ *       require 'oci8'
+ *       # The user must have 'READ ON DIRECTORY file_storage_dir' privilege.
+ *       conn = OCI8.new('username/password')
+ *
+ *       # The second argument is usually an uppercase string unless the directory
+ *       # object is explicitly created as *double-quoted* lowercase characters.
+ *       bfile = OCI8::BFILE.new(conn, 'FILE_STORAGE_DIR', 'hello_world.txt')
+ *       bfile.read # => "Hello World!\n"
  */
 
 /*
@@ -574,10 +601,10 @@ static VALUE oci8_lob_rewind(VALUE self)
  *  call-seq:
  *    truncate(length)
  *
- *  Changes the lob size to the given <i>length</i>.
- *
- *  @param [Integer] length
+ *  @param [Integer] length length in characters if +self+ is a {CLOB} or a {NCLOB}.
+ *    length in bytes if +self+ is a {BLOB} or a {BFILE}.
  *  @return [self]
+ *  @see #size=
  */
 static VALUE oci8_lob_truncate(VALUE self, VALUE len)
 {
@@ -591,13 +618,13 @@ static VALUE oci8_lob_truncate(VALUE self, VALUE len)
 }
 
 /*
- *  call-seq:
- *    size = length
+ * @overload size=(length)
  *
  *  Changes the lob size to the given <i>length</i>.
  *
- *  @param [Integer] length
- *  @return [Integer]
+ *  @param [Integer] length length in characters if +self+ is a {CLOB} or a {NCLOB}.
+ *    length in bytes if +self+ is a {BLOB} or a {BFILE}.
+ *  @see #truncate
  */
 static VALUE oci8_lob_set_size(VALUE self, VALUE len)
 {
@@ -606,19 +633,27 @@ static VALUE oci8_lob_set_size(VALUE self, VALUE len)
 }
 
 /*
- *  call-seq:
- *    read(length = nil)
+ * @overload read
  *
- *  Reads <i>length</i> characters for CLOB and NCLOB or <i>length</i>
- *  bytes for BLOB and BILF from the current position.
+ *  
+ *
+ *  @param [Integer] length number of characters if +self+ is a {CLOB} or a {NCLOB}.
+ *    number of bytes if +self+ is a {BLOB} or a {BFILE}.
+ *  @return [String or nil] data read. <code>nil</code> means it
+ *    met EOF at beginning. It returns an empty string '' as a special exception
+ *    when <i>length</i> is <code>nil</code> and the lob is empty.
+ *
+ * @overload read(length)
+ *
+ *  Reads <i>length</i> characters for {CLOB} and {NCLOB} or <i>length</i>
+ *  bytes for {BLOB} and {BFILE} from the current position.
  *  If <i>length</i> is <code>nil</code>, it reads data until EOF.
  *
- *  It returns a string or <code>nil</code>. <code>nil</code> means it
- *  met EOF at beginning. As a special exception, when <i>length</i> is
- *  <code>nil</code> and the lob length is zero, it returns an empty string ''.
- *
- *  @param [Integer] length
- *  @return [String or nil]
+ *  @param [Integer] length number of characters if +self+ is a {CLOB} or a {NCLOB}.
+ *    number of bytes if +self+ is a {BLOB} or a {BFILE}.
+ *  @return [String or nil] data read. <code>nil</code> means it
+ *    met EOF at beginning. It returns an empty string '' as a special exception
+ *    when <i>length</i> is <code>nil</code> and the lob is empty.
  */
 static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
 {
@@ -736,13 +771,13 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
 }
 
 /*
- *  call-seq:
- *    write(data)
+ * @overload write(data)
  *
- *  Writes <i>data</i>.
+ *  Writes +data+ to LOB.
  *
  *  @param [String] data
- *  @return [Integer]
+ *  @return [Integer] number of characters written if +self+ is a {CLOB} or a {NCLOB}.
+ *    number of bytes written if +self+ is a {BLOB} or a {BFILE}.
  */
 static VALUE oci8_lob_write(VALUE self, VALUE data)
 {
@@ -810,7 +845,7 @@ static VALUE oci8_lob_flush(VALUE self)
 /*
  *  Returns the chunk size of a LOB.
  *
- *  @see http://docs.oracle.com/cd/E16338_01/appdev.112/e10646/oci17msc002.htm#i493090
+ *  @see http://docs.oracle.com/database/121/ARPLS/d_lob.htm#ARPLS66706 DBMS_LOB.GETCHUNKSIZE
  *  @return [Integer]
  */
 static VALUE oci8_lob_get_chunk_size(VALUE self)
@@ -899,15 +934,14 @@ static void oci8_bfile_set_name(VALUE self, VALUE dir_alias, VALUE filename)
 }
 
 /*
- *  call-seq:
- *    initialize(conn, dir_alias = nil, filename = nil)
+ * @overload initialize(conn, directory = nil, filename = nil)
  *
  *  Creates a BFILE object.
- *  This is correspond to {http://docs.oracle.com/cd/E11882_01/server.112/e17118/functions019.htm#sthref953 BFILENAME}.
+ *  This is correspond to {BFILENAME}[https://docs.oracle.com/database/121/SQLRF/functions020.htm].
  *
  *  @param [OCI8] conn
- *  @param [String] dir_alias  a directory object created by
- *    {http://docs.oracle.com/cd/E11882_01/server.112/e17118/statements_5007.htm "CREATE DIRECTORY"}.
+ *  @param [String] directory  a directory object created by
+ *    {"CREATE DIRECTORY"}[http://docs.oracle.com/database/121/SQLRF/statements_5008.htm].
  *  @param [String] filename
  *  @return [OCI8::BFILE]
  */
@@ -943,6 +977,8 @@ static VALUE oci8_bfile_initialize(int argc, VALUE *argv, VALUE self)
 }
 
 /*
+ * @overload dir_alias
+ *
  *  Returns the directory object name.
  *
  *  @return [String]
@@ -956,6 +992,8 @@ static VALUE oci8_bfile_get_dir_alias(VALUE self)
 }
 
 /*
+ * @overload filename
+ *
  *  Returns the file name.
  *
  *  @return [String]
@@ -969,12 +1007,11 @@ static VALUE oci8_bfile_get_filename(VALUE self)
 }
 
 /*
- *  call-seq:
- *    dir_alias = name
+ * @overload dir_alias=(dir_alias)
  *
  *  Changes the directory object name.
  *
- *  @param [String] name
+ *  @param [String] dir_alias
  */
 static VALUE oci8_bfile_set_dir_alias(VALUE self, VALUE dir_alias)
 {
@@ -988,12 +1025,11 @@ static VALUE oci8_bfile_set_dir_alias(VALUE self, VALUE dir_alias)
 }
 
 /*
- *  call-seq:
- *    filename = name
+ * @overload filename=(filename)
  *
  *  Changes the file name.
  *
- *  @param [String] name
+ *  @param [String] filename
  */
 static VALUE oci8_bfile_set_filename(VALUE self, VALUE filename)
 {
@@ -1007,9 +1043,9 @@ static VALUE oci8_bfile_set_filename(VALUE self, VALUE filename)
 }
 
 /*
- *  Returns <code>true</code> when the BFILE exists on the server's operating system.
+ * @overload exists?
  *
- *  @return [true or false]
+ *  Returns <code>true</code> when the BFILE exists on the server's operating system.
  */
 static VALUE oci8_bfile_exists_p(VALUE self)
 {
@@ -1023,38 +1059,10 @@ static VALUE oci8_bfile_exists_p(VALUE self)
 }
 
 /*
- *  Document-method: OCI8::BFILE#truncate
- *
- *  call-seq:
- *    truncate(length)
- *
- *  Raises <code>RuntimeError</code>.
+ *  Raises <code>RuntimeError</code> always.
  *
  *  @raise [RuntimeError] cannot modify a read-only BFILE object
  */
-
-/*
- *  Document-method: OCI8::BFILE#size=
- *
- *  call-seq:
- *    size = length
- *
- *  Raises <code>RuntimeError</code>.
- *
- *  @raise [RuntimeError] cannot modify a read-only BFILE object
- */
-
-/*
- *  Document-method: OCI8::BFILE#write
- *
- *  call-seq:
- *    write(data)
- *
- *  Raises <code>RuntimeError</code>.
- *
- *  @raise [RuntimeError] cannot modify a read-only BFILE object
- */
-
 static VALUE oci8_bfile_error(VALUE self, VALUE dummy)
 {
     rb_raise(rb_eRuntimeError, "cannot modify a read-only BFILE object");
