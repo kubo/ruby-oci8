@@ -11,12 +11,6 @@
 #include <math.h>
 #include "oranumber_util.h"
 
-#ifndef RB_NUM_COERCE_FUNCS_NEED_OPID
-/* ruby 1.8 */
-#define rb_num_coerce_cmp(x, y, id) rb_num_coerce_cmp((x), (y))
-#define rb_num_coerce_bin(x, y, id) rb_num_coerce_bin((x), (y))
-#endif
-
 int oci8_float_conversion_type_is_ruby = 1;
 
 #ifndef INFINITY
@@ -32,9 +26,7 @@ static ID id_denominator;
 static ID id_Rational;
 static ID id_BigDecimal;
 
-#ifndef rb_Rational2
 static VALUE cRational;
-#endif
 static VALUE cBigDecimal;
 
 static VALUE cOCINumber;
@@ -52,11 +44,6 @@ static OCINumber const_mPI2; /* -PI/2 */
 #endif
 #define RBOCI8_T_ORANUMBER (T_MASK + 1)
 #define RBOCI8_T_BIGDECIMAL (T_MASK + 2)
-#ifdef rb_Rational2
-#define RBOCI8_T_RATIONAL T_RATIONAL
-#else
-#define RBOCI8_T_RATIONAL (T_MASK + 3)
-#endif
 
 static int rboci8_type(VALUE obj)
 {
@@ -64,21 +51,19 @@ static int rboci8_type(VALUE obj)
     VALUE klass;
 
     switch (type) {
-#ifndef rb_Rational2
     case T_OBJECT:
         klass = CLASS_OF(obj);
         if (cRational != 0) {
             if (klass == cRational) {
-                return RBOCI8_T_RATIONAL;
+                return T_RATIONAL;
             }
         } else {
             if (strcmp(rb_class2name(klass), "Rational") == 0) {
                 cRational = rb_const_get(rb_cObject, id_Rational);
-                return RBOCI8_T_RATIONAL;
+                return T_RATIONAL;
             }
         }
         break;
-#endif
     case T_DATA:
         klass = CLASS_OF(obj);
         if (klass == cOCINumber) {
@@ -866,7 +851,7 @@ static VALUE onum_coerce(VALUE self, VALUE other)
         return rb_assoc_new(oci8_make_ocinumber(&n, oci8_errhp), self);
     case T_FLOAT:
         return rb_assoc_new(other, onum_to_f(self));
-    case RBOCI8_T_RATIONAL:
+    case T_RATIONAL:
         return rb_assoc_new(other, onum_to_r(self));
     case RBOCI8_T_BIGDECIMAL:
         return rb_assoc_new(other, onum_to_d(self));
@@ -925,7 +910,7 @@ static VALUE onum_add(VALUE lhs, VALUE rhs)
         return oci8_make_ocinumber(&r, errhp);
     case T_FLOAT:
         return rb_funcall(onum_to_f(lhs), oci8_id_add_op, 1, rhs);
-    case RBOCI8_T_RATIONAL:
+    case T_RATIONAL:
         return rb_funcall(onum_to_r(lhs), oci8_id_add_op, 1, rhs);
     case RBOCI8_T_BIGDECIMAL:
         return rb_funcall(onum_to_d(lhs), oci8_id_add_op, 1, rhs);
@@ -966,7 +951,7 @@ static VALUE onum_sub(VALUE lhs, VALUE rhs)
         return oci8_make_ocinumber(&r, errhp);
     case T_FLOAT:
         return rb_funcall(onum_to_f(lhs), oci8_id_sub_op, 1, rhs);
-    case RBOCI8_T_RATIONAL:
+    case T_RATIONAL:
         return rb_funcall(onum_to_r(lhs), oci8_id_sub_op, 1, rhs);
     case RBOCI8_T_BIGDECIMAL:
         return rb_funcall(onum_to_d(lhs), oci8_id_sub_op, 1, rhs);
@@ -1007,7 +992,7 @@ static VALUE onum_mul(VALUE lhs, VALUE rhs)
         return oci8_make_ocinumber(&r, errhp);
     case T_FLOAT:
         return rb_funcall(onum_to_f(lhs), oci8_id_mul_op, 1, rhs);
-    case RBOCI8_T_RATIONAL:
+    case T_RATIONAL:
         return rb_funcall(onum_to_r(lhs), oci8_id_mul_op, 1, rhs);
     case RBOCI8_T_BIGDECIMAL:
         return rb_funcall(onum_to_d(lhs), oci8_id_mul_op, 1, rhs);
@@ -1056,7 +1041,7 @@ static VALUE onum_div(VALUE lhs, VALUE rhs)
         return oci8_make_ocinumber(&r, errhp);
     case T_FLOAT:
         return rb_funcall(onum_to_f(lhs), oci8_id_div_op, 1, rhs);
-    case RBOCI8_T_RATIONAL:
+    case T_RATIONAL:
         return rb_funcall(onum_to_r(lhs), oci8_id_div_op, 1, rhs);
     case RBOCI8_T_BIGDECIMAL:
         return rb_funcall(onum_to_d(lhs), oci8_id_div_op, 1, rhs);
@@ -1439,15 +1424,7 @@ static VALUE onum_to_r(VALUE self)
     } else {
         y = rb_funcall(INT2FIX(10), rb_intern("**"), 1, INT2FIX(nshift));
     }
-#ifdef rb_Rational2
     return rb_Rational(x, y);
-#else
-    if (!cRational) {
-        rb_require("rational");
-        cRational = rb_const_get(rb_cObject, id_Rational);
-    }
-    return rb_funcall(rb_cObject, id_Rational, 2, x, y);
-#endif
 }
 
 /*

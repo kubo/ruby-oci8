@@ -223,8 +223,6 @@ void oci8_unlink_from_parent(oci8_base_t *base)
     base->parent = NULL;
 }
 
-#ifdef NATIVE_THREAD_WITH_GVL
-
 static void oci8_unblock_func(void *user_data)
 {
     oci8_svcctx_t *svcctx = (oci8_svcctx_t *)user_data;
@@ -275,7 +273,6 @@ static VALUE protected_call(VALUE data)
     return rv;
 }
 
-/* ruby 1.9 */
 sword oci8_call_without_gvl(oci8_svcctx_t *svcctx, void *(*func)(void *), void *data)
 {
     OCIError *errhp = oci8_errhp;
@@ -330,66 +327,6 @@ sword oci8_call_without_gvl(oci8_svcctx_t *svcctx, void *(*func)(void *), void *
         return (sword)(VALUE)func(data);
     }
 }
-#else /* NATIVE_THREAD_WITH_GVL */
-
-/* ruby 1.8 */
-typedef struct {
-    oci8_svcctx_t *svcctx;
-    void *(*func)(void *);
-    void *data;
-} blocking_region_arg_t;
-
-static VALUE blocking_function_execute(blocking_region_arg_t *arg)
-{
-    oci8_svcctx_t *svcctx = arg->svcctx;
-    void *(*func)(void *) = arg->func;
-    void *data = arg->data;
-    struct timeval tv;
-    sword rv;
-
-    tv.tv_sec = 0;
-    tv.tv_usec = 10000;
-    svcctx->executing_thread = rb_thread_current();
-    while ((rv = (sword)(VALUE)func(data)) == OCI_STILL_EXECUTING) {
-        rb_thread_wait_for(tv);
-        if (tv.tv_usec < 500000)
-            tv.tv_usec <<= 1;
-    }
-    if (rv == OCI_ERROR) {
-        if (oci8_get_error_code(oci8_errhp) == 1013) {
-            OCIReset(svcctx->base.hp.ptr, oci8_errhp);
-            svcctx->executing_thread = Qnil;
-            rb_raise(eOCIBreak, "Canceled by user request.");
-        }
-    }
-    svcctx->executing_thread = Qnil;
-    return rv;
-}
-
-static VALUE blocking_function_ensure(oci8_svcctx_t *svcctx)
-{
-    if (!NIL_P(svcctx->executing_thread)) {
-        /* The thread is killed. */
-        OCIBreak(svcctx->base.hp.ptr, oci8_errhp);
-        OCIReset(svcctx->base.hp.ptr, oci8_errhp);
-        svcctx->executing_thread = Qnil;
-    }
-    return Qnil;
-}
-
-sword oci8_call_without_gvl(oci8_svcctx_t *svcctx, void *(*func)(void *), void *data)
-{
-    blocking_region_arg_t arg;
-
-    arg.svcctx = svcctx;
-    arg.func = func;
-    arg.data = data;
-    if (!NIL_P(svcctx->executing_thread)) {
-        rb_raise(rb_eRuntimeError, "executing in another thread");
-    }
-    return (sword)rb_ensure(blocking_function_execute, (VALUE)&arg, blocking_function_ensure, (VALUE)svcctx);
-}
-#endif /* NATIVE_THREAD_WITH_GVL */
 
 typedef struct {
     oci8_svcctx_t *svcctx;

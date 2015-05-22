@@ -531,19 +531,16 @@ class OraDate
     Date.new(year, month, day)
   end
 
-  if defined? DateTime # ruby 1.8.0 or upper
+  # timezone offset of the time the command started
+  # @private
+  @@tz_offset = Time.now.utc_offset.to_r/86400
 
-    # timezone offset of the time the command started
-    # @private
-    @@tz_offset = Time.now.utc_offset.to_r/86400
-
-    # Returns a DateTime object which denotes self.
-    #
-    # Note that this is not daylight saving time aware.
-    # The Time zone offset is that of the time the command started.
-    def to_datetime
-      DateTime.new(year, month, day, hour, minute, second, @@tz_offset)
-    end
+  # Returns a DateTime object which denotes self.
+  #
+  # Note that this is not daylight saving time aware.
+  # The Time zone offset is that of the time the command started.
+  def to_datetime
+    DateTime.new(year, month, day, hour, minute, second, @@tz_offset)
   end
 
   # @private

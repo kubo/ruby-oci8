@@ -8,15 +8,6 @@
 #define _RUBY_OCI_H_ 1
 
 #include "ruby.h"
-
-#ifndef rb_pid_t
-#ifdef WIN32
-#define rb_pid_t int
-#else
-#define rb_pid_t pid_t
-#endif
-#endif
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
@@ -43,9 +34,7 @@ extern "C"
 #define ORAVER_12_1 ORAVERNUM(12, 1, 0, 0, 0)
 
 #include "extconf.h"
-#ifdef HAVE_TYPE_RB_ENCODING
 #include <ruby/encoding.h>
-#endif
 
 #ifndef OCI_TEMP_CLOB
 #define OCI_TEMP_CLOB 1
@@ -101,75 +90,7 @@ typedef struct OCIMsg  OCIMsg;
 typedef struct OCICPool OCICPool;
 #endif
 
-/* new macros in ruby 1.8.6.
- * define compatible macros for ruby 1.8.5 or lower.
- */
-#ifndef RSTRING_PTR
-#define RSTRING_PTR(obj) RSTRING(obj)->ptr
-#endif
-#ifndef RSTRING_LEN
-#define RSTRING_LEN(obj) RSTRING(obj)->len
-#endif
-#ifndef RARRAY_PTR
-#define RARRAY_PTR(obj) RARRAY(obj)->ptr
-#endif
-#ifndef RARRAY_LEN
-#define RARRAY_LEN(obj) RARRAY(obj)->len
-#endif
-
-#ifndef HAVE_RB_STR_SET_LEN
-#define rb_str_set_len(s, l) do { \
-    RSTRING(s)->len = (l); \
-    RSTRING(s)->ptr[l] = '\0'; \
-} while (0)
-#endif
-
-/* new macros in ruby 1.9.
- * define compatible macros for ruby 1.8 or lower.
- */
-#ifndef RFLOAT_VALUE
-#define RFLOAT_VALUE(obj) RFLOAT(obj)->value
-#endif
-#ifndef STRINGIZE
-#define STRINGIZE(name) #name
-#endif
-#ifndef RB_GC_GUARD
-#ifdef __GNUC__
-#define RB_GC_GUARD_PTR(ptr) \
-    __extension__ ({volatile VALUE *rb_gc_guarded_ptr = (ptr); rb_gc_guarded_ptr;})
-#else
-#ifdef _MSC_VER
-#pragma optimize("", off)
-#endif
-static inline volatile VALUE *rb_gc_guarded_ptr(volatile VALUE *ptr) {return ptr;}
-#ifdef _MSC_VER
-#pragma optimize("", on)
-#endif
-#define RB_GC_GUARD_PTR(ptr) rb_gc_guarded_ptr(ptr)
-#endif
-#define RB_GC_GUARD(v) (*RB_GC_GUARD_PTR(&(v)))
-#endif
-
-/* new functions in ruby 1.9.
- * define compatible macros for ruby 1.8 or lower.
- */
-#if !defined(HAVE_RB_ERRINFO) && defined(HAVE_RUBY_ERRINFO)
-#define rb_errinfo() ruby_errinfo
-#endif
-
-#ifndef HAVE_TYPE_RB_ENCODING
-/* ruby 1.8, rubinuis 1.2 */
-#define rb_enc_associate(str, enc) do {} while(0)
-#define rb_enc_str_new(str, len, enc) rb_str_new((str), (len))
-#define rb_enc_str_buf_cat(str, ptr, len, enc) rb_str_buf_cat((str), (ptr), (len))
-#define rb_external_str_new_with_enc(ptr, len, enc) rb_tainted_str_new((ptr), (len))
-#define rb_locale_str_new_cstr(ptr)  rb_str_new2(ptr)
-#define rb_str_buf_cat_ascii(str, ptr) rb_str_buf_cat2((str), (ptr))
-#define rb_str_conv_enc(str, from, to) (str)
-#define rb_str_export_to_enc(str, enc) (str)
-#define rb_usascii_str_new(ptr, len) rb_str_new((ptr), (len))
-#define rb_usascii_str_new_cstr(ptr) rb_str_new2(ptr)
-#elif defined RBX_CAPI_RUBY_H
+#if defined RBX_CAPI_RUBY_H
 /* rubinius 2.0 */
 #ifndef HAVE_RB_ENC_STR_BUF_CAT
 #define rb_enc_str_buf_cat(str, ptr, len, enc) \
@@ -247,18 +168,6 @@ struct oci8_data_type_struct {
 #define RB_OBJ_WRITTEN(a, oldv, b) do {(void)oldv;} while (0)
 #endif
 
-#if defined(HAVE_RB_THREAD_CALL_WITHOUT_GVL) || defined(HAVE_RB_THREAD_BLOCKING_REGION)
-#define NATIVE_THREAD_WITH_GVL 1
-#endif
-
-#if defined(HAVE_NATIVETHREAD) || NATIVE_THREAD_WITH_GVL
-/*
- * oci8_errhp is a thread local object in ruby 1.9, rubinius
- * and ruby 1.8 configured with --enable-pthread.
- */
-#define USE_THREAD_LOCAL_ERRHP 1
-#endif
-
 /* macros depends on the compiler.
  *  LIKELY(x)      hint for the compiler that 'x' is 1(TRUE) in many cases.
  *  UNLIKELY(x)    hint for the compiler that 'x' is 0(FALSE) in many cases.
@@ -291,8 +200,6 @@ struct oci8_data_type_struct {
  *    set a value to the key.
  *
  */
-#ifdef USE_THREAD_LOCAL_ERRHP
-/* rubies with native-thread support. */
 #if defined(_WIN32)
 #include <windows.h>
 #define oci8_tls_key_t           DWORD
@@ -304,7 +211,6 @@ struct oci8_data_type_struct {
 #define oci8_tls_get(key)        pthread_getspecific(key)
 #define oci8_tls_set(key, val)   pthread_setspecific((key), (val))
 #endif
-#endif /* USE_THREAD_LOCAL_ERRHP */
 
 /* utility macros
  */
@@ -439,9 +345,7 @@ typedef struct oci8_svcctx {
     unsigned char state;
     char is_autocommit;
     char suppress_free_temp_lobs;
-#ifdef NATIVE_THREAD_WITH_GVL
     char non_blocking;
-#endif
     VALUE long_read_len;
     oci8_temp_lob_t *temp_lobs;
 } oci8_svcctx_t;
@@ -482,17 +386,12 @@ typedef struct {
  *   extern OCIError *oci8_errhp;
  */
 #define oci8_envhp (LIKELY(oci8_global_envhp != NULL) ? oci8_global_envhp : oci8_make_envhp())
-#ifdef USE_THREAD_LOCAL_ERRHP
 #define oci8_errhp oci8_get_errhp()
-#else
-#define oci8_errhp (LIKELY(oci8_global_errhp != NULL) ? oci8_global_errhp : oci8_make_errhp())
-#endif
 
 /* env.c */
 extern ub4 oci8_env_mode;
 extern OCIEnv *oci8_global_envhp;
 OCIEnv *oci8_make_envhp(void);
-#ifdef USE_THREAD_LOCAL_ERRHP
 extern oci8_tls_key_t oci8_tls_key; /* native thread key */
 OCIError *oci8_make_errhp(void);
 
@@ -502,10 +401,6 @@ static inline OCIError *oci8_get_errhp()
     return LIKELY(errhp != NULL) ? errhp : oci8_make_errhp();
 }
 
-#else
-extern OCIError *oci8_global_errhp;
-OCIError *oci8_make_errhp(void);
-#endif
 void Init_oci8_env(void);
 
 /* oci8lib.c */
@@ -638,6 +533,7 @@ VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
 void Init_oci8_encoding(VALUE cOCI8);
 VALUE oci8_charset_id2name(VALUE svc, VALUE charset_id);
 extern int oci8_nls_ratio;
+extern rb_encoding *oci8_encoding;
 
 /* win32.c */
 void Init_oci8_win32(VALUE cOCI8);
@@ -645,9 +541,6 @@ void Init_oci8_win32(VALUE cOCI8);
 /* hook_funcs.c */
 void oci8_install_hook_functions(void);
 void oci8_shutdown_sockets(void);
-
-#ifdef HAVE_TYPE_RB_ENCODING
-extern rb_encoding *oci8_encoding;
 
 #define OCI8StringValue(v) do { \
     StringValue(v); \
@@ -657,10 +550,6 @@ extern rb_encoding *oci8_encoding;
     SafeStringValue(v); \
     (v) = rb_str_export_to_enc(v, oci8_encoding); \
 } while (0)
-#else
-#define OCI8StringValue(v)     StringValue(v)
-#define OCI8SafeStringValue(v) SafeStringValue(v)
-#endif
 
 #include "thread_util.h"
 #include "apiwrap.h"

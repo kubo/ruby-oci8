@@ -1,3 +1,10 @@
+2015-05-22  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.c.tmpl, ext/oci8/encoding.c, ext/oci8/env.c,
+	  ext/oci8/extconf.rb, ext/oci8/lob.c, ext/oci8/oci8.c, ext/oci8/oci8.h,
+	  ext/oci8/oci8lib.c, ext/oci8/ocinumber.c, ext/oci8/thread_util.c,
+	  ext/oci8/thread_util.h, lib/oci8/bindtype.rb, lib/oci8/encoding-init.rb,
+	  lib/oci8/oci8.rb: Drop ruby 1.8 support.
+
 2015-04-04  Kubo Takehiro  <kubo@jiubao.org>
 	* NEWS: add changes between 2.1.7 and 2.1.8.
 	* VERSION: update to 2.1.8.

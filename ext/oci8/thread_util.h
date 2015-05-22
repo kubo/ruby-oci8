@@ -4,7 +4,6 @@
  *
  * Copyright (C) 2011 KUBO Takehiro <kubo@jiubao.org>
  */
-#ifdef USE_THREAD_LOCAL_ERRHP
 
 /*
  * Prepare to execute thread-related functions.
@@ -17,14 +16,3 @@ void Init_oci8_thread_util(void);
  * The return value is errno.
  */
 int oci8_run_native_thread(void *(*func)(void *), void *arg);
-
-#else
-
-/*
- * For ruby 1.8 configured without --enable-pthread on Unix.
- */
-
-#define Init_oci8_thread_util() do {} while (0)
-#define oci8_run_native_thread(func, arg) ((func)(arg), 0)
-
-#endif

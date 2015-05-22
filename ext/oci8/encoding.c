@@ -21,10 +21,7 @@ static VALUE csid2name;
 static ID id_upcase;
 static VALUE csname2id;
 static VALUE oci8_charset_name2id(VALUE svc, VALUE name);
-#ifdef HAVE_TYPE_RB_ENCODING
 rb_encoding *oci8_encoding;
-#endif
-
 
 /*
  * call-seq:
@@ -192,33 +189,6 @@ static VALUE oci8_get_nls_ratio(VALUE klass)
     return INT2NUM(oci8_nls_ratio);
 }
 
-#ifndef HAVE_TYPE_RB_ENCODING
-/*
- * call-seq:
- *   OCI8.nls_ratio = integer
- *
- * Sets NLS ratio, maximum number of bytes per one character of the
- * current NLS chracter set. It is initialized in 'oci8/encoding-init.rb'
- * when oci8 is required. You have no need to set it explicitly.
- *
- * @param [Fixnum] integer  NLS ratio
- * @since 2.1.0
- * @private
- * @note ruby 1.8 only
- */
-static VALUE oci8_set_nls_ratio(VALUE klass, VALUE val)
-{
-    int v = NUM2INT(val);
-    if (v <= 0) {
-        rb_raise(rb_eRangeError, "expected a positive integer but %d", v);
-    }
-    oci8_nls_ratio = v;
-    return val;
-}
-#endif
-
-#ifdef HAVE_TYPE_RB_ENCODING
-
 /*
  * call-seq:
  *    OCI8.encoding -> enc
@@ -280,7 +250,6 @@ static VALUE oci8_set_encoding(VALUE klass, VALUE encoding)
     }
     return encoding;
 }
-#endif
 
 void Init_oci8_encoding(VALUE cOCI8)
 {
@@ -298,11 +267,6 @@ void Init_oci8_encoding(VALUE cOCI8)
     rb_define_method(cOCI8, "charset_name2id", oci8_charset_name2id, 1);
     rb_define_method(cOCI8, "charset_id2name", oci8_charset_id2name, 1);
     rb_define_singleton_method(cOCI8, "nls_ratio", oci8_get_nls_ratio, 0);
-#ifndef HAVE_TYPE_RB_ENCODING
-    rb_define_singleton_method(cOCI8, "nls_ratio=", oci8_set_nls_ratio, 1);
-#endif
-#ifdef HAVE_TYPE_RB_ENCODING
     rb_define_singleton_method(cOCI8, "encoding", oci8_get_encoding, 0);
     rb_define_singleton_method(cOCI8, "encoding=", oci8_set_encoding, 1);
-#endif
 }

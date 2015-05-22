@@ -1,3 +1,8 @@
+if RUBY_VERSION < "1.9"
+  puts "Ruby-oci8 doesn't work ruby 1.8 since ruby-oci8 2.2.0."
+  exit 1
+end
+
 begin
   require 'mkmf'
 rescue LoadError
@@ -105,23 +110,10 @@ end
 have_func("localtime_r")
 have_func("dladdr")
 
-# ruby 1.8 headers
-have_header("intern.h")
-have_header("util.h")
-# ruby 1.9.1 headers
-have_header("ruby/util.h")
-have_type('rb_encoding', ['ruby/ruby.h', 'ruby/encoding.h'])
 # ruby 2.0.0 headers
 have_header("ruby/thread.h")
 
-# $! in C API
-have_var("ruby_errinfo", "ruby.h") # ruby 1.8
-have_func("rb_errinfo", "ruby.h")  # ruby 1.9
-
-have_func("rb_str_set_len", "ruby.h")
-have_func("rb_set_end_proc", "ruby.h")
 have_func("rb_class_superclass", "ruby.h")
-have_func("rb_thread_blocking_region", "ruby.h")
 have_func("rb_thread_call_without_gvl", "ruby/thread.h")
 have_func("rb_sym2str", "ruby.h")
 if (defined? RUBY_ENGINE) && RUBY_ENGINE == 'rbx'

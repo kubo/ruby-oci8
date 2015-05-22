@@ -4,11 +4,7 @@
 %>
 #define API_WRAP_C 1
 #include "apiwrap.h"
-#ifdef NATIVE_THREAD_WITH_GVL
 #define BLOCKING_FUNCTION_EPILOGUE(svcctx) do { (svcctx)->executing_thread = Qnil; } while (0)
-#else
-#define BLOCKING_FUNCTION_EPILOGUE(svcctx) do { } while (0)
-#endif
 
 <%
 prev_name = ''

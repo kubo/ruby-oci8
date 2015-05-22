@@ -115,18 +115,12 @@ class OCI8
                 param[:length] = val.size
               else
                 # byte semantics
-                if OCI8.respond_to? :encoding and OCI8.encoding != val.encoding
+                if OCI8.encoding != val.encoding
                   # If the string encoding is different with NLS_LANG character set,
                   # convert it to get the length.
                   val = val.encode(OCI8.encoding)
                 end
-                if val.respond_to? :bytesize
-                  # ruby 1.8.7 or upper
-                  param[:length] = val.bytesize
-                else
-                  # ruby 1.8.6 or lower
-                  param[:length] = val.size
-                end
+                param[:length] = val.bytesize
               end
             else
               param[:length] = @@minimum_bind_length
@@ -166,11 +160,7 @@ class OCI8
           unless param[:length]
             if val.respond_to? :to_str
               val = val.to_str
-              if val.respond_to? :bytesize
-                param[:length] = val.bytesize
-              else
-                param[:length] = val.size
-              end
+              param[:length] = val.bytesize
             else
               param[:length] = 400
             end

@@ -5,12 +5,7 @@
  * Copyright (C) 2002-2011 KUBO Takehiro <kubo@jiubao.org>
  */
 #include "oci8.h"
-
-#if defined(HAVE_RUBY_UTIL_H)
 #include <ruby/util.h>
-#elif defined(HAVE_UTIL_H)
-#include <util.h>
-#endif
 
 ub4 oci8_env_mode = OCI_OBJECT | OCI_THREADED;
 
@@ -27,7 +22,6 @@ OCIEnv *oci8_make_envhp(void)
     return oci8_global_envhp;
 }
 
-#ifdef USE_THREAD_LOCAL_ERRHP
 /*
  * Setup thread-local oci8_errhp.
  */
@@ -87,48 +81,10 @@ OCIError *oci8_make_errhp(void)
     oci8_tls_set(oci8_tls_key, (void*)errhp);
     return errhp;
 }
-#else
-/*
- * oci8_errhp is global in ruby 1.8 configured without --enable-pthread on Unix.
- */
-OCIError *oci8_global_errhp;
-
-OCIError *oci8_make_errhp(void)
-{
-    sword rv;
-
-    rv = OCIHandleAlloc(oci8_envhp, (dvoid *)&oci8_global_errhp, OCI_HTYPE_ERROR, 0, NULL);
-    if (rv != OCI_SUCCESS)
-        oci8_env_raise(oci8_envhp, rv);
-    return oci8_global_errhp;
-}
-#endif
 
 void Init_oci8_env(void)
 {
-#ifdef USE_THREAD_LOCAL_ERRHP
     int error;
-#endif
-
-#if !defined(NATIVE_THREAD_WITH_GVL) && !defined(_WIN32)
-    /* workaround code.
-     *
-     * Some instant clients set the environment variables
-     * ORA_NLS_PROFILE33, ORA_NLS10 and ORACLE_HOME if they aren't
-     * set. It causes problems on some platforms.
-     */
-    if (RTEST(rb_eval_string("RUBY_VERSION == \"1.8.4\""))) {
-        if (getenv("ORA_NLS_PROFILE33") == NULL) {
-            ruby_setenv("ORA_NLS_PROFILE33", "");
-        }
-        if (getenv("ORA_NLS10") == NULL) {
-            ruby_setenv("ORA_NLS10", "");
-        }
-        if (getenv("ORACLE_HOME") == NULL) {
-            ruby_setenv("ORACLE_HOME", ".");
-        }
-    }
-#endif /* WIN32 */
 
     /* workaround code.
      *
@@ -156,7 +112,6 @@ void Init_oci8_env(void)
         }
     }
 
-#ifdef USE_THREAD_LOCAL_ERRHP
 #if defined(_WIN32)
     if (!dllmain_is_called) {
         /* sanity check */
@@ -174,5 +129,4 @@ void Init_oci8_env(void)
     if (error != 0) {
         rb_raise(rb_eRuntimeError, "Cannot create thread local key (errno = %d)", error);
     }
-#endif
 }

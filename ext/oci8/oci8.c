@@ -250,9 +250,7 @@ static VALUE oci8_svcctx_alloc(VALUE klass)
 
     svcctx->pid = getpid();
     svcctx->is_autocommit = 0;
-#ifdef NATIVE_THREAD_WITH_GVL
     svcctx->non_blocking = 1;
-#endif
     svcctx->long_read_len = INT2FIX(65535);
     return self;
 }
@@ -761,14 +759,7 @@ static VALUE oci8_rollback(VALUE self)
 static VALUE oci8_non_blocking_p(VALUE self)
 {
     oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
-#ifdef NATIVE_THREAD_WITH_GVL
     return svcctx->non_blocking ? Qtrue : Qfalse;
-#else
-    sb1 non_blocking;
-
-    chker2(OCIAttrGet(svcctx->srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp), &svcctx->base);
-    return non_blocking ? Qtrue : Qfalse;
-#endif
 }
 
 /*
@@ -791,20 +782,7 @@ static VALUE oci8_non_blocking_p(VALUE self)
 static VALUE oci8_set_non_blocking(VALUE self, VALUE val)
 {
     oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
-#ifdef NATIVE_THREAD_WITH_GVL
     svcctx->non_blocking = RTEST(val);
-#else
-    sb1 non_blocking;
-
-    if (svcctx->state & OCI8_STATE_CPOOL) {
-        rb_raise(rb_eRuntimeError, "Could not set non-blocking mode to a connection allocated from OCI8::ConnectionPool.");
-    }
-    chker2(OCIAttrGet(svcctx->srvhp, OCI_HTYPE_SERVER, &non_blocking, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp), &svcctx->base);
-    if ((RTEST(val) && !non_blocking) || (!RTEST(val) && non_blocking)) {
-        /* toggle blocking / non-blocking. */
-        chker2(OCIAttrSet(svcctx->srvhp, OCI_HTYPE_SERVER, 0, 0, OCI_ATTR_NONBLOCKING_MODE, oci8_errhp), &svcctx->base);
-    }
-#endif
     return val;
 }
 
@@ -894,9 +872,6 @@ static VALUE oci8_break(VALUE self)
     if (NIL_P(svcctx->executing_thread)) {
         return Qfalse;
     }
-#ifndef NATIVE_THREAD_WITH_GVL
-    chker2(OCIBreak(svcctx->base.hp.ptr, oci8_errhp), &svcctx->base);
-#endif
     rb_thread_wakeup(svcctx->executing_thread);
     return Qtrue;
 }

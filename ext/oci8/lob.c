@@ -65,8 +65,6 @@ static void oci8_lob_free(oci8_base_t *base)
     if (svcctx != NULL
         && OCILobIsTemporary(oci8_envhp, oci8_errhp, lob->base.hp.lob, &is_temporary) == OCI_SUCCESS
         && is_temporary) {
-
-#ifdef NATIVE_THREAD_WITH_GVL
         oci8_temp_lob_t *temp_lob = ALLOC(oci8_temp_lob_t);
 
         temp_lob->next = svcctx->temp_lobs;
@@ -75,10 +73,6 @@ static void oci8_lob_free(oci8_base_t *base)
         lob->base.type = 0;
         lob->base.closed = 1;
         lob->base.hp.ptr = NULL;
-#else
-        /* FIXME: This may stall the GC. */
-        OCILobFreeTemporary(svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob);
-#endif
     }
     lob->svcctx = NULL;
 }
