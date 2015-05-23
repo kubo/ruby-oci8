@@ -15,10 +15,6 @@ class OCI8
     :cancel_read_at_exit => false,
   }
 
-  if OCI8.oracle_client_version < OCI8::ORAVER_9_2
-    @@properties[:statement_cache_size] = nil
-  end
-
   # @private
   def @@properties.[](name)
     raise IndexError, "No such property name: #{name}" unless @@properties.has_key?(name)
@@ -45,9 +41,6 @@ class OCI8
         raise ArgumentError, "float_conversion_type's value should be either :ruby or :oracle."
       end
     when :statement_cache_size
-      if OCI8.oracle_client_version < OCI8::ORAVER_9_2
-        raise RuntimeError, ":statement_cache_size is disabled on Oracle 9iR1 client."
-      end
       val = val.to_i
       raise ArgumentError, "The property value for :statement_cache_size must not be negative." if val < 0
     when :events_mode
@@ -109,7 +102,6 @@ class OCI8
   #     
   #     The statement cache size per each session. The default size is 0, which
   #     means no statement cache, since 2.1.2. It was 20 in 2.1.1.
-  #     This feature is available on Oracle 9iR2 or later.
   #     See: http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/oci09adv.htm#i471377
   #     
   #     *Since:* 2.1.1

@@ -82,8 +82,24 @@ Init_oci8lib()
 
 #ifdef RUNTIME_API_CHECK
     Init_oci8_apiwrap();
-    if (oracle_client_version < ORAVER_9_0) {
-        rb_raise(rb_eLoadError, "Oracle 8 (8.0) and Oracle 8i (8.1) is not supported anymore!");
+    if (oracle_client_version < ORAVER_10_1) {
+        const char *oraver;
+        const char *ruby_oci8_ver;
+        if (oracle_client_version >= ORAVER_9_2) {
+            oraver = "9iR2";
+            ruby_oci8_ver = "2.1.x";
+        } else if (oracle_client_version >= ORAVER_9_0) {
+            oraver = "9iR1";
+            ruby_oci8_ver = "2.1.x";
+        } else if (oracle_client_version >= ORAVER_8_2) {
+            oraver = "8i";
+            ruby_oci8_ver = "2.0.x";
+        } else {
+            oraver = "8";
+            ruby_oci8_ver = "2.0.x";
+        }
+        rb_raise(rb_eLoadError, "Ruby-oci8 %s doesn't support Oracle %s. Use ruby-oci8 %s instead.",
+                 OCI8LIB_VERSION, oraver, ruby_oci8_ver);
     }
 
     if (have_OCIClientVersion) {

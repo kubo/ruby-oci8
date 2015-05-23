@@ -14,13 +14,6 @@
 /* NLS ratio, maximum number of bytes per one chracter */
 int oci8_nls_ratio = 1;
 
-/* Oracle charset id -> Oracle charset name */
-static VALUE csid2name;
-
-/* Oracle charset name -> Oracle charset id */
-static ID id_upcase;
-static VALUE csname2id;
-static VALUE oci8_charset_name2id(VALUE svc, VALUE name);
 rb_encoding *oci8_encoding;
 
 /*
@@ -30,72 +23,21 @@ rb_encoding *oci8_encoding;
  * Returns the Oracle character set name from the specified
  * character set ID if it is valid. Otherwise, +nil+ is returned.
  *
- * === Oracle 9iR2 client or upper
- *
- * It is done by using the mapping table stored in the client side.
- *
- * === Oracle 9iR1 client or lower
- *
- * It executes the following PL/SQL block internally to use
- * the mapping table stored in the server side.
- *
- *   BEGIN
- *     :name := nls_charset_name(:csid);
- *   END;
- *
  * @param [Fixnum] charset_id   Oracle character set id
  * @return [String]             Oracle character set name or nil
  * @since 2.0.0
  */
 VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
 {
-    VALUE name = rb_hash_aref(csid2name, csid);
+    char buf[OCI_NLS_MAXBUFSZ];
+    sword rv;
 
-    if (!NIL_P(name)) {
-        return name;
-    }
     Check_Type(csid, T_FIXNUM);
-    if (have_OCINlsCharSetIdToName) {
-        /* Oracle 9iR2 or upper */
-        char buf[OCI_NLS_MAXBUFSZ];
-        sword rv;
-
-        rv = OCINlsCharSetIdToName(oci8_envhp, TO_ORATEXT(buf), sizeof(buf), (ub2)FIX2INT(csid));
-        if (rv != OCI_SUCCESS) {
-            return Qnil;
-        }
-        name = rb_usascii_str_new_cstr(buf);
-    } else {
-        /* Oracle 9iR1 or lower */
-        oci8_exec_sql_var_t bind_vars[2];
-        char buf[OCI_NLS_MAXBUFSZ];
-        ub2 buflen = 0;
-        int ival = FIX2INT(csid);
-
-        /* :name */
-        bind_vars[0].valuep = buf;
-        bind_vars[0].value_sz = OCI_NLS_MAXBUFSZ;
-        bind_vars[0].dty = SQLT_CHR;
-        bind_vars[0].indp = NULL;
-        bind_vars[0].alenp = &buflen;
-        /* :csid */
-        bind_vars[1].valuep = &ival;
-        bind_vars[1].value_sz = sizeof(int);
-        bind_vars[1].dty = SQLT_INT;
-        bind_vars[1].indp = NULL;
-        bind_vars[1].alenp = NULL;
-
-        /* convert chaset id to charset name by querying Oracle server. */
-        oci8_exec_sql(oci8_get_svcctx(svc), "BEGIN :name := nls_charset_name(:csid); END;", 0, NULL, 2, bind_vars, 1);
-        if (buflen == 0) {
-            return Qnil;
-        }
-        name = rb_usascii_str_new(buf, buflen);
+    rv = OCINlsCharSetIdToName(oci8_envhp, TO_ORATEXT(buf), sizeof(buf), (ub2)FIX2INT(csid));
+    if (rv != OCI_SUCCESS) {
+        return Qnil;
     }
-    OBJ_FREEZE(name);
-    rb_hash_aset(csid2name, csid, name);
-    rb_hash_aset(csname2id, name, csid);
-    return name;
+    return rb_usascii_str_new_cstr(buf);
 }
 
 /*
@@ -105,70 +47,19 @@ VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
  * Returns the Oracle character set ID for the specified Oracle
  * character set name if it is valid. Othewise, +nil+ is returned.
  *
- * === Oracle 9iR2 client or upper
- *
- * It is done by using the mapping table stored in the client side.
- *
- * === Oracle 9iR1 client or lower
- *
- * It executes the following PL/SQL block internally to use
- * the mapping table stored in the server side.
- *
- *   BEGIN
- *     :csid := nls_charset_id(:name);
- *   END;
- *
  * @param [String] charset_name   Oracle character set name
  * @return [Fixnum]               Oracle character set id or nil
  * @since 2.0.0
  */
 static VALUE oci8_charset_name2id(VALUE svc, VALUE name)
 {
-    VALUE csid;
+    ub2 rv;
 
-    name = rb_funcall(name, id_upcase, 0);
-    csid = rb_hash_aref(csname2id, StringValue(name));
-    if (!NIL_P(csid)) {
-        return csid;
+    rv = OCINlsCharSetNameToId(oci8_envhp, TO_ORATEXT(StringValueCStr(name)));
+    if (rv == 0) {
+        return Qnil;
     }
-    if (have_OCINlsCharSetNameToId) {
-        /* Oracle 9iR2 or upper */
-        ub2 rv;
-
-        rv = OCINlsCharSetNameToId(oci8_envhp, RSTRING_ORATEXT(name));
-        if (rv == 0) {
-            return Qnil;
-        }
-        csid = INT2FIX(rv);
-    } else {
-        /* Oracle 9iR1 or lower */
-        oci8_exec_sql_var_t bind_vars[2];
-        int ival;
-        sb2 ind = 0; /* null indicator */
-
-        /* :csid */
-        bind_vars[0].valuep = &ival;
-        bind_vars[0].value_sz = sizeof(int);
-        bind_vars[0].dty = SQLT_INT;
-        bind_vars[0].indp = &ind;
-        bind_vars[0].alenp = NULL;
-        /* :name */
-        bind_vars[1].valuep = RSTRING_PTR(name);
-        bind_vars[1].value_sz = RSTRING_LEN(name);
-        bind_vars[1].dty = SQLT_CHR;
-        bind_vars[1].indp = NULL;
-        bind_vars[1].alenp = NULL;
-
-        /* convert chaset name to charset id by querying Oracle server. */
-        oci8_exec_sql(oci8_get_svcctx(svc), "BEGIN :csid := nls_charset_id(:name); END;", 0, NULL, 2, bind_vars, 1);
-        if (ind) {
-            return Qnil;
-        }
-        csid = INT2FIX(ival);
-    }
-    rb_hash_aset(csid2name, csid, name);
-    rb_hash_aset(csname2id, name, csid);
-    return csid;
+    return INT2FIX(rv);
 }
 
 /*
@@ -257,12 +148,6 @@ void Init_oci8_encoding(VALUE cOCI8)
     oci8_cOCIHandle = rb_define_class("OCIHandle", rb_cObject);
     cOCI8 = rb_define_class("OCI8", oci8_cOCIHandle);
 #endif
-    csid2name = rb_hash_new();
-    rb_global_variable(&csid2name);
-
-    id_upcase = rb_intern("upcase");
-    csname2id = rb_hash_new();
-    rb_global_variable(&csname2id);
 
     rb_define_method(cOCI8, "charset_name2id", oci8_charset_name2id, 1);
     rb_define_method(cOCI8, "charset_id2name", oci8_charset_id2name, 1);

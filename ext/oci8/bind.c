@@ -421,7 +421,5 @@ void Init_oci8_bind(VALUE klass)
     /* register primitive data types. */
     oci8_define_bind_class("String", &bind_string_data_type, bind_string_alloc);
     oci8_define_bind_class("RAW", &bind_raw_data_type, bind_raw_alloc);
-    if (oracle_client_version >= ORAVER_10_1) {
-        oci8_define_bind_class("BinaryDouble", &bind_binary_double_data_type, bind_binary_double_alloc);
-    }
+    oci8_define_bind_class("BinaryDouble", &bind_binary_double_data_type, bind_binary_double_alloc);
 }

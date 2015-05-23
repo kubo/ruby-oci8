@@ -88,6 +88,25 @@ $defs << "-DORACLE_CLIENT_VERSION=#{format('0x%08x', oci_client_version)}"
 if with_config('runtime-check')
   $defs << "-DRUNTIME_API_CHECK=1"
   $libs = saved_libs
+else
+  oraver = OCI8::OracleVersion.new(oci_client_version)
+  if oraver < OCI8::OracleVersion.new(10)
+    case "#{oraver.major}.#{oraver.minor}"
+    when "8.0"
+      ora_name = "Oracle 8"
+      oci8_ver = "2.0.x"
+    when "8.1"
+      ora_name = "Oracle 8i"
+      oci8_ver = "2.0.x"
+    when "9.1"
+      ora_name = "Oracle 9iR1"
+      oci8_ver = "2.1.x"
+    when "9.2"
+      ora_name = "Oracle 9iR2"
+      oci8_ver = "2.1.x"
+    end
+    raise "Ruby-oci8 #{RUBY_OCI8_VERSION} doesn't support #{ora_name}. Use ruby-oci8 #{oci8_ver} instead."
+  end
 end
 
 $objs = ["oci8lib.o", "env.o", "error.o", "oci8.o", "ocihandle.o",
