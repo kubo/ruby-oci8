@@ -25,9 +25,9 @@ rb_encoding *oci8_encoding;
  *
  * @param [Fixnum] charset_id   Oracle character set id
  * @return [String]             Oracle character set name or nil
- * @since 2.0.0
+ * @since 2.2.0
  */
-VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
+VALUE oci8_s_charset_id2name(VALUE klass, VALUE csid)
 {
     char buf[OCI_NLS_MAXBUFSZ];
     sword rv;
@@ -49,9 +49,9 @@ VALUE oci8_charset_id2name(VALUE svc, VALUE csid)
  *
  * @param [String] charset_name   Oracle character set name
  * @return [Fixnum]               Oracle character set id or nil
- * @since 2.0.0
+ * @since 2.2.0
  */
-static VALUE oci8_charset_name2id(VALUE svc, VALUE name)
+static VALUE oci8_s_charset_name2id(VALUE klass, VALUE name)
 {
     ub2 rv;
 
@@ -142,6 +142,43 @@ static VALUE oci8_set_encoding(VALUE klass, VALUE encoding)
     return encoding;
 }
 
+/*
+ * call-seq:
+ *   charset_name2id(charset_name) -> charset_id
+ *
+ * Returns the Oracle character set ID for the specified Oracle
+ * character set name if it is valid. Othewise, +nil+ is returned.
+ *
+ * @param [String] charset_name   Oracle character set name
+ * @return [Fixnum]               Oracle character set id or nil
+ * @since 2.0.0
+ * @deprecated Use {OCI8.charset_name2id} instead.
+ */
+static VALUE oci8_charset_name2id(VALUE svc, VALUE name)
+{
+    rb_warning("Use OCI8.charset_name2id instead of OCI8#charset_name2id.");
+    return oci8_s_charset_name2id(Qnil, name);
+}
+
+/*
+ * call-seq:
+ *   charset_id2name(charset_id) -> charset_name
+ *
+ * Returns the Oracle character set name from the specified
+ * character set ID if it is valid. Otherwise, +nil+ is returned.
+ *
+ * @param [Fixnum] charset_id   Oracle character set id
+ * @return [String]             Oracle character set name or nil
+ * @since 2.0.0
+ * @deprecated Use {OCI8.charset_id2name} instead.
+ */
+static VALUE oci8_charset_id2name(VALUE svc, VALUE name)
+{
+    rb_warning("Use OCI8.charset_id2name instead of OCI8#charset_id2name.");
+    return oci8_s_charset_id2name(Qnil, name);
+}
+
+
 void Init_oci8_encoding(VALUE cOCI8)
 {
 #if 0
@@ -149,9 +186,11 @@ void Init_oci8_encoding(VALUE cOCI8)
     cOCI8 = rb_define_class("OCI8", oci8_cOCIHandle);
 #endif
 
-    rb_define_method(cOCI8, "charset_name2id", oci8_charset_name2id, 1);
-    rb_define_method(cOCI8, "charset_id2name", oci8_charset_id2name, 1);
+    rb_define_singleton_method(cOCI8, "charset_name2id", oci8_s_charset_name2id, 1);
+    rb_define_singleton_method(cOCI8, "charset_id2name", oci8_s_charset_id2name, 1);
     rb_define_singleton_method(cOCI8, "nls_ratio", oci8_get_nls_ratio, 0);
     rb_define_singleton_method(cOCI8, "encoding", oci8_get_encoding, 0);
     rb_define_singleton_method(cOCI8, "encoding=", oci8_set_encoding, 1);
+    rb_define_method(cOCI8, "charset_name2id", oci8_charset_name2id, 1);
+    rb_define_method(cOCI8, "charset_id2name", oci8_charset_id2name, 1);
 }

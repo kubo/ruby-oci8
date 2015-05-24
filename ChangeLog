@@ -1,3 +1,7 @@
+2015-05-24  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/encoding.c: Add OCI8.charset_name2id and OCI8.charset_id2name.
+	    Mark OCI8#charset_name2id and OCI8#charset_id2name as deprecated.
+
 2015-05-23  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/bind.c, ext/oci8/encoding.c, ext/oci8/error.c, ext/oci8/oci8.c,
 	  ext/oci8/oci8lib.c, ext/oci8/ocidatetime.c, ext/oci8/stmt.c,
