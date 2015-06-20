@@ -531,7 +531,6 @@ VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
 
 /* encoding.c */
 void Init_oci8_encoding(VALUE cOCI8);
-VALUE oci8_charset_id2name(VALUE svc, VALUE charset_id);
 extern int oci8_nls_ratio;
 extern rb_encoding *oci8_encoding;
 
