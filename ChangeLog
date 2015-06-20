@@ -1,4 +1,9 @@
 2015-06-20  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb: Delete an object file created by extconf.rb
+	    before compilation.
+	    (github issue #75)
+
+2015-06-20  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.yml, ext/oci8/stmt.c:
 	    Delete unreachable code which was created when Oracle 9i support was dropped.
 
