@@ -1,4 +1,7 @@
 2015-06-20  Kubo Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb: Change the default prefetch rows size 100.
+
+2015-06-20  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb: Delete an object file created by extconf.rb
 	    before compilation.
 	    (github issue #75)

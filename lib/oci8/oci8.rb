@@ -157,7 +157,7 @@ class OCI8
       attr_set_ub4(176, stmt_cache_size) # 176: OCI_ATTR_STMTCACHESIZE
     end
 
-    @prefetch_rows = nil
+    @prefetch_rows = 100
     @username = nil
   end
 
@@ -329,12 +329,12 @@ class OCI8
     end
   end
 
-  # Sets the prefetch rows size. The default value is one.
+  # Sets the prefetch rows size. The default value is 100.
   # When a select statement is executed, the OCI library allocate
   # prefetch buffer to reduce the number of network round trips by
   # retrieving specified number of rows in one round trip.
   #
-  # Note: Active record adaptors set 100 by default.
+  # Note: The default value had been 1 before ruby-oci8 2.2.0.
   def prefetch_rows=(num)
     @prefetch_rows = num
   end
