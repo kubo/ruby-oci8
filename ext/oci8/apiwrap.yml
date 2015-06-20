@@ -874,16 +874,6 @@ OCIStmtGetPieceInfo:
             - ub4 *idxp
             - ub1 *piecep
 
-OCIStmtPrepare:
-  :version: 800
-  :args:
-            - OCIStmt *stmtp
-            - OCIError *errhp
-            - CONST text *stmt
-            - ub4 stmt_len
-            - ub4 language
-            - ub4 mode
-
 OCIStmtSetPieceInfo:
   :version: 800
   :args:

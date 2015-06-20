@@ -1,3 +1,7 @@
+2015-06-20  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml, ext/oci8/stmt.c:
+	    Delete unreachable code which was created when Oracle 9i support was dropped.
+
 2015-05-24  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/encoding.c: Add OCI8.charset_name2id and OCI8.charset_id2name.
 	    Mark OCI8#charset_name2id and OCI8#charset_id2name as deprecated.

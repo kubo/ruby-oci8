@@ -89,13 +89,6 @@ static VALUE oci8_stmt_initialize(VALUE self, VALUE svc, VALUE sql)
             oci8_env_raise(oci8_envhp, rv);
         }
         stmt->base.type = OCI_HTYPE_STMT;
-        if (!NIL_P(sql)) {
-            OCI8SafeStringValue(sql);
-            rv = OCIStmtPrepare(stmt->base.hp.stmt, oci8_errhp, RSTRING_ORATEXT(sql), RSTRING_LEN(sql), OCI_NTV_SYNTAX, OCI_DEFAULT);
-            if (IS_OCI_ERROR(rv)) {
-                chker3(rv, &svcctx->base, stmt->base.hp.stmt);
-            }
-        }
     }
     RB_OBJ_WRITE(stmt->base.self, &stmt->svc, svc);
 
