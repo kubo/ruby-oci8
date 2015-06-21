@@ -5,47 +5,37 @@
 #
 class OCI8
 
-  # get the environment variable NLS_LANG.
-  nls_lang = ENV['NLS_LANG']
+  @@client_charset_name = charset_id2name(@@environment_handle.send(:attr_get_ub2, 31))
+  # 31 is OCI_ATTR_ENV_CHARSET_ID.
 
-  if nls_lang.is_a? String and nls_lang.length == 0
-    nls_lang = nil
-  end
-
-  # if NLS_LANG is not set, get it from the Windows registry.
-  if nls_lang.nil? and defined? OCI8::Win32Util
-    dll_path = OCI8::Win32Util.dll_path.upcase
-    if dll_path =~ %r{\\BIN\\OCI.DLL}
-      oracle_home = $`
-      OCI8::Win32Util.enum_homes do |home, lang|
-        if oracle_home == home.upcase
-          nls_lang = lang
-          break
+  if @@client_charset_name == 'US7ASCII'
+    # Check whether US7ASCII is explicitly set by NLS_LANG or not.
+    nls_lang = ENV['NLS_LANG']
+    if nls_lang.nil? and defined? OCI8::Win32Util
+      dll_path = OCI8::Win32Util.dll_path.upcase
+      if dll_path =~ %r{\\BIN\\OCI.DLL}
+        oracle_home = $`
+        OCI8::Win32Util.enum_homes do |home, lang|
+          if oracle_home == home.upcase
+            nls_lang = lang
+            break
+          end
         end
       end
     end
-  end
-
-  # extract the charset name.
-  if nls_lang
-    if nls_lang =~ /\.([[:alnum:]]+)$/
-      @@client_charset_name = $1.upcase
-    else
-      raise "Invalid NLS_LANG format: #{nls_lang}"
+    if nls_lang.nil?
+      warn "Warning: NLS_LANG is not set. fallback to US7ASCII."
     end
-  else
-    warn "Warning: NLS_LANG is not set. fallback to US7ASCII."
-    # @private
-    @@client_charset_name = 'US7ASCII'
   end
 
   if defined? DEFAULT_OCI8_ENCODING
     enc = DEFAULT_OCI8_ENCODING
   else
     require 'yaml'
-    enc = YAML::load_file(File.dirname(__FILE__) + '/encoding.yml')[@@client_charset_name]
+    yaml_file = File.dirname(__FILE__) + '/encoding.yml'
+    enc = YAML::load_file(yaml_file)[@@client_charset_name]
     if enc.nil?
-      raise "Ruby encoding name is not found in encoding.yml for NLS_LANG #{nls_lang}."
+      raise "Cannot convert Oracle charset name #{@@client_charset_name} to Ruby encoding name in #{yaml_file}."
     end
     if enc.is_a? Array
       # Use the first available encoding in the array.

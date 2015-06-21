@@ -1,3 +1,7 @@
+2015-06-21  Kubo Takehiro  <kubo@jiubao.org>
+	* lib/oci8/encoding-init.rb: Get Oracle client charset name from
+	    the environment handle instead of NLS_LANG.
+
 2015-06-20  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.h: Fix a compilation error.
 
