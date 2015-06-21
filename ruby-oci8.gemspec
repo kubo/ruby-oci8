@@ -7,6 +7,7 @@
 #   gem build ruby-oci8.gemspec -- current
 #
 require 'fileutils'
+require File.dirname(__FILE__) + '/lib/oci8/version.rb'
 
 if ARGV.include?("--") and ARGV[(ARGV.index("--") + 1)] == 'current'
   gem_platform = 'current'
@@ -16,7 +17,7 @@ end
 
 spec = Gem::Specification.new do |s|
   s.name = 'ruby-oci8'
-  s.version = File.read('VERSION').strip
+  s.version = OCI8::VERSION
   s.summary = 'Ruby interface for Oracle using OCI8 API'
   s.email = 'kubo@jiubao.org'
   s.homepage = 'https://github.com/kubo/ruby-oci8/'
