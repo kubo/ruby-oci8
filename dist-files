@@ -5,7 +5,6 @@ ChangeLog
 Makefile
 NEWS
 README.md
-VERSION
 dist-files
 metaconfig
 pre-distclean.rb
@@ -53,7 +52,7 @@ ext/oci8/thread_util.c
 ext/oci8/thread_util.h
 ext/oci8/win32.c
 lib/.document
-lib/oci8.rb.in
+lib/oci8.rb
 lib/dbd/OCI8.rb
 lib/oci8/.document
 lib/oci8/bindtype.rb
@@ -69,6 +68,7 @@ lib/oci8/oci8.rb
 lib/oci8/ocihandle.rb
 lib/oci8/oracle_version.rb
 lib/oci8/properties.rb
+lib/oci8/version.rb
 test/README
 test/config.rb
 test/setup_test_object.sql
@@ -93,4 +93,5 @@ test/test_oci8.rb
 test/test_oracle_version.rb
 test/test_oradate.rb
 test/test_oranumber.rb
+test/test_package_type.rb
 test/test_rowid.rb

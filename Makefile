@@ -1,9 +1,9 @@
-VERSION = `cat VERSION`
+VERSION = `$(RUBY) -I. -rlib/oci8/version.rb -e "print OCI8::VERSION"`
 RUBY = ruby -w
 
 all: build
 
-config.save: lib/oci8.rb.in
+config.save:
 	$(RUBY) setup.rb config
 
 build: config.save

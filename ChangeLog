@@ -1,4 +1,11 @@
 2015-06-21  Kubo Takehiro  <kubo@jiubao.org>
+	* Makefile, dist-files, ext/oci8/extconf.rb, ext/oci8/oci8.c: Use
+	   ruby-oci8 version in lib/oci8/version.rb instead of VERSION.
+	* VERSION: Deleted
+	* lib/oci8/version.rb: Added
+	* lib/oci8.rb, lib/oci8.rb.in: Renamed lib/oci8.rb to lib/oci8.rb.in.
+
+2015-06-21  Kubo Takehiro  <kubo@jiubao.org>
 	* lib/oci8/encoding-init.rb: Get Oracle client charset name from
 	    the environment handle instead of NLS_LANG.
 

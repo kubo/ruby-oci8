@@ -1096,7 +1096,7 @@ void Init_oci8(VALUE *out)
         oracle_client_vernum = INT2FIX(ORAVERNUM(major, minor, update, patch, port_update));
     }
 
-    rb_define_const(cOCI8, "VERSION", rb_obj_freeze(rb_usascii_str_new_cstr(OCI8LIB_VERSION)));
+    rb_define_const(cOCI8, "LIB_VERSION", rb_obj_freeze(rb_usascii_str_new_cstr(OCI8LIB_VERSION)));
     rb_define_singleton_method_nodoc(cOCI8, "oracle_client_vernum", oci8_s_oracle_client_vernum, 0);
     rb_define_singleton_method_nodoc(cOCI8, "__get_prop", oci8_s_get_prop, 1);
     rb_define_singleton_method_nodoc(cOCI8, "__set_prop", oci8_s_set_prop, 2);

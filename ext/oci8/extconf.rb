@@ -17,23 +17,9 @@ end
 require File.dirname(__FILE__) + '/oraconf'
 require File.dirname(__FILE__) + '/apiwrap'
 require File.dirname(__FILE__) + '/../../lib/oci8/oracle_version.rb'
-
-RUBY_OCI8_VERSION = File.read("#{File.dirname(__FILE__)}/../../VERSION").chomp
+require File.dirname(__FILE__) + '/../../lib/oci8/version.rb'
 
 oraconf = OraConf.get()
-
-def replace_keyword(source, target, replace)
-  puts "creating #{target} from #{source}"
-  open(source, "rb") { |f|
-    buf = f.read
-    replace.each do |key, value|
-      buf.gsub!('@@' + key + '@@', value)
-    end
-    open(target, "wb") {|fw|
-      fw.write buf
-    }
-  }        
-end
 
 $CFLAGS += oraconf.cflags
 saved_libs = $libs
@@ -105,7 +91,7 @@ else
       ora_name = "Oracle 9iR2"
       oci8_ver = "2.1.x"
     end
-    raise "Ruby-oci8 #{RUBY_OCI8_VERSION} doesn't support #{ora_name}. Use ruby-oci8 #{oci8_ver} instead."
+    raise "Ruby-oci8 #{OCI8::VERSION} doesn't support #{ora_name}. Use ruby-oci8 #{oci8_ver} instead."
   end
 end
 
@@ -139,15 +125,6 @@ if (defined? RUBY_ENGINE) && RUBY_ENGINE == 'rbx'
   have_func("rb_str_buf_cat_ascii", "ruby.h")
   have_func("rb_enc_str_buf_cat", "ruby.h")
 end
-
-# replace files
-replace = {
-  'OCI8_CLIENT_VERSION' => oraconf.version,
-  'OCI8_MODULE_VERSION' => RUBY_OCI8_VERSION
-}
-
-# make ruby script before running create_makefile.
-replace_keyword(File.dirname(__FILE__) + '/../../lib/oci8.rb.in', '../../lib/oci8.rb', replace)
 
 ruby_engine = (defined? RUBY_ENGINE) ? RUBY_ENGINE : 'ruby'
 
@@ -216,7 +193,7 @@ end
 
 $defs << "-DInit_oci8lib=Init_#{so_basename}"
 $defs << "-Doci8lib=#{so_basename}"
-$defs << "-DOCI8LIB_VERSION=\\\"#{RUBY_OCI8_VERSION}\\\""
+$defs << "-DOCI8LIB_VERSION=\\\"#{OCI8::VERSION}\\\""
 $defs << "-DCHAR_IS_NOT_A_SHORTCUT_TO_ID" if ruby_engine != 'ruby'
 
 create_header()

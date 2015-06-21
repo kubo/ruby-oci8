@@ -69,10 +69,11 @@ else
 end
 require so_basename
 
-if OCI8::VERSION != '@@OCI8_MODULE_VERSION@@'
+require 'oci8/version.rb'
+if OCI8::VERSION != OCI8::LIB_VERSION
   require 'rbconfig'
   so_name = so_basename + "." + RbConfig::CONFIG['DLEXT']
-  raise "VERSION MISMATCH! #{so_name} version is #{OCI8::VERSION}, but oci8.rb version is @@OCI8_MODULE_VERSION@@."
+  raise "VERSION MISMATCH! #{so_name} version is #{OCI8::LIB_VERSION}, but oci8.rb version is #{OCI8::VERSION}."
 end
 
 require 'oci8/encoding-init.rb'
