@@ -1,3 +1,9 @@
+2015-06-23  Kubo Takehiro  <kubo@jiubao.org>
+	* ruby-oci8.gemspec: Load oci8/version.rb temporarily and delete OCI8.
+	    Some 'bundler' tasks load 'ruby-oci8.gemspec' before 'require "oci8"'
+	    and fail with 'TypeError: superclass mismatch for class OCI8.'
+	    (github issue #80)
+
 2015-06-21  Kubo Takehiro  <kubo@jiubao.org>
 	* ruby-oci8.gemspec: Use ruby-oci8 version in lib/oci8/version.rb
 	    instead of VERSION file to generate gem.

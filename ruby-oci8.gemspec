@@ -7,7 +7,6 @@
 #   gem build ruby-oci8.gemspec -- current
 #
 require 'fileutils'
-require File.dirname(__FILE__) + '/lib/oci8/version.rb'
 
 if ARGV.include?("--") and ARGV[(ARGV.index("--") + 1)] == 'current'
   gem_platform = 'current'
@@ -15,9 +14,20 @@ else
   gem_platform = Gem::Platform::RUBY
 end
 
+if defined? OCI8
+  oci8_version = OCI8::VERSION
+else
+  # Load oci8/version.rb temporarily and delete OCI8.
+  # Some 'bundler' tasks load this file before 'require "oci8"'
+  # and fail with 'TypeError: superclass mismatch for class OCI8.'
+  load File.dirname(__FILE__) + '/lib/oci8/version.rb'
+  oci8_version = OCI8::VERSION
+  Object.send(:remove_const, :OCI8)
+end
+
 spec = Gem::Specification.new do |s|
   s.name = 'ruby-oci8'
-  s.version = OCI8::VERSION
+  s.version = oci8_version
   s.summary = 'Ruby interface for Oracle using OCI8 API'
   s.email = 'kubo@jiubao.org'
   s.homepage = 'https://github.com/kubo/ruby-oci8/'
