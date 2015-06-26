@@ -67,7 +67,14 @@ when 'jruby'
 else
   raise 'unsupported ruby engine: ' + RUBY_ENGINE
 end
-require so_basename
+
+begin
+  require so_basename
+rescue LoadError, OCIError
+  require 'oci8/check_load_error'
+  OCI8::Util::check_load_error($!)
+  raise
+end
 
 require 'oci8/version.rb'
 if OCI8::VERSION != OCI8::LIB_VERSION
