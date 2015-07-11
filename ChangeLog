@@ -1,3 +1,10 @@
+2015-07-11  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/error.c, ext/oci8/extconf.rb, ext/oci8/oci8.h,
+	  ext/oci8/oci8lib.c, ext/oci8/util.c, ext/oci8/win32.c,
+	  lib/oci8/encoding-init.rb: Delete OCI8::Win32Util.dll_path
+	    and add OCI8::Util.dll_path, which works on Linux, Solaris,
+	    OS X and HP-UX in addition to Windows.
+
 2015-06-26  Kubo Takehiro  <kubo@jiubao.org>
 	* lib/oci8.rb, lib/oci8/check_load_error.rb: Check the message of
 	    LoadError and raise more user-friendly message.

@@ -151,6 +151,9 @@ Init_oci8lib()
     Init_oci8_metadata(cOCI8);
     Init_oci8_lob(cOCI8);
 
+    /* OCI8::Util */
+    Init_oci8_util(cOCI8);
+
     /* allocate a temporary errhp to pass Init_oci_number() */
     rv = OCIEnvCreate(&envhp, oci8_env_mode, NULL, NULL, NULL, NULL, 0, NULL);
     if (rv != OCI_SUCCESS) {

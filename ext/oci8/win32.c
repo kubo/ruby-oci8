@@ -2,7 +2,7 @@
 /*
   win32.c - part of ruby-oci8
 
-  Copyright (C) 2009-2010 KUBO Takehiro <kubo@jiubao.org>
+  Copyright (C) 2009-2015 Kubo Takehiro <kubo@jiubao.org>
 */
 #include "oci8.h"
 #ifdef __CYGWIN__
@@ -40,29 +40,6 @@ static void raise_error(void)
     }
     rb_raise(rb_eRuntimeError, "%s", msg);
 }
-
-/*
- *  Returns the full path of OCI.DLL used by the current process.
- *
- *  @return [String]
- */
-static VALUE dll_path(VALUE module)
-{
-    HMODULE hModule;
-    DWORD len;
-    char path[1024];
-
-    hModule = GetModuleHandle("OCI.DLL");
-    if (hModule == NULL) {
-        raise_error();
-    }
-    len = GetModuleFileName(hModule, path, sizeof(path));
-    if (len == 0) {
-        raise_error();
-    }
-    return rb_external_str_new_with_enc(path, len, rb_filesystem_encoding());
-}
-
 
 typedef struct {
     HKEY hKey;
@@ -154,6 +131,5 @@ void Init_oci8_win32(VALUE cOCI8)
 {
     VALUE mWin32Util = rb_define_module_under(cOCI8, "Win32Util");
 
-    rb_define_module_function(mWin32Util, "dll_path", dll_path, 0);
     rb_define_module_function(mWin32Util, "enum_homes", enum_homes, 0);
 }

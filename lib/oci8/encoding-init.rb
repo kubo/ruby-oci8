@@ -12,8 +12,7 @@ class OCI8
     # Check whether US7ASCII is explicitly set by NLS_LANG or not.
     nls_lang = ENV['NLS_LANG']
     if nls_lang.nil? and defined? OCI8::Win32Util
-      dll_path = OCI8::Win32Util.dll_path.upcase
-      if dll_path =~ %r{\\BIN\\OCI.DLL}
+      if OCI8::Util::dll_path =~ /\\BIN\\OCI\.DLL$/i
         oracle_home = $`
         OCI8::Win32Util.enum_homes do |home, lang|
           if oracle_home == home.upcase

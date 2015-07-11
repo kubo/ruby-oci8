@@ -2,7 +2,7 @@
 /*
  * oci8.h - part of ruby-oci8
  *
- * Copyright (C) 2002-2014 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2015 Kubo Takehiro <kubo@jiubao.org>
  */
 #ifndef _RUBY_OCI_H_
 #define _RUBY_OCI_H_ 1
@@ -533,6 +533,10 @@ VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
 void Init_oci8_encoding(VALUE cOCI8);
 extern int oci8_nls_ratio;
 extern rb_encoding *oci8_encoding;
+
+/* util.c */
+void Init_oci8_util(VALUE cOCI8);
+const char *oci8_dll_path(void);
 
 /* win32.c */
 void Init_oci8_win32(VALUE cOCI8);
