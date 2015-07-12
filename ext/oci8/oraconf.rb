@@ -518,6 +518,13 @@ EOS
             end
           end
         end
+      when /darwin/
+        fallback_path = ENV['DYLD_FALLBACK_LIBRARY_PATH']
+        if fallback_path.nil?
+          fallback_path = "#{ENV['HOME']}/lib:/usr/local/lib:/lib:/usr/lib"
+        end
+        puts "  checking DYLD_FALLBACK_LIBRARY_PATH..."
+        ld_path, file = check_lib_in_path(fallback_path, glob_name, check_proc)
       end
     end
 
