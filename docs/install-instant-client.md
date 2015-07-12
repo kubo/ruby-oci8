@@ -98,6 +98,34 @@ Windows
 
 Unzip the packages and set PATH to point to the directory where OCI.DLL is installed.
 
+OS X
+----
+
+To install `Oracle Instant Client Basic Lite` by [Homebrew][],
+
+* Download two instant client packages: `Basic Lite` and `SDK` and put them
+  to `/Library/Caches/Homebrew` (if the environment variable `HOMEBREW_CACHE`
+  is not set and `$HOME/Library/Caches/Homebrew` doesn't exist.)
+* Run the followining commands:
+
+        brew install InstantClientTap/instantclient/instantclient-basiclite
+        brew install InstantClientTap/instantclient/instantclient-sdk
+
+To install `Oracle Instant Client Basic` by [Homebrew][].,
+
+* Download *three* instant client packages: `Basic`, `Basic Lite` and `SDK`
+  and put them to `/Library/Caches/Homebrew` (if the environment variable
+  `HOMEBREW_CACHE` is not set and `$HOME/Library/Caches/Homebrew` doesn't exist.)
+* Run the followining commands:
+
+        brew install InstantClientTap/instantclient/instantclient-basic
+        brew install InstantClientTap/instantclient/instantclient-sdk
+
+You have no need to set the environment variable `DYLD_LIBRARY_PATH` if
+'`brew --prefix`' is '`/usr/local`' and the ruby-oci8 version is 2.2.0 or upper.
+
+Note: The latest ruby-oci8 version is 2.1.8.
+
 Check the environment
 =====================
 
@@ -172,3 +200,4 @@ note: If you use '`sudo`', use it only when running '`make install`'.
     nmake install
 
 [download page]: https://bintray.com/kubo/generic/ruby-oci8
+[Homebrew]: http://brew.sh/
