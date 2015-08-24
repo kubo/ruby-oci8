@@ -312,15 +312,6 @@ OCILobFileSetName:
             - CONST text *filename
             - ub2 f_length
 
-# round trip: 1
-OCILobGetLength_nb:
-  :version: 800
-  :args:
-            - OCISvcCtx *svchp
-            - OCIError *errhp
-            - OCILobLocator *locp
-            - ub4 *lenp
-
 # round trip: 0
 OCILobLocatorIsInit:
   :version: 800
@@ -329,48 +320,6 @@ OCILobLocatorIsInit:
             - OCIError *errhp
             - CONST OCILobLocator *locp
             - boolean *is_initialized
-
-# round trip: 0 or 1
-OCILobRead_nb:
-  :version: 800
-  :args:
-            - OCISvcCtx *svchp
-            - OCIError *errhp
-            - OCILobLocator *locp
-            - ub4 *amtp
-            - ub4 offset
-            - dvoid *bufp
-            - ub4 bufl
-            - dvoid *ctxp
-            - OCICallbackLobRead cbfp
-            - ub2 csid
-            - ub1 csfrm
-
-# round trip: 1
-OCILobTrim_nb:
-  :version: 800
-  :args:
-            - OCISvcCtx *svchp
-            - OCIError *errhp
-            - OCILobLocator *locp
-            - ub4 newlen
-
-# round trip: 0 or 1
-OCILobWrite_nb:
-  :version: 800
-  :args:
-            - OCISvcCtx *svchp
-            - OCIError *errhp
-            - OCILobLocator *locp
-            - ub4 *amtp
-            - ub4 offset
-            - dvoid *bufp
-            - ub4 buflen
-            - ub1 piece
-            - dvoid *ctxp
-            - OCICallbackLobWrite cbfp
-            - ub2 csid
-            - ub1 csfrm
 
 # round trip: 1
 OCILogoff:

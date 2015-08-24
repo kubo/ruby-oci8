@@ -1,3 +1,7 @@
+2015-08-24  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml, ext/oci8/lob.c: Support LOB whose size is
+	    over 4G.
+
 2015-08-23  Kubo Takehiro  <kubo@jiubao.org>
 	* dist-files: Add ext/oci8/util.c.
 

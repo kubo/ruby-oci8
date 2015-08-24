@@ -373,12 +373,6 @@ typedef struct {
 #define chker2(status, base) oci8_check_error_((status), (base), NULL, __FILE__, __LINE__)
 #define chker3(status, base, stmt) oci8_check_error_((status), (base), (stmt), __FILE__, __LINE__)
 
-#if SIZEOF_LONG > 4
-#define UB4_TO_NUM INT2FIX
-#else
-#define UB4_TO_NUM UINT2NUM
-#endif
-
 /* The folloiwng macros oci8_envhp and oci8_errhp are used
  * as if they are defined as follows:
  *

@@ -20,6 +20,10 @@ static VALUE seek_end;
 
 #define TO_LOB(obj) ((oci8_lob_t *)oci8_check_typeddata((obj), &oci8_lob_data_type, 1))
 
+#ifndef MIN
+#define MIN(a, b) ((a) < (b) ? (a) : (b))
+#endif
+
 enum state {
     S_NO_OPEN_CLOSE,
     S_OPEN,
@@ -30,8 +34,7 @@ enum state {
 typedef struct {
     oci8_base_t base;
     oci8_svcctx_t *svcctx;
-    ub4 pos;
-    int char_width;
+    ub8 pos;
     ub1 csfrm;
     ub1 lobtype;
     enum state state;
@@ -253,12 +256,12 @@ void oci8_assign_bfile(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest)
     oci8_assign_lob(cOCI8BFILE, svcctx, lob, dest);
 }
 
-static ub4 oci8_lob_get_length(oci8_lob_t *lob)
+static ub8 oci8_lob_get_length(oci8_lob_t *lob)
 {
     oci8_svcctx_t *svcctx = check_svcctx(lob);
-    ub4 len;
+    ub8 len;
 
-    chker2(OCILobGetLength_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &len),
+    chker2(OCILobGetLength2_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &len),
            &svcctx->base);
     return len;
 }
@@ -381,7 +384,6 @@ static VALUE oci8_lob_do_initialize(int argc, VALUE *argv, VALUE self, ub1 csfrm
         oci8_env_raise(oci8_envhp, rv);
     lob->base.type = OCI_DTYPE_LOB;
     lob->pos = 0;
-    lob->char_width = 1;
     lob->csfrm = csfrm;
     lob->lobtype = lobtype;
     lob->state = S_NO_OPEN_CLOSE;
@@ -468,26 +470,6 @@ static VALUE oci8_blob_initialize(int argc, VALUE *argv, VALUE self)
 }
 
 /*
- *  call-seq:
- *    __char_width = size
- *
- *  @private
- *  IMO, nobody need and use this.
- */
-static VALUE oci8_lob_set_char_width(VALUE self, VALUE vsize)
-{
-    oci8_lob_t *lob = TO_LOB(self);
-    int size;
-
-    size = NUM2INT(vsize); /* 1 */
-
-    if (size <= 0)
-        rb_raise(rb_eArgError, "size must be more than one.");
-    lob->char_width = size;
-    return vsize;
-}
-
-/*
  *  Returns +true+ when <i>self</i> is initialized.
  *
  *  @return [true or false]
@@ -511,7 +493,7 @@ static VALUE oci8_lob_available_p(VALUE self)
  */
 static VALUE oci8_lob_get_size(VALUE self)
 {
-    return UB4_TO_NUM(oci8_lob_get_length(TO_LOB(self)));
+    return ULL2NUM(oci8_lob_get_length(TO_LOB(self)));
 }
 
 /*
@@ -524,7 +506,7 @@ static VALUE oci8_lob_get_size(VALUE self)
 static VALUE oci8_lob_get_pos(VALUE self)
 {
     oci8_lob_t *lob = TO_LOB(self);
-    return UB4_TO_NUM(lob->pos);
+    return ULL2NUM(lob->pos);
 }
 
 /*
@@ -571,11 +553,11 @@ static VALUE oci8_lob_seek(int argc, VALUE *argv, VALUE self)
         }
     }
     if (whence == seek_cur) {
-        position = rb_funcall(UB4_TO_NUM(lob->pos), id_plus, 1, position);
+        position = rb_funcall(ULL2NUM(lob->pos), id_plus, 1, position);
     } else if (whence == seek_end) {
-        position = rb_funcall(UB4_TO_NUM(oci8_lob_get_length(lob)), id_plus, 1, position);
+        position = rb_funcall(ULL2NUM(oci8_lob_get_length(lob)), id_plus, 1, position);
     }
-    lob->pos = NUM2UINT(position);
+    lob->pos = NUM2ULL(position);
     return self;
 }
 
@@ -606,7 +588,7 @@ static VALUE oci8_lob_truncate(VALUE self, VALUE len)
     oci8_svcctx_t *svcctx = check_svcctx(lob);
 
     lob_open(lob);
-    chker2(OCILobTrim_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, NUM2UINT(len)),
+    chker2(OCILobTrim2_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, NUM2ULL(len)),
            &svcctx->base);
     return self;
 }
@@ -624,6 +606,32 @@ static VALUE oci8_lob_set_size(VALUE self, VALUE len)
 {
     oci8_lob_truncate(self, len);
     return len;
+}
+
+static void open_bfile(oci8_svcctx_t *svcctx, oci8_lob_t *lob, OCIError *errhp)
+{
+    while (1) {
+        sword rv = OCILobFileOpen_nb(svcctx, svcctx->base.hp.svc, errhp, lob->base.hp.lob, OCI_FILE_READONLY);
+        if (rv == OCI_ERROR && oci8_get_error_code(oci8_errhp) == 22290) {
+            /* ORA-22290: operation would exceed the maximum number of opened files or LOBs */
+            /* close all opened BFILE implicitly. */
+            oci8_base_t *base;
+            for (base = &lob->base; base != &lob->base; base = base->next) {
+                if (base->type == OCI_DTYPE_LOB) {
+                    oci8_lob_t *tmp = (oci8_lob_t *)base;
+                    if (tmp->state == S_BFILE_OPEN) {
+                        chker2(OCILobFileClose_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, tmp->base.hp.lob),
+                               &svcctx->base);
+                        tmp->state = S_BFILE_CLOSE;
+                    }
+                }
+            }
+        } else {
+            chker2(rv, &svcctx->base);
+            lob->state = S_BFILE_OPEN;
+            return;
+        }
+    }
 }
 
 /*
@@ -653,61 +661,55 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
 {
     oci8_lob_t *lob = TO_LOB(self);
     oci8_svcctx_t *svcctx = check_svcctx(lob);
-    ub4 length;
-    ub4 nchar;
-    long nbyte;
-    ub4 amt;
+    ub8 lob_length;
+    ub8 read_len;
+    ub8 pos = lob->pos;
+    long strbufsiz;
+    ub8 byte_amt;
+    ub8 char_amt;
     sword rv;
-    size_t buf_size_in_char;
     VALUE size;
     VALUE v = rb_ary_new();
+    OCIError *errhp = oci8_errhp;
+    ub1 piece = OCI_FIRST_PIECE;
 
     rb_scan_args(argc, argv, "01", &size);
-    length = oci8_lob_get_length(lob);
-    if (length == 0 && NIL_P(size)) {
+    lob_length = oci8_lob_get_length(lob);
+    if (lob_length == 0 && NIL_P(size)) {
         return rb_usascii_str_new("", 0);
     }
-    if (length <= lob->pos) /* EOF */
+    if (lob_length <= pos) /* EOF */
         return Qnil;
-    length -= lob->pos;
     if (NIL_P(size)) {
-        nchar = length; /* read until EOF */
+        read_len = lob_length - pos;
     } else {
-        nchar = NUM2UINT(size);
-        if (nchar > length)
-            nchar = length;
+        ub8 sz = NUM2ULL(size);
+        read_len = MIN(sz, lob_length - pos);
     }
-    nbyte = oci8_nls_ratio * (long)nchar;
-    amt = nchar;
-    buf_size_in_char = nbyte / lob->char_width;
+    if (lob->lobtype == OCI_TEMP_CLOB) {
+        byte_amt = 0;
+        char_amt = read_len;
+        if (oci8_nls_ratio == 1) {
+            strbufsiz = MIN(read_len, ULONG_MAX);
+        } else {
+            strbufsiz = MIN(read_len + read_len / 8, ULONG_MAX);
+        }
+        if (strbufsiz <= 10) {
+            strbufsiz = 10;
+        }
+    } else {
+        byte_amt = read_len;
+        char_amt = 0;
+        strbufsiz = MIN(read_len, ULONG_MAX);
+    }
+    if (lob->state == S_BFILE_CLOSE) {
+        open_bfile(svcctx, lob, errhp);
+    }
     do {
-        VALUE strbuf = rb_str_buf_new(nbyte);
+        VALUE strbuf = rb_str_buf_new(strbufsiz);
         char *buf = RSTRING_PTR(strbuf);
 
-        if (lob->state == S_BFILE_CLOSE) {
-            rv = OCILobFileOpen_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, OCI_FILE_READONLY);
-            if (rv == OCI_ERROR && oci8_get_error_code(oci8_errhp) == 22290) {
-                /* ORA-22290: operation would exceed the maximum number of opened files or LOBs */
-                /* close all opened BFILE implicitly. */
-                oci8_base_t *base;
-                for (base = &lob->base; base != &lob->base; base = base->next) {
-                    if (base->type == OCI_DTYPE_LOB) {
-                        oci8_lob_t *tmp = (oci8_lob_t *)base;
-                        if (tmp->state == S_BFILE_OPEN) {
-                            tmp->state = S_BFILE_CLOSE;
-                        }
-                    }
-                }
-                chker2(OCILobFileCloseAll_nb(svcctx, svcctx->base.hp.svc, oci8_errhp),
-                       &svcctx->base);
-                continue;
-            }
-            chker2(rv, &svcctx->base);
-            lob->state = S_BFILE_OPEN;
-        }
-        /* initialize buf in zeros everytime to check a nul characters. */
-        memset(buf, 0, nbyte);
-        rv = OCILobRead_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, buf, nbyte, NULL, NULL, 0, lob->csfrm);
+        rv = OCILobRead2_nb(svcctx, svcctx->base.hp.svc, errhp, lob->base.hp.lob, &byte_amt, &char_amt, pos + 1, buf, strbufsiz, piece, NULL, NULL, 0, lob->csfrm);
         svcctx->suppress_free_temp_lobs = 0;
         switch (rv) {
         case OCI_SUCCESS:
@@ -717,48 +719,32 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
              * See: https://github.com/kubo/ruby-oci8/issues/20
              */
             svcctx->suppress_free_temp_lobs = 1;
+            piece = OCI_NEXT_PIECE;
             break;
-        case OCI_ERROR:
-            if (oci8_get_error_code(oci8_errhp) == 22289) {
-                /* ORA-22289: cannot perform FILEREAD operation on an unopened file or LOB */
-                if (lob->state == S_BFILE_CLOSE)
-                    continue;
-            }
-            /* FALLTHROUGH */
         default:
             chker2(rv, &svcctx->base);
         }
-
-        /* Workaround when using Oracle 10.2.0.4 or 11.1.0.6 client and
-         * variable-length character set (e.g. AL32UTF8).
-         *
-         * When the above mentioned condition, amt may be shorter. So
-         * amt is increaded until a nul character to know the actually
-         * read size.
-         */
-        while (amt < nbyte && buf[amt] != '\0') {
-            amt++;
-        }
-
-        if (amt == 0)
+        if (byte_amt == 0)
             break;
-        /* for fixed size charset, amt is the number of characters stored in buf. */
-        if (amt > buf_size_in_char)
-            rb_raise(eOCIException, "Too large buffer fetched or you set too large size of a character.");
-        amt *= lob->char_width;
-        rb_str_set_len(strbuf, amt);
+        if (lob->lobtype == OCI_TEMP_CLOB) {
+            pos += char_amt;
+        } else {
+            pos += byte_amt;
+        }
+        rb_str_set_len(strbuf, byte_amt);
         rb_ary_push(v, strbuf);
     } while (rv == OCI_NEED_DATA);
-    lob->pos += nchar;
-    if (nchar == length) {
+
+    if (pos >= lob_length) {
         lob_close(lob);
         bfile_close(lob);
     }
+    lob->pos = pos;
     switch (RARRAY_LEN(v)) {
     case 0:
         return Qnil;
     case 1:
-        v = RARRAY_PTR(v)[0];
+        v = RARRAY_AREF(v, 0);
         break;
     default:
         v = rb_ary_join(v, Qnil);
@@ -787,25 +773,35 @@ static VALUE oci8_lob_write(VALUE self, VALUE data)
 {
     oci8_lob_t *lob = TO_LOB(self);
     oci8_svcctx_t *svcctx = check_svcctx(lob);
-    ub4 amt;
+    volatile VALUE str;
+    ub8 byte_amt;
+    ub8 char_amt;
 
     lob_open(lob);
     if (TYPE(data) != T_STRING) {
-        data = rb_obj_as_string(data);
+        str = rb_obj_as_string(data);
+    } else {
+        str = data;
     }
     if (lob->lobtype == OCI_TEMP_CLOB) {
-        data = rb_str_export_to_enc(data, oci8_encoding);
+        str = rb_str_export_to_enc(str, oci8_encoding);
     }
-    RB_GC_GUARD(data);
-    amt = RSTRING_LEN(data);
-    if (amt == 0) {
+    byte_amt = RSTRING_LEN(str);
+    if (byte_amt == 0) {
         /* to avoid ORA-24801: illegal parameter value in OCI lob function */
         return INT2FIX(0);
     }
-    chker2(OCILobWrite_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &amt, lob->pos + 1, RSTRING_PTR(data), amt, OCI_ONE_PIECE, NULL, NULL, 0, lob->csfrm),
+    char_amt = 0;
+    chker2(OCILobWrite2_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, &byte_amt, &char_amt, lob->pos + 1, RSTRING_PTR(str), byte_amt, OCI_ONE_PIECE, NULL, NULL, 0, lob->csfrm),
            &svcctx->base);
-    lob->pos += amt;
-    return UINT2NUM(amt);
+    RB_GC_GUARD(str);
+    if (lob->lobtype == OCI_TEMP_CLOB) {
+        lob->pos += char_amt;
+        return UINT2NUM(char_amt);
+    } else {
+        lob->pos += byte_amt;
+        return UINT2NUM(byte_amt);
+    }
 }
 
 /*
@@ -966,7 +962,6 @@ static VALUE oci8_bfile_initialize(int argc, VALUE *argv, VALUE self)
     }
     lob->base.type = OCI_DTYPE_LOB;
     lob->pos = 0;
-    lob->char_width = 1;
     lob->csfrm = SQLCS_IMPLICIT;
     lob->lobtype = OCI_TEMP_BLOB;
     lob->state = S_BFILE_CLOSE;
@@ -1288,7 +1283,6 @@ void Init_oci8_lob(VALUE cOCI8)
     rb_define_method(cOCI8CLOB, "initialize", oci8_clob_initialize, -1);
     rb_define_method(cOCI8NCLOB, "initialize", oci8_nclob_initialize, -1);
     rb_define_method(cOCI8BLOB, "initialize", oci8_blob_initialize, -1);
-    rb_define_private_method(cOCI8LOB, "__char_width=", oci8_lob_set_char_width, 1);
     rb_define_method(cOCI8LOB, "available?", oci8_lob_available_p, 0);
     rb_define_method(cOCI8LOB, "size", oci8_lob_get_size, 0);
     rb_define_method(cOCI8LOB, "pos", oci8_lob_get_pos, 0);
