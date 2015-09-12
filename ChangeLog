@@ -1,4 +1,8 @@
 2015-09-12  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/lob.c: Add notice that OCI8::LOB is an I/O object and is closed
+	    when a associating connection is closed.
+
+2015-09-12  Kubo Takehiro  <kubo@jiubao.org>
 	* lib/oci8/oci8.rb: Add ruby-oci8 version to
 	    V$SESSION_CONNECT_INFO.CLIENT_DRIVER for Oracle 12.1.0.2 or later.
 	    (suggested by Christopher Jones)

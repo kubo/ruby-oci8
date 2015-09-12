@@ -302,6 +302,10 @@ static void bfile_close(oci8_lob_t *lob)
 /*
  *  Document-class: OCI8::LOB
  *
+ *  OCI8::LOB is an I/O object. LOB contents are read from and written
+ *  to the Oracle server via an associating connection. When a connection
+ *  is closed, associating LOBs are also closed.
+ *
  *  This is the abstract base class of large-object data types; {BFILE}, {BLOB}, {CLOB} and {NCLOB}.
  *
  */
