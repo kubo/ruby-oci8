@@ -1,3 +1,8 @@
+2015-09-12  Kubo Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb: Add ruby-oci8 version to
+	    V$SESSION_CONNECT_INFO.CLIENT_DRIVER for Oracle 12.1.0.2 or later.
+	    (suggested by Christopher Jones)
+
 2015-08-24  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.yml, ext/oci8/lob.c: Support LOB whose size is
 	    over 4G.

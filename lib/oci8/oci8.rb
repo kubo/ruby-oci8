@@ -1,6 +1,6 @@
 # oci8.rb -- OCI8
 #
-# Copyright (C) 2002-2013 Kubo Takehiro <kubo@jiubao.org>
+# Copyright (C) 2002-2015 Kubo Takehiro <kubo@jiubao.org>
 #
 # Original Copyright is:
 #   Oracle module for Ruby
@@ -143,7 +143,7 @@ class OCI8
         # 'rubyoci8' is displayed in V$SESSION_CONNECT_INFO.CLIENT_DRIVER
         # if both the client and the server are Oracle 11g or upper.
         # 424: OCI_ATTR_DRIVER_NAME
-        @session_handle.send(:attr_set_string, 424, 'rubyoci8')
+        @session_handle.send(:attr_set_string, 424, "rubyoci8 : #{OCI8::VERSION}")
       end
       server_attach(dbname, attach_mode)
       session_begin(cred ? cred : OCI_CRED_RDBMS, mode ? mode : OCI_DEFAULT)
