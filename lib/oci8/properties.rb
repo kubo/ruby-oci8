@@ -94,7 +94,7 @@ class OCI8
   #     From ruby 1.9.2, a float value converted from Oracle number 15.7 by
   #     the Oracle function OCINumberToReal() makes a string representation
   #     15.700000000000001 by Float#to_s.
-  #     See: http://rubyforge.org/forum/forum.php?thread_id=50030&forum_id=1078
+  #     See: https://web.archive.org/web/20140521195004/https://rubyforge.org/forum/forum.php?thread_id=50030&forum_id=1078
   #     
   #     *Since:* 2.1.0
   #

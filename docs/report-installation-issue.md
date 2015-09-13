@@ -1,13 +1,10 @@
 # @title Report Installation Issues
 
-Look at {file:docs/platform-specific-issues.md},
-[the issues page on github][github] and [the ruby-oci8 help forum on rubyforge][rubyforge]
-to check whether your issue is fixed or not.
+Look at {file:docs/platform-specific-issues.md} and [the issues page on github][github] to check whether your issue is fixed or not.
 
 If it is a new one, post the following information to [github][].
 
 [github]: https://github.com/kubo/ruby-oci8/issues
-[rubyforge]: http://rubyforge.org/forum/forum.php?forum_id=1078
 
 *    Messages printed out to the console
 
