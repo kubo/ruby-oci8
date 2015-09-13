@@ -1,3 +1,6 @@
+2015-09-13  Kubo Takehiro  <kubo@jiubao.org>
+	* .gitignore: Ignore ext/oci8/*.bundle.
+
 2015-09-12  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/lob.c: Add notice that OCI8::LOB is an I/O object and is closed
 	    when a associating connection is closed.

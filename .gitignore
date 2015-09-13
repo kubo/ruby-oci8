@@ -15,6 +15,7 @@ ext/oci8/depend
 ext/oci8/extconf.h
 ext/oci8/mkmf.log
 ext/oci8/oci8lib_*.def
+ext/oci8/*.bundle
 ext/oci8/*.def
 ext/oci8/*.map
 ext/oci8/*.o
