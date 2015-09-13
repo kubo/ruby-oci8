@@ -1,4 +1,7 @@
 2015-09-13  Kubo Takehiro  <kubo@jiubao.org>
+	* ruby-oci8.gemspec: Use Kernel.load instead of load not to use Gem::Specification.load.
+
+2015-09-13  Kubo Takehiro  <kubo@jiubao.org>
 	* .gitignore: Ignore ext/oci8/*.bundle.
 
 2015-09-12  Kubo Takehiro  <kubo@jiubao.org>

@@ -20,7 +20,7 @@ else
   # Load oci8/version.rb temporarily and delete OCI8.
   # Some 'bundler' tasks load this file before 'require "oci8"'
   # and fail with 'TypeError: superclass mismatch for class OCI8.'
-  load File.dirname(__FILE__) + '/lib/oci8/version.rb'
+  Kernel.load File.dirname(__FILE__) + '/lib/oci8/version.rb'
   oci8_version = OCI8::VERSION
   Object.send(:remove_const, :OCI8)
 end
