@@ -140,10 +140,12 @@ class OCI8
       @session_handle.send(:attr_set_string, OCI_ATTR_USERNAME, username) if username
       @session_handle.send(:attr_set_string, OCI_ATTR_PASSWORD, password) if password
       if @@oracle_client_version >= ORAVER_11_1
-        # 'rubyoci8' is displayed in V$SESSION_CONNECT_INFO.CLIENT_DRIVER
+        # Sets the driver name displayed in V$SESSION_CONNECT_INFO.CLIENT_DRIVER
         # if both the client and the server are Oracle 11g or upper.
+        # Only the first 8 chracters "ruby-oci" are displayed when the Oracle
+        # server version is lower than 12.0.1.2.
         # 424: OCI_ATTR_DRIVER_NAME
-        @session_handle.send(:attr_set_string, 424, "rubyoci8 : #{OCI8::VERSION}")
+        @session_handle.send(:attr_set_string, 424, "ruby-oci8 : #{OCI8::VERSION}")
       end
       server_attach(dbname, attach_mode)
       session_begin(cred ? cred : OCI_CRED_RDBMS, mode ? mode : OCI_DEFAULT)

@@ -481,8 +481,20 @@ EOS
   def test_client_driver_name
     if OCI8.oracle_client_version >= OCI8::ORAVER_11_1 and @conn.oracle_server_version >= OCI8::ORAVER_11_1
       sid = @conn.select_one("select userenv('sid') from dual")[0].to_i
-      driver_name = @conn.select_one('select client_driver from v$session_connect_info where sid = :1', sid)[0]
-      assert_equal('rubyoci8', driver_name)
+      cursor = @conn.parse('select client_driver from v$session_connect_info where sid = :1')
+      cursor.exec(sid)
+      column_size = cursor.column_metadata[0].data_size
+      expected_value = case column_size
+                       when 30 # Oracle version >= 12.1.0.2
+                         "ruby-oci8 : #{OCI8::VERSION}"
+                       when 9  # Oracle version <  12.1.0.2
+                         'ruby-oci' # only the first 8 characters
+                       else
+                         raise "Unknown column size #{column_size}"
+                       end
+      driver_name = cursor.fetch[0]
+      cursor.close
+      assert_equal(expected_value, driver_name)
     end
   end
 end # TestOCI8

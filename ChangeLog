@@ -1,3 +1,10 @@
+2015-09-17  Kubo Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb: Change the driver name displayed in
+	    V$SESSION_CONNECT_INFO.CLIENT_DRIVER from "rubyoci8 : VERSION" to
+	    "ruby-oci8 : VERSION".
+	* test/test_oci8.rb: Fix a test checking the driver name.
+	    (github issue #93)
+
 2015-09-13  Kubo Takehiro  <kubo@jiubao.org>
 	* NEWS, docs/report-installation-issue.md, ext/oci8/oraconf.rb,
 	  lib/oci8/properties.rb, ruby-oci8.gemspec: Fix links to rubyforge.
