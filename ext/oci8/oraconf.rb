@@ -525,6 +525,57 @@ EOS
         end
         puts "  checking DYLD_FALLBACK_LIBRARY_PATH..."
         ld_path, file = check_lib_in_path(fallback_path, glob_name, check_proc)
+        if ld_path.nil?
+          puts "  checking OCI_DIR..."
+          ld_path, file = check_lib_in_path(ENV['OCI_DIR'], glob_name, check_proc)
+          if ld_path
+            puts "  checking dependent shared libraries in #{file}..."
+            open("|otool -L #{file}") do |f|
+              f.gets # discard the first line
+              while line = f.gets
+                line =~ /^\s+(\S+)/
+                libname = $1
+                case libname
+                when /^@rpath\/libclntsh\.dylib/, /^@rpath\/libnnz\d\d\.dylib/, /^@loader_path\/libnnz\d\d\.dylib/
+                  # No need to check the real path.
+                  # The current instant client doesn't use @rpath or @loader_path.
+                when /\/libclntsh\.dylib/, /\/libnnz\d\d.dylib/
+                  raise <<EOS unless File.exists?(libname)
+The output of "otool -L #{file}" is:
+  | #{IO.readlines("|otool -L #{file}").join('  | ')}
+Ruby-oci8 doesn't work without DYLD_LIBRARY_PATH or DYLD_FALLBACK_LIBRARY_PATH
+because the dependent file "#{libname}" doesn't exist.
+
+If you need to use ruby-oci8 without DYLD_LIBRARY_PATH or DYLD_FALLBACK_LIBRARY_PATH,
+download "fix_oralib.rb" in https://github.com/kubo/fix_oralib_osx
+and execute it in the directory "#{File.dirname(file)}" as follows to fix the path.
+
+  cd #{File.dirname(file)}
+  curl -O https://raw.githubusercontent.com/kubo/fix_oralib_osx/master/fix_oralib.rb
+  ruby fix_oralib.rb
+
+Note: DYLD_* environment variables are unavailable for security reasons on OS X 10.11 El Capitan.
+EOS
+                end
+              end
+            end
+          end
+        end
+        if ld_path.nil?
+          raise <<EOS
+Set the environment variable DYLD_LIBRARY_PATH, DYLD_FALLBACK_LIBRARY_PATH or
+OCI_DIR to point to the Instant client directory.
+
+If DYLD_LIBRARY_PATH or DYLD_FALLBACK_LIBRARY_PATH is set, the environment
+variable must be set at runtime also.
+
+If OCI_DIR is set, dependent shared library paths are checked. If the checking
+is passed, ruby-oci8 works without DYLD_LIBRARY_PATH or DYLD_FALLBACK_LIBRARY_PATH.
+
+Note: OCI_DIR should be absolute path.
+Note: DYLD_* environment variables are unavailable for security reasons on OS X 10.11 El Capitan.
+EOS
+        end
       end
     end
 
@@ -542,6 +593,7 @@ EOS
   end
 
   def self.check_lib_in_path(paths, glob_name, check_proc)
+    return nil if paths.nil?
     paths.split(File::PATH_SEPARATOR).each do |path|
       next if path.nil? or path == ''
       print "    checking #{path}... "
@@ -696,7 +748,7 @@ EOS
       case RUBY_PLATFORM
       when /solaris/
         " -L#{lib_dir} -R#{lib_dir} -lclntsh"
-      when /linux/
+      when /linux/,/darwin/
         " -L#{lib_dir} -Wl,-rpath,#{lib_dir} -lclntsh"
       else
         " -L#{lib_dir} -lclntsh"

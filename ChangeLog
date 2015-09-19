@@ -1,4 +1,9 @@
 2015-09-19  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: Use OCI_DIR environmant variable also
+	   to check instant client directory on OS X.
+	    (github issue #89)
+
+2015-09-19  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.h: Define STRINGIZE macro for rubinius.
 
 2015-09-19  Kubo Takehiro  <kubo@jiubao.org>
