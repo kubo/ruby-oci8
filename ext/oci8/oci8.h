@@ -100,6 +100,9 @@ typedef struct OCICPool OCICPool;
 #define rb_str_buf_cat_ascii(str, ptr) \
     rb_str_concat((str), rb_usascii_str_new_cstr(ptr))
 #endif
+#ifndef STRINGIZE
+#define STRINGIZE(name) #name
+#endif
 #endif
 
 /*

@@ -1,4 +1,7 @@
 2015-09-19  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8.h: Define STRINGIZE macro for rubinius.
+
+2015-09-19  Kubo Takehiro  <kubo@jiubao.org>
 	* README.md: Update supported Oracle version.
 	* dist-files: Add lib/oci8/check_load_error.rb.
 	* ext/oci8/extconf.rb: Reduce the number of #define values.
