@@ -1,4 +1,11 @@
 2015-09-19  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/dist-files, ext/oci8/extconf.rb, ext/oci8/oci8.h,
+	  ext/oci8/oci8lib.c, ext/oci8/osx.c: Intercept dlopen issued
+	    by libclntsh.dylib to make OCIEnvCreate() work without
+	    setting rpath to ruby itself.
+	    (github issue #89)
+
+2015-09-19  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: Use OCI_DIR environmant variable also
 	   to check instant client directory on OS X.
 	    (github issue #89)

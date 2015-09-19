@@ -154,6 +154,10 @@ Init_oci8lib()
     /* OCI8::Util */
     Init_oci8_util(cOCI8);
 
+#ifdef __APPLE__
+    Init_oci8_osx();
+#endif
+
     /* allocate a temporary errhp to pass Init_oci_number() */
     rv = OCIEnvCreate(&envhp, oci8_env_mode, NULL, NULL, NULL, NULL, 0, NULL);
     if (rv != OCI_SUCCESS) {
