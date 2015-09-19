@@ -37,6 +37,8 @@ YAML.load(open(File.dirname(__FILE__) + '/apiwrap.yml')).each do |key, val|
   funcs[ver] ||= []
   funcs[ver] << key
 end
+
+saved_defs = $defs.clone
 funcs.keys.sort.each do |version|
   next if version == 0x08000000
   verstr = format('%d.%d.%d', ((version >> 24) & 0xFF), ((version >> 20) & 0xF), ((version >> 12) & 0xFF))
@@ -53,6 +55,7 @@ funcs.keys.sort.each do |version|
   puts "checking for Oracle #{verstr} API - #{result}"
   break if result == 'fail'
 end
+$defs = saved_defs
 
 have_type('oratext', 'ociap.h')
 have_type('OCIDateTime*', 'ociap.h')

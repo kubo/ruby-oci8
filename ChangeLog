@@ -1,3 +1,8 @@
+2015-09-19  Kubo Takehiro  <kubo@jiubao.org>
+	* README.md: Update supported Oracle version.
+	* dist-files: Add lib/oci8/check_load_error.rb.
+	* ext/oci8/extconf.rb: Reduce the number of #define values.
+
 2015-09-17  Kubo Takehiro  <kubo@jiubao.org>
 	* lib/oci8/oci8.rb: Change the driver name displayed in
 	    V$SESSION_CONNECT_INFO.CLIENT_DRIVER from "rubyoci8 : VERSION" to

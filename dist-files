@@ -57,6 +57,7 @@ lib/oci8.rb
 lib/dbd/OCI8.rb
 lib/oci8/.document
 lib/oci8/bindtype.rb
+lib/oci8/check_load_error.rb
 lib/oci8/compat.rb
 lib/oci8/connection_pool.rb
 lib/oci8/cursor.rb
