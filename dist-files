@@ -42,7 +42,6 @@ ext/oci8/oraconf.rb
 ext/oci8/oradate.c
 ext/oci8/oranumber_util.c
 ext/oci8/oranumber_util.h
-ext/oci8/osx.c
 ext/oci8/plthook.h
 ext/oci8/plthook_elf.c
 ext/oci8/plthook_osx.c

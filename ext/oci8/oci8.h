@@ -538,9 +538,6 @@ const char *oci8_dll_path(void);
 /* win32.c */
 void Init_oci8_win32(VALUE cOCI8);
 
-/* osx.c */
-void Init_oci8_osx(void);
-
 /* hook_funcs.c */
 void oci8_install_hook_functions(void);
 void oci8_shutdown_sockets(void);
