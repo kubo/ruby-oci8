@@ -1,4 +1,7 @@
 2015-09-26  Kubo Takehiro  <kubo@jiubao.org>
+	* lib/oci8/check_load_error.rb: Refactoring.
+
+2015-09-26  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/dist-files, ext/oci8/extconf.rb, ext/oci8/oci8.h,
 	  ext/oci8/oci8lib.c, ext/oci8/osx.c: Revert the previous commit.
 

@@ -12,8 +12,7 @@ class OCI8
       GetSystemDirectoryA = Win32API.new('kernel32', 'GetSystemDirectoryA', 'PL', 'L')
       GetWindowsDirectoryA = Win32API.new('kernel32', 'GetWindowsDirectoryA', 'PL', 'L')
 
-      def self.check_load_error(exc)
-        check_load_error_common(exc)
+      def self.check_os_specific_load_error(exc)
         case exc.message
         when /^193: / # "193: %1 is not a valid Win32 application." in English
           check_win32_pe_arch(exc.message.split(' - ')[1], "ruby-oci8")
@@ -21,7 +20,7 @@ class OCI8
             check_win32_pe_arch(File.join(path, '\OCI.DLL'), "Oracle client")
           end
         end
-      end # self.check_load_error
+      end # self.check_os_specific_load_error
 
       def self.dll_load_path_list
         buf = "\0" * MAX_PATH
@@ -47,23 +46,25 @@ class OCI8
                 if [nil].pack('P').size == 4
                   raise LoadError, "\"#{filename}\" is x64 DLL. Use 32-bit #{package} instead."
                 end
+                return true
               when 0x014c
                 if [nil].pack('P').size == 8
                   raise LoadError, "\"#{filename}\" is 32-bit DLL. Use x64 #{package} instead."
                 end
+                return true
               end
             end
           end
           raise LoadError, "\"#{filename}\" is not a valid Win32 application."
         end
+        nil
       rescue
         nil
       end # self.check_win32_pe_arch
 
     when /linux/
 
-      def self.check_load_error(exc)
-        check_load_error_common(exc)
+      def self.check_os_specific_load_error(exc)
         case exc.message
         when /^libaio\.so\.1:/ # "libaio.so.1: cannot open shared object file: No such file or directory" in English
           install_cmd = if File.executable? '/usr/bin/apt-get'
@@ -77,17 +78,17 @@ class OCI8
             raise LoadError, "You need to install libaio.so.1."
           end
         end
-      end # self.check_load_error
+      end # self.check_os_specific_load_error
 
     else
 
-      def self.check_load_error(exc)
-        check_load_error_common(exc)
+      def self.check_os_specific_load_error(exc)
       end
 
     end # case RUBY_PLATFORM
 
-    def self.check_load_error_common(exc)
+    def self.check_load_error(exc)
+      check_os_specific_load_error(exc)
       case exc.message
       when /^OCI Library Initialization Error/
         # TODO
