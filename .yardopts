@@ -13,5 +13,6 @@ COPYING_old
 docs/install-full-client.md
 docs/install-instant-client.md
 docs/install-binary-package.md
+docs/install-on-osx.md
 docs/platform-specific-issues.md
 docs/report-installation-issue.md

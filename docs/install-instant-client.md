@@ -5,9 +5,12 @@ Introduction
 
 This page explains the way to install ruby-oci8 for Oracle Instant Client.
 
-For Oracle Full Client, look at {file:docs/install-full-client.md}.
-For Windows, look at {file:docs/install-binary-package.md} unless you
+Look at {file:docs/install-full-client.md} for Oracle Full Client.
+
+Look at {file:docs/install-binary-package.md} for Windows unless you
 have a special need to compile ruby-oci8 by yourself.
+
+Look at {file:docs/install-on-osx.md} for OS X.
 
 Install Oracle Instant Client Packages
 ======================================
@@ -43,7 +46,6 @@ a symbolic link to link the library.
 Note:
 
 * use libclntsh.sl instead of libclntsh.so on HP-UX PA-RISC.
-* use libclntsh.dylib instead of libclntsh.so on Mac OS X.
 * skip this step for AIX.
 * run `yum install libaio` also on Redhat.
 * run `apt-get install libaio1` also on Ubuntu.
@@ -62,10 +64,10 @@ the installed directory.
   <tr><td> HP-UX PA-RISC 32-bit ruby </td><td> SHLIB_PATH                            </td></tr>
   <tr><td> HP-UX PA-RISC 64-bit ruby </td><td> LD_LIBRARY_PATH                       </td></tr>
   <tr><td> HP-UX IA64                </td><td> LD_LIBRARY_PATH                       </td></tr>
-  <tr><td> Mac OS X                  </td><td> DYLD_LIBRARY_PATH                     </td></tr>
   <tr><td> AIX                       </td><td> LIBPATH                               </td></tr>
 </tbody>
 </table>
+Note: Look at {file:docs/install-on-osx.md} for OS X.
 
 For example:
 
@@ -98,34 +100,6 @@ Windows
 
 Unzip the packages and set PATH to point to the directory where OCI.DLL is installed.
 
-OS X
-----
-
-To install `Oracle Instant Client Basic Lite` by [Homebrew][],
-
-* Download two instant client packages: `Basic Lite` and `SDK` and put them
-  to `/Library/Caches/Homebrew` (if the environment variable `HOMEBREW_CACHE`
-  is not set and `$HOME/Library/Caches/Homebrew` doesn't exist.)
-* Run the followining commands:
-
-        brew install InstantClientTap/instantclient/instantclient-basiclite
-        brew install InstantClientTap/instantclient/instantclient-sdk
-
-To install `Oracle Instant Client Basic` by [Homebrew][].,
-
-* Download *three* instant client packages: `Basic`, `Basic Lite` and `SDK`
-  and put them to `/Library/Caches/Homebrew` (if the environment variable
-  `HOMEBREW_CACHE` is not set and `$HOME/Library/Caches/Homebrew` doesn't exist.)
-* Run the followining commands:
-
-        brew install InstantClientTap/instantclient/instantclient-basic
-        brew install InstantClientTap/instantclient/instantclient-sdk
-
-You have no need to set the environment variable `DYLD_LIBRARY_PATH` if
-'`brew --prefix`' is '`/usr/local`' and the ruby-oci8 version is 2.2.0 or upper.
-
-Note: The latest ruby-oci8 version is 2.1.8.
-
 Check the environment
 =====================
 
@@ -133,7 +107,7 @@ Oracle installation
 -------------------
 
 Run the following command and confirm it works fine. If it doesn't
-work well, check LD\_LIBRARY\_PATH or PATH.
+work well, check `LD_LIBRARY_PATH` or PATH.
 
     sqlplus USERNAME/PASSWORD
 
@@ -200,4 +174,3 @@ note: If you use '`sudo`', use it only when running '`make install`'.
     nmake install
 
 [download page]: https://bintray.com/kubo/generic/ruby-oci8
-[Homebrew]: http://brew.sh/

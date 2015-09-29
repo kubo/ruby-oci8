@@ -1,3 +1,9 @@
+2015-09-29  Kubo Takehiro  <kubo@jiubao.org>
+	* docs/install-on-osx.md, .yardopts: Add a new file for
+	    installation on OS X.
+	* docs/install-instant-client.md: Delete installation steps
+	    on OS X.
+
 2015-09-26  Kubo Takehiro  <kubo@jiubao.org>
 	* lib/oci8/check_load_error.rb: Refactoring.
 
