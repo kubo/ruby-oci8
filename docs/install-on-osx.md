@@ -3,17 +3,17 @@
 This page explains the way to install ruby-oci8 os OS X.
 
 Look at {file:docs/install-full-client.md}, {file:docs/install-instant-client.md}
-or {file:docs/install-binary-package.md} for ohter platforms.
+or {file:docs/install-binary-package.md} for other platforms.
 
 Install C compiler
 ==================
 
-You need to install Xcode from the Mac App store.
+You need to install the Xcode Command Line Tools `sudo xcode-build --install`
 
 Install Oracle Instant Client Packages
 ======================================
 
-Donwload Instant Client Packages
+Download Oracle Instant Client Packages
 --------------------------------
 
 Download the following packages from [Oracle Technology Network][]
@@ -22,42 +22,46 @@ Download the following packages from [Oracle Technology Network][]
 * Instant Client Package - SDK
 * Instant Client Package - SQL*Plus (optionally)
 
-Install them by Homebrew
-------------------------
+Install Oracle Instant Client Packages via Homebrew
+---------------------------------------------------
 
-To install `Oracle Instant Client Basic Lite` by [Homebrew][],
+To install `Oracle Instant Client Basic Lite` via [Homebrew][]
 
 * Download two instant client packages: `Basic Lite` and `SDK` and put them
-  to `/Library/Caches/Homebrew` (if the environment variable `HOMEBREW_CACHE`
+  in `/Library/Caches/Homebrew` (if the environment variable `HOMEBREW_CACHE`
   is not set and `$HOME/Library/Caches/Homebrew` doesn't exist.)
 * Run the followining commands:
 
         brew install InstantClientTap/instantclient/instantclient-basiclite
         brew install InstantClientTap/instantclient/instantclient-sdk
 
-To install `Oracle Instant Client Basic` by [Homebrew][].,
+To install `Oracle Instant Client Basic` by [Homebrew][]
 
 * Download *three* instant client packages: `Basic`, `Basic Lite` and `SDK`
-  and put them to `/Library/Caches/Homebrew` (if the environment variable
+  and put them in `/Library/Caches/Homebrew` (if the environment variable
   `HOMEBREW_CACHE` is not set and `$HOME/Library/Caches/Homebrew` doesn't exist.)
 * Run the followining commands:
 
         brew install InstantClientTap/instantclient/instantclient-basic
         brew install InstantClientTap/instantclient/instantclient-sdk
+        
+* Set the environment variable OCI_DIR while performing the following installation steps.
 
-Intall them manually
---------------------
+    export OCI_DIR=$(brew --prefix)/lib
 
-If you don't use [Homebrew][], do the followings:
+Install Oracle Instant Client Manually
+---------------------
+
+If you don't use [Homebrew][], do the following:
 
 Unzip the packages as follows:
 
     mkdir /opt
     mkdir /opt/oracle
     cd /opt/oracle
-    #
-    # Copy downloaded files to /opt/oracle before the following commands.
-    #
+
+Copy downloaded files to /opt/oracle before running the following commands.
+
     unzip instantclient-basic-macos.x64-11.2.0.4.0.zip
     unzip instantclient-sdk-macos.x64-11.2.0.4.0.zip
     unzip instantclient-sqlplus-macos.x64-11.2.0.4.0.zip
@@ -74,7 +78,7 @@ without `DYLD_LIBRARY_PATH`.
     curl -O https://raw.githubusercontent.com/kubo/fix_oralib_osx/master/fix_oralib.rb
     ruby fix_oralib.rb
 
-Set the environment variable OCI_DIR while the following installation steps.
+Set the environment variable OCI_DIR while performing the following installation steps.
 
     export OCI_DIR=/opt/oracle/instantclient11_2
 
