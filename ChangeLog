@@ -1,4 +1,7 @@
 2015-10-04  Kubo Takehiro  <kubo@jiubao.org>
+	* NEWS: Add changes between 2.1.8 and 2.2.0.
+
+2015-10-04  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8lib.c: Fix compilation errors when --with-runtime-check
 	    is passed to extconf.rb.
 

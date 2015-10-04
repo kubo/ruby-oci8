@@ -1,5 +1,47 @@
 # @markup markdown
 
+2.2.0
+=====
+
+### Drop ruby 1.8 support
+
+Use ruby-oci8 2.1.8 for ruby 1.8.
+
+### Drop Oracle 9i support
+
+Use ruby-oci8 2.1.8 for Oracle 9i.
+
+New Features
+------------
+
+### Support LOB over 4G
+
+### Fix to install ruby-oci8 on OS X 10.11 El Capitan.
+
+`DYLD_LIBRARY_PATH` is unset for security reasons on OS X 10.11.
+The installtion script was changed to work without `DYLD_LIBRARY_PATH`
+and check the environment variable `OCI_DIR` also to tell instant
+client directory.
+
+Other Changes
+-------------
+
+-   Change the default prefetch row size to 100.
+
+-   Add notice that OCI8::LOB is an I/O object and is closed
+    when a associating connection is closed.
+
+-   Add ruby-oci8 version the driver name, which is displayed in 
+    `V$SESSION_CONNECT_INFO.CLIENT_DRIVER` for Oracle 12.1.0.2 or later.
+    (suggested by Christopher Jones)
+
+-   Use `Kernel.load` in ruby-oci8.gemspec instead of `load`.
+    `load`, without the module name, is used as `Gem::Specification.load`
+    by some ruby installations.
+
+-   Add OCI8.charset_name2id and OCI8.charset_id2name.
+    Mark OCI8#charset_name2id and OCI8#charset_id2name as deprecated.
+
 2.1.8
 =====
 
