@@ -91,7 +91,7 @@ Init_oci8lib()
         } else if (oracle_client_version >= ORAVER_9_0) {
             oraver = "9iR1";
             ruby_oci8_ver = "2.1.x";
-        } else if (oracle_client_version >= ORAVER_8_2) {
+        } else if (oracle_client_version >= ORAVER_8_1) {
             oraver = "8i";
             ruby_oci8_ver = "2.0.x";
         } else {
@@ -389,8 +389,9 @@ static VALUE exec_sql(cb_arg_t *arg)
     if (rv != OCI_SUCCESS) {
         oci8_env_raise(oci8_envhp, rv);
     }
-    chker2(OCIStmtPrepare(arg->stmtp, oci8_errhp, (text*)arg->sql_text,
-                          strlen(arg->sql_text), OCI_NTV_SYNTAX, OCI_DEFAULT),
+    chker2(OCIStmtPrepare2(arg->svcctx->base.hp.svc, &arg->stmtp, oci8_errhp, 
+                           (text*)arg->sql_text, strlen(arg->sql_text), NULL, 0,
+                           OCI_NTV_SYNTAX, OCI_DEFAULT),
            &arg->svcctx->base);
     for (pos = 0; pos < arg->num_define_vars; pos++) {
         arg->define_vars[pos].hp = NULL;
@@ -429,7 +430,7 @@ static VALUE exec_sql(cb_arg_t *arg)
 static VALUE ensure_func(cb_arg_t *arg)
 {
     if (arg->stmtp != NULL) {
-        OCIHandleFree(arg->stmtp, OCI_HTYPE_STMT);
+        OCIStmtRelease(arg->stmtp, oci8_errhp, NULL, 0, OCI_DEFAULT);
     }
     return Qnil;
 }
@@ -514,7 +515,7 @@ void *oci8_find_symbol(const char *symbol_name)
         }
         if (handle == NULL) {
             VALUE msg;
-            const char *ary = RARRAY_CONST_PTR(err);
+            const VALUE *arr = RARRAY_CONST_PTR(err);
 
             msg = rb_str_buf_new(NUM_SONAMES * 50);
             for (idx = 0; idx < NUM_SONAMES; idx++) {
