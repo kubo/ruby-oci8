@@ -2,7 +2,7 @@
 
 This page explains the way to install ruby-oci8 os OS X.
 
-Look at {file:docs/install-full-client.md}, {file:docs/install-instant-client.md}
+Look at [Instant clinent](install-full-client), {file:docs/install-instant-client.md}
 or {file:docs/install-binary-package.md} for other platforms.
 
 Install C compiler
@@ -35,7 +35,7 @@ To install `Oracle Instant Client Basic Lite` via [Homebrew][]
         brew install InstantClientTap/instantclient/instantclient-basiclite
         brew install InstantClientTap/instantclient/instantclient-sdk
 
-To install `Oracle Instant Client Basic` by [Homebrew][]
+To install `Oracle Instant Client Basic` via [Homebrew][]
 
 * Download *three* instant client packages: `Basic`, `Basic Lite` and `SDK`
   and put them in `/Library/Caches/Homebrew` (if the environment variable
@@ -45,7 +45,8 @@ To install `Oracle Instant Client Basic` by [Homebrew][]
         brew install InstantClientTap/instantclient/instantclient-basic
         brew install InstantClientTap/instantclient/instantclient-sdk
         
-* Set the environment variable OCI_DIR while performing the following installation steps.
+* Set the environment variable OCI_DIR while performing the following installation steps
+  if Homebrew is installed outside `/usr/local`.
 
     export OCI_DIR=$(brew --prefix)/lib
 

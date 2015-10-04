@@ -32,6 +32,7 @@ Installation
 * {file:docs/install-full-client.md Install for Oracle Full Client}
 * {file:docs/install-instant-client.md Install for Oracle Instant Client}
 * {file:docs/install-binary-package.md Install Binary Package}
+* {file:docs/install-on-osx.md Install on OS X}
 
 Report issues
 =============

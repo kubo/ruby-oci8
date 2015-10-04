@@ -1,3 +1,12 @@
+2015-10-04  Kubo Takehiro  <kubo@jiubao.org>
+	* docs/install-on-osx.md: Add notice that OCI_DIR is necessary
+	    when Homebrew is installed outside /usr/local.
+	* README.md: Add a link to install-on-osx.md.
+
+2015-10-03  Kubo Takehiro  <kubo@jiubao.org>
+	* docs/install-on-osx.md: Merge GH-95: Add OCI_DIR export to
+	    Homebrew Installation Steps
+
 2015-09-29  Kubo Takehiro  <kubo@jiubao.org>
 	* docs/install-on-osx.md, .yardopts: Add a new file for
 	    installation on OS X.
