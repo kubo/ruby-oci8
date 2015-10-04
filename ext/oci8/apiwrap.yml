@@ -1282,7 +1282,8 @@ OCINlsCharSetNameToId:
             - dvoid *envhp
             - const oratext *name
 
-OCIStmtPrepare2_nb:
+# round trip: 0
+OCIStmtPrepare2:
   :version: 920
   :args:
             - OCISvcCtx *svchp

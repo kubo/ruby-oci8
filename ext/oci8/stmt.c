@@ -77,7 +77,7 @@ static VALUE oci8_stmt_initialize(VALUE self, VALUE svc, VALUE sql)
     if (!NIL_P(sql)) {
         OCI8SafeStringValue(sql);
 
-        rv = OCIStmtPrepare2_nb(svcctx, svcctx->base.hp.svc, &stmt->base.hp.stmt, oci8_errhp, RSTRING_ORATEXT(sql), RSTRING_LEN(sql), NULL, 0, OCI_NTV_SYNTAX, OCI_DEFAULT);
+        rv = OCIStmtPrepare2(svcctx->base.hp.svc, &stmt->base.hp.stmt, oci8_errhp, RSTRING_ORATEXT(sql), RSTRING_LEN(sql), NULL, 0, OCI_NTV_SYNTAX, OCI_DEFAULT);
         if (IS_OCI_ERROR(rv)) {
             chker2(rv, &svcctx->base);
         }

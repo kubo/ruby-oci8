@@ -1,4 +1,9 @@
 2015-10-04  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml, ext/oci8/stmt.c: Use OCIStmtPrepare2 as
+	    a local function, which doesn't require a server round-trip.
+	    Local functions are executed without releasing the GVL.
+
+2015-10-04  Kubo Takehiro  <kubo@jiubao.org>
 	* docs/install-on-osx.md: Add notice that OCI_DIR is necessary
 	    when Homebrew is installed outside /usr/local.
 	* README.md: Add a link to install-on-osx.md.
