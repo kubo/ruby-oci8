@@ -19,7 +19,7 @@ New Features
 ### Fix to install ruby-oci8 on OS X 10.11 El Capitan.
 
 `DYLD_LIBRARY_PATH` is unset for security reasons on OS X 10.11.
-The installtion script was changed to work without `DYLD_LIBRARY_PATH`
+The installation script was changed to work without `DYLD_LIBRARY_PATH`
 and check the environment variable `OCI_DIR` also to tell instant
 client directory.
 
