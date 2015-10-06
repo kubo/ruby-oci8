@@ -1,3 +1,14 @@
+2015-10-06  Kubo Takehiro  <kubo@jiubao.org>
+	* README.md: Add notice that ruby 1.8 is not supported.
+	* README.md, ext/oci8/oraconf.rb: Change links to ruby-oci8 documents.
+	    They had referred docs generated from the latest gem. They were
+	    updated only when a new version was released. Now they refers
+	    to docs generated from the latest github repository. They are
+	    updated for each commits.
+
+2015-10-05  Kubo Takehiro  <kubo@jiubao.org>
+	* docs/install-on-osx.md: Merge GH-97: Fix small typo in NEWS file.
+
 2015-10-04  Kubo Takehiro  <kubo@jiubao.org>
 	* NEWS: Add changes between 2.1.8 and 2.2.0.
 

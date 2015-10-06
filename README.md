@@ -7,6 +7,9 @@ Instant Client.
 
 Use ruby-oci8 2.0.6 for Oracle 8 or use ruby-oci8 2.1.8 for Oracle 9i.
 
+Note that ruby 1.8 support was dropped in ruby-oci8 2.2.0.
+Use ruby-2.1.8 for ruby 1.8.
+
 What's new
 ==========
 
@@ -24,7 +27,7 @@ If you install a ruby-oci8 gem package, you may need to add `-rubygems` before `
 Documentation
 =============
 
-* http://rubydoc.info/gems/ruby-oci8/
+* http://www.rubydoc.info/github/kubo/ruby-oci8
 
 Installation
 ============
