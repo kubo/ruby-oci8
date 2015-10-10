@@ -1,3 +1,8 @@
+2015-10-10  Kubo Takehiro  <kubo@jiubao.org>
+	* ruby-oci8.gemspec: Change the required_ruby_version from '>= 1.8.0'
+	    to '>= 1.9.1'.
+	    (github issue #96)
+
 2015-10-06  Kubo Takehiro  <kubo@jiubao.org>
 	* README.md: Add notice that ruby 1.8 is not supported.
 	* README.md, ext/oci8/oraconf.rb: Change links to ruby-oci8 documents.

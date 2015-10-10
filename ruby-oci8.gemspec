@@ -30,9 +30,9 @@ spec = Gem::Specification.new do |s|
   s.version = oci8_version
   s.summary = 'Ruby interface for Oracle using OCI8 API'
   s.email = 'kubo@jiubao.org'
-  s.homepage = 'https://github.com/kubo/ruby-oci8/'
+  s.homepage = 'http://www.rubydoc.info/github/kubo/ruby-oci8'
   s.description = <<EOS
-ruby-oci8 is a ruby interface for Oracle using OCI8 API. It is available with Oracle8i, Oracle9i, Oracle10g, Oracle11g and Oracle Instant Client.
+ruby-oci8 is a ruby interface for Oracle using OCI8 API. It is available with Oracle 10g or later including Oracle Instant Client.
 EOS
   s.has_rdoc = 'yard'
   s.authors = ['Kubo Takehiro']
@@ -41,7 +41,7 @@ EOS
   files = File.read('dist-files').split("\n")
   if gem_platform == Gem::Platform::RUBY
     s.extensions << 'ext/oci8/extconf.rb'
-    s.required_ruby_version = '>= 1.8.0'
+    s.required_ruby_version = '>= 1.9.1'
   else
     so_files = Dir.glob('ext/oci8/oci8lib_*.so')
     so_vers = so_files.collect do |file|
