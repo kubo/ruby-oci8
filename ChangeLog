@@ -1,4 +1,9 @@
 2015-10-10  Kubo Takehiro  <kubo@jiubao.org>
+	* docs/osx-install-dev-tools.png: added.
+	* docs/install-on-osx.md: fix "Install C compiler."
+	* README.md: Use documents in rubydoc.info as homepage.
+
+2015-10-10  Kubo Takehiro  <kubo@jiubao.org>
 	* ruby-oci8.gemspec: Change the required_ruby_version from '>= 1.8.0'
 	    to '>= 1.9.1'.
 	    (github issue #96)

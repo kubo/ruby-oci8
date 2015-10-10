@@ -22,10 +22,8 @@ Connect to scott/tiger, select `emp` and print as CSV format.
 
     ruby -r oci8 -e "OCI8.new('scott', 'tiger').exec('select * from emp') do |r| puts r.join(','); end"
 
-If you install a ruby-oci8 gem package, you may need to add `-rubygems` before `-r oci8`.
-
-Documentation
-=============
+Homepage
+========
 
 * http://www.rubydoc.info/github/kubo/ruby-oci8
 
@@ -40,7 +38,7 @@ Installation
 Report issues
 =============
 
-* {file:docs/report-installation-issue.md}
+* {file:docs/report-installation-issue.md Report Installation Issues}
 * [The issues page on github](https://github.com/kubo/ruby-oci8/issues)
 
 License

@@ -8,7 +8,22 @@ or {file:docs/install-binary-package.md} for other platforms.
 Install C compiler
 ==================
 
-You need to install the Xcode Command Line Tools `sudo xcode-build --install`
+You need to install the command line developer tools.
+Run `"cc --version"` in a terminal to check whether they are installed.
+
+If the cc version is printed, the tools are installed.
+
+If the follwoing dialog is displayed, click its Install button to
+install the tools.
+You have no need to install the Xcode to compile ruby-oci8.
+It requires command line tools, not an IDE such as the Xcode.
+
+![dialog](../docs/osx-install-dev-tools.png)
+
+If `"Agreeing to the Xcode/iOS license requires admin privileges,
+please re-run as root via sudo."` is printed, you need to run
+`"sudo cc --version"`, enter your password, look at the license
+and type `"agree"`.
 
 Install Oracle Instant Client Packages
 ======================================
