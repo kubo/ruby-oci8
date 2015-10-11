@@ -6,6 +6,7 @@
 --exclude lib/dbd
 --hide-void-return
 --charset UTF-8
+--asset docs/osx-install-dev-tools.png:osx-install-dev-tools.png
 -
 NEWS
 COPYING

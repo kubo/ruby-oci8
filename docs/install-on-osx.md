@@ -8,7 +8,9 @@ or {file:docs/install-binary-package.md} for other platforms.
 Install C compiler
 ==================
 
-You need to install the command line developer tools.
+You need to install the command line developer tools or the Xcode.
+(The latter includes the former.)
+
 Run `"cc --version"` in a terminal to check whether they are installed.
 
 If the cc version is printed, the tools are installed.
@@ -18,7 +20,7 @@ install the tools.
 You have no need to install the Xcode to compile ruby-oci8.
 It requires command line tools, not an IDE such as the Xcode.
 
-![dialog](../docs/osx-install-dev-tools.png)
+![dialog](osx-install-dev-tools.png)
 
 If `"Agreeing to the Xcode/iOS license requires admin privileges,
 please re-run as root via sudo."` is printed, you need to run
