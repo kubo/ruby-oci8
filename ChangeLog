@@ -1,4 +1,9 @@
-2015-10-10  Kubo Takehiro  <kubo@jiubao.org>
+2015-10-11  Kubo Takehiro  <kubo@jiubao.org>
+	* NEWS: Add changes between 2.2.0 and 2.2.0.1.
+	* docs/install-on-osx.md: Fix indent width.
+	* lib/oci8/version.rb: update to 2.2.0.1.
+
+2015-10-11  Kubo Takehiro  <kubo@jiubao.org>
 	* docs/osx-install-dev-tools.png: added.
 	* docs/install-on-osx.md: fix "Install C compiler."
 	* README.md: Use documents in rubydoc.info as homepage.

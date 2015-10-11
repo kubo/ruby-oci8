@@ -2,7 +2,7 @@
 
 This page explains the way to install ruby-oci8 os OS X.
 
-Look at [Instant clinent](install-full-client), {file:docs/install-instant-client.md}
+Look at {file:docs/install-full-client.md}, {file:docs/install-instant-client.md}
 or {file:docs/install-binary-package.md} for other platforms.
 
 Install C compiler
@@ -65,7 +65,7 @@ To install `Oracle Instant Client Basic` via [Homebrew][]
 * Set the environment variable OCI_DIR while performing the following installation steps
   if Homebrew is installed outside `/usr/local`.
 
-    export OCI_DIR=$(brew --prefix)/lib
+        export OCI_DIR=$(brew --prefix)/lib
 
 Install Oracle Instant Client Manually
 ---------------------
