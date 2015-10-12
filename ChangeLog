@@ -1,4 +1,7 @@
 2015-10-12  Kubo Takehiro  <kubo@jiubao.org>
+	* NEWS: Add changes between 2.2.0.1 and 2.2.0.2.
+
+2015-10-12  Kubo Takehiro  <kubo@jiubao.org>
 	* lib/oci8/version.rb: Update the version to 2.2.0.2 to
 	    release binary gems for mingw32.
 

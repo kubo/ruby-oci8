@@ -1,10 +1,18 @@
 # @markup markdown
 
+2.2.0.2
+=======
+
+Nothing was changed except the version.
+
+The forth version was incremented to release binary gems for mingw32.
+Th binary gems for 2.2.0.1 didn't work by faultily packaging.
+
 2.2.0.1
 =======
 
 If ruby-oci8 2.2.0 is installed, you have no need to update it to
-2.2.0.1. Source code itself was not chaned between 2.2.0 and 2.2.0.1.
+2.2.0.1. Source code itself was not changed between 2.2.0 and 2.2.0.1.
 
 ### Change the required ruby version in the ruby-oci8 gem
 
