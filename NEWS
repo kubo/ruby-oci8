@@ -6,7 +6,7 @@
 Nothing was changed except the version.
 
 The forth version was incremented to release binary gems for mingw32.
-Th binary gems for 2.2.0.1 didn't work by faultily packaging.
+The binary gems for 2.2.0.1 didn't work by faultily packaging.
 
 2.2.0.1
 =======
