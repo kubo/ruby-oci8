@@ -25,35 +25,31 @@ $CFLAGS += oraconf.cflags
 saved_libs = $libs
 $libs += oraconf.libs
 
-oci_actual_client_version = 0x08000000
-funcs = {}
-YAML.load(open(File.dirname(__FILE__) + '/apiwrap.yml')).each do |key, val|
-  key = key[0..-4] if key[-3..-1] == '_nb'
-  ver = val[:version]
-  ver_major = (ver / 100)
-  ver_minor = (ver / 10) % 10
-  ver_update = ver % 10
-  ver = ((ver_major << 24) | (ver_minor << 20) | (ver_update << 12))
-  funcs[ver] ||= []
-  funcs[ver] << key
-end
-
 saved_defs = $defs.clone
-funcs.keys.sort.each do |version|
-  next if version == 0x08000000
-  verstr = format('%d.%d.%d', ((version >> 24) & 0xFF), ((version >> 20) & 0xF), ((version >> 12) & 0xFF))
-  puts "checking for Oracle #{verstr} API - start"
-  result = catch :result do
-    funcs[version].sort.each do |func|
-      unless have_func(func)
-        throw :result, "fail"
-      end
-    end
-    oci_actual_client_version = version
-    "pass"
+fmt = "%s"
+def fmt.%(x)
+  x ? super : "failed"
+end
+oci_major_version = checking_for 'OCI_MAJOR_VERSION in oci.h', fmt do
+  try_constant('OCI_MAJOR_VERSION', 'oci.h')
+end
+if oci_major_version
+  oci_minor_version = checking_for 'OCI_MINOR_VERSION in oci.h', fmt do
+    try_constant('OCI_MINOR_VERSION', 'oci.h')
   end
-  puts "checking for Oracle #{verstr} API - #{result}"
-  break if result == 'fail'
+else
+  if have_func('OCILobGetLength2')
+    oci_major_version = 10
+    oci_minor_version = 1
+  elsif have_func('OCIStmtPrepare2')
+    raise "Ruby-oci8 #{OCI8::VERSION} doesn't support Oracle 9iR2. Use ruby-oci8 2.1.x instead."
+  elsif have_func('OCILogon2')
+    raise "Ruby-oci8 #{OCI8::VERSION} doesn't support Oracle 9iR1. Use ruby-oci8 2.1.x instead."
+  elsif have_func('OCIEnvCreate')
+    raise "Ruby-oci8 #{OCI8::VERSION} doesn't support Oracle 8i. Use ruby-oci8 2.0.x instead."
+  else
+    raise "Ruby-oci8 #{OCI8::VERSION} doesn't support Oracle 8. Use ruby-oci8 2.0.x instead."
+  end
 end
 $defs = saved_defs
 
@@ -68,34 +64,15 @@ have_type('OCIMsg*', 'ociap.h')
 have_type('OCICPool*', 'ociap.h')
 
 if with_config('oracle-version')
-  oci_client_version = OCI8::OracleVersion.new(with_config('oracle-version')).to_i
+  oraver = OCI8::OracleVersion.new(with_config('oracle-version'))
 else
-  oci_client_version = oci_actual_client_version
+  oraver = OCI8::OracleVersion.new(oci_major_version, oci_minor_version)
 end
-$defs << "-DORACLE_CLIENT_VERSION=#{format('0x%08x', oci_client_version)}"
+$defs << "-DORACLE_CLIENT_VERSION=#{format('0x%08x', oraver.to_i)}"
 
 if with_config('runtime-check')
   $defs << "-DRUNTIME_API_CHECK=1"
   $libs = saved_libs
-else
-  oraver = OCI8::OracleVersion.new(oci_client_version)
-  if oraver < OCI8::OracleVersion.new(10)
-    case "#{oraver.major}.#{oraver.minor}"
-    when "8.0"
-      ora_name = "Oracle 8"
-      oci8_ver = "2.0.x"
-    when "8.1"
-      ora_name = "Oracle 8i"
-      oci8_ver = "2.0.x"
-    when "9.1"
-      ora_name = "Oracle 9iR1"
-      oci8_ver = "2.1.x"
-    when "9.2"
-      ora_name = "Oracle 9iR2"
-      oci8_ver = "2.1.x"
-    end
-    raise "Ruby-oci8 #{OCI8::VERSION} doesn't support #{ora_name}. Use ruby-oci8 #{oci8_ver} instead."
-  end
 end
 
 $objs = ["oci8lib.o", "env.o", "error.o", "oci8.o", "ocihandle.o",

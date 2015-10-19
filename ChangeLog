@@ -1,3 +1,7 @@
+2015-10-19  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb: Use macros OCI_MAJOR_VERSION and OCI_MINOR_VERSION
+	    in oci.h to check the target Oracle client version.
+
 2015-10-12  Kubo Takehiro  <kubo@jiubao.org>
 	* NEWS: Add changes between 2.2.0.1 and 2.2.0.2.
 
