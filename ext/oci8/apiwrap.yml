@@ -811,30 +811,6 @@ OCIStmtFetch_nb:
             - ub2 orientation
             - ub4 mode
 
-OCIStmtGetPieceInfo:
-  :version: 800
-  :args:
-            - OCIStmt *stmtp
-            - OCIError *errhp
-            - dvoid **hndlpp
-            - ub4 *typep
-            - ub1 *in_outp
-            - ub4 *iterp
-            - ub4 *idxp
-            - ub1 *piecep
-
-OCIStmtSetPieceInfo:
-  :version: 800
-  :args:
-            - dvoid *hndlp
-            - ub4 type
-            - OCIError *errhp
-            - CONST dvoid *bufp
-            - ub4 *alenp
-            - ub1 piece
-            - CONST dvoid *indp
-            - ub2 *rcodep
-
 # round trip: 0
 OCIStringAssignText:
   :version: 800
@@ -1003,26 +979,6 @@ OCINumberIsInt:
             - OCIError *err
             - CONST OCINumber *number
             - boolean *result
-  :code_if_not_found: |
-    /* pseude code
-     *   work = trunc(number);
-     *   if (number == work) {
-     *      result = TRUE;
-     *   } else {
-     *      result = FALSE;
-     *   }
-     */
-    OCINumber work;
-    sword rv;
-    sword cmp;
-    rv = oci8_OCINumberTrunc(err, number, 0, &work, file, line);
-    if (rv != OCI_SUCCESS)
-        return rv;
-    rv = oci8_OCINumberCmp(err, number, &work, &cmp, file, line);
-    if (rv != OCI_SUCCESS)
-        return rv;
-    *result = (cmp == 0) ? TRUE : FALSE;
-    return OCI_SUCCESS;
 
 # round trip: 0
 OCINumberPrec:
@@ -1040,13 +996,6 @@ OCINumberSetPi:
   :args:
             - OCIError *err
             - OCINumber *num
-  :code_if_not_found: |
-    static const OCINumber pi = {
-        {0x15, 0xc1, 0x04, 0x0f, 0x10, 0x5d, 0x42, 0x24, 0x5a, 0x50,
-         0x21, 0x27, 0x2f, 0x1b, 0x2c, 0x27, 0x21, 0x50, 0x33, 0x1d,
-         0x55, 0x15}
-    };
-    *num = pi;
 
 # round trip: 0
 OCINumberShift:
@@ -1064,31 +1013,6 @@ OCINumberSign:
             - OCIError *err
             - CONST OCINumber *number
             - sword *result
-  :code_if_not_found: |
-    /* pseude code
-     *   number <=> 0
-     */
-    OCINumber zero;
-    sword rv;
-    sword cmp;
-    OCINumberSetZero(err, &zero);
-    rv = oci8_OCINumberCmp(err, number, &zero, &cmp, file, line);
-    if (rv != OCI_SUCCESS)
-        return rv;
-    if (cmp > 0)
-        *result = 1;
-    else if (cmp < 0)
-        *result = -1;
-    else
-        *result = 0;
-    return OCI_SUCCESS;
-
-# round trip: 0
-OCIReset:
-  :version: 810
-  :args:
-            - dvoid *hndlp
-            - OCIError *errhp
 
 #
 # Oracle 9.0
@@ -1159,16 +1083,6 @@ OCIDateTimeGetTime:
             - ub1 *mm
             - ub1 *ss
             - ub4 *fsec
-
-# round trip: 0 (not docmented. I guess.)
-OCIIntervalFromText:
-  :version: 900
-  :args:
-            - dvoid *hndl
-            - OCIError *err
-            - CONST OraText *inpstr
-            - size_t str_len
-            - OCIInterval *result
 
 # round trip: 0 (not docmented. I guess.)
 OCIDateTimeGetTimeZoneOffset:
@@ -1379,48 +1293,9 @@ OCIClientVersion:
             - sword *port_update_num
 
 # round trip: 1
-OCIDBStartup_nb:
-  :version: 1020
-  :args:
-            - OCISvcCtx *svchp
-            - OCIError *errhp
-            - OCIAdmin *admhp
-            - ub4 mode
-            - ub4 flags
-
-# round trip: 1
-OCIDBShutdown_nb:
-  :version: 1020
-  :args:
-            - OCISvcCtx *svchp
-            - OCIError *errhp
-            - OCIAdmin *admhp
-            - ub4 mode
-
-# round trip: 1
 OCIPing_nb:
   :version: 1020
   :args:
             - OCISvcCtx *svchp
             - OCIError *errhp
             - ub4 mode
-
-#
-# Oracle 11.1
-#
-
-OCIArrayDescriptorAlloc:
-  :version: 1110
-  :args:
-            - const void *parenth
-            - void **descpp
-            - const ub4 type
-            - ub4 array_size
-            - const size_t xtramem_sz
-            - void **usrmempp
-
-OCIArrayDescriptorFree:
-  :version: 1110
-  :args:
-            - void **descp
-            - const ub4 type

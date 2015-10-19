@@ -1,4 +1,7 @@
 2015-10-19  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml: Delete unused OCI function definitions.
+
+2015-10-19  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb: Use macros OCI_MAJOR_VERSION and OCI_MINOR_VERSION
 	    in oci.h to check the target Oracle client version.
 
