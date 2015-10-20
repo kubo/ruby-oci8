@@ -216,6 +216,10 @@ OCI8::BindType::Mapping[OCI8::NCLOB]  = OCI8::BindType::NCLOB
 OCI8::BindType::Mapping[OCI8::BLOB]   = OCI8::BindType::BLOB
 OCI8::BindType::Mapping[OCI8::BFILE]  = OCI8::BindType::BFILE
 OCI8::BindType::Mapping[OCI8::Cursor] = OCI8::BindType::Cursor
+if defined? OCI8::BindType::Boolean
+  OCI8::BindType::Mapping[TrueClass] = OCI8::BindType::Boolean
+  OCI8::BindType::Mapping[FalseClass] = OCI8::BindType::Boolean
+end
 
 # implicitly define
 

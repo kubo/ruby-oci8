@@ -31,6 +31,7 @@ end
 
 if $oracle_version >= OCI8::ORAVER_12_1
   require "#{srcdir}/test_package_type"
+  require "#{srcdir}/test_bind_boolean.rb"
 end
 
 # Ruby/DBI

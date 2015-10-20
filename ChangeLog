@@ -1,3 +1,7 @@
+2015-10-20  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/bind.c, lib/oci8/bindtype.rb, test/test_all.rb,
+	  test/test_bind_boolean.rb: Support boolean type binding.
+
 2015-10-19  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/apiwrap.yml: Delete unused OCI function definitions.
 

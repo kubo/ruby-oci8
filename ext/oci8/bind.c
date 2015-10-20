@@ -224,9 +224,6 @@ static void bind_binary_double_init(oci8_bind_t *obind, VALUE svc, VALUE val, VA
     obind->alloc_sz = sizeof(double);
 }
 
-#ifndef SQLT_BDOUBLE
-#define SQLT_BDOUBLE 22
-#endif
 static const oci8_bind_data_type_t bind_binary_double_data_type = {
     {
         {
@@ -255,6 +252,58 @@ static const oci8_bind_data_type_t bind_binary_double_data_type = {
 static VALUE bind_binary_double_alloc(VALUE klass)
 {
     return oci8_allocate_typeddata(klass, &bind_binary_double_data_type.base);
+}
+
+/*
+ * bind_boolean
+ */
+static VALUE bind_boolean_get(oci8_bind_t *obind, void *data, void *null_struct)
+{
+    return *(int*)data ? Qtrue : Qfalse;
+}
+
+static void bind_boolean_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
+{
+    *(int*)data = RTEST(val) ? -1 : 0;
+}
+
+static void bind_boolean_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
+{
+    obind->value_sz = sizeof(int);
+    obind->alloc_sz = sizeof(int);
+}
+
+#ifndef SQLT_BOL
+#define SQLT_BOL 252
+#endif
+static const oci8_bind_data_type_t bind_boolean_data_type = {
+    {
+        {
+            "OCI8::BindType::Boolean",
+            {
+                NULL,
+                oci8_handle_cleanup,
+                oci8_handle_size,
+            },
+            &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+            RUBY_TYPED_WB_PROTECTED,
+#endif
+        },
+        oci8_bind_free,
+        sizeof(oci8_bind_t)
+    },
+    bind_boolean_get,
+    bind_boolean_set,
+    bind_boolean_init,
+    NULL,
+    NULL,
+    SQLT_BOL,
+};
+
+static VALUE bind_boolean_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_boolean_data_type.base);
 }
 
 static VALUE oci8_bind_get(VALUE self)
@@ -422,4 +471,7 @@ void Init_oci8_bind(VALUE klass)
     oci8_define_bind_class("String", &bind_string_data_type, bind_string_alloc);
     oci8_define_bind_class("RAW", &bind_raw_data_type, bind_raw_alloc);
     oci8_define_bind_class("BinaryDouble", &bind_binary_double_data_type, bind_binary_double_alloc);
+    if (oracle_client_version >= ORAVER_12_1) {
+        oci8_define_bind_class("Boolean", &bind_boolean_data_type, bind_boolean_alloc);
+    }
 }
