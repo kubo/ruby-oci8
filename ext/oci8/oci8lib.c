@@ -381,10 +381,6 @@ static VALUE exec_sql(cb_arg_t *arg)
     ub4 pos;
     sword rv;
 
-    rv = OCIHandleAlloc(oci8_envhp, (dvoid*)&arg->stmtp, OCI_HTYPE_STMT, 0, NULL);
-    if (rv != OCI_SUCCESS) {
-        oci8_env_raise(oci8_envhp, rv);
-    }
     chker2(OCIStmtPrepare2(arg->svcctx->base.hp.svc, &arg->stmtp, oci8_errhp, 
                            (text*)arg->sql_text, strlen(arg->sql_text), NULL, 0,
                            OCI_NTV_SYNTAX, OCI_DEFAULT),

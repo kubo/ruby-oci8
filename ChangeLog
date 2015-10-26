@@ -1,4 +1,9 @@
 2015-10-26  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oci8lib.c: Fix handle leaks when OCI8#ping is used and
+	    the Oracle client version is 10gR1.
+	    This bug was introduced in ruby-oci8 2.2.0.
+
+2015-10-26  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8lib.c: Revive code dropped in ruby-oci8 2.2.0.
 	    This prevents potential SEGV on ruby process termination.
 
