@@ -23,10 +23,8 @@ static ID id_finite_p;
 static ID id_split;
 static ID id_numerator;
 static ID id_denominator;
-static ID id_Rational;
 static ID id_BigDecimal;
 
-static VALUE cRational;
 static VALUE cBigDecimal;
 
 static VALUE cOCINumber;
@@ -51,19 +49,6 @@ static int rboci8_type(VALUE obj)
     VALUE klass;
 
     switch (type) {
-    case T_OBJECT:
-        klass = CLASS_OF(obj);
-        if (cRational != 0) {
-            if (klass == cRational) {
-                return T_RATIONAL;
-            }
-        } else {
-            if (strcmp(rb_class2name(klass), "Rational") == 0) {
-                cRational = rb_const_get(rb_cObject, id_Rational);
-                return T_RATIONAL;
-            }
-        }
-        break;
     case T_DATA:
         klass = CLASS_OF(obj);
         if (klass == cOCINumber) {
@@ -1805,7 +1790,6 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
     id_split = rb_intern("split");
     id_numerator = rb_intern("numerator");
     id_denominator = rb_intern("denominator");
-    id_Rational = rb_intern("Rational");
     id_BigDecimal = rb_intern("BigDecimal");
 
     cOCINumber = rb_define_class("OraNumber", rb_cNumeric);
