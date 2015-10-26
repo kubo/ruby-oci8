@@ -54,7 +54,6 @@ void oci8_base_free(oci8_base_t *base)
     base->hp.ptr = NULL;
 }
 
-#ifdef HAVE_RB_SET_END_PROC
 static void at_exit_func(VALUE val)
 {
     oci8_in_finalizer = 1;
@@ -62,7 +61,6 @@ static void at_exit_func(VALUE val)
     oci8_shutdown_sockets();
 #endif
 }
-#endif
 
 static VALUE bind_base_alloc(VALUE klass)
 {
@@ -118,9 +116,7 @@ Init_oci8lib()
     oci8_id_mul_op = rb_intern("*");
     oci8_id_div_op = rb_intern("/");
 #endif
-#ifdef HAVE_RB_SET_END_PROC
     rb_set_end_proc(at_exit_func, Qnil);
-#endif
 
     Init_oci8_thread_util();
     Init_oci8_error();
