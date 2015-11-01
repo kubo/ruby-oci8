@@ -53,16 +53,6 @@ else
 end
 $defs = saved_defs
 
-have_type('oratext', 'ociap.h')
-have_type('OCIDateTime*', 'ociap.h')
-have_type('OCIInterval*', 'ociap.h')
-have_type('OCICallbackLobRead2', 'ociap.h')
-have_type('OCICallbackLobWrite2', 'ociap.h')
-have_type('OCIAdmin*', 'ociap.h')
-have_type('OCIAuthInfo*', 'ociap.h')
-have_type('OCIMsg*', 'ociap.h')
-have_type('OCICPool*', 'ociap.h')
-
 if with_config('oracle-version')
   oraver = OCI8::OracleVersion.new(with_config('oracle-version'))
 else

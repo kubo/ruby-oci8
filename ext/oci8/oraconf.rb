@@ -696,7 +696,7 @@ EOS
     original_libs = $libs
     begin
       $libs += " -L#{CONFIG['libdir']} " + @libs
-      have_func("OCIInitialize", "oci.h")
+      have_func("OCIEnvCreate", "oci.h")
     ensure
       $libs = original_libs
     end
@@ -708,11 +708,12 @@ EOS
       case RUBY_PLATFORM
       when /cygwin|x64-mingw32/
         regex = ([nil].pack('P').size == 8) ? / T (OCI\w+)/ : / T _(OCI\w+)/
+        oci_funcs = YAML.load(open(File.dirname(__FILE__) + '/apiwrap.yml'))
         open("OCI.def", "w") do |f|
           f.puts("EXPORTS")
           open("|nm #{lib_dir}/MSVC/OCI.LIB") do |r|
             while line = r.gets
-              f.puts($1) if regex =~ line
+              f.puts($1) if regex =~ line and oci_funcs.include?($1)
             end
           end
         end

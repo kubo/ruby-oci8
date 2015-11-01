@@ -1,4 +1,9 @@
 2015-11-01  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, ext/oci8/oci8.h: Delete unnecessary checks.
+	* ext/oci8/oraconf.rb: Reduce time to build an import library on
+	    Mingw32 and Cygwin.
+
+2015-11-01  Kubo Takehiro  <kubo@jiubao.org>
 	* lib/oci8/oci8.rb: delete code for Oracle 8i.
 
 2015-10-26  Kubo Takehiro  <kubo@jiubao.org>

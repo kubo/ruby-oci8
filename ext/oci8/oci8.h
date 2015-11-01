@@ -58,38 +58,6 @@ typedef oraub8 ub8;
 typedef orasb8 sb8;
 #endif /* ORAXB8_DEFINED */
 
-#ifndef HAVE_TYPE_ORATEXT
-typedef unsigned char oratext;
-#endif
-#if !defined HAVE_TYPE_OCIDATETIME_ && !defined HAVE_TYPE_OCIDATETIMEP
-typedef struct OCIDateTime OCIDateTime;
-#endif
-#if !defined HAVE_TYPE_OCIINTERVAL_ && !defined HAVE_TYPE_OCIINTERVALP
-typedef struct OCIInterval OCIInterval;
-#endif
-#ifndef HAVE_TYPE_OCICALLBACKLOBREAD2
-typedef sb4 (*OCICallbackLobRead2)(dvoid *ctxp, CONST dvoid *bufp, oraub8 len,
-                                   ub1 piece, dvoid **changed_bufpp,
-                                   oraub8 *changed_lenp);
-#endif
-#ifndef HAVE_TYPE_OCICALLBACKLOBWRITE2
-typedef sb4 (*OCICallbackLobWrite2)(dvoid *ctxp, dvoid *bufp, oraub8 *lenp,
-                                    ub1 *piece, dvoid **changed_bufpp,
-                                    oraub8 *changed_lenp);
-#endif
-#if !defined HAVE_TYPE_OCIADMIN_ && !defined HAVE_TYPE_OCIADMINP
-typedef struct OCIAdmin OCIAdmin;
-#endif
-#if !defined HAVE_TYPE_OCIAUTHINFO_ && !defined HAVE_TYPE_OCIAUTHINFOP
-typedef struct OCIAuthInfo OCIAuthInfo;
-#endif
-#if !defined HAVE_TYPE_OCIMSG_ && !defined HAVE_TYPE_OCIMSGP
-typedef struct OCIMsg  OCIMsg;
-#endif
-#if !defined HAVE_TYPE_OCICPOOL_ && !defined HAVE_TYPE_OCICPOOLP
-typedef struct OCICPool OCICPool;
-#endif
-
 #if defined RBX_CAPI_RUBY_H
 /* rubinius 2.0 */
 #ifndef HAVE_RB_ENC_STR_BUF_CAT
