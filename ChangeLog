@@ -1,4 +1,8 @@
 2015-11-01  Kubo Takehiro  <kubo@jiubao.org>
+	* NEWS: Add changes between 2.2.0.2 and 2.2.1.
+	* lib/oci8/version.rb: update to 2.2.1.
+
+2015-11-01  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/extconf.rb, ext/oci8/oci8.h: Delete unnecessary checks.
 	* ext/oci8/oraconf.rb: Reduce time to build an import library on
 	    Mingw32 and Cygwin.

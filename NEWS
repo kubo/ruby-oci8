@@ -1,5 +1,34 @@
 # @markup markdown
 
+2.2.1
+=====
+
+New Features
+------------
+
+### Add OCI8::Metadata::Boolean
+
+Support boolean type binding. This feature requires Oracle 12c client and server.
+This doens't work when either Oracle server or client is 11g or lower.
+
+Fixed Issues
+------------
+
+The following two issues were introduced in ruby-oci8 2.2.0.
+
+### Fix handle leaks in OCI8#ping
+
+This bug affects Oracle 10gR1 client only.
+
+### Fix potential segmentation fault on ruby process termination
+
+Other Changes
+-------------
+
+-   Reduce compilation time by dropping unnecessary checks.
+
+-   Delete unused code which was added to support old Oracle and ruby 1.8.
+
 2.2.0.2
 =======
 
