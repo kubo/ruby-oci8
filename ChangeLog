@@ -1,3 +1,6 @@
+2015-11-01  Kubo Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb: delete code for Oracle 8i.
+
 2015-10-26  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8lib.c: Fix handle leaks when OCI8#ping is used and
 	    the Oracle client version is 10gR1.

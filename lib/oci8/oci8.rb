@@ -351,22 +351,7 @@ class OCI8
   # @see OCI8.oracle_client_version
   # @return [OCI8::OracleVersion]
   def oracle_server_version
-    unless defined? @oracle_server_version
-      if vernum = oracle_server_vernum
-        # If the Oracle client is Oracle 9i or upper,
-        # get the server version from the OCI function OCIServerRelease.
-        @oracle_server_version = OCI8::OracleVersion.new(vernum)
-      else
-        # Otherwise, get it from v$version.
-        self.exec('select banner from v$version') do |row|
-          if /^Oracle.*?(\d+\.\d+\.\d+\.\d+\.\d+)/ =~ row[0]
-            @oracle_server_version = OCI8::OracleVersion.new($1)
-            break
-          end
-        end
-      end
-    end
-    @oracle_server_version
+    @oracle_server_version ||= OCI8::OracleVersion.new(oracle_server_vernum)
   end
 
   # Returns the Oracle database character set name such as AL32UTF8.
