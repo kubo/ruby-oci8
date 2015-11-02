@@ -5,10 +5,14 @@ Ruby-oci8 is a ruby interface for Oracle Database. The latest version
 is available for all Oracle versions after Oracle 10g including Oracle
 Instant Client.
 
-Use ruby-oci8 2.0.6 for Oracle 8 or use ruby-oci8 2.1.8 for Oracle 9i.
+Oracle Support Versions
+| Oracle Version | ruby-oci8 Version | Notes |
+|----------------|-------------------|------|
+| Oracle 8       | ruby-oci8 2.0.6   | |
+| Oracle 9i      | ruby-oci8 2.1.8   | |
+| Oracle 11      | ruby-oci8 2.2.0.2 | Drops support for ruby 1.8 |
+| Oracle 12      | ruby-oci8 2.2.1   | Drops support for Oracle 11g Client/Server |
 
-Note that ruby 1.8 support was dropped in ruby-oci8 2.2.0.
-Use ruby-2.1.8 for ruby 1.8.
 
 What's new
 ==========
