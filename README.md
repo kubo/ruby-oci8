@@ -6,6 +6,7 @@ is available for all Oracle versions after Oracle 10g including Oracle
 Instant Client.
 
 Oracle Support Versions
+
 | Oracle Version | ruby-oci8 Version | Notes |
 |----------------|-------------------|------|
 | Oracle 8       | ruby-oci8 2.0.6   | |
