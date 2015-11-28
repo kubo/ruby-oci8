@@ -9,7 +9,7 @@ New Features
 ### Add OCI8::Metadata::Boolean
 
 Support boolean type binding. This feature requires Oracle 12c client and server.
-This doesn't work when either Oracle server or client is 11g or lower.
+Binding a boolean value fails when either Oracle server or client is 11g or lower.
 
 Fixed Issues
 ------------
