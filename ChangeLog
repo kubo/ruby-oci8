@@ -1,3 +1,7 @@
+2015-11-28  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: Check the default value of DYLD_FALLBACK_LIBRARY_PATH
+	    after checking OCI_DIR. (OS X only)
+
 2015-11-01  Kubo Takehiro  <kubo@jiubao.org>
 	* NEWS: Add changes between 2.2.0.2 and 2.2.1.
 	* lib/oci8/version.rb: update to 2.2.1.

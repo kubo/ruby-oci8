@@ -522,10 +522,11 @@ EOS
       when /darwin/
         fallback_path = ENV['DYLD_FALLBACK_LIBRARY_PATH']
         if fallback_path.nil?
-          fallback_path = "#{ENV['HOME']}/lib:/usr/local/lib:/lib:/usr/lib"
+          puts "  DYLD_FALLBACK_LIBRARY_PATH is not set."
+        else
+          puts "  checking DYLD_FALLBACK_LIBRARY_PATH..."
+          ld_path, file = check_lib_in_path(fallback_path, glob_name, check_proc)
         end
-        puts "  checking DYLD_FALLBACK_LIBRARY_PATH..."
-        ld_path, file = check_lib_in_path(fallback_path, glob_name, check_proc)
         if ld_path.nil?
           puts "  checking OCI_DIR..."
           ld_path, file = check_lib_in_path(ENV['OCI_DIR'], glob_name, check_proc)
@@ -560,6 +561,14 @@ EOS
                 end
               end
             end
+          end
+        end
+        if ld_path.nil?
+          fallback_path = ENV['DYLD_FALLBACK_LIBRARY_PATH']
+          if fallback_path.nil?
+            fallback_path = "#{ENV['HOME']}/lib:/usr/local/lib:/lib:/usr/lib"
+            puts "  checking the default value of DYLD_FALLBACK_LIBRARY_PATH..."
+            ld_path, file = check_lib_in_path(fallback_path, glob_name, check_proc)
           end
         end
         if ld_path.nil?
