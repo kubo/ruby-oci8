@@ -717,7 +717,9 @@ EOS
       case RUBY_PLATFORM
       when /cygwin|x64-mingw32/
         regex = ([nil].pack('P').size == 8) ? / T (OCI\w+)/ : / T _(OCI\w+)/
-        oci_funcs = YAML.load(open(File.dirname(__FILE__) + '/apiwrap.yml'))
+        oci_funcs = YAML.load(open(File.dirname(__FILE__) + '/apiwrap.yml')).keys.collect do |func|
+          func =~ /_nb$/ ? $` : func
+        end
         open("OCI.def", "w") do |f|
           f.puts("EXPORTS")
           open("|nm #{lib_dir}/MSVC/OCI.LIB") do |r|

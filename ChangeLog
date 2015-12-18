@@ -1,3 +1,9 @@
+2015-12-18  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: Fix a linkage error on cygwin and mingw32
+	    when installing without `--with-runtime-check`.
+	    This bug was introduced in ruby-oci8 2.2.1.
+	    (github issue #113)
+
 2015-11-28  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: Check the default value of DYLD_FALLBACK_LIBRARY_PATH
 	    after checking OCI_DIR. (OS X only)
