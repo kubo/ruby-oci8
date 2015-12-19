@@ -63,9 +63,9 @@ class OCI8
   #
   # === connecting as a privileged user
   #
-  # Set :SYSDBA or :SYSOPER to +privilege+, otherwise
-  # "username/password as sysdba" or "username/password as sysoper"
-  # as a single argument.
+  # Set :SYSDBA, :SYSOPER, :SYSASM, :SYSBACKUP, :SYSDG or :SYSKM
+  # to +privilege+, otherwise "username/password as sysdba",
+  # "username/password as sysoper", etc. as a single argument.
   #
   #   OCI8.new('sys', 'change_on_install', nil, :SYSDBA)
   # or
@@ -96,29 +96,15 @@ class OCI8
   #
   def initialize(*args)
     if args.length == 1
-      username, password, dbname, mode = parse_connect_string(args[0])
+      username, password, dbname, privilege = parse_connect_string(args[0])
     else
-      username, password, dbname, mode = args
+      username, password, dbname, privilege = args
     end
 
     if username.nil? and password.nil?
       cred = OCI_CRED_EXT
     end
-    case mode
-    when :SYSDBA
-      mode = OCI_SYSDBA
-    when :SYSOPER
-      mode = OCI_SYSOPER
-    when :SYSASM
-      if OCI8.oracle_client_version < OCI8::ORAVER_11_1
-        raise "SYSASM is not supported on Oracle version #{OCI8.oracle_client_version}"
-      end
-      mode = OCI_SYSASM
-    when nil
-      # do nothing
-    else
-      raise "unknown privilege type #{mode}"
-    end
+    auth_mode = to_auth_mode(privilege)
 
     stmt_cache_size = OCI8.properties[:statement_cache_size]
     stmt_cache_size = nil if stmt_cache_size == 0
@@ -148,7 +134,7 @@ class OCI8
         @session_handle.send(:attr_set_string, 424, "ruby-oci8 : #{OCI8::VERSION}")
       end
       server_attach(dbname, attach_mode)
-      session_begin(cred ? cred : OCI_CRED_RDBMS, mode ? mode : OCI_DEFAULT)
+      session_begin(cred ? cred : OCI_CRED_RDBMS, auth_mode)
     else
       # logon by the OCI function OCILogon2().
       logon2(username, password, dbname, attach_mode)
@@ -440,6 +426,45 @@ class OCI8
     end
     def recv_timeout=(timeout)
       raise NotImplementedError, 'revc_timeout= is unimplemented in this Oracle version'
+    end
+  end
+
+  private
+
+  # Converts the specified privilege name to the value passed to the
+  # fifth argument of OCISessionBegin().
+  #
+  # @private
+  def to_auth_mode(privilege)
+    case privilege
+    when :SYSDBA
+      0x00000002 # OCI_SYSDBA in oci.h
+    when :SYSOPER
+      0x00000004 # OCI_SYSOPER in oci.h
+    when :SYSASM
+      if OCI8.oracle_client_version < OCI8::ORAVER_11_1
+        raise "SYSASM is not supported on Oracle version #{OCI8.oracle_client_version}"
+      end
+      0x00008000 # OCI_SYSASM in oci.h
+    when :SYSBACKUP
+      if OCI8.oracle_client_version < OCI8::ORAVER_12_1
+        raise "SYSBACKUP is not supported on Oracle version #{OCI8.oracle_client_version}"
+      end
+      0x00020000 # OCI_SYSBKP in oci.h
+    when :SYSDG
+      if OCI8.oracle_client_version < OCI8::ORAVER_12_1
+        raise "SYSDG is not supported on Oracle version #{OCI8.oracle_client_version}"
+      end
+      0x00040000 # OCI_SYSDGD in oci.h
+    when :SYSKM
+      if OCI8.oracle_client_version < OCI8::ORAVER_12_1
+        raise "SYSKM is not supported on Oracle version #{OCI8.oracle_client_version}"
+      end
+      0x00080000 # OCI_SYSKMT in oci.h
+    when nil
+      0 # OCI_DEFAULT
+    else
+      raise "unknown privilege type #{privilege}"
     end
   end
 end

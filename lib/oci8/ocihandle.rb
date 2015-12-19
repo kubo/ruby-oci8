@@ -427,22 +427,6 @@ class OCIHandle
 
   #################################
   #
-  # Authentication Modes
-  #
-  #################################
-
-  # for SYSDBA authorization
-  # @private
-  OCI_SYSDBA                  = 0x0002
-  # for SYSOPER authorization
-  # @private
-  OCI_SYSOPER                 = 0x0004
-  # for SYSASM authorization
-  # @private
-  OCI_SYSASM                  = 0x8000
-
-  #################################
-  #
   # OCI Parameter Types
   #
   #################################

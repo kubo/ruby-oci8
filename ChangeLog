@@ -1,4 +1,9 @@
 2015-12-19  Kubo Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb, lib/oci8/ocihandle.rb: Support SYSBACKUP, SYSDG
+	    and SYSKM privileges.
+	    (github issue #110)
+
+2015-12-19  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/plthook_win32.c: Fix bug introduced by the previous commit
 	    for mingw32 64-bit compiler.
 	    (github issue #113)
