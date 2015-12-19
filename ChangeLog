@@ -1,3 +1,8 @@
+2015-12-19  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/plthook_win32.c: Fix bug introduced by the previous commit
+	    for mingw32 64-bit compiler.
+	    (github issue #113)
+
 2015-12-18  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/plthook_win32.c, ext/oci8/extconf.rb: Import the latest
 	    plthook_win32.c for cygwin. Ruby-oci8 had not been compiled on
