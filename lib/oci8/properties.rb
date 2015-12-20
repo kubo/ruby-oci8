@@ -13,6 +13,10 @@ class OCI8
     :statement_cache_size => 0,
     :events_mode => ((OCI8.__get_prop(2) & 4) != 0), # 4 <- OCI_EVENTS in oci.h
     :cancel_read_at_exit => false,
+    :tcp_connect_timeout => nil,
+    :outbound_connect_timeout => nil,
+    :send_timeout => nil,
+    :recv_timeout => nil,
   }
 
   # @private
@@ -53,6 +57,11 @@ class OCI8
     when :cancel_read_at_exit
       val = val ? true : false
       OCI8.__set_prop(3, val)
+    when :tcp_connect_timeout, :outbound_connect_timeout, :send_timeout, :recv_timeout
+      if !val.nil?
+        val = val.to_i
+        raise ArgumentError, "The property value for :#{name} must be nil or a positive integer." if val <= 0
+      end
     end
     super(name, val)
   end
@@ -131,6 +140,30 @@ class OCI8
   #     network quality is poor and packets are lost irregularly.
   #
   #     *Since:* 2.1.8
+  #
+  # [:tcp_connect_timeout]
+  #
+  #     See {file:docs/timeout-parameters.md}
+  #
+  #     *Since:* 2.2.2
+  #
+  # [:outbound_connect_timeout]
+  #
+  #     See {file:docs/timeout-parameters.md}
+  #
+  #     *Since:* 2.2.2
+  #
+  # [:send_timeout]
+  #
+  #     See {file:docs/timeout-parameters.md}
+  #
+  #     *Since:* 2.2.2
+  #
+  # [:recv_timeout]
+  #
+  #     See {file:docs/timeout-parameters.md}
+  #
+  #     *Since:* 2.2.2
   #
   # @return [a customized Hash]
   # @since 2.0.5

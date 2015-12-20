@@ -114,6 +114,12 @@ class OCI8
       @pool = dbname # to prevent GC from freeing the connection pool.
       dbname = dbname.send(:pool_name)
       attach_mode |= 0x0200 # OCI_CPOOL and OCI_LOGON2_CPOOL
+    else
+      tcp_connect_timeout = OCI8::properties[:tcp_connect_timeout]
+      outbound_connect_timeout = OCI8::properties[:outbound_connect_timeout]
+      if tcp_connect_timeout || outbound_connect_timeout
+        dbname = to_connect_descriptor(dbname, tcp_connect_timeout, outbound_connect_timeout)
+      end
     end
     if stmt_cache_size
       # enable statement caching
@@ -134,6 +140,10 @@ class OCI8
         @session_handle.send(:attr_set_string, 424, "ruby-oci8 : #{OCI8::VERSION}")
       end
       server_attach(dbname, attach_mode)
+      if OCI8.oracle_client_version >= OCI8::ORAVER_11_1
+        self.send_timeout = OCI8::properties[:send_timeout] if OCI8::properties[:send_timeout]
+        self.recv_timeout = OCI8::properties[:recv_timeout] if OCI8::properties[:recv_timeout]
+      end
       session_begin(cred ? cred : OCI_CRED_RDBMS, auth_mode)
     else
       # logon by the OCI function OCILogon2().
@@ -375,6 +385,8 @@ class OCI8
     # Zero means no timeout.
     # This is equivalent to {http://docs.oracle.com/database/121/NETRF/sqlnet.htm#NETRF228 SQLNET.SEND_TIMEOUT} in client-side sqlnet.ora.
     #
+    # If you need to set send timeout while establishing a connection, use {file:docs/timeout-parameters.md timeout parameters in OCI8::properties} instead.
+    #
     # If you have trouble by setting this, don't use it because it uses
     # {http://blog.jiubao.org/2015/01/undocumented-oci-handle-attributes.html an undocumented OCI handle attribute}.
     #
@@ -402,6 +414,8 @@ class OCI8
     # Sets receive timeout in seconds.
     # Zero means no timeout.
     # This is equivalent to {http://docs.oracle.com/database/121/NETRF/sqlnet.htm#NETRF227 SQLNET.RECV_TIMEOUT} in client-side sqlnet.ora.
+    #
+    # If you need to set receive timeout while establishing a connection, use {file:docs/timeout-parameters.md timeout parameters in OCI8::properties} instead.
     #
     # If you have trouble by setting this, don't use it because it uses
     # {http://blog.jiubao.org/2015/01/undocumented-oci-handle-attributes.html an undocumented OCI handle attribute}.
@@ -465,6 +479,45 @@ class OCI8
       0 # OCI_DEFAULT
     else
       raise "unknown privilege type #{privilege}"
+    end
+  end
+
+  @@easy_connect_naming_regex = %r{
+    ^
+    (//)?                  # preceding double-slash($1)
+    (?:\[([\h:]+)\]|([^\s:/]+)) # IPv6 enclosed by square brackets($2) or hostname($3)
+    (?::(\d+))?            # port($4)
+    (?:
+      /
+      ([^\s:/]+)?          # service name($5)
+      (?::([^\s:/]+))?     # server($6)
+      (?:/([^\s:/]+))?     # instance name($7)
+    )?
+    $
+  }x
+
+  # Parse easy connect string as described in https://docs.oracle.com/database/121/NETAG/naming.htm
+  # and add TRANSPORT_CONNECT_TIMEOUT or CONNECT_TIMEOUT.
+  #
+  # @private
+  def to_connect_descriptor(database, tcp_connect_timeout, outbound_connect_timeout)
+    if @@easy_connect_naming_regex =~ database && ($1 || $2 || $4 || $5 || $6 || $7)
+      connect_data = []
+      connect_data << "(SERVICE_NAME=#$5)"
+      connect_data << "(SERVER=#$6)" if $6
+      connect_data << "(INSTANCE_NAME=#$7)" if $7
+      desc = []
+      desc << "(CONNECT_DATA=#{connect_data.join})"
+      desc << "(ADDRESS=(PROTOCOL=TCP)(HOST=#{$2 || $3})(PORT=#{$4 || 1521}))"
+      if tcp_connect_timeout
+        desc << "(TRANSPORT_CONNECT_TIMEOUT=#{tcp_connect_timeout})"
+      end
+      if outbound_connect_timeout
+        desc << "(CONNECT_TIMEOUT=#{outbound_connect_timeout})"
+      end
+      "(DESCRIPTION=#{desc.join})"
+    else
+      database
     end
   end
 end

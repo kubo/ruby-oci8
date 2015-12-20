@@ -17,6 +17,7 @@ docs/install-on-osx.md
 docs/osx-install-dev-tools.png
 docs/platform-specific-issues.md
 docs/report-installation-issue.md
+docs/timeout-parameters.md
 ext/oci8/.document
 ext/oci8/MANIFEST
 ext/oci8/apiwrap.c.tmpl
