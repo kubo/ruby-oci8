@@ -23,7 +23,7 @@ They affect only TCP connections.
 
 The first two parameters `tcp_connect_timeout` and `outbound_connect_timeout`
 are applied only to [connect descriptors][connect descriptor] using [Easy Connect Naming Method][EZCONNECT].
-If you uses easy connect naming method without any of `port`, `service_name`, `server` and `instance_name`,
+If you use easy connect naming method without any of `port`, `service_name`, `server` and `instance_name`,
 you need to use `//host` to distinguish it from a net service name.
 
 The next two parameters `send_timeout` and `recv_timeout` are available on Oracle 11g client
@@ -32,8 +32,8 @@ after establishing a connection.
 
 Note that establishing a connection consists of two phases. The first phase is connecting
 to a service. The second phase is user authentication. The first two parameters
-`tcp_connect_timeout` and `outbound_connect_timeout` affects only the first phase.
-The next two parameters `send_timeout` and `recv_timeout` affects network round trips
+`tcp_connect_timeout` and `outbound_connect_timeout` affect only the first phase.
+The next two parameters `send_timeout` and `recv_timeout` affect network round trips
 since the second phase.
 
 [TCP.CONNECT_TIMEOUT]: http://docs.oracle.com/database/121/NETRF/sqlnet.htm#BIIDDACA
