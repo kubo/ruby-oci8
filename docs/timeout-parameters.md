@@ -45,4 +45,4 @@ since the second phase.
 [connect descriptor]: https://docs.oracle.com/database/121/NETRF/glossary.htm#BGBEDFBF
 [EZCONNECT]: https://docs.oracle.com/database/121/NETAG/naming.htm#NETAG255
 [CONNECT_TIMEOUT]: https://docs.oracle.com/database/121/NETRF/tnsnames.htm#NETRF666
-[TRANSPORT_CONNECT_TIMEOUT] https://docs.oracle.com/database/121/NETRF/tnsnames.htm#NETRF1982
+[TRANSPORT_CONNECT_TIMEOUT]: https://docs.oracle.com/database/121/NETRF/tnsnames.htm#NETRF1982
