@@ -24,7 +24,9 @@ They affect only TCP connections.
 The first two parameters `tcp_connect_timeout` and `outbound_connect_timeout`
 are applied only to [connect descriptors][connect descriptor] using [Easy Connect Naming Method][EZCONNECT].
 If you use easy connect naming method without any of `port`, `service_name`, `server` and `instance_name`,
-you need to use `//host` to distinguish it from a net service name.
+you need to use `//host` to distinguish it from a net service name in `tnsnames.ora`. If you need
+these parameters without using easy connect naming, add equivalent parameters [CONNECT_TIMEOUT]
+and/or [TRANSPORT_CONNECT_TIMEOUT] in your `tnsname.ora` instead.
 
 The next two parameters `send_timeout` and `recv_timeout` are available on Oracle 11g client
 or upper. These parameters can be changed by {OCI8#send_timeout=} and/or {OCI8#recv_timeout=}
@@ -42,3 +44,5 @@ since the second phase.
 [SQLNET.RECV_TIMEOUT]: http://docs.oracle.com/database/121/NETRF/sqlnet.htm#NETRF227
 [connect descriptor]: https://docs.oracle.com/database/121/NETRF/glossary.htm#BGBEDFBF
 [EZCONNECT]: https://docs.oracle.com/database/121/NETAG/naming.htm#NETAG255
+[CONNECT_TIMEOUT]: https://docs.oracle.com/database/121/NETRF/tnsnames.htm#NETRF666
+[TRANSPORT_CONNECT_TIMEOUT] https://docs.oracle.com/database/121/NETRF/tnsnames.htm#NETRF1982
