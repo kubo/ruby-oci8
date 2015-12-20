@@ -384,12 +384,19 @@ class OCI8
       attr_set_ub4(11, rows) # OCI_ATTR_PREFETCH_ROWS(11)
     end
 
-    # Returns the number of processed rows.
-    #
-    # @return [Integer]
-    def row_count
-      # http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/ociaahan.htm#sthref5498
-      attr_get_ub4(9) # OCI_ATTR_ROW_COUNT(9)
+    if OCI8::oracle_client_version >= ORAVER_12_1
+      # Returns the number of processed rows.
+      #
+      # @return [Integer]
+      def row_count
+        # https://docs.oracle.com/database/121/LNOCI/ociaahan.htm#sthref5774
+        attr_get_ub8(457) # OCI_ATTR_UB8_ROW_COUNT(457)
+      end
+    else
+      def row_count
+        # http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/ociaahan.htm#sthref5498
+        attr_get_ub4(9) # OCI_ATTR_ROW_COUNT(9)
+      end
     end
 
     # Returns the text of the SQL statement prepared in the cursor.

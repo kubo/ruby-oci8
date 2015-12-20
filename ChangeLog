@@ -1,4 +1,8 @@
 2015-12-20  Kubo Takehiro  <kubo@jiubao.org>
+	* lib/oci8/cursor.rb: Use OCI_ATTR_UB8_ROW_COUNT to get the number of processed rows
+	    if Oracle client version is 12c or upper.
+
+2015-12-20  Kubo Takehiro  <kubo@jiubao.org>
 	* lib/oci8/oci8.rb, lib/oci8/properties.rb, test/test_connstr.rb:
 	    Support tcp_connect_timeout, connect_timeout, send_timeout and
 	    recv_timeout in OCI8::properties.
