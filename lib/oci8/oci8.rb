@@ -116,9 +116,9 @@ class OCI8
       attach_mode |= 0x0200 # OCI_CPOOL and OCI_LOGON2_CPOOL
     else
       tcp_connect_timeout = OCI8::properties[:tcp_connect_timeout]
-      outbound_connect_timeout = OCI8::properties[:outbound_connect_timeout]
-      if tcp_connect_timeout || outbound_connect_timeout
-        dbname = to_connect_descriptor(dbname, tcp_connect_timeout, outbound_connect_timeout)
+      connect_timeout = OCI8::properties[:connect_timeout]
+      if tcp_connect_timeout || connect_timeout
+        dbname = to_connect_descriptor(dbname, tcp_connect_timeout, connect_timeout)
       end
     end
     if stmt_cache_size
@@ -500,7 +500,7 @@ class OCI8
   # and add TRANSPORT_CONNECT_TIMEOUT or CONNECT_TIMEOUT.
   #
   # @private
-  def to_connect_descriptor(database, tcp_connect_timeout, outbound_connect_timeout)
+  def to_connect_descriptor(database, tcp_connect_timeout, connect_timeout)
     if @@easy_connect_naming_regex =~ database && ($1 || $2 || $4 || $5 || $6 || $7)
       connect_data = []
       connect_data << "(SERVICE_NAME=#$5)"
@@ -512,8 +512,8 @@ class OCI8
       if tcp_connect_timeout
         desc << "(TRANSPORT_CONNECT_TIMEOUT=#{tcp_connect_timeout})"
       end
-      if outbound_connect_timeout
-        desc << "(CONNECT_TIMEOUT=#{outbound_connect_timeout})"
+      if connect_timeout
+        desc << "(CONNECT_TIMEOUT=#{connect_timeout})"
       end
       "(DESCRIPTION=#{desc.join})"
     else

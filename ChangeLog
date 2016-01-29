@@ -1,3 +1,8 @@
+2016-01-29  Kubo Takehiro  <kubo@jiubao.org>
+	* lib/oci8/oci8.rb, lib/oci8/properties.rb: Rename outbound_connect_timeout in
+	   OCI8::properties to connect_timeout.
+	* docs/timeout-parameters.md: Revise document.
+
 2015-12-20  Kubo Takehiro  <kubo@jiubao.org>
 	* lib/oci8/cursor.rb: Use OCI_ATTR_UB8_ROW_COUNT to get the number of processed rows
 	    if Oracle client version is 12c or upper.
