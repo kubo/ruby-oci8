@@ -1,3 +1,10 @@
+2016-03-13  Kubo Takehiro  <kubo@jiubao.org>
+	* ruby-oci8.gemspec: Change the license name in gemspec to suppress the
+	   following warning.
+	     WARNING: license value '2-clause BSD-style license' is invalid.
+	     Use a license identifier from http://spdx.org/licenses or 'Nonstandard'
+	     for a nonstandard license.
+
 2016-01-29  Kubo Takehiro  <kubo@jiubao.org>
 	* lib/oci8/oci8.rb, lib/oci8/properties.rb: Rename outbound_connect_timeout in
 	   OCI8::properties to connect_timeout.
