@@ -41,6 +41,11 @@ Report issues
 * {file:docs/report-installation-issue.md Report Installation Issues}
 * [The issues page on github](https://github.com/kubo/ruby-oci8/issues)
 
+Other documents
+===============
+
+* {file:docs/conflicts-local-connections-and-processes.md Conflicts between Local Connections and Child Process Handling on Unix}
+
 License
 =======
 

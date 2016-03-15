@@ -1,3 +1,9 @@
+2016-03-15  Kubo Takehiro  <kubo@jiubao.org>
+	* docs/conflicts-local-connections-and-processes.md: Add a document
+	    about conflicts between local connections and child process
+	    handling on Unix.
+	* README.md: Add a link to a newly added file.
+
 2016-03-13  Kubo Takehiro  <kubo@jiubao.org>
 	* ruby-oci8.gemspec: Change the license name in gemspec to suppress the
 	   following warning.

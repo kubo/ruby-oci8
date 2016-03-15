@@ -14,6 +14,7 @@ docs/install-binary-package.md
 docs/install-full-client.md
 docs/install-instant-client.md
 docs/install-on-osx.md
+docs/conflicts-local-connections-and-processes.md
 docs/osx-install-dev-tools.png
 docs/platform-specific-issues.md
 docs/report-installation-issue.md
