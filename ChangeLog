@@ -1,3 +1,6 @@
+2016-03-18  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: Fix for mswin64.
+
 2016-03-15  Kubo Takehiro  <kubo@jiubao.org>
 	* docs/conflicts-local-connections-and-processes.md: Add a document
 	    about conflicts between local connections and child process

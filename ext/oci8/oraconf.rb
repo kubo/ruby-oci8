@@ -13,7 +13,7 @@ module MiniRegistry
       @code = code
     end
   end
-  if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/
+  if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw32|bccwin32/
     # Windows
     require 'Win32API' # raise LoadError when UNIX.
 
@@ -390,7 +390,7 @@ EOS
     is_32bit = size_of_pointer == 4
     is_big_endian = "\x01\x02".unpack('s')[0] == 0x0102
     case RUBY_PLATFORM
-    when /mswin32|cygwin|mingw32|bccwin32/
+    when /mswin32|mswin64|cygwin|mingw32|bccwin32/
       oci_basename = 'oci'
       oci_glob_postfix = ''
       nls_data_basename = ['oraociei*', 'oraociicus*']
@@ -607,7 +607,7 @@ EOS
     paths.split(File::PATH_SEPARATOR).each do |path|
       next if path.nil? or path == ''
       print "    checking #{path}... "
-      path.gsub!(/\\/, '/') if /mswin32|cygwin|mingw32|bccwin32/ =~ RUBY_PLATFORM
+      path.gsub!(/\\/, '/') if /mswin32|mswin64|cygwin|mingw32|bccwin32/ =~ RUBY_PLATFORM
       files = Dir.glob(File.join(path, glob_name))
       if files.empty?
         puts "no"
@@ -711,7 +711,7 @@ EOS
     end
   end
 
-  if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/ # when Windows
+  if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw32|bccwin32/ # when Windows
 
     def get_libs(lib_dir)
       case RUBY_PLATFORM
@@ -793,7 +793,7 @@ class OraConfFC < OraConf
       use_lib32 = false
     end
 
-    if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/
+    if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw32|bccwin32/
       lib_dir = "#{@oracle_home}/oci/lib"
     elsif use_lib32
       lib_dir = "#{@oracle_home}/lib32"
@@ -812,7 +812,7 @@ class OraConfFC < OraConf
     print("Get the version of Oracle from SQL*Plus... ")
     STDOUT.flush
     version = nil
-    dev_null = RUBY_PLATFORM =~ /mswin32|mingw32|bccwin32/ ? "nul" : "/dev/null"
+    dev_null = RUBY_PLATFORM =~ /mswin32|mswin64|mingw32|bccwin32/ ? "nul" : "/dev/null"
     if File.exist?("#{@oracle_home}/bin/plus80.exe")
       sqlplus = "plus80.exe"
     else
@@ -837,7 +837,7 @@ class OraConfFC < OraConf
     version
   end # get_version
 
-  if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/ # when Windows
+  if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw32|bccwin32/ # when Windows
 
     def is_valid_home?(oracle_home)
       return false if oracle_home.nil?
@@ -1037,7 +1037,7 @@ class OraConfIC < OraConf
       inc_dir = "#{ic_dir}/sdk/include"
     end
 
-    if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/ # when Windows
+    if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw32|bccwin32/ # when Windows
       unless File.exist?("#{ic_dir}/sdk/lib/msvc/oci.lib")
         raise <<EOS
 Could not compile with Oracle instant client.
