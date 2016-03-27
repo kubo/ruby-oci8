@@ -387,6 +387,8 @@ class OCI8
     #
     # If you need to set send timeout while establishing a connection, use {file:docs/timeout-parameters.md timeout parameters in OCI8::properties} instead.
     #
+    # Note that the connection becomes unusable on timeout.
+    #
     # If you have trouble by setting this, don't use it because it uses
     # {http://blog.jiubao.org/2015/01/undocumented-oci-handle-attributes.html an undocumented OCI handle attribute}.
     #
@@ -416,6 +418,8 @@ class OCI8
     # This is equivalent to {http://docs.oracle.com/database/121/NETRF/sqlnet.htm#NETRF227 SQLNET.RECV_TIMEOUT} in client-side sqlnet.ora.
     #
     # If you need to set receive timeout while establishing a connection, use {file:docs/timeout-parameters.md timeout parameters in OCI8::properties} instead.
+    #
+    # Note that the connection becomes unusable on timeout.
     #
     # If you have trouble by setting this, don't use it because it uses
     # {http://blog.jiubao.org/2015/01/undocumented-oci-handle-attributes.html an undocumented OCI handle attribute}.

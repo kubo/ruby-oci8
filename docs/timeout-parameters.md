@@ -21,11 +21,14 @@ These parameters are applied only to TCP/IP connections.
 
 The first two parameters `tcp_connect_timeout` and `connect_timeout`
 are applied only to [connect descriptors][connect descriptor] using [Easy Connect Naming Method][EZCONNECT].
+If you use a net service name, you should set [TRANSPORT_CONNECT_TIMEOUT][] and/or
+[CONNECT_TIMEOUT][] in the address descriptor in `tnsnames.ora` instead of these parameters.
 If you use easy connect naming method without any of `port`, `service_name`, `server` and `instance_name`,
-you need to use `//host` to distinguish it from a net service name in `tnsnames.ora`.
+you need to use `//host` to distinguish it from a net service name.
 
 The next two parameters `send_timeout` and `recv_timeout` are available on Oracle 11g client
-or upper.
+or upper. Use these parameters to prevent a ruby process from being blocked by poor quality network.
+Otherwise, the ruby process may be blocked until TCP keepalive time (2 hours).
 
 tcp_connect_timeout
 -------------------
@@ -41,11 +44,11 @@ connect_timeout
 and [CONNECT_TIMEOUT][] in the address description.
 See description about [SQLNET.OUTBOUND_CONNECT_TIMEOUT][] and [CONNECT_TIMEOUT][].
 
-Note: this parameter isn't equivalent to login timeout. It need the following three
+Note: this parameter isn't equivalent to login timeout. It needs the following three
 steps to establish a database connection.
 
 1. Establish a TCP/IP connection.
-2. Establish an Oracle Net connection.
+2. Establish an [Oracle Net][] connection on the TCP/IP connection.
 3. Authenticate and authorize the database user.
 
 `tcp_connect_timeout` sets the timeout of the first step.
@@ -61,6 +64,8 @@ send_timeout
 `send_timeout` is equivalent to [SQLNET.SEND_TIMEOUT][] in the client-side `sqlnet.ora`.
 See description about [SQLNET.SEND_TIMEOUT][].
 
+Note that the connection becomes unusable on timeout.
+
 See also {OCI8#send_timeout=}.
 
 recv_timeout
@@ -68,6 +73,8 @@ recv_timeout
 
 `recv_timeout` is equivalent to [SQLNET.RECV_TIMEOUT][] in the client-side `sqlnet.ora`.
 See description about [SQLNET.RECV_TIMEOUT][].
+
+Note that the connection becomes unusable on timeout.
 
 See also {OCI8#recv_timeout=}.
 
@@ -81,3 +88,4 @@ Note: This parameter must be larger than the longest SQL execution time in your 
 [EZCONNECT]: https://docs.oracle.com/database/121/NETAG/naming.htm#NETAG255
 [CONNECT_TIMEOUT]: https://docs.oracle.com/database/121/NETRF/tnsnames.htm#NETRF666
 [TRANSPORT_CONNECT_TIMEOUT]: https://docs.oracle.com/database/121/NETRF/tnsnames.htm#NETRF1982
+[Oracle Net]: https://en.wikipedia.org/wiki/Oracle_Net_Services#Oracle_Net

@@ -44,6 +44,7 @@ Report issues
 Other documents
 ===============
 
+* {file:docs/timeout-parameters.md Timeout Parameters}
 * {file:docs/conflicts-local-connections-and-processes.md Conflicts between Local Connections and Child Process Handling on Unix}
 
 License
