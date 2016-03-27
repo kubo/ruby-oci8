@@ -1,4 +1,9 @@
 2016-03-27  Kubo Takehiro  <kubo@jiubao.org>
+	* lib/ruby-oci8.rb: Added for 'Bundler.require'.
+	    (github issue #114)
+	* dist-files: Add lib/ruby-oci8.rb.
+
+2016-03-27  Kubo Takehiro  <kubo@jiubao.org>
 	* README.md, docs/timeout-parameters.md, lib/oci8/oci8.rb:
 	    Update documents about timeout parameters.
 
