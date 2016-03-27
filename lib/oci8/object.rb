@@ -78,7 +78,8 @@ EOS
   #
   # @private
   def get_tdo_by_typename(typename)
-    tdo = @name_to_tdo && @name_to_tdo[typename]
+    @name_to_tdo ||= {}
+    tdo = @name_to_tdo[typename]
     return tdo if tdo
 
     metadata = describe_any(typename)
