@@ -1,6 +1,6 @@
 /* -*- c-file-style: "ruby"; indent-tabs-mode: nil -*- */
 /*
- * Copyright (C) 2002-2014 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2016 Kubo Takehiro <kubo@jiubao.org>
  */
 
 /*
@@ -20,8 +20,11 @@ static VALUE cOCI8TDO;
 static VALUE cOCI8NamedType;
 static VALUE cOCI8NamedCollection;
 static VALUE cOCI8BindNamedType;
+static VALUE cOCI8MetadataType;
 static ID id_to_value;
 static ID id_set_attributes;
+static ID id_get_tdo_by_metadata;
+static ID id_at_is_final_type;
 
 #define TO_TDO(obj) ((oci8_base_t *)oci8_check_typeddata((obj), &oci8_tdo_data_type, 1))
 #define CHECK_TDO(obj) ((void)oci8_check_typeddata((obj), &oci8_tdo_data_type, 1))
@@ -137,10 +140,49 @@ static VALUE oci8_named_type_initialize(VALUE self)
     return Qnil;
 }
 
+typedef struct get_tdo_by_instance_arg {
+    VALUE svc;
+    void *instance;
+    void *typeref;
+} get_tdo_by_instance_arg_t;
+
+static VALUE get_tdo_by_instance(VALUE data)
+{
+    get_tdo_by_instance_arg_t *arg = (get_tdo_by_instance_arg_t *)data;
+    VALUE metadata;
+
+    chkerr(OCIObjectGetTypeRef(oci8_envhp, oci8_errhp, arg->instance, arg->typeref));
+    metadata = oci8_do_describe(arg->svc, arg->typeref, 0, OCI_OTYPE_REF, cOCI8MetadataType, Qfalse);
+    return rb_funcall(arg->svc, id_get_tdo_by_metadata, 1, metadata);
+}
+
 static VALUE oci8_named_type_tdo(VALUE self)
 {
     oci8_named_type_t *obj = DATA_PTR(self);
-    return obj->tdo;
+    VALUE tdo = obj->tdo;
+
+    if (!RTEST(rb_ivar_get(tdo, id_at_is_final_type))) {
+        /* The type of the instance may be a subtype. */
+        oci8_base_t *svcctx;
+        get_tdo_by_instance_arg_t arg;
+        int state = 0;
+
+        /* search svcctx */
+        svcctx = DATA_PTR(obj->tdo);
+        while (svcctx->type != OCI_HTYPE_SVCCTX) {
+            svcctx = svcctx->parent;
+        }
+
+        arg.svc = svcctx->self;
+        arg.instance = *obj->instancep;
+        chkerr(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_REF, NULL, NULL, OCI_DURATION_DEFAULT, TRUE, &arg.typeref));
+        tdo = rb_protect(get_tdo_by_instance, (VALUE)&arg, &state);
+        chkerr(OCIObjectFree(oci8_envhp, oci8_errhp, arg.typeref, OCI_OBJECTFREE_FORCE));
+        if (state != 0) {
+            rb_jump_tag(state);
+        }
+    }
+    return tdo;
 }
 
 static void oci8_named_type_check_offset(VALUE self, VALUE val_offset, VALUE ind_offset, size_t val_size, void **instancep, OCIInd **indp)
@@ -754,8 +796,11 @@ static VALUE bind_named_type_alloc(VALUE klass)
 
 void Init_oci_object(VALUE cOCI8)
 {
+    cOCI8MetadataType = rb_eval_string("OCI8::Metadata::Type");
     id_to_value = rb_intern("to_value");
     id_set_attributes = rb_intern("attributes=");
+    id_get_tdo_by_metadata = rb_intern("get_tdo_by_metadata");
+    id_at_is_final_type = rb_intern("@is_final_type");
 
     /* OCI8::TDO */
     cOCI8TDO = oci8_define_class_under(cOCI8, "TDO", &oci8_tdo_data_type, oci8_tdo_alloc);

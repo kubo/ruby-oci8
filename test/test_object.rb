@@ -22,7 +22,7 @@ begin
 
   begin
     version = RbTestObj.test_object_version(conn)
-    error_message = "Invalid test object version" if version != 2
+    error_message = "Invalid test object version" if version != 3
   rescue NoMethodError
     raise unless $!.to_s.include?('test_object_version')
     error_message = "rb_test_obj.test_object_version is not declared."
@@ -46,6 +46,12 @@ EOS
 
 
 class RbTestIntArray < OCI8::Object::Base
+end
+
+class RbTestObjBase < OCI8::Object::Base
+end
+
+class RbTestObjSub < RbTestObjBase
 end
 
 class TestObj1 < Minitest::Test
@@ -455,5 +461,24 @@ EOS
       assert_equal(ary ? ary[1] : nil, csr[:out2])
       assert_equal(ary ? ary[2] : nil, csr[:out3])
     end
+  end
+
+  def test_get_subtype
+    csr = @conn.parse("BEGIN :result := rb_test_obj_get_object(:1); END;")
+    csr.bind_param(1, nil, RbTestObjBase)
+    csr.bind_param(2, nil, Integer)
+
+    csr[2] = 0
+    csr.exec
+    val = csr[1]
+    assert_instance_of(RbTestObjBase, val)
+    assert_equal(val.id, 'base')
+
+    csr[2] = 1
+    csr.exec
+    val = csr[1]
+    assert_instance_of(RbTestObjSub, val)
+    assert_equal(val.id, 'sub')
+    assert_equal(val.subid, 'subid')
   end
 end

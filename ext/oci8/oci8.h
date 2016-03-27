@@ -2,7 +2,7 @@
 /*
  * oci8.h - part of ruby-oci8
  *
- * Copyright (C) 2002-2015 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2016 Kubo Takehiro <kubo@jiubao.org>
  */
 #ifndef _RUBY_OCI_H_
 #define _RUBY_OCI_H_ 1
@@ -442,6 +442,7 @@ void Init_oci8_bind(VALUE cOCI8BindTypeBase);
 
 /* metadata.c */
 extern const oci8_handle_data_type_t oci8_metadata_base_data_type;
+VALUE oci8_do_describe(VALUE self, void *objptr, ub4 objlen, ub1 objtype, VALUE klass, VALUE check_public);
 void Init_oci8_metadata(VALUE cOCI8);
 VALUE oci8_metadata_create(OCIParam *parmhp, VALUE svc, VALUE parent);
 

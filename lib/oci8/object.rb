@@ -383,8 +383,10 @@ EOS
 
       case metadata.typecode
       when :named_type
+        @is_final_type = metadata.is_final_type?
         initialize_named_type(con, metadata)
       when :named_collection
+        @is_final_type = true
         initialize_named_collection(con, metadata)
       end
     end

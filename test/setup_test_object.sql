@@ -10,6 +10,10 @@ drop type rb_test_obj_elem_array
 /
 drop type rb_test_obj_elem
 /
+drop type rb_test_obj_sub
+/
+drop type rb_test_obj_base
+/
 create type rb_test_obj_elem as object (
   x integer,
   y integer
@@ -116,7 +120,7 @@ create or replace type body rb_test_obj is
 
   static function test_object_version return integer is
   begin
-    return 2;
+    return 3;
   end;
 
   static function class_func(n number) return rb_test_obj is
@@ -167,5 +171,21 @@ begin
   end loop;
 end;
 /
-commit
+
+create type rb_test_obj_base as object (
+   id varchar2(30)
+) not final
+/
+create type rb_test_obj_sub under rb_test_obj_base (
+   subid varchar2(30)
+) final
+/
+create or replace function rb_test_obj_get_object(get_base integer) return rb_test_obj_base is
+begin
+  if get_base = 0 then
+    return rb_test_obj_base('base');
+  else
+    return rb_test_obj_sub('sub', 'subid');
+  end if;
+end;
 /

@@ -1,4 +1,11 @@
 2016-03-27  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml, ext/oci8/metadata.c, ext/oci8/object.c,
+	  ext/oci8/oci8.h, lib/oci8/object.rb, test/setup_test_object.sql,
+	  test/test_object.rb: Check object type from each object instance
+	    when an Oracle object is got from a bind parameter.
+	    (github issue #119)
+
+2016-03-27  Kubo Takehiro  <kubo@jiubao.org>
 	* lib/ruby-oci8.rb: Added for 'Bundler.require'.
 	    (github issue #114)
 	* dist-files: Add lib/ruby-oci8.rb.

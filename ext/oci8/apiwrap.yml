@@ -671,6 +671,15 @@ OCIObjectGetInd:
             - dvoid **null_struct
 
 # round trip: 0
+OCIObjectGetTypeRef:
+  :version: 800
+  :args:
+            - OCIEnv *env
+            - OCIError *err
+            - dvoid *instance
+            - OCIRef *type_ref
+
+# round trip: 0
 OCIObjectNew:
   :version: 800
   :args:

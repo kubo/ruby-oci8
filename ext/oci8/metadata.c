@@ -2,7 +2,7 @@
 /*
  * metadata.c
  *
- * Copyright (C) 2006-2015 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2006-2016 Kubo Takehiro <kubo@jiubao.org>
  *
  * implement private methods of classes in OCI8::Metadata module.
  *
@@ -145,7 +145,7 @@ static VALUE metadata_is_implicit_p(VALUE self)
     return md->is_implicit ? Qtrue : Qfalse;
 }
 
-static VALUE oci8_do_describe(VALUE self, void *objptr, ub4 objlen, ub1 objtype, VALUE klass, VALUE check_public)
+VALUE oci8_do_describe(VALUE self, void *objptr, ub4 objlen, ub1 objtype, VALUE klass, VALUE check_public)
 {
     oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
     OCIParam *parmhp;
@@ -274,4 +274,6 @@ void Init_oci8_metadata(VALUE cOCI8)
     rb_define_private_method(cOCI8, "__describe", oci8_describe, 3);
     rb_define_private_method(cOCI8MetadataBase, "__type_metadata", metadata_get_type_metadata, 1);
     rb_define_method(cOCI8MetadataBase, "tdo_id", metadata_get_tdo_id, 0);
+
+    rb_define_class_under(mOCI8Metadata, "Type", cOCI8MetadataBase);
 }
