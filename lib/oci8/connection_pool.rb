@@ -13,17 +13,88 @@ class OCI8
   #
   # This is equivalent to Oracle JDBC Driver {OCI Connection Pooling}[http://docs.oracle.com/cd/E11882_01/java.112/e16548/ociconpl.htm#JJDBC28789].
   #
-  # Usage:
+  # Note that this is different with generally called connection pooling.
+  # Generally connection pooling caches connections in a pool.
+  # When an application needs a new connection, a connection is got from
+  # the pool. So that the amount of time to establish a connection is
+  # reduced. However connection pooling in ruby-oci8 is different with
+  # above.
+  #
+  # One Oracle connection is devided into two layers: One is physical
+  # connection such as TCP/IP. The other is logical connection which
+  # is used by an application. The connection pooling in ruby-oci8
+  # caches physical connections in a pool, not logical connections.
+  # When an application needs a new connection, a logical connection
+  # is created via a physical connection, which needs time to
+  # establish a connection unlike generally called connection pooling.
+  # When an application sends a query via a logical connection, a
+  # physical connection is got from the pool. The physical connection
+  # returns to the pool automatically when the query finishes.
+  # As long as logical connections are used sequentially, only one
+  # physical connection is used. When an application sends
+  # queries at a time, it needs more than one physical connection
+  # because one physical connection cannot transmit more then one
+  # query at a time.
+  #
+  # Example:
   #   # Create a connection pool.
+  #   # The number of initial physical connections: 1
+  #   # The number of maximum physical connections: 5
+  #   # the connection increment parameter: 2
   #   # username and password are required to establish an implicit primary session.
   #   cpool = OCI8::ConnectionPool.new(1, 5, 2, username, password, database)
   #   
-  #   # Get a session from the pool.
+  #   #   The number of physical connections: 1
+  #   #   The number of logical connections: 0
+  #   
+  #   # Create a session.
   #   # Pass the connection pool to the third argument.
   #   conn1 = OCI8.new(username, password, cpool)
   #   
-  #   # Get another session.
+  #   # One logical connection was created.
+  #   #   The number of physical connections: 1
+  #   #   The number of logical connections: 1
+  #   
+  #   # Create another session.
   #   conn2 = OCI8.new(username, password, cpool)
+  #   
+  #   # Another logical connection was created.
+  #   #   The number of physical connections: 1
+  #   #   The number of logical connections: 2
+  #   
+  #   # Use conn1 and conn2 sequentially
+  #   conn1.exec('...')
+  #   conn2.exec('...')
+  #   
+  #   # Both logical connections use one physical connection.
+  #   #   The number of physical connections: 1
+  #   #   The number of logical connections: 2
+  #   
+  #   thr1 = Thread.new do
+  #      conn1.exec('...')
+  #   end
+  #   thr2 = Thread.new do
+  #      conn2.exec('...')
+  #   end
+  #   thr1.join
+  #   thr2.join
+  #   
+  #   # Logical connections cannot use one physical connection at a time.
+  #   # So that the number of physical connections is incremented.
+  #   #   The number of physical connections: 3
+  #   #   The number of logical connections: 2
+  #   
+  #   conn1.logoff
+  #
+  #   # One logical connection was closed.
+  #   #   The number of physical connections: 3
+  #   #   The number of logical connections: 1
+  #   
+  #   conn2.logoff
+  #   
+  #   # All logical connections were closed.
+  #   #   The number of physical connections: 3
+  #   #   The number of logical connections: 0
   #
   class ConnectionPool
 
