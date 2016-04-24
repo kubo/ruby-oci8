@@ -10,6 +10,7 @@ metaconfig
 pre-distclean.rb
 ruby-oci8.gemspec
 setup.rb
+docs/bind-array-to-in_cond.md
 docs/install-binary-package.md
 docs/install-full-client.md
 docs/install-instant-client.md
