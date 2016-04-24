@@ -1,4 +1,8 @@
 2016-04-24  Kubo Takehiro  <kubo@jiubao.org>
+	* NEWS: Add changes between 2.2.1 and 2.2.2.
+	* lib/oci8/version.rb: update to 2.2.2.
+
+2016-04-24  Kubo Takehiro  <kubo@jiubao.org>
 	* docs/report-installation-issue.md: Use RbConfig::CONFIG instead of
 	   deprecated Config::CONFIG.
 

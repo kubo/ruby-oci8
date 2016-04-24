@@ -1,5 +1,52 @@
 # @markup markdown
 
+2.2.2
+=====
+
+New Features
+------------
+
+### Add OCI8::in_cond
+
+This is a helper method to bind an array to parameters in IN-conditions.
+See {file:docs/bind-array-to-in_cond.md  Bind an Array to IN-condition}
+
+### Add timeout parameters in OCI8::properties
+
+See {file:docs/timeout-parameters.md Timeout Parameters}
+
+### Support SYSBACKUP, SYSDG and SYSKM privileges.
+
+For example:
+
+    OCI8.new(username, password, database, :SYSBACKUP)
+
+(github issue #110)
+
+### Support {OCI8::Cursor#row_count} over 4G (Oracle 12c client only)
+
+Fixed Issues
+------------
+
+### Fix type mapping of subtypes of Oracle object
+
+github issue #119
+
+### Fix compile error on cygwin since ruby-oci8 2.1.8.
+
+github issue #113
+
+### Fix compile error when the ruby was compiled by Visual Studio 64bit.
+
+Other Changes
+-------------
+
+-   Suppress warning: instance variable @name_to_tdo not initialized.
+
+
+-   Check the default value of DYLD_FALLBACK_LIBRARY_PATH after checking OCI_DIR on installation. (OS X only)
+
+
 2.2.1
 =====
 
