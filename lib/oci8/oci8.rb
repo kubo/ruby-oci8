@@ -447,6 +447,60 @@ class OCI8
     end
   end
 
+  # A helper class to bind an array to paramters in IN-condition.
+  #
+  # See {file:docs/bind-array-to-in_cond.md Bind an Array to IN-condition}
+  class InCondBindHelper
+    def initialize(bind_name_prefix, array, type = nil, length = nil)
+      bind_name_prefix = bind_name_prefix.to_s
+      if bind_name_prefix !~ /^\w+$/
+        raise ArgumentError, "The first argument doesn't consist of alphanumeric characters and underscores."
+      end
+      if array.empty?
+        # This doesn't match anything.
+        # However in-condition requires at least one value.
+        @bind_names = ":#{bind_name_prefix}_0"
+        @bind_values = [[nil, type.nil? ? String : type, length]]
+      else
+        @bind_names = Array.new(array.length) do |index|
+          ":#{bind_name_prefix}_#{index}"
+        end.join(', ')
+        first_non_nil = array.find do |e|
+          !e.nil?
+        end
+        first_non_nil = '' if first_non_nil.nil?
+        @bind_values = array.collect do |elem|
+          if elem.nil? and type.nil?
+            [elem, first_non_nil.class]
+          else
+            [elem, type, length]
+          end
+        end
+      end
+    end
+
+    def names
+      @bind_names
+    end
+
+    def values
+      @bind_values
+    end
+  end
+
+  # Creates a helper object to bind an array to paramters in IN-condition.
+  #
+  # See {file:docs/bind-array-to-in_cond.md Bind an Array to IN-condition}
+  #
+  # @param [Symbol]  bind_name_prefix prefix of the place holder name
+  # @param [Object]  array an array of values to be bound.
+  # @param [Class]   type data type. This is used as the third argument of {OCI8::Cursor#bind_param}.
+  # @param [Integer] length maximum bind length for string values. This is used as the fourth argument of {OCI8::Cursor#bind_param}.
+  # @return [OCI8::InCondBindHelper]
+  def self.in_cond(bind_name_prefix, array, type = nil, length = nil)
+    InCondBindHelper.new(bind_name_prefix, array, type, length)
+  end
+
   private
 
   # Converts the specified privilege name to the value passed to the

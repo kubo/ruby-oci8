@@ -46,6 +46,7 @@ Other documents
 
 * {file:docs/timeout-parameters.md Timeout Parameters}
 * {file:docs/conflicts-local-connections-and-processes.md Conflicts between Local Connections and Child Process Handling on Unix}
+* {file:docs/bind-array-to-in_cond.md Bind an Array to IN-condition}
 
 License
 =======
