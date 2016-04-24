@@ -20,14 +20,14 @@ If it is a new one, post the following information to [github][].
 
          file `which ruby`
          ruby --version
-         ruby -r rbconfig -e "p Config::CONFIG['host']"
-         ruby -r rbconfig -e "p Config::CONFIG['CC']"
-         ruby -r rbconfig -e "p Config::CONFIG['CFLAGS']"
-         ruby -r rbconfig -e "p Config::CONFIG['LDSHARED']"
-         ruby -r rbconfig -e "p Config::CONFIG['LDFLAGS']"
-         ruby -r rbconfig -e "p Config::CONFIG['DLDLAGS']"
-         ruby -r rbconfig -e "p Config::CONFIG['LIBS']"
-         ruby -r rbconfig -e "p Config::CONFIG['GNU_LD']"
+         ruby -r rbconfig -e "p RbConfig::CONFIG['host']"
+         ruby -r rbconfig -e "p RbConfig::CONFIG['CC']"
+         ruby -r rbconfig -e "p RbConfig::CONFIG['CFLAGS']"
+         ruby -r rbconfig -e "p RbConfig::CONFIG['LDSHARED']"
+         ruby -r rbconfig -e "p RbConfig::CONFIG['LDFLAGS']"
+         ruby -r rbconfig -e "p RbConfig::CONFIG['DLDLAGS']"
+         ruby -r rbconfig -e "p RbConfig::CONFIG['LIBS']"
+         ruby -r rbconfig -e "p RbConfig::CONFIG['GNU_LD']"
          
          # if you use gcc,
          gcc --print-prog-name=ld
