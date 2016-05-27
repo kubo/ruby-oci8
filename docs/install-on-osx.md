@@ -86,19 +86,19 @@ Copy downloaded files to /opt/oracle before running the following commands.
 
 Make a symbolic link to link the library.
 
-    cd /opt/oracle/instantclient11_2
+    cd /opt/oracle/instantclient_11_2
     ln -s libclntsh.dylib.11.1 libclntsh.dylib
 
 Fix the library install and identification names using [fix_oralib][] to make them work
 without `DYLD_LIBRARY_PATH`.
 
-    cd /opt/oracle/instantclient11_2
+    cd /opt/oracle/instantclient_11_2
     curl -O https://raw.githubusercontent.com/kubo/fix_oralib_osx/master/fix_oralib.rb
     ruby fix_oralib.rb
 
 Set the environment variable OCI_DIR while performing the following installation steps.
 
-    export OCI_DIR=/opt/oracle/instantclient11_2
+    export OCI_DIR=/opt/oracle/instantclient_11_2
 
 Installation
 ============
