@@ -35,34 +35,53 @@ Download Oracle Instant Client Packages
 
 Download the following packages from [Oracle Technology Network][]
 
-* Instant Client Package - Basic or Basic Lite
-* Instant Client Package - SDK
-* Instant Client Package - SQL*Plus (optionally)
+* Instant Client Package - Basic (`instantclient-basic-macos.x64-12.1.0.2.0.zip`) or Basic Lite (`instantclient-basiclite-macos.x64-12.1.0.2.0.zip`)
+* Instant Client Package - SDK (`instantclient-sdk-macos.x64-12.1.0.2.0.zip`)
+* Instant Client Package - SQL*Plus (`instantclient-sdk-macos.x64-12.1.0.2.0.zip`) (optionally) 
 
 Install Oracle Instant Client Packages via Homebrew
 ---------------------------------------------------
 
-To install `Oracle Instant Client Basic Lite` via [Homebrew][]
-
-* Download two instant client packages: `Basic Lite` and `SDK` and put them
-  in `/Library/Caches/Homebrew` (if the environment variable `HOMEBREW_CACHE`
-  is not set and `$HOME/Library/Caches/Homebrew` doesn't exist.)
-* Run the followining commands:
-
-        brew install InstantClientTap/instantclient/instantclient-basiclite
-        brew install InstantClientTap/instantclient/instantclient-sdk
-
 To install `Oracle Instant Client Basic` via [Homebrew][]
 
-* Download *three* instant client packages: `Basic`, `Basic Lite` and `SDK`
-  and put them in `/Library/Caches/Homebrew` (if the environment variable
-  `HOMEBREW_CACHE` is not set and `$HOME/Library/Caches/Homebrew` doesn't exist.)
+* Copy downloaded zip files to `/Library/Caches/Homebrew`
+  (if the environment variable `HOMEBREW_CACHE`
+  is not set and `$HOME/Library/Caches/Homebrew` doesn't exist.)
+
 * Run the followining commands:
 
-        brew install InstantClientTap/instantclient/instantclient-basic
-        brew install InstantClientTap/instantclient/instantclient-sdk
+  **Note:** Use `kubo/instantclient' instead of 'InstantClientTap/instantclient'
+  until [this pull request](https://github.com/InstantClientTap/homebrew-instantclient/pull/7)
+  is accepted.
+
+        brew tap InstantClientTap/instantclient
+        brew install instantclient-basic
+        brew install instantclient-sdk
+        brew install instantclient-sqlplus # (optionally)
+
+* Set the environment variable `OCI_DIR` while performing the following installation steps
+  if Homebrew is installed outside `/usr/local`.
+
+        export OCI_DIR=$(brew --prefix)/lib
+
+To install `Oracle Instant Client Basic Lite` via [Homebrew][]
+
+* Copy downloaded zip files to `/Library/Caches/Homebrew`
+  (if the environment variable `HOMEBREW_CACHE`
+  is not set and `$HOME/Library/Caches/Homebrew` doesn't exist.)
+
+* Run the followining commands:
+
+  **Note:** Use `kubo/instantclient' instead of 'InstantClientTap/instantclient'
+  until [this pull request](https://github.com/InstantClientTap/homebrew-instantclient/pull/7)
+  is accepted.
+
+        brew tap InstantClientTap/instantclient
+        brew install instantclient-basiclite
+        brew install instantclient-sdk
+        brew install instantclient-sqlplus --with-basiclite # (optionally)
         
-* Set the environment variable OCI_DIR while performing the following installation steps
+* Set the environment variable `OCI_DIR` while performing the following installation steps
   if Homebrew is installed outside `/usr/local`.
 
         export OCI_DIR=$(brew --prefix)/lib
@@ -74,31 +93,23 @@ If you don't use [Homebrew][], do the following:
 
 Unzip the packages as follows:
 
-    mkdir /opt
-    mkdir /opt/oracle
+    mkdir -p /opt/oracle
     cd /opt/oracle
 
 Copy downloaded files to /opt/oracle before running the following commands.
 
-    unzip instantclient-basic-macos.x64-11.2.0.4.0.zip
-    unzip instantclient-sdk-macos.x64-11.2.0.4.0.zip
-    unzip instantclient-sqlplus-macos.x64-11.2.0.4.0.zip
+    unzip instantclient-basic-macos.x64-12.1.0.2.0.zip
+    unzip instantclient-sdk-macos.x64-12.1.0.2.0.zip
+    unzip instantclient-sqlplus-macos.x64-12.1.0.2.0.zip
 
 Make a symbolic link to link the library.
 
-    cd /opt/oracle/instantclient_11_2
-    ln -s libclntsh.dylib.11.1 libclntsh.dylib
-
-Fix the library install and identification names using [fix_oralib][] to make them work
-without `DYLD_LIBRARY_PATH`.
-
-    cd /opt/oracle/instantclient_11_2
-    curl -O https://raw.githubusercontent.com/kubo/fix_oralib_osx/master/fix_oralib.rb
-    ruby fix_oralib.rb
+    cd /opt/oracle/instantclient_12_1
+    ln -s libclntsh.dylib.12.1 libclntsh.dylib
 
 Set the environment variable OCI_DIR while performing the following installation steps.
 
-    export OCI_DIR=/opt/oracle/instantclient_11_2
+    export OCI_DIR=/opt/oracle/instantclient_12_1
 
 Installation
 ============

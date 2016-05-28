@@ -1,3 +1,6 @@
+2016-05-28  Kubo Takehiro  <kubo@jiubao.org>
+	* docs/install-on-osx.md: Update installation document about OS X.
+
 2016-04-24  Kubo Takehiro  <kubo@jiubao.org>
 	* mkpkg-win32.rb: Added to compile mingw32 packages.
 	* dist-files: Updated to include docs/report-installation-issue.md.
