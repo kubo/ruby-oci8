@@ -50,10 +50,6 @@ To install `Oracle Instant Client Basic` via [Homebrew][]
 
 * Run the followining commands:
 
-  **Note:** Use `kubo/instantclient' instead of 'InstantClientTap/instantclient'
-  until [this pull request](https://github.com/InstantClientTap/homebrew-instantclient/pull/7)
-  is accepted.
-
         brew tap InstantClientTap/instantclient
         brew install instantclient-basic
         brew install instantclient-sdk
@@ -71,10 +67,6 @@ To install `Oracle Instant Client Basic Lite` via [Homebrew][]
   is not set and `$HOME/Library/Caches/Homebrew` doesn't exist.)
 
 * Run the followining commands:
-
-  **Note:** Use `kubo/instantclient' instead of 'InstantClientTap/instantclient'
-  until [this pull request](https://github.com/InstantClientTap/homebrew-instantclient/pull/7)
-  is accepted.
 
         brew tap InstantClientTap/instantclient
         brew install instantclient-basiclite
