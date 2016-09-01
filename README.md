@@ -8,7 +8,7 @@ Instant Client.
 Use ruby-oci8 2.0.6 for Oracle 8 or use ruby-oci8 2.1.8 for Oracle 9i.
 
 Note that ruby 1.8 support was dropped in ruby-oci8 2.2.0.
-Use ruby-2.1.8 for ruby 1.8.
+Use ruby-oci8 2.1.8 for ruby 1.8.
 
 What's new
 ==========
