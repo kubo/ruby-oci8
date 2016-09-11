@@ -139,10 +139,25 @@ struct oci8_data_type_struct {
 #define RB_OBJ_WRITTEN(a, oldv, b) do {(void)oldv;} while (0)
 #endif
 
+/* new macros in ruby 2.4.0
+ */
+#ifndef ALWAYS_INLINE
+#if defined(__GNUC__) && ((__GNUC__ > 3) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
+/* gcc version >= 3.1 */
+#define ALWAYS_INLINE(x) __attribute__((always_inline)) x
+#endif
+#ifdef _MSC_VER
+/* microsoft c */
+#define ALWAYS_INLINE(x) __forceinline x
+#endif
+#ifndef ALWAYS_INLINE
+#define ALWAYS_INLINE(x) x
+#endif
+#endif /* ALWAYS_INLINE */
+
 /* macros depends on the compiler.
  *  LIKELY(x)      hint for the compiler that 'x' is 1(TRUE) in many cases.
  *  UNLIKELY(x)    hint for the compiler that 'x' is 0(FALSE) in many cases.
- *  ALWAYS_INLINE  forcely inline the function.
  */
 #if defined(__GNUC__) && ((__GNUC__ > 2) || (__GNUC__ == 2 && __GNUC_MINOR__ >= 96))
 /* gcc version >= 2.96 */
@@ -152,14 +167,6 @@ struct oci8_data_type_struct {
 /* other compilers */
 #define LIKELY(x)   (x)
 #define UNLIKELY(x) (x)
-#endif
-#if defined(__GNUC__) && ((__GNUC__ > 3) || (__GNUC__ == 3 && __GNUC_MINOR__ >= 1))
-/* gcc version >= 3.1 */
-#define ALWAYS_INLINE inline __attribute__((always_inline))
-#endif
-#ifdef _MSC_VER
-/* microsoft c */
-#define ALWAYS_INLINE __forceinline
 #endif
 
 /* macros to access thread-local storage.
@@ -186,27 +193,24 @@ struct oci8_data_type_struct {
 /* utility macros
  */
 #define IS_OCI_ERROR(v) (((v) != OCI_SUCCESS) && ((v) != OCI_SUCCESS_WITH_INFO))
-#ifdef ALWAYS_INLINE
 #define TO_ORATEXT to_oratext
 #define TO_CONST_ORATEXT to_const_oratext
 #define TO_CHARPTR to_charptr
-static ALWAYS_INLINE OraText *to_oratext(char *c)
+ALWAYS_INLINE(static OraText *to_oratext(char *c));
+static inline OraText *to_oratext(char *c)
 {
     return (OraText*)c;
 }
-static ALWAYS_INLINE const OraText *to_const_oratext(const char *c)
+ALWAYS_INLINE(static const OraText *to_const_oratext(const char *c));
+static inline const OraText *to_const_oratext(const char *c)
 {
     return (const OraText*)c;
 }
-static ALWAYS_INLINE char *to_charptr(OraText *c)
+ALWAYS_INLINE(static char *to_charptr(OraText *c));
+static inline char *to_charptr(OraText *c)
 {
     return (char*)c;
 }
-#else
-#define TO_ORATEXT(c) ((OraText*)(c))
-#define TO_CONST_ORATEXT(c) ((const OraText*)(c))
-#define TO_CHARPTR(c) ((char*)(c))
-#endif
 #define RSTRING_ORATEXT(obj) TO_ORATEXT(RSTRING_PTR(obj))
 #define rb_str_new2_ora(str) rb_str_new2(TO_CHARPTR(str))
 
