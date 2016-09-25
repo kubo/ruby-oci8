@@ -259,10 +259,10 @@ void Init_oci8_metadata(VALUE cOCI8)
 {
     mOCI8Metadata = rb_define_module_under(cOCI8, "Metadata");
     cOCI8MetadataBase = oci8_define_class_under(mOCI8Metadata, "Base", &oci8_metadata_base_data_type, oci8_metadata_alloc);
-    ptype_to_class = rb_hash_new();
-    class_to_ptype = rb_hash_new();
     rb_global_variable(&ptype_to_class);
     rb_global_variable(&class_to_ptype);
+    ptype_to_class = rb_hash_new();
+    class_to_ptype = rb_hash_new();
     id_at_obj_link = rb_intern("@obj_link");
 
     rb_define_singleton_method(cOCI8MetadataBase, "register_ptype", metadata_s_register_ptype, 1);

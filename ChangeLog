@@ -1,3 +1,7 @@
+2016-09-25  Kubo Takehiro  <kubo@jiubao.org>
+	* ext/oci8/metadata.c, ext/oci8/oci8.c: Fix load error when
+	    GC.stress = true.
+
 2016-09-11  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/oci8.h: Suppress 'warning: "ALWAYS_INLINE" redefined' when
 	   compiled for ruby 2.4.0-preview2.

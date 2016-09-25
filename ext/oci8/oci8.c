@@ -372,8 +372,8 @@ void oci8_do_parse_connect_string(VALUE conn_str, VALUE *user, VALUE *pass, VALU
 {
     static VALUE re = Qnil;
     if (NIL_P(re)) {
-        re = rb_eval_string(CONN_STR_REGEX);
         rb_global_variable(&re);
+        re = rb_eval_string(CONN_STR_REGEX);
     }
     OCI8SafeStringValue(conn_str);
     if (RTEST(rb_reg_match(re, conn_str))) {
