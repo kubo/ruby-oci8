@@ -37,10 +37,10 @@ EOS
     
     cursor.bind_param_array(1, nil, String)
     cursor.bind_param_array(2, nil ,String)
-    cursor.bind_param_array(3, nil, Fixnum)
+    cursor.bind_param_array(3, nil, Integer)
     cursor.bind_param_array(4, nil, OraDate)
     cursor.bind_param_array(5, nil, Integer)
-    cursor.bind_param_array(6, nil, Bignum)
+    cursor.bind_param_array(6, nil, Integer)
     cursor.bind_param_array(7, nil, DateTime)
 
     c_arr = Array.new
@@ -91,7 +91,7 @@ EOS
     
     cursor = @conn.parse("SELECT * FROM test_table ORDER BY c")
     cursor.define(5, Integer)
-    cursor.define(6, Bignum)
+    cursor.define(6, Integer)
     cursor.exec
     assert_equal(["C","V","N","D","INT","BIGNUM","T"], cursor.get_col_names)
     1.upto(30) do |i|
@@ -121,7 +121,7 @@ EOS
     cursor = @conn.parse("INSERT INTO test_table VALUES (:N, :V)")
     max_array_size = 10
     cursor.max_array_size = max_array_size
-    cursor.bind_param_array(1, nil, Fixnum)
+    cursor.bind_param_array(1, nil, Integer)
     cursor.bind_param_array(2, nil, String)
     n_arr = Array.new
     v_arr = Array.new
@@ -173,7 +173,7 @@ EOS
     cursor = @conn.parse("INSERT INTO test_table VALUES (:N, :V)")
     max_array_size = 4
     cursor.max_array_size = max_array_size
-    cursor.bind_param_array(1, nil, Fixnum)
+    cursor.bind_param_array(1, nil, Integer)
     cursor.bind_param_array(2, nil, String)
     n_arr = Array.new
     v_arr = Array.new
@@ -210,7 +210,7 @@ EOS
     cursor = @conn.parse("INSERT INTO test_table VALUES (:N, :V)")
     max_array_size = 3
     cursor.max_array_size = max_array_size
-    cursor.bind_param_array(1, nil, Fixnum)
+    cursor.bind_param_array(1, nil, Integer)
     cursor.bind_param_array(2, nil, String)
     assert_raises(RuntimeError) { cursor.exec_array }
     cursor.close
@@ -235,7 +235,7 @@ EOS
       n_arr << i
       v_arr << i.to_s
     end    
-    cursor.bind_param_array(1, nil, Fixnum)
+    cursor.bind_param_array(1, nil, Integer)
     cursor.bind_param_array(2, nil, String)
     cursor[1] = n_arr
     cursor[2] = v_arr
@@ -250,7 +250,7 @@ EOS
         delete_arr << i
       end  
     end
-    cursor.bind_param_array(1, nil, Fixnum)
+    cursor.bind_param_array(1, nil, Integer)
     cursor[1] = delete_arr
     cursor.exec_array
     cursor.close
@@ -288,7 +288,7 @@ EOS
       n_arr << i
       v_arr << i.to_s
     end    
-    cursor.bind_param_array(1, nil, Fixnum)
+    cursor.bind_param_array(1, nil, Integer)
     cursor.bind_param_array(2, nil, String)
     cursor[1] = n_arr
     cursor[2] = v_arr
@@ -306,7 +306,7 @@ EOS
       end  
     end
     cursor.bind_param_array(1, nil, String)
-    cursor.bind_param_array(2, nil, Fixnum)
+    cursor.bind_param_array(2, nil, Integer)
     cursor[1] = update_v_arr
     cursor[2] = update_arr
     cursor.exec_array

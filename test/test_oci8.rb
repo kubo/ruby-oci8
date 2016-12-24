@@ -107,7 +107,7 @@ EOS
     cursor.define(6, Date) # define 6th column as Date
     cursor.define(7, DateTime) # define 7th column as DateTime
     cursor.define(8, Integer) # define 8th column as Integer
-    cursor.define(9, Bignum) # define 9th column as Bignum
+    cursor.define(9, Integer) # define 9th column as Integer
     cursor.exec
     assert_equal(["C", "V", "N", "D1", "D2", "D3", "D4", "INT", "BIGNUM"], cursor.get_col_names)
     1.upto(10) do |i|
@@ -204,7 +204,7 @@ EOS
     cursor.define(5, DateTime) # define 5th column as DateTime
     cursor.define(6, Date) # define 6th column as Date
     cursor.define(7, Integer) # define 7th column as Integer
-    cursor.define(8, Bignum) # define 8th column as Integer
+    cursor.define(8, Integer) # define 8th column as Integer
     assert_equal(["C", "V", "N", "D1", "D2", "D3", "INT", "BIGNUM"], cursor.get_col_names)
     1.upto(10) do |i|
       rv = cursor.fetch
@@ -370,7 +370,7 @@ EOS
       assert_equal(row[3], BigDecimal("1234567890123.45"))
       assert_equal(row[4], 1234.5)
       assert_instance_of(BigDecimal, row[0])
-      assert_instance_of(Bignum, row[1])
+      assert_instance_of((2**64).class, row[1])
       assert_instance_of(Float, row[2])
       assert_instance_of(BigDecimal, row[3])
       assert_instance_of(Float, row[4])
@@ -397,14 +397,14 @@ EOS
       assert_kind_of(Float, cursor[1])
     end
 
-    # Fixnum
-    cursor.bind_param(1, nil, Fixnum)
-    cursor.bind_param(2, nil, Fixnum)
+    # Integer
+    cursor.bind_param(1, nil, Integer)
+    cursor.bind_param(2, nil, Integer)
     src.each_with_index do |s, idx|
       cursor[2] = s
       cursor.exec
       assert_equal(cursor[1], int[idx])
-      assert_kind_of(Fixnum, cursor[1])
+      assert_kind_of(Integer, cursor[1])
     end
 
     # Integer

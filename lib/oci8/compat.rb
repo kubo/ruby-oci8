@@ -70,7 +70,7 @@ class OCI8
   constants.each do |name|
     next if name.to_s.index("SQLT_") != 0
     val = const_get name.intern
-    if val.is_a? Fixnum
+    if val.is_a? Integer
       SQLT_NAMES[val] = name
     end
   end
@@ -80,21 +80,21 @@ class OCI8
 
   class Cursor
     def self.select_number_as=(val)
-      if val == Fixnum
-        @@bind_unknown_number = OCI8::BindType::Fixnum
+      if val == Integer
+        @@bind_unknown_number = OCI8::BindType::Integer
       elsif val == Integer
         @@bind_unknown_number = OCI8::BindType::Integer
       elsif val == Float
         @@bind_unknown_number = OCI8::BindType::Float
       else
-        raise ArgumentError, "must be Fixnum, Integer or Float"
+        raise ArgumentError, "must be Integer, Integer or Float"
       end
     end
 
     def self.select_number_as
       case @@bind_unknown_number
-      when OCI8::BindType::Fixnum
-        return Fixnum
+      when OCI8::BindType::Integer
+        return Integer
       when OCI8::BindType::Integer
         return Integer
       when OCI8::BindType::Float
@@ -108,6 +108,9 @@ class OCI8
 
   module BindType
     # alias to Integer for compatibility with ruby-oci8 1.0.
-    Fixnum = Integer
+    unless 0.class == Integer
+      fixnum = 0.class
+      fixnum = Integer
+    end
   end
 end

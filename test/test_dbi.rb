@@ -130,7 +130,7 @@ EOS
     sth.func(:define, 6, Date) # define 6th column as Date
     sth.func(:define, 7, DateTime) # define 7th column as DateTime
     sth.func(:define, 8, Integer) # define 8th column as Integer
-    sth.func(:define, 9, Bignum) # define 9th column as Bignum
+    sth.func(:define, 9, Integer) # define 9th column as Integer
     sth.execute
     assert_equal(["C", "V", "N", "D1", "D2", "D3", "D4", "INT", "BIGNUM"], sth.column_info.collect {|cl| cl.name})
     1.upto(10) do |i|

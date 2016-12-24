@@ -63,9 +63,9 @@ class OCI8
     # +type+ and Fixnum or Float to +val+.
     #
     # example:
-    #   cursor.bind_param(1, 1234) # bind as Fixnum, Initial value is 1234.
+    #   cursor.bind_param(1, 1234) # bind as Integer, Initial value is 1234.
     #   cursor.bind_param(1, 1234.0) # bind as Float, Initial value is 1234.0.
-    #   cursor.bind_param(1, nil, Fixnum) # bind as Fixnum, Initial value is NULL.
+    #   cursor.bind_param(1, nil, Integer) # bind as Integer, Initial value is NULL.
     #   cursor.bind_param(1, nil, Float) # bind as Float, Initial value is NULL.
     #
     # In case of binding a string, set the string itself to
@@ -379,7 +379,7 @@ class OCI8
     #
     # FYI: Rails oracle adaptor uses 100 by default.
     #
-    # @param [Fixnum] rows The number of rows to be prefetched
+    # @param [Integer] rows The number of rows to be prefetched
     def prefetch_rows=(rows)
       attr_set_ub4(11, rows) # OCI_ATTR_PREFETCH_ROWS(11)
     end
@@ -430,12 +430,12 @@ class OCI8
     # * OCI8::STMT_ALTER
     # * OCI8::STMT_BEGIN (PL/SQL block which starts with a BEGIN keyword)
     # * OCI8::STMT_DECLARE (PL/SQL block which starts with a DECLARE keyword)
-    # * Other Fixnum value undocumented in Oracle manuals.
+    # * Other Integer value undocumented in Oracle manuals.
     #
     # <em>Changes between ruby-oci8 1.0 and 2.0.</em>
     #
     # [ruby-oci8 2.0] OCI8::STMT_* are Symbols. (:select_stmt, :update_stmt, etc.)
-    # [ruby-oci8 1.0] OCI8::STMT_* are Fixnums. (1, 2, 3, etc.)
+    # [ruby-oci8 1.0] OCI8::STMT_* are Integers. (1, 2, 3, etc.)
     #
     def type
       # http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/ociaahan.htm#sthref5506

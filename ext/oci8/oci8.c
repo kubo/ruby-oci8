@@ -286,7 +286,7 @@ static VALUE oci8_s_oracle_client_vernum(VALUE klass)
 /*
  * @overload OCI8.__get_prop(key)
  *
- *  @param [Fixnum] key    1, 2 or 3
+ *  @param [Integer] key   1, 2 or 3
  *  @return [Object]       depends on +key+.
  *  @private
  */
@@ -306,7 +306,7 @@ static VALUE oci8_s_get_prop(VALUE klass, VALUE key)
 /*
  * @overload OCI8.__set_prop(key, value)
  *
- *  @param [Fixnum] key    1, 2 or 3
+ *  @param [Integer] key   1, 2 or 3
  *  @param [Object] value  depends on +key+.
  *
  *  @private
@@ -359,7 +359,7 @@ static VALUE oci8_s_set_prop(VALUE klass, VALUE key, VALUE val)
  *    # When NLS_LANG is FRENCH_FRANCE.AL32UTF8
  *    OCI8.error_message(1) # => "ORA-00001: violation de contrainte unique (%s.%s)"
  *
- *  @param [Fixnum] message_no   Oracle error message number
+ *  @param [Integer] message_no  Oracle error message number
  *  @return [String]             Oracle error message
  */
 static VALUE oci8_s_error_message(VALUE klass, VALUE msgid)
@@ -668,8 +668,8 @@ static VALUE oci8_server_attach(VALUE self, VALUE dbname, VALUE attach_mode)
  *
  *  Begins the session by the OCI function OCISessionBegin().
  *
- *  @param [Fixnum] cred
- *  @param [Fixnum] mode
+ *  @param [Integer] cred
+ *  @param [Integer] mode
  *  @private
  */
 static VALUE oci8_session_begin(VALUE self, VALUE cred, VALUE mode)

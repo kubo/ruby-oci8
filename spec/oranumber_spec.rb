@@ -38,37 +38,37 @@ describe OraNumber do
     (OraNumber(2) / OraNumber(1)).should eql(OraNumber(2))
   end
 
-  # OraNumber bin_op Fixnum
-  it "+ Fixnum should be an OraNumber" do
+  # OraNumber bin_op Integer
+  it "+ Integer should be an OraNumber" do
     (OraNumber(2) + 1).should eql(OraNumber(3))
   end
 
-  it "- Fixnum should be an OraNumber" do
+  it "- Integer should be an OraNumber" do
     (OraNumber(2) - 1).should eql(OraNumber(1))
   end
 
-  it "* Fixnum should be an OraNumber" do
+  it "* Integer should be an OraNumber" do
     (OraNumber(2) * 1).should eql(OraNumber(2))
   end
 
-  it "/ Fixnum should be an OraNumber" do
+  it "/ Integer should be an OraNumber" do
     (OraNumber(2) / 1).should eql(OraNumber(2))
   end
 
-  # OraNumber bin_op Bignum
-  it "+ Bignum should be an OraNumber" do
+  # OraNumber bin_op Integer
+  it "+ Integer should be an OraNumber" do
     (OraNumber(2) + 100000000000000000000).should eql(OraNumber(100000000000000000002))
   end
 
-  it "- Bignum should be an OraNumber" do
+  it "- Integer should be an OraNumber" do
     (OraNumber(2) - 100000000000000000000).should eql(OraNumber(-99999999999999999998))
   end
 
-  it "* Bignum should be an OraNumber" do
+  it "* Integer should be an OraNumber" do
     (OraNumber(2) * 100000000000000000000).should eql(OraNumber(200000000000000000000))
   end
 
-  it "/ Bignum should be an OraNumber" do
+  it "/ Integer should be an OraNumber" do
     (OraNumber(2) / 100000000000000000000).should eql(OraNumber("0.00000000000000000002"))
   end
 
@@ -124,7 +124,7 @@ describe OraNumber do
   end
 end
 
-describe Fixnum do
+describe Integer do # Ruby 2.3 or lower it was Fixnum
   it "+ OraNumber should be an OraNumber" do
     (2 + OraNumber(1)).should eql(OraNumber(3))
   end
@@ -142,7 +142,7 @@ describe Fixnum do
   end
 end
 
-describe Bignum do
+describe Integer do # Ruby 2.3 or lower it was Bignum
   it "+ OraNumber should be an OraNumber" do
     (100000000000000000000 + OraNumber(1)).should eql(OraNumber(100000000000000000001))
   end

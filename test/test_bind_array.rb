@@ -19,8 +19,8 @@ class TestBindArray < Minitest::Test
 
   def test_bind_array_values_containg_nil
     assert_equal([[nil, String]], OCI8::in_cond(:id, [nil]).values)
-    assert_equal([[nil, Fixnum], [2, nil, nil], [3, nil, nil]], OCI8::in_cond(:id, [nil, 2, 3]).values)
-    assert_equal([[1, nil, nil], [nil, Fixnum], [3, nil, nil]], OCI8::in_cond(:id, [1, nil, 3]).values)
+    assert_equal([[nil, 0.class], [2, nil, nil], [3, nil, nil]], OCI8::in_cond(:id, [nil, 2, 3]).values)
+    assert_equal([[1, nil, nil], [nil, 0.class], [3, nil, nil]], OCI8::in_cond(:id, [1, nil, 3]).values)
   end
 
   def test_bind_array_values_with_type

@@ -199,26 +199,32 @@ class OCI8
 end
 
 # bind or explicitly define
-OCI8::BindType::Mapping[String]       = OCI8::BindType::String
-OCI8::BindType::Mapping[OraNumber]    = OCI8::BindType::OraNumber
-OCI8::BindType::Mapping['BigDecimal'] = OCI8::BindType::BigDecimal
-OCI8::BindType::Mapping['Rational']   = OCI8::BindType::Rational
-OCI8::BindType::Mapping[Fixnum]       = OCI8::BindType::Integer
-OCI8::BindType::Mapping[Float]        = OCI8::BindType::Float
-OCI8::BindType::Mapping[Integer]      = OCI8::BindType::Integer
-OCI8::BindType::Mapping[Bignum]       = OCI8::BindType::Integer
-OCI8::BindType::Mapping[OraDate]      = OCI8::BindType::OraDate
-OCI8::BindType::Mapping[Time]         = OCI8::BindType::Time
-OCI8::BindType::Mapping[Date]         = OCI8::BindType::Date
-OCI8::BindType::Mapping[DateTime]     = OCI8::BindType::DateTime
-OCI8::BindType::Mapping[OCI8::CLOB]   = OCI8::BindType::CLOB
-OCI8::BindType::Mapping[OCI8::NCLOB]  = OCI8::BindType::NCLOB
-OCI8::BindType::Mapping[OCI8::BLOB]   = OCI8::BindType::BLOB
-OCI8::BindType::Mapping[OCI8::BFILE]  = OCI8::BindType::BFILE
-OCI8::BindType::Mapping[OCI8::Cursor] = OCI8::BindType::Cursor
+OCI8::BindType::Mapping[String]          = OCI8::BindType::String
+OCI8::BindType::Mapping[OraNumber]       = OCI8::BindType::OraNumber
+OCI8::BindType::Mapping['BigDecimal']    = OCI8::BindType::BigDecimal
+OCI8::BindType::Mapping['Rational']      = OCI8::BindType::Rational
+unless 0.class == Integer
+  # Ruby 2.3 or lower it need to bind with Fixnum
+  OCI8::BindType::Mapping[0.class]       = OCI8::BindType::Integer
+end
+OCI8::BindType::Mapping[Float]           = OCI8::BindType::Float
+OCI8::BindType::Mapping[Integer]         = OCI8::BindType::Integer
+unless (2**64).class == Integer
+  # Ruby 2.3 or lower it need to bind with Bignum
+  OCI8::BindType::Mapping[(2**64).class] = OCI8::BindType::Integer
+end
+OCI8::BindType::Mapping[OraDate]         = OCI8::BindType::OraDate
+OCI8::BindType::Mapping[Time]            = OCI8::BindType::Time
+OCI8::BindType::Mapping[Date]            = OCI8::BindType::Date
+OCI8::BindType::Mapping[DateTime]        = OCI8::BindType::DateTime
+OCI8::BindType::Mapping[OCI8::CLOB]      = OCI8::BindType::CLOB
+OCI8::BindType::Mapping[OCI8::NCLOB]     = OCI8::BindType::NCLOB
+OCI8::BindType::Mapping[OCI8::BLOB]      = OCI8::BindType::BLOB
+OCI8::BindType::Mapping[OCI8::BFILE]     = OCI8::BindType::BFILE
+OCI8::BindType::Mapping[OCI8::Cursor]    = OCI8::BindType::Cursor
 if defined? OCI8::BindType::Boolean
-  OCI8::BindType::Mapping[TrueClass] = OCI8::BindType::Boolean
-  OCI8::BindType::Mapping[FalseClass] = OCI8::BindType::Boolean
+  OCI8::BindType::Mapping[TrueClass]     = OCI8::BindType::Boolean
+  OCI8::BindType::Mapping[FalseClass]    = OCI8::BindType::Boolean
 end
 
 # implicitly define

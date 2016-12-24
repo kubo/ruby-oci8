@@ -31,7 +31,7 @@ class TestOraDate < Minitest::Test
   def test_set_year
     cursor = @conn.parse("BEGIN :year := TO_NUMBER(TO_CHAR(:date, 'SYYYY'), '9999'); END;")
     cursor.bind_param(:date, OraDate)
-    cursor.bind_param(:year, Fixnum)
+    cursor.bind_param(:year, Integer)
     date = OraDate.new()
     YEAR_CHECK_TARGET.each do |i|
       # set year
@@ -45,7 +45,7 @@ class TestOraDate < Minitest::Test
 
   def test_get_year
     cursor = @conn.parse("BEGIN :date := TO_DATE(TO_CHAR(:year, '0999'), 'SYYYY'); END;")
-    cursor.bind_param(:year, Fixnum)
+    cursor.bind_param(:year, Integer)
     cursor.bind_param(:date, OraDate)
     YEAR_CHECK_TARGET.each do |i|
       # set date via oracle.
@@ -59,7 +59,7 @@ class TestOraDate < Minitest::Test
   def test_set_month
     cursor = @conn.parse("BEGIN :month := TO_NUMBER(TO_CHAR(:date, 'MM'), '99'); END;")
     cursor.bind_param(:date, OraDate)
-    cursor.bind_param(:month, Fixnum)
+    cursor.bind_param(:month, Integer)
     date = OraDate.new()
     MONTH_CHECK_TARGET.each do |i|
       # set month
@@ -73,7 +73,7 @@ class TestOraDate < Minitest::Test
 
   def test_get_month
     cursor = @conn.parse("BEGIN :date := TO_DATE(TO_CHAR(:month, '99'), 'MM'); END;")
-    cursor.bind_param(:month, Fixnum)
+    cursor.bind_param(:month, Integer)
     cursor.bind_param(:date, OraDate)
     MONTH_CHECK_TARGET.each do |i|
       # set date via oracle.
@@ -87,7 +87,7 @@ class TestOraDate < Minitest::Test
   def test_set_day
     cursor = @conn.parse("BEGIN :day := TO_NUMBER(TO_CHAR(:date, 'DD'), '99'); END;")
     cursor.bind_param(:date, OraDate)
-    cursor.bind_param(:day, Fixnum)
+    cursor.bind_param(:day, Integer)
     date = OraDate.new()
     DAY_CHECK_TARGET.each do |i|
       # set day
@@ -101,7 +101,7 @@ class TestOraDate < Minitest::Test
 
   def test_get_day
     cursor = @conn.parse("BEGIN :date := TO_DATE('200101' || TO_CHAR(:day, 'FM00'), 'YYYYMMDD'); END;")
-    cursor.bind_param(:day, Fixnum)
+    cursor.bind_param(:day, Integer)
     cursor.bind_param(:date, OraDate)
     DAY_CHECK_TARGET.each do |i|
       # set date via oracle.
@@ -115,7 +115,7 @@ class TestOraDate < Minitest::Test
   def test_set_hour
     cursor = @conn.parse("BEGIN :hour := TO_NUMBER(TO_CHAR(:date, 'HH24'), '99'); END;")
     cursor.bind_param(:date, OraDate)
-    cursor.bind_param(:hour, Fixnum)
+    cursor.bind_param(:hour, Integer)
     date = OraDate.new()
     HOUR_CHECK_TARGET.each do |i|
       # set hour
@@ -129,7 +129,7 @@ class TestOraDate < Minitest::Test
 
   def test_get_hour
     cursor = @conn.parse("BEGIN :date := TO_DATE(TO_CHAR(:hour, '99'), 'HH24'); END;")
-    cursor.bind_param(:hour, Fixnum)
+    cursor.bind_param(:hour, Integer)
     cursor.bind_param(:date, OraDate)
     HOUR_CHECK_TARGET.each do |i|
       # set date via oracle.
@@ -143,7 +143,7 @@ class TestOraDate < Minitest::Test
   def test_set_minute
     cursor = @conn.parse("BEGIN :minute := TO_NUMBER(TO_CHAR(:date, 'MI'), '99'); END;")
     cursor.bind_param(:date, OraDate)
-    cursor.bind_param(:minute, Fixnum)
+    cursor.bind_param(:minute, Integer)
     date = OraDate.new()
     MINUTE_CHECK_TARGET.each do |i|
       # set minute
@@ -157,7 +157,7 @@ class TestOraDate < Minitest::Test
 
   def test_get_minute
     cursor = @conn.parse("BEGIN :date := TO_DATE(TO_CHAR(:minute, '99'), 'MI'); END;")
-    cursor.bind_param(:minute, Fixnum)
+    cursor.bind_param(:minute, Integer)
     cursor.bind_param(:date, OraDate)
     MINUTE_CHECK_TARGET.each do |i|
       # set date via oracle.
@@ -171,7 +171,7 @@ class TestOraDate < Minitest::Test
   def test_set_second
     cursor = @conn.parse("BEGIN :second := TO_NUMBER(TO_CHAR(:date, 'SS'), '99'); END;")
     cursor.bind_param(:date, OraDate)
-    cursor.bind_param(:second, Fixnum)
+    cursor.bind_param(:second, Integer)
     date = OraDate.new()
     SECOND_CHECK_TARGET.each do |i|
       # set second
@@ -185,7 +185,7 @@ class TestOraDate < Minitest::Test
 
   def test_get_second
     cursor = @conn.parse("BEGIN :date := TO_DATE(TO_CHAR(:second, '99'), 'SS'); END;")
-    cursor.bind_param(:second, Fixnum)
+    cursor.bind_param(:second, Integer)
     cursor.bind_param(:date, OraDate)
     SECOND_CHECK_TARGET.each do |i|
       # set date via oracle.

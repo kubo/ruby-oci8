@@ -116,12 +116,12 @@ static VALUE ora_date_s_allocate(VALUE klass)
  *    OraDate.new(2012)        # => 2012-01-01 00:00:00
  *    OraDate.new(2012, 3, 4)  # => 2012-03-04 00:00:00
  *
- *  @param [Fixnum] year year
- *  @param [Fixnum] month month
- *  @param [Fixnum] day  day of month
- *  @param [Fixnum] hour hour
- *  @param [Fixnum] min  minute
- *  @param [Fixnum] sec  second
+ *  @param [Integer] year year
+ *  @param [Integer] month month
+ *  @param [Integer] day  day of month
+ *  @param [Integer] hour hour
+ *  @param [Integer] min  minute
+ *  @param [Integer] sec  second
  */
 static VALUE ora_date_initialize(int argc, VALUE *argv, VALUE self)
 {
@@ -267,7 +267,7 @@ static VALUE ora_date_to_a(VALUE self)
  *
  *  Returns the year field of <i>self</i>.
  *
- *  @return [Fixnum]
+ *  @return [Integer]
  */
 static VALUE ora_date_year(VALUE self)
 {
@@ -281,7 +281,7 @@ static VALUE ora_date_year(VALUE self)
  *
  *  Assigns <i>num</i> to the year field of <i>self</i>.
  *
- *  @param [Fixnum] num number between -4712 and 9999
+ *  @param [Integer] num number between -4712 and 9999
  */
 static VALUE ora_date_set_year(VALUE self, VALUE val)
 {
@@ -299,7 +299,7 @@ static VALUE ora_date_set_year(VALUE self, VALUE val)
  *  Returns the month field of <i>self</i>.
  *  The month starts with one.
  *
- *  @return [Fixnum]
+ *  @return [Integer]
  */
 static VALUE ora_date_month(VALUE self)
 {
@@ -314,7 +314,7 @@ static VALUE ora_date_month(VALUE self)
  *  Assigns <i>num</i> to the month field of <i>self</i>.
  *  The month starts with one.
  *
- *  @param [Fixnum] num number between 1 and 12
+ *  @param [Integer] num number between 1 and 12
  */
 static VALUE ora_date_set_month(VALUE self, VALUE val)
 {
@@ -331,7 +331,7 @@ static VALUE ora_date_set_month(VALUE self, VALUE val)
  *
  *  Returns the day of month field of <i>self</i>.
  *
- *  @return [Fixnum]
+ *  @return [Integer]
  */
 static VALUE ora_date_day(VALUE self)
 {
@@ -345,7 +345,7 @@ static VALUE ora_date_day(VALUE self)
  *
  *  Assigns <i>num</i> to the day of month field of <i>self</i>.
  *
- *  @param [Fixnum] num number between 1 and 31
+ *  @param [Integer] num number between 1 and 31
  */
 static VALUE ora_date_set_day(VALUE self, VALUE val)
 {
@@ -362,7 +362,7 @@ static VALUE ora_date_set_day(VALUE self, VALUE val)
  *
  *  Returns the hour field of <i>self</i>.
  *
- *  @return [Fixnum]
+ *  @return [Integer]
  */
 static VALUE ora_date_hour(VALUE self)
 {
@@ -376,7 +376,7 @@ static VALUE ora_date_hour(VALUE self)
  *
  *  Assigns <i>num</i> to the hour field of <i>self</i>.
  *
- *  @param [Fixnum] num number between 0 and 23
+ *  @param [Integer] num number between 0 and 23
  */
 static VALUE ora_date_set_hour(VALUE self, VALUE val)
 {
@@ -393,7 +393,7 @@ static VALUE ora_date_set_hour(VALUE self, VALUE val)
  *
  *  Returns the minute field of <i>self</i>.
  *
- *  @return [Fixnum]
+ *  @return [Integer]
  */
 static VALUE ora_date_minute(VALUE self)
 {
@@ -407,7 +407,7 @@ static VALUE ora_date_minute(VALUE self)
  *
  *  Assigns <i>num</i> to the minute field of <i>self</i>.
  *
- *  @param [Fixnum] num number between 0 and 59
+ *  @param [Integer] num number between 0 and 59
  */
 static VALUE ora_date_set_minute(VALUE self, VALUE val)
 {
@@ -424,7 +424,7 @@ static VALUE ora_date_set_minute(VALUE self, VALUE val)
  *
  *  Returns the second field of <i>self</i>.
  *
- *  @return [Fixnum]
+ *  @return [Integer]
  */
 static VALUE ora_date_second(VALUE self)
 {
@@ -438,7 +438,7 @@ static VALUE ora_date_second(VALUE self)
  *
  *  Assigns <i>num</i> to the second field of <i>self</i>.
  *
- *  @param [Fixnum] num number between 0 and 59
+ *  @param [Integer] num number between 0 and 59
  */
 static VALUE ora_date_set_second(VALUE self, VALUE val)
 {

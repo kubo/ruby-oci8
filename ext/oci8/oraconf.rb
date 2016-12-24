@@ -384,7 +384,7 @@ EOS
                         [nil].pack('P').size
                       rescue ArgumentError
                         # Rubinius 1.2.3 doesn't support Array#pack('P').
-                        # Use Fixnum#size, which returns the size of long.
+                        # Use Integer#size, which returns the size of long.
                         1.size
                       end
     is_32bit = size_of_pointer == 4
