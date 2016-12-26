@@ -69,7 +69,7 @@ EOS
     cursor.exec
     assert_equal(test_data1, cursor.fetch[0])
     assert_equal(test_data2, cursor.fetch[0])
-    assert_equal(test_data3, cursor.fetch[0])
+    assert_nil(cursor.fetch[0])
     assert_equal(test_data4, cursor.fetch[0])
     cursor.close
     drop_table('test_table')

@@ -38,6 +38,8 @@ class TestPackageType < Minitest::Test
       val = method.is_a?(Array) ? obj[method[0]] : obj.send(method)
       if expected_value.is_a? Hash
         check_attributes("#{msg} > #{method}", val, expected_value)
+      elsif expected_value.nil?
+        assert_nil(val, "#{msg} > #{method}")
       else
         assert_equal(expected_value, val, "#{msg} > #{method}")
       end

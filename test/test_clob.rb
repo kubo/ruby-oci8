@@ -67,7 +67,7 @@ class TestCLob < Minitest::Test
         # Though buf.size counts in byte,
         # offset and $lobreadnum count in character.
       end
-      assert_equal(nil, buf)
+      assert_nil(buf)
       assert(f.eof?)
       assert(lob.eof?)
     end

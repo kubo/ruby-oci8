@@ -1,4 +1,10 @@
 2016-12-26  Kubo Takehiro  <kubo@jiubao.org>
+	* test/test_clob.rb, test/test_metadata.rb, test/test_object.rb,
+	  test/test_oci8.rb, test/test_package_type.rb: Suppress warnings:
+	    "Use assert_nil if expecting nil from ... in `...' This will
+	    fail in MT6" printed by Minitest.
+
+2016-12-26  Kubo Takehiro  <kubo@jiubao.org>
 	* lib/oci8/bindtype.rb, lib/oci8/compat.rb, lib/oci8/oci8.rb,
 	  test/config.rb: Suppress "warning: constant ::Fixnum is deprecated"
 	  and "warning: constant ::Bignum is deprecated" due to integer

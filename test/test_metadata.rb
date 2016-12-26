@@ -42,6 +42,8 @@ class TestMetadata < Minitest::Test
         assert(expected_value.call(val), "#{msg} > #{method}")
       when Regexp
         assert_match(expected_value, val, "#{msg} > #{method}")
+      when nil
+        assert_nil(val, "#{msg} > #{method}")
       else
         assert_equal(expected_value, val, "#{msg} > #{method}")
       end
@@ -1335,7 +1337,6 @@ EOS
     drop_type('TEST_TYPE_NESTEAD_TABLE')
     drop_type('TEST_TYPE_CHILD')
     drop_type('TEST_TYPE_PARENT')
-    expected_values = []
     attrs_map = {}
 
     @conn.exec(<<-EOS)

@@ -237,15 +237,35 @@ class TestObj1 < Minitest::Test
       assert_equal(@nclob_val, nclob_val)
       assert_equal(@blob_val, blob_val)
       assert_equal(@obj_val, obj_val)
-      assert_equal(@int_array_val, int_array_val && int_array_val.to_ary)
+      if @int_array_val
+        assert_equal(@int_array_val, int_array_val.to_ary)
+      else
+        assert_nil(@int_array_val, int_array_val)
+      end
       assert_array_in_delta(@flt_array_val, flt_array_val && flt_array_val.to_ary)
       assert_array_in_delta(@num_array_val, num_array_val && num_array_val.to_ary)
       assert_array_in_delta(@bdbl_array_val, bdbl_array_val && bdbl_array_val.to_ary)
       assert_array_in_delta(@bflt_array_val, bflt_array_val && bflt_array_val.to_ary)
-      assert_equal(@str_array_val, str_array_val && str_array_val.to_ary)
-      assert_equal(@raw_array_val, raw_array_val && raw_array_val.to_ary)
-      assert_equal(@obj_array_val, obj_array_val && obj_array_val.to_ary)
-      assert_equal(@obj_ary_of_ary_val, obj_ary_of_ary_val && obj_ary_of_ary_val.to_ary.collect { |elem| elem.to_ary })
+      if @str_array_val
+        assert_equal(@str_array_val, str_array_val.to_ary)
+      else
+        assert_nil(str_array_val)
+      end
+      if @raw_array_val
+        assert_equal(@raw_array_val, raw_array_val.to_ary)
+      else
+        assert_nil(raw_array_val)
+      end
+      if @obj_array_val
+        assert_equal(@obj_array_val, obj_array_val.to_ary)
+      else
+        assert_nil(obj_array_val)
+      end
+      if @obj_ary_of_ary_val
+        assert_equal(@obj_ary_of_ary_val, obj_ary_of_ary_val.to_ary.collect { |elem| elem.to_ary })
+      else
+        assert_nil(obj_ary_of_ary_val)
+      end
       assert_equal(@date_val, date_val)
 #      assert_equal(@date_array_val, date_array_val && date_array_val.to_ary)
     end
@@ -256,6 +276,8 @@ class TestObj1 < Minitest::Test
         exp.each_with_index do |elem, idx|
           assert_in_delta(elem, val[idx], Delta)
         end
+      elsif exp.nil?
+        assert_nil(val)
       else
         assert_equal(exp, val)
       end
@@ -456,10 +478,26 @@ EOS
       csr.bind_param(:out2, nil, Integer)
       csr.bind_param(:out3, nil, Integer)
       csr.exec
-      assert_equal(ary ? ary.length : -1, csr[:cnt])
-      assert_equal(ary ? ary[0] : nil, csr[:out1])
-      assert_equal(ary ? ary[1] : nil, csr[:out2])
-      assert_equal(ary ? ary[2] : nil, csr[:out3])
+      if ary
+        assert_equal(ary.length, csr[:cnt])
+      else
+        assert_equal(-1, csr[:cnt])
+      end
+      if ary && ary[0]
+        assert_equal(ary[0], csr[:out1])
+      else
+        assert_nil(csr[:out1])
+      end
+      if ary && ary[1]
+        assert_equal(ary[1], csr[:out2])
+      else
+        assert_nil(csr[:out2])
+      end
+      if ary && ary[2]
+        assert_equal(ary[2], csr[:out3])
+      else
+        assert_nil(csr[:out3])
+      end
     end
   end
 
