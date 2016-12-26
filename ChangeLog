@@ -1,3 +1,13 @@
+2016-12-26  Kubo Takehiro  <kubo@jiubao.org>
+	* lib/oci8/bindtype.rb, lib/oci8/compat.rb, lib/oci8/oci8.rb,
+	  test/config.rb: Suppress "warning: constant ::Fixnum is deprecated"
+	  and "warning: constant ::Bignum is deprecated" due to integer
+	  unification in ruby 2.4.0.
+
+2016-12-14  Koichi ITO  <koic.ito@gmail.com>
+	* ext/oci8/ocinumber.c:	Fix invalid value for BigDecimal in
+	    Ruby 2.4.0+
+
 2016-09-25  Kubo Takehiro  <kubo@jiubao.org>
 	* ext/oci8/metadata.c, ext/oci8/oci8.c: Fix load error when
 	    GC.stress = true.

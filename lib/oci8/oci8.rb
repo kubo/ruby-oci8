@@ -622,7 +622,7 @@ class OCIError
   #
   def initialize(*args)
     if args.length > 0
-      if args[0].is_a? Fixnum
+      if args[0].is_a? Integer
         @code = args.shift
         super(OCI8.error_message(@code).gsub('%s') {|s| args.empty? ? '%s' : args.shift})
         @sql = nil

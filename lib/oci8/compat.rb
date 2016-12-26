@@ -70,7 +70,7 @@ class OCI8
   constants.each do |name|
     next if name.to_s.index("SQLT_") != 0
     val = const_get name.intern
-    if val.is_a? Fixnum
+    if val.is_a? Integer
       SQLT_NAMES[val] = name
     end
   end
@@ -79,6 +79,10 @@ class OCI8
   alias autocommit autocommit?
 
   class Cursor
+    # @!visibility private
+    # dirty hack to suppress "warning: constant ::Fixnum is deprecated"
+    Fixnum = (0.class == ::Integer) ? ::Integer : ::Fixnum
+
     def self.select_number_as=(val)
       if val == Fixnum
         @@bind_unknown_number = OCI8::BindType::Fixnum

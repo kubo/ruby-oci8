@@ -203,10 +203,13 @@ OCI8::BindType::Mapping[String]       = OCI8::BindType::String
 OCI8::BindType::Mapping[OraNumber]    = OCI8::BindType::OraNumber
 OCI8::BindType::Mapping['BigDecimal'] = OCI8::BindType::BigDecimal
 OCI8::BindType::Mapping['Rational']   = OCI8::BindType::Rational
-OCI8::BindType::Mapping[Fixnum]       = OCI8::BindType::Integer
 OCI8::BindType::Mapping[Float]        = OCI8::BindType::Float
 OCI8::BindType::Mapping[Integer]      = OCI8::BindType::Integer
-OCI8::BindType::Mapping[Bignum]       = OCI8::BindType::Integer
+unless 0.class == Integer
+  # ruby before integer unification
+  OCI8::BindType::Mapping[Fixnum]     = OCI8::BindType::Integer
+  OCI8::BindType::Mapping[Bignum]     = OCI8::BindType::Integer
+end
 OCI8::BindType::Mapping[OraDate]      = OCI8::BindType::OraDate
 OCI8::BindType::Mapping[Time]         = OCI8::BindType::Time
 OCI8::BindType::Mapping[Date]         = OCI8::BindType::Date

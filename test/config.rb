@@ -125,6 +125,13 @@ end
 
 class Minitest::Test
 
+  # @!visibility private
+  # dirty hack to suppress "warning: constant ::Fixnum is deprecated"
+  Fixnum = (0.class == ::Integer) ? ::Integer : ::Fixnum
+  # @!visibility private
+  # dirty hack to suppress "warning: constant ::Bignum is deprecated"
+  Bignum = (0.class == ::Integer) ? ::Integer : ::Bignum
+
   def get_oci8_connection()
     OCI8.new($dbuser, $dbpass, $dbname)
       rescue OCIError
