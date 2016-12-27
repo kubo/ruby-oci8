@@ -14,6 +14,7 @@ when '32'
      'c:\ruby\ruby-2.1.3-i386-mingw32',
      'c:\ruby\ruby-2.2.1-i386-mingw32',
      'c:\ruby\ruby-2.3.0-i386-mingw32',
+     'c:\ruby\ruby-2.4.0-i386-mingw32',
     ]
 
   $oracle_path = 'c:\oracle\instantclient_12_1-win32'
@@ -27,6 +28,7 @@ when '32'
      ['c:\ruby\ruby-2.1.3-i386-mingw32', $devkit_mingw64_path],
      ['c:\ruby\ruby-2.2.1-i386-mingw32', $devkit_mingw64_path],
      ['c:\ruby\ruby-2.3.0-i386-mingw32', $devkit_mingw64_path],
+     ['c:\ruby\ruby-2.4.0-i386-mingw32', $devkit_mingw64_path],
     ]
 
 when '64'
@@ -38,6 +40,7 @@ when '64'
      'c:\ruby\ruby-2.1.3-x64-mingw32',
      'c:\ruby\ruby-2.2.1-x64-mingw32',
      'c:\ruby\ruby-2.3.0-x64-mingw32',
+     'c:\ruby\ruby-2.4.0-x64-mingw32',
     ]
 
   $oracle_path = 'c:\oracle\instantclient_12_1-win64'
@@ -48,6 +51,7 @@ when '64'
      ['c:\ruby\ruby-2.1.3-x64-mingw32', $devkit_mingw64_path],
      ['c:\ruby\ruby-2.2.1-x64-mingw32', $devkit_mingw64_path],
      ['c:\ruby\ruby-2.3.0-x64-mingw32', $devkit_mingw64_path],
+     ['c:\ruby\ruby-2.4.0-x64-mingw32', $devkit_mingw64_path],
     ]
 else
   puts "#{ARGV[0]} (32|64)"

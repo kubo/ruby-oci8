@@ -1,3 +1,9 @@
+2016-12-27  Kubo Takehiro  <kubo@jiubao.org>
+	* NEWS: Add changes between 2.2.2 and 2.2.3.
+	* lib/oci8/version.rb: update to 2.2.3.
+	* dist-files: add test/test_bind_array.rb
+	* mkpkg-win32.rb: add path to ruby 2.4.0
+
 2016-12-26  Kubo Takehiro  <kubo@jiubao.org>
 	* test/test_clob.rb, test/test_metadata.rb, test/test_object.rb,
 	  test/test_oci8.rb, test/test_package_type.rb: Suppress warnings:

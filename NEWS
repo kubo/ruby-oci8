@@ -1,5 +1,19 @@
 # @markup markdown
 
+2.2.3
+=====
+
+New Features
+------------
+
+### Support ruby 2.4.0
+
+-   [Fix invalid value for BigDecimal](https://github.com/kubo/ruby-oci8/issues/144)
+-   Fix load error when `GC.stress = true`.
+-   Suppress warnings caused by integer unification
+-   Suppress warnings outputted by Minitest in ruby 2.4.0
+-   Suppress warnings when compiling with ruby 2.4.0
+
 2.2.2
 =====
 
