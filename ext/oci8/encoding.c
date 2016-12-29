@@ -23,7 +23,7 @@ rb_encoding *oci8_encoding;
  * Returns the Oracle character set name from the specified
  * character set ID if it is valid. Otherwise, +nil+ is returned.
  *
- * @param [Fixnum] charset_id   Oracle character set id
+ * @param [Integer] charset_id  Oracle character set id
  * @return [String]             Oracle character set name or nil
  * @since 2.2.0
  */
@@ -48,7 +48,7 @@ VALUE oci8_s_charset_id2name(VALUE klass, VALUE csid)
  * character set name if it is valid. Othewise, +nil+ is returned.
  *
  * @param [String] charset_name   Oracle character set name
- * @return [Fixnum]               Oracle character set id or nil
+ * @return [Integer]              Oracle character set id or nil
  * @since 2.2.0
  */
 static VALUE oci8_s_charset_name2id(VALUE klass, VALUE name)
@@ -71,7 +71,7 @@ static VALUE oci8_s_charset_name2id(VALUE klass, VALUE name)
  * internal buffer size of a string bind variable whose nls length
  * semantics is char.
  *
- * @return [Fixnum]  NLS ratio
+ * @return [Integer] NLS ratio
  * @since 2.1.0
  * @private
  */
@@ -150,7 +150,7 @@ static VALUE oci8_set_encoding(VALUE klass, VALUE encoding)
  * character set name if it is valid. Othewise, +nil+ is returned.
  *
  * @param [String] charset_name   Oracle character set name
- * @return [Fixnum]               Oracle character set id or nil
+ * @return [Integer]              Oracle character set id or nil
  * @since 2.0.0
  * @deprecated Use {OCI8.charset_name2id} instead.
  */
@@ -167,7 +167,7 @@ static VALUE oci8_charset_name2id(VALUE svc, VALUE name)
  * Returns the Oracle character set name from the specified
  * character set ID if it is valid. Otherwise, +nil+ is returned.
  *
- * @param [Fixnum] charset_id   Oracle character set id
+ * @param [Integer] charset_id  Oracle character set id
  * @return [String]             Oracle character set name or nil
  * @since 2.0.0
  * @deprecated Use {OCI8.charset_id2name} instead.

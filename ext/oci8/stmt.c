@@ -288,7 +288,7 @@ static VALUE oci8_stmt_fetch(VALUE self, VALUE svc)
  *
  *  Returns the definition of column specified by <i>pos</i>
  *
- *  @param [Fixnum] pos Column position which starts from one
+ *  @param [Integer] pos Column position which starts from one
  *  @return [OCI8::Metadata::Base]
  *
  *  @private

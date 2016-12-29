@@ -380,7 +380,7 @@ class OCI8
     #
     # FYI: Rails oracle adaptor uses 100 by default.
     #
-    # @param [Fixnum] rows The number of rows to be prefetched
+    # @param [Integer] rows The number of rows to be prefetched
     def prefetch_rows=(rows)
       attr_set_ub4(11, rows) # OCI_ATTR_PREFETCH_ROWS(11)
     end
@@ -431,12 +431,12 @@ class OCI8
     # * OCI8::STMT_ALTER
     # * OCI8::STMT_BEGIN (PL/SQL block which starts with a BEGIN keyword)
     # * OCI8::STMT_DECLARE (PL/SQL block which starts with a DECLARE keyword)
-    # * Other Fixnum value undocumented in Oracle manuals.
+    # * Other Integer value undocumented in Oracle manuals.
     #
     # <em>Changes between ruby-oci8 1.0 and 2.0.</em>
     #
     # [ruby-oci8 2.0] OCI8::STMT_* are Symbols. (:select_stmt, :update_stmt, etc.)
-    # [ruby-oci8 1.0] OCI8::STMT_* are Fixnums. (1, 2, 3, etc.)
+    # [ruby-oci8 1.0] OCI8::STMT_* are Integers. (1, 2, 3, etc.)
     #
     def type
       # http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/ociaahan.htm#sthref5506

@@ -245,9 +245,9 @@ static VALUE attr_get_common(int argc, VALUE *argv, VALUE self, enum datatype da
  *
  *  Gets the value of an attribute as `ub1' datatype.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
- *  @return [Fixnum]
+ *  @return [Integer]
  *
  *  @since 2.0.4
  *  @private
@@ -262,9 +262,9 @@ static VALUE attr_get_ub1(int argc, VALUE *argv, VALUE self)
  *
  *  Gets the value of an attribute as `ub2' datatype.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
- *  @return [Fixnum]
+ *  @return [Integer]
  *
  *  @since 2.0.4
  *  @private
@@ -279,7 +279,7 @@ static VALUE attr_get_ub2(int argc, VALUE *argv, VALUE self)
  *
  *  Gets the value of an attribute as `ub4' datatype.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  *  @return [Integer]
  *
@@ -296,7 +296,7 @@ static VALUE attr_get_ub4(int argc, VALUE *argv, VALUE self)
  *
  *  Gets the value of an attribute as `ub8' datatype.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  *  @return [Integer]
  *
@@ -313,9 +313,9 @@ static VALUE attr_get_ub8(int argc, VALUE *argv, VALUE self)
  *
  *  Gets the value of an attribute as `sb1' datatype.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
- *  @return [Fixnum]
+ *  @return [Integer]
  *
  *  @since 2.0.4
  *  @private
@@ -330,9 +330,9 @@ static VALUE attr_get_sb1(int argc, VALUE *argv, VALUE self)
  *
  *  Gets the value of an attribute as `sb2' datatype.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
- *  @return [Fixnum]
+ *  @return [Integer]
  *
  *  @since 2.0.4
  *  @private
@@ -347,7 +347,7 @@ static VALUE attr_get_sb2(int argc, VALUE *argv, VALUE self)
  *
  *  Gets the value of an attribute as `sb4' datatype.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  *  @return [Integer]
  *
@@ -364,7 +364,7 @@ static VALUE attr_get_sb4(int argc, VALUE *argv, VALUE self)
  *
  *  Gets the value of an attribute as `sb8' datatype.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  *  @return [Integer]
  *
@@ -381,7 +381,7 @@ static VALUE attr_get_sb8(int argc, VALUE *argv, VALUE self)
  *
  *  Gets the value of an attribute as `boolean' datatype.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  *  @return [true of false]
  *
@@ -403,7 +403,7 @@ static VALUE attr_get_boolean(int argc, VALUE *argv, VALUE self)
  *  @note If the specified attr_type's datatype is not a
  *    pointer type, it causes a segmentation fault.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  *  @return [String]
  *
@@ -424,7 +424,7 @@ static VALUE attr_get_string(int argc, VALUE *argv, VALUE self)
  *  @note If the specified attr_type's datatype is not a
  *    pointer type, it causes a segmentation fault.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  *  @return [String]
  *
@@ -445,9 +445,9 @@ static VALUE attr_get_binary(int argc, VALUE *argv, VALUE self)
  *  @note If the specified attr_type's datatype is not a
  *    pointer type, it causes a segmentation fault.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
- *  @return [Fixnum]
+ *  @return [Integer]
  *
  *  @since 2.0.4
  *  @private
@@ -466,7 +466,7 @@ static VALUE attr_get_integer(int argc, VALUE *argv, VALUE self)
  *  @note If the specified attr_type's datatype is not a
  *    pointer type, it causes a segmentation fault.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Boolean] strict If false, "ORA-24328: illegal attribute value" is ignored.
  *  @return [OraDate]
  *
@@ -486,8 +486,8 @@ static VALUE attr_get_oradate(int argc, VALUE *argv, VALUE self)
  *  @note If the specified attr_type's datatype is a
  *    pointer type, it causes a segmentation fault.
  *
- *  @param [Fixnum] attr_type
- *  @param [Fixnum] attr_value
+ *  @param [Integer] attr_type
+ *  @param [Integer] attr_value
  *  @return [self]
  *
  *  @since 2.0.4
@@ -514,8 +514,8 @@ static VALUE attr_set_ub1(VALUE self, VALUE attr_type, VALUE val)
  *  @note If the specified attr_type's datatype is a
  *    pointer type, it causes a segmentation fault.
  *
- *  @param [Fixnum] attr_type
- *  @param [Fixnum] attr_value
+ *  @param [Integer] attr_type
+ *  @param [Integer] attr_value
  *  @return [self]
  *
  *  @since 2.0.4
@@ -542,7 +542,7 @@ static VALUE attr_set_ub2(VALUE self, VALUE attr_type, VALUE val)
  *  @note If the specified attr_type's datatype is a
  *    pointer type, it causes a segmentation fault.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Integer] attr_value
  *  @return [self]
  *
@@ -570,7 +570,7 @@ static VALUE attr_set_ub4(VALUE self, VALUE attr_type, VALUE val)
  *  @note If the specified attr_type's datatype is a
  *    pointer type, it causes a segmentation fault.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Integer] attr_value
  *  @return [self]
  *
@@ -598,8 +598,8 @@ static VALUE attr_set_ub8(VALUE self, VALUE attr_type, VALUE val)
  *  @note If the specified attr_type's datatype is a
  *    pointer type, it causes a segmentation fault.
  *
- *  @param [Fixnum] attr_type
- *  @param [Fixnum] attr_value
+ *  @param [Integer] attr_type
+ *  @param [Integer] attr_value
  *  @return [self]
  *
  *  @since 2.0.4
@@ -626,8 +626,8 @@ static VALUE attr_set_sb1(VALUE self, VALUE attr_type, VALUE val)
  *  @note If the specified attr_type's datatype is a
  *   pointer type, it causes a segmentation fault.
  *
- *  @param [Fixnum] attr_type
- *  @param [Fixnum] attr_value
+ *  @param [Integer] attr_type
+ *  @param [Integer] attr_value
  *  @return [self]
  *
  *  @since 2.0.4
@@ -654,7 +654,7 @@ static VALUE attr_set_sb2(VALUE self, VALUE attr_type, VALUE val)
  *  @note If the specified attr_type's datatype is a
  *    pointer type, it causes a segmentation fault.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Integer] attr_value
  *  @return [self]
  *
@@ -682,7 +682,7 @@ static VALUE attr_set_sb4(VALUE self, VALUE attr_type, VALUE val)
  *  @note If the specified attr_type's datatype is a
  *    pointer type, it causes a segmentation fault.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Integer] attr_value
  *  @return [self]
  *
@@ -710,7 +710,7 @@ static VALUE attr_set_sb8(VALUE self, VALUE attr_type, VALUE val)
  *  @note If the specified attr_type's datatype is a
  *    pointer type, it causes a segmentation fault.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [true or false] attr_value
  *  @return [self]
  *
@@ -737,7 +737,7 @@ static VALUE attr_set_boolean(VALUE self, VALUE attr_type, VALUE val)
  *  +attr_value+ is converted to {OCI8.encoding} before it is set
  *  when the ruby version is 1.9.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [String] attr_value
  *  @return [self]
  *
@@ -761,7 +761,7 @@ static VALUE attr_set_string(VALUE self, VALUE attr_type, VALUE val)
  *
  *  Sets the value of an attribute as `ub1 *' datatype.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [String] attr_value
  *  @return [self]
  *
@@ -787,7 +787,7 @@ static VALUE attr_set_binary(VALUE self, VALUE attr_type, VALUE val)
  *  +number+ is converted to internal Oracle NUMBER format before
  *  it is set.
  *
- *  @param [Fixnum] attr_type
+ *  @param [Integer] attr_type
  *  @param [Numeric] number
  *  @return [self]
  *
