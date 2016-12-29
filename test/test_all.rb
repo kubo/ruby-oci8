@@ -9,6 +9,7 @@ require "#{srcdir}/test_bind_array.rb"
 require "#{srcdir}/test_bind_string"
 require "#{srcdir}/test_bind_time"
 require "#{srcdir}/test_bind_raw"
+require "#{srcdir}/test_bind_integer"
 if $test_clob
   require "#{srcdir}/test_clob"
 end
