@@ -58,15 +58,16 @@ class OCI8
     #   # ...or...
     #   cursor.bind_param(':ename', 'SMITH') # bind by name
     #
-    # To bind as number, Fixnum and Float are available, but Bignum is
-    # not supported. If its initial value is NULL, please set nil to 
-    # +type+ and Fixnum or Float to +val+.
+    # To bind as number, set the number intself to +val+. If its initial value
+    # is NULL, please set nil to +type+ and Integer, Float or OraNumber to +val+.
     #
     # example:
-    #   cursor.bind_param(1, 1234) # bind as Fixnum, Initial value is 1234.
+    #   cursor.bind_param(1, 1234) # bind as Integer, Initial value is 1234.
     #   cursor.bind_param(1, 1234.0) # bind as Float, Initial value is 1234.0.
-    #   cursor.bind_param(1, nil, Fixnum) # bind as Fixnum, Initial value is NULL.
+    #   cursor.bind_param(1, nil, Integer) # bind as Integer, Initial value is NULL.
     #   cursor.bind_param(1, nil, Float) # bind as Float, Initial value is NULL.
+    #   cursor.bind_param(1, OraNumber(1234)) # bind as OraNumber, Initial value is 1234.
+    #   cursor.bind_param(1, nil, OraNumber) # bind as OraNumber, Initial value is NULL.
     #
     # In case of binding a string, set the string itself to
     # +val+. When the bind variable is used as output, set the

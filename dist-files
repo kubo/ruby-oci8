@@ -87,6 +87,7 @@ test/test_bind_array.rb
 test/test_bind_raw.rb
 test/test_bind_string.rb
 test/test_bind_time.rb
+test/test_bind_integer.rb
 test/test_break.rb
 test/test_clob.rb
 test/test_connection_pool.rb
