@@ -1,3 +1,11 @@
+2017-01-07  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/oci8lib.c: If libclntsh.so exports and imports same
+	    functions, their PLT entries are forcedly modified to point
+	    to itself not to use functions in other libraries.
+	    (Only on Linux and macOS)
+	* README.md, docs/ldap-auth-and-function-interposition.md:
+	    Add document about "LDAP Authentication and Function Interposition."
+
 2016-12-28  Yavor Nikolov <nikolov.javor@gmail.com>
 	* README.md: add build status and Gem version badges
 	    (merged at 2016-12-29)

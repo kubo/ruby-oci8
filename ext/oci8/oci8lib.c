@@ -7,6 +7,10 @@
 #ifdef HAVE_RUBY_THREAD_H
 #include <ruby/thread.h>
 #endif
+#if defined(HAVE_PLTHOOK) && !defined(WIN32)
+#include <dlfcn.h>
+#include "plthook.h"
+#endif
 
 ID oci8_id_at_last_error;
 ID oci8_id_get;
@@ -67,6 +71,122 @@ static VALUE bind_base_alloc(VALUE klass)
     rb_raise(rb_eNameError, "private method `new' called for %s:Class", rb_class2name(klass));
 }
 
+#if defined(HAVE_PLTHOOK) && !defined(WIN32)
+static const char *find_libclntsh(void *handle)
+{
+    void *symaddr = dlsym(handle, "OCIEnvCreate");
+    Dl_info info;
+#ifdef __APPLE__
+    const char *basename = "libclntsh.dylib";
+#else
+    const char *basename = "libclntsh.so";
+#endif
+    const char *p;
+
+    if (symaddr == NULL) {
+        return NULL;
+    }
+    if (dladdr(symaddr, &info) == 0) {
+        return NULL;
+    }
+    if ((p = strrchr(info.dli_fname, '/')) == NULL) {
+        return NULL;
+    }
+    if (strncmp(p + 1, basename, strlen(basename)) != 0) {
+        return NULL;
+    }
+    return info.dli_fname;
+}
+
+/*
+ * Symbol prefix depends on the platform.
+ *  Linux x86_64 - no prefix
+ *  Linux x86_32 - "_"
+ *  macOS        - "@_"
+ */
+static const char *find_symbol_prefix(plthook_t *ph, size_t *len)
+{
+    unsigned int pos = 0;
+    const char *name;
+    void **addr;
+
+    while (plthook_enum(ph, &pos, &name, &addr) == 0) {
+        const char *p = strstr(name, "OCIEnvCreate");
+        if (p != NULL) {
+            *len = p - name;
+            return name;
+        }
+    }
+    return NULL;
+}
+
+/*
+ * Fix PLT entries against function interposition.
+ * See: http://www.rubydoc.info/github/kubo/ruby-oci8/file/docs/ldap-auth-and-function-interposition.md
+ */
+static void rebind_internal_symbols(void)
+{
+    const char *libfile;
+    void *handle;
+    int flags = RTLD_LAZY | RTLD_NOLOAD;
+    plthook_t *ph;
+    unsigned int pos = 0;
+    const char *name;
+    void **addr;
+    const char *prefix;
+    size_t prefix_len;
+
+#ifdef RTLD_FIRST
+    flags |= RTLD_FIRST; /* for macOS */
+#endif
+
+    libfile = find_libclntsh(RTLD_DEFAULT); /* normal case */
+    if (libfile == NULL) {
+        libfile = find_libclntsh(RTLD_NEXT); /* special case when OCIEnvCreate is hooked by LD_PRELOAD */
+    }
+    if (libfile == NULL) {
+        return;
+    }
+    handle = dlopen(libfile, flags);
+    if (handle == NULL) {
+        return;
+    }
+    if (plthook_open(&ph, libfile) != 0) {
+        dlclose(handle);
+        return;
+    }
+    prefix = find_symbol_prefix(ph, &prefix_len);
+    if (prefix == NULL) {
+        dlclose(handle);
+        plthook_close(ph);
+        return;
+    }
+    while (plthook_enum(ph, &pos, &name, &addr) == 0) {
+        void *funcaddr;
+        if (prefix_len != 0) {
+            if (strncmp(name, prefix, prefix_len) != 0) {
+                continue;
+            }
+            name += prefix_len;
+        }
+        if (strncmp(name, "OCI", 3) == 0) {
+            /* exclude functions starting with OCI not to prevent LD_PRELOAD hooking */
+            continue;
+        }
+        funcaddr = dlsym(handle, name);
+        if (funcaddr != NULL && *addr != funcaddr) {
+            /* If libclntsh.so exports and imports same functions, their
+             * PLT entries are forcedly modified to point to itself not
+             * to use functions in other libraries.
+             */
+            *addr = funcaddr;
+        }
+    }
+    plthook_close(ph);
+    dlclose(handle);
+}
+#endif
+
 #ifdef _WIN32
 __declspec(dllexport)
 #endif
@@ -105,6 +225,9 @@ Init_oci8lib()
         OCIClientVersion(&major, &minor, &update, &patch, &port_update);
         oracle_client_version = ORAVERNUM(major, minor, update, patch, port_update);
     }
+#endif
+#if defined(HAVE_PLTHOOK) && !defined(WIN32)
+    rebind_internal_symbols();
 #endif
 
     oci8_id_at_last_error = rb_intern("@last_error");
