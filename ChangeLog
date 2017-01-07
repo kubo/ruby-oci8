@@ -1,3 +1,42 @@
+2016-12-28  Yavor Nikolov <nikolov.javor@gmail.com>
+	* README.md: add build status and Gem version badges
+	    (merged at 2016-12-29)
+
+2016-12-28  Yavor Nikolov <nikolov.javor@gmail.com>
+	* README.md: add title, demote sections to H2
+	    (merged at 2016-12-29)
+
+2016-12-28  Yavor Nikolov <nikolov.javor@gmail.com>
+	* lib/oci8/cursor.rb: Fix misleading cursor.bind_param header comment
+	    Reword an obsolete description of bind_param - since currently there is no
+	    restriction for Bignum nor for very large Integer values.
+	    (merged at 2016-12-29)
+
+2016-12-27  Yavor Nikolov <nikolov.javor@gmail.com>
+	* dist-files, test/test_all.rb, test/test_bind_integer.rb:
+	    Tests for binding integer cursor in parameters
+	    Add tests for binding a range of small and large integer variables
+	    directly (not through OraNumber).
+	    (merged at 2016-12-29)
+
+2016-12-26  Yavor Nikolov <nikolov.javor@gmail.com>
+	* circle.yml, cisetup/create_ruby_user.sql, cisetup/oracle/download.sh,
+	  cisetup/oracle/install.sh, cisetup/setup_accounts.sh:
+	    Add Circle CI build
+	    (merged at 2016-12-28)
+
+2016-12-26  Yavor Nikolov <nikolov.javor@gmail.com>
+	* test/test_oci8.rb: Fix date/time test (expected time timezone).
+	    Time.now offset leads to unstable test due to DST sensitivity.
+	    The solution is to take the offset of the specific local date/time.
+	    (merged at 2016-12-28)
+
+2016-12-25  Koichi ITO <koic.ito@gmail.com>
+	* ext/oci8/encoding.c, ext/oci8/oci8.c, ext/oci8/ocihandle.c
+	  ext/oci8/oraconf.rb, ext/oci8/oradate.c, ext/oci8/stmt.c
+	  lib/oci8/cursor.rb: Integer Unification in Ruby 2.4.0+
+	    (merged at 2016-12-29)
+
 2016-12-27  Kubo Takehiro  <kubo@jiubao.org>
 	* NEWS: Add changes between 2.2.2 and 2.2.3.
 	* lib/oci8/version.rb: update to 2.2.3.
