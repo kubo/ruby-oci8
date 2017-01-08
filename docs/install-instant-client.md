@@ -104,9 +104,9 @@ If `require "ruby-oci8"` raises a load error such as "OCI.DLL: 126(The
 specified module could not be found. )", either `OCI.DLL` or a DLL depended
 by `OCI.DLL` could not be found in `PATH`.
 
-If `OCI.DLL` is surely in `PATH`, the missing DLL is a Visual C++ runtime
+If `OCI.DLL` is surely in `PATH`, the missing module is a Visual C++ runtime
 library in most cases. You need to install "Microsoft Visual C++ Redistributable
-Package" or copy the runtime library to the directory where `ruby.exe` resides.
+Package" or copy a runtime library to the directory where `ruby.exe` resides.
 
 | Oracle Version | Package | Runtime Library|
 |---|---|---|
