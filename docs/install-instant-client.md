@@ -98,7 +98,27 @@ For example:
 Windows
 -------
 
-Unzip the packages and set PATH to point to the directory where OCI.DLL is installed.
+Unzip the packages and set `PATH` to point to the directory where `OCI.DLL` is installed.
+
+If `require "ruby-oci8"` raises a load error such as "OCI.DLL: 126(The
+specified module could not be found. )", either `OCI.DLL` or a DLL depended
+by `OCI.DLL` could not be found in `PATH`.
+
+If `OCI.DLL` is surely in `PATH`, the missing DLL is a Visual C++ runtime
+library in most cases. You need to install "Microsoft Visual C++ Redistributable
+Package" or copy the runtime library to the directory where `ruby.exe` resides.
+
+| Oracle Version | Package | Runtime Library|
+|---|---|---|
+| 12.1.0.x | [Microsoft Visual C++ 2010 Redistributable Package][2010] | MSVCR100.DLL |
+| 11.2.0.x | Microsoft Visual C++ 2005 SP1 Redistributable Package ([x86][2005SP1_x86], [x64][2005SP1_x64]) | MSVCR80.DLL(The file version must be 8.0.50727.762.) |
+| 11.1.0.x | [No separate redistributable package][2003] | MSVCR71.DLL |
+| 10.2.0.x | [No separate redistributable package][2003] | MSVCR71.DLL |
+
+[2010]: http://www.microsoft.com/en-us/download/details.aspx?id=26999
+[2005SP1_x86]: https://www.microsoft.com/en-us/download/details.aspx?id=5638
+[2005SP1_x64]: https://www.microsoft.com/en-us/download/details.aspx?id=18471
+[2003]: http://stackoverflow.com/questions/1596167/where-to-download-microsoft-visual-c-2003-redistributable#6132093
 
 Check the environment
 =====================

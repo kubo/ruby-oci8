@@ -1,21 +1,22 @@
 # @title Install Binary Package
 
-Windows 32-bit (mingw32 ruby)
-=============================
+Windows
+=======
 
-Run the following command:
+You need to install Oracle client in advance.
+If you don't have installed Oracle client, install {file:docs/install-instant-client.md#Install_Oracle_Instant_Client_Packages instant client}. Only the Basic or Basic Lite package is needed to use ruby-oci8.
+However it is better to install SQL*Plus also because it is usable to check whether
+a problem is in Oracle setting or in ruby-oci8.
+
+Run the following command to install ruby-oci8.
 
     gem install ruby-oci8
 
-Windows 32-bit (mswin32 ruby)
-=============================
-
-Run the following command:
+If you uses mswin32 ruby, use the following command instead.
 
     gem install --platform x86-mingw32 ruby-oci8
-
-Ruby-oci8 gem for x86-mingw32 works on mswin32 ruby.
-If it doesn't work, see {file:docs/install-instant-client.md} or {file:docs/install-full-client.md}.
+      or
+    gem install --platform x64-mingw32 ruby-oci8
 
 Other platforms
 ===============

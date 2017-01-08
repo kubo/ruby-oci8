@@ -1,3 +1,7 @@
+2017-01-08  Kubo Takehiro <kubo@jiubao.org>
+	* docs/install-binary-package.md, docs/install-instant-client.md:
+	    Update documents for installation on Windows.
+
 2017-01-07  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/oci8lib.c: If libclntsh.so exports and imports same
 	    functions, their PLT entries are forcedly modified to point
