@@ -1,5 +1,8 @@
 # @title Report Installation Issues
 
+Report Installation Issues
+==========================
+
 Look at {file:docs/platform-specific-issues.md} and [the issues page on github][github] to check whether your issue is fixed or not.
 
 If it is a new one, post the following information to [github][].

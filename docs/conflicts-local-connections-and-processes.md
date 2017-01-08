@@ -1,7 +1,10 @@
 # @title Conflicts between Local Connections and Child Process Handling on Unix
 
+Conflicts between Local Connections and Child Process Handling on Unix
+======================================================================
+
 Background
-==========
+----------
 
 When a local (not-TCP) Oracle connection is established on Unix,
 Oracle client library changes signal handlers in the process to reap
@@ -9,7 +12,7 @@ all dead child processes. However it conflicts with child process
 handling in ruby.
 
 Problem 1: It trashes child process handling of Open3::popen.
-==========
+----------
 
     require 'oci8'
     require 'open3'
@@ -35,7 +38,7 @@ The above code outputs the following result:
 the child process on the process termination before ruby detects it.
 
 Problem 2: It creates defunct processes after disconnection if signal handlers are reset.
-==========
+----------
 
 The `system` function overwrites signal handlers.
 It fixes the problem 1 as follows.
@@ -80,7 +83,7 @@ If a program repeatedly creates a local connection and disconnects it,
 the number of defunct processes increases gradually.
 
 Solution: BEQUEATH_DETACH=YES
-==========
+----------
 
 By setting [BEQUEATH_DETACH=YES][] in `sqlnet.ora`, Oracle client library
 doesn't change signal handlers. The above two problems are fixed.

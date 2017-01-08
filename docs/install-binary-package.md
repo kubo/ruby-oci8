@@ -1,7 +1,10 @@
 # @title Install Binary Package
 
+Install Binary Package
+======================
+
 Windows
-=======
+-------
 
 You need to install Oracle client in advance.
 If you don't have installed Oracle client, install {file:docs/install-instant-client.md#Install_Oracle_Instant_Client_Packages instant client}. Only the Basic or Basic Lite package is needed to use ruby-oci8.
@@ -19,7 +22,7 @@ If you uses mswin32 ruby, use the following command instead.
     gem install --platform x64-mingw32 ruby-oci8
 
 Other platforms
-===============
+---------------
 
 We doesn't make binary gems for other platforms.
 If you need to distribute a binary gem, compile ruby-oci8 and run the following command.

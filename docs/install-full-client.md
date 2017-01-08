@@ -1,7 +1,10 @@
 # @title Install for Oracle Full Client
 
+Install for Oracle Full Client
+==============================
+
 Introduction
-============
+------------
 
 This page explains the way to install ruby-oci8 for Oracle Full Client
 installations.
@@ -11,18 +14,16 @@ For Windows, look at {file:docs/install-binary-package.md} unless you
 have a special need to compile ruby-oci8 by yourself.
 
 Check the environment
-=====================
+---------------------
 
-Oracle installation
--------------------
+### Oracle installation
 
 Run the following command and confirm it works fine. If it doesn't
 work well, you need to ask to your database administrator.
 
     sqlplus USERNAME/PASSWORD
 
-ruby installation
------------------
+### ruby installation
 
 Run the following command. If it ends with "can't find header files
 for ruby" or "ruby: no such file to load -- mkmf (LoadError)", you need
@@ -30,8 +31,7 @@ to install ruby-devel(redhat) or ruby-dev(debian/ubuntu).
 
     ruby -r mkmf -e ""
 
-development tools
------------------
+### development tools
 
 You need a C compiler and development tools such as make or nmake.
 Note that they must be same with ones used to compile the ruby.
@@ -39,15 +39,14 @@ For example, you need Oracle Solaris Studio, not gcc, for ruby
 compiled by Oracle Solaris Studio.
 
 Installation
-============
+------------
 
 If you get a problem in the following steps, look at {file:docs/platform-specific-issues.md}
 and {file:docs/report-installation-issue.md}.
 
-Set the library search path
----------------------------
+### Set the library search path
 
-### UNIX
+#### UNIX
 
 Set the library search path, whose name depends on the OS, to point to
 $ORACLE\_HOME/lib. If the database is 64-bit and the ruby is 32-bit,
@@ -74,27 +73,25 @@ Do not forget to export the variable as follows:
     $ LD_LIBRARY_PATH=$ORACLE_HOME/lib
     $ export LD_LIBRARY_PATH
 
-### Windows(mswin32, mingw32, cygwin)
+#### Windows(mswin32, mingw32, cygwin)
 
 If sqlplus runs correctly, library search path has no problem.
 
-gem package
------------
+### gem package
 
 Run the following command.
 
     gem install ruby-oci8
 
-tar.gz package
---------------
+### tar.gz package
 
-### Download the source code
+#### Download the source code
 
 Download the latest tar.gz package from [download page][].
 
-### Run make and install
+#### Run make and install
 
-#### UNIX or Windows(mingw32, cygwin)
+##### UNIX or Windows(mingw32, cygwin)
 
     gzip -dc ruby-oci8-VERSION.tar.gz | tar xvf -
     cd ruby-oci8-VERSION
@@ -104,7 +101,7 @@ Download the latest tar.gz package from [download page][].
 note: If you use '`sudo`', use it only when running '`make install`'.
 '`sudo`' doesn't pass library search path to the executing command for security reasons.
 
-#### Windows(mswin32)
+##### Windows(mswin32)
 
     gzip -dc ruby-oci8-VERSION.tar.gz | tar xvf -
     cd ruby-oci8-VERSION

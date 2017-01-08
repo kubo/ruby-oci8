@@ -1,4 +1,7 @@
 2017-01-08  Kubo Takehiro <kubo@jiubao.org>
+	* docs/*.md: Change heading levels.
+
+2017-01-08  Kubo Takehiro <kubo@jiubao.org>
 	* docs/install-binary-package.md, docs/install-instant-client.md:
 	    Update documents for installation on Windows.
 

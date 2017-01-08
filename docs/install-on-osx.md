@@ -1,12 +1,15 @@
 # @title Install ruby-oci8 on OS X
 
+Install ruby-oci8 on OS X
+=========================
+
 This page explains the way to install ruby-oci8 os OS X.
 
 Look at {file:docs/install-full-client.md}, {file:docs/install-instant-client.md}
 or {file:docs/install-binary-package.md} for other platforms.
 
 Install C compiler
-==================
+------------------
 
 You need to install the command line developer tools or the Xcode.
 (The latter includes the former.)
@@ -28,10 +31,9 @@ please re-run as root via sudo."` is printed, you need to run
 and type `"agree"`.
 
 Install Oracle Instant Client Packages
-======================================
+--------------------------------------
 
-Download Oracle Instant Client Packages
---------------------------------
+### Download Oracle Instant Client Packages
 
 Download the following packages from [Oracle Technology Network][]
 
@@ -39,8 +41,7 @@ Download the following packages from [Oracle Technology Network][]
 * Instant Client Package - SDK (`instantclient-sdk-macos.x64-12.1.0.2.0.zip`)
 * Instant Client Package - SQL*Plus (`instantclient-sdk-macos.x64-12.1.0.2.0.zip`) (optionally) 
 
-Install Oracle Instant Client Packages via Homebrew
----------------------------------------------------
+### Install Oracle Instant Client Packages via Homebrew
 
 To install `Oracle Instant Client Basic` via [Homebrew][]
 
@@ -78,8 +79,7 @@ To install `Oracle Instant Client Basic Lite` via [Homebrew][]
 
         export OCI_DIR=$(brew --prefix)/lib
 
-Install Oracle Instant Client Manually
----------------------
+### Install Oracle Instant Client Manually
 
 If you don't use [Homebrew][], do the following:
 
@@ -104,25 +104,23 @@ Set the environment variable OCI_DIR while performing the following installation
     export OCI_DIR=/opt/oracle/instantclient_12_1
 
 Installation
-============
+------------
 
 If you get a problem in the following steps, look at {file:docs/report-installation-issue.md}.
 
-gem package
------------
+### gem package
 
 Run the following command.
 
     gem install ruby-oci8
 
-tar.gz package
---------------
+### tar.gz package
 
-### Download the source code
+#### Download the source code
 
 Download the latest tar.gz package from [download page][].
 
-### Run make and install
+#### Run make and install
 
     tar xvfz ruby-oci8-VERSION.tar.gz
     cd ruby-oci8-VERSION

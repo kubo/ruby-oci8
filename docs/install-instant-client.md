@@ -1,7 +1,10 @@
 # @title Install for Oracle Instant Client
 
+Install for Oracle Instant Client
+=================================
+
 Introduction
-============
+------------
 
 This page explains the way to install ruby-oci8 for Oracle Instant Client.
 
@@ -13,10 +16,10 @@ have a special need to compile ruby-oci8 by yourself.
 Look at {file:docs/install-on-osx.md} for OS X.
 
 Install Oracle Instant Client Packages
-======================================
+--------------------------------------
 
-Donwload Instant Client Packages
---------------------------------
+### Donwload Instant Client Packages
+
 Download the following packages from [Oracle Technology Network](http://www.oracle.com/technetwork/database/features/instant-client/index-097480.html).
 
 * Instant Client Package - Basic or Basic Lite
@@ -25,8 +28,7 @@ Download the following packages from [Oracle Technology Network](http://www.orac
 
 Note: use 32-bit packages for 32-bit ruby even though the OS is 64-bit.
 
-UNIX zip packages
------------------
+### UNIX zip packages
 
 Unzip the packages as follows:
 
@@ -79,8 +81,7 @@ Though many instant client pages indicate that the environment varialbe
 configuration files such as `tnsnames.ora` and `sqlnet.ora` are in
 `$ORACLE_HOME/network/admin/`.
 
-Linux rpm packages
-------------------
+### Linux rpm packages
 
 Install the downloaded packages as follows:
 
@@ -95,8 +96,7 @@ For example:
     $ LD_LIBRARY_PATH=/usr/lib/oracle/12.1/client/lib
     $ export LD_LIBRARY_PATH
 
-Windows
--------
+### Windows
 
 Unzip the packages and set `PATH` to point to the directory where `OCI.DLL` is installed.
 
@@ -121,18 +121,16 @@ Package" or copy the runtime library to the directory where `ruby.exe` resides.
 [2003]: http://stackoverflow.com/questions/1596167/where-to-download-microsoft-visual-c-2003-redistributable#6132093
 
 Check the environment
-=====================
+---------------------
 
-Oracle installation
--------------------
+### Oracle installation
 
 Run the following command and confirm it works fine. If it doesn't
 work well, check `LD_LIBRARY_PATH` or PATH.
 
     sqlplus USERNAME/PASSWORD
 
-ruby installation
------------------
+### ruby installation
 
 Run the following command. If it ends with "can't find header files
 for ruby" or "ruby: no such file to load -- mkmf (LoadError)", you need
@@ -140,8 +138,7 @@ to install ruby-devel(redhat) or ruby-dev(debian/ubuntu).
 
     ruby -r mkmf -e ""
 
-development tools
------------------
+### development tools
 
 You need a C compiler and development tools such as make or nmake.
 Note that they must be same with ones used to compile the ruby.
@@ -149,13 +146,12 @@ For example, you need Oracle Solaris Studio, not gcc, for ruby
 compiled by Oracle Solaris Studio.
 
 Installation
-============
+------------
 
 If you get a problem in the following steps, look at {file:docs/platform-specific-issues.md}
 and {file:docs/report-installation-issue.md}.
 
-gem package
------------
+### gem package
 
 Run the following command.
 
@@ -164,19 +160,18 @@ Run the following command.
 If you get a problem, look at {file:docs/platform-specific-issues.md}
 and {file:docs/report-installation-issue.md}.
 
-tar.gz package
---------------
+### tar.gz package
 
-### Download the source code
+#### Download the source code
 
 Download the latest tar.gz package from [download page][].
 
 Note: if you are using Windows and you have no special need to compile
 it by yourself, look at {file:docs/install-binary-packge.md}.
 
-### Run make and install
+#### Run make and install
 
-#### UNIX or Windows(mingw32, cygwin)
+##### UNIX or Windows(mingw32, cygwin)
 
     gzip -dc ruby-oci8-VERSION.tar.gz | tar xvf -
     cd ruby-oci8-VERSION
@@ -186,7 +181,7 @@ it by yourself, look at {file:docs/install-binary-packge.md}.
 note: If you use '`sudo`', use it only when running '`make install`'.
 '`sudo`' doesn't pass library search path to the executing command for security reasons.
 
-#### Windows(mswin32)
+##### Windows(mswin32)
 
     gzip -dc ruby-oci8-VERSION.tar.gz | tar xvf -
     cd ruby-oci8-VERSION

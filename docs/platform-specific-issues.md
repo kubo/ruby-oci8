@@ -1,10 +1,12 @@
 # @title Platform Specific Issues
 
-Linux
-=====
+Platform Specific Issues
+========================
 
-Ubuntu 11.10 (Oneiric Ocelot)
------------------------------
+Linux
+-----
+
+### Ubuntu 11.10 (Oneiric Ocelot)
 
 If the following error occurs even though libc6-dev is installed,
 
@@ -15,8 +17,7 @@ You need to use ruby-oci8 2.1.0 or upper. Otherwise, run the following command a
 
     $ sudo ln -s /usr/include/linux/ /usr/include/sys
 
-General Linux
--------------
+### General Linux
 
 Use the same bit-width of libraries with ruby. For example, x86\_64
 instant client for x86\_64 ruby and 32-bit instant client for 32-bit
@@ -32,21 +33,18 @@ To check which type of ruby do you use:
 Note: "`" is a back quote.
 
 Mac OS X
-========
+--------
 
-OS X 10.7+
-----------
+### OS X 10.7+
 
 Use the latest 64-bit instant client. The older 64-bit (10.2.0.4) instant client [doesn't work](https://forums.oracle.com/forums/thread.jspa?threadID=2187558). The older 32-bit instant client will work but only with 32-bit ruby or jruby (using JDBC).
 
-Intel Mac (64-bit)
-------------------
+### Intel Mac (64-bit)
 
 See [How to setup Ruby and Oracle Instant Client on Snow Leopard](http://blog.rayapps.com/2009/09/06/how-to-setup-ruby-and-oracle-instant-client-on-snow-leopard/).
 Note that setting the environment variable RC\_ARCHS=x86\_64 instead of ARCHFLAGS="-arch x86\_64" will work fine also.
 
-Intel Mac (32-bit)
-------------------
+### Intel Mac (32-bit)
 
 See [How to setup Ruby and Oracle Instant Client on Snow Leopard](http://blog.rayapps.com/2009/09/06/how-to-setup-ruby-and-oracle-instant-client-on-snow-leopard/). Note that you need to replace x86\_64 with i386 in the blog.
 
@@ -57,13 +55,12 @@ use one of the following workarounds.
 * use [ruby-odbc](http://www.ch-werner.de/rubyodbc/) and a third party ODBC driver ([Actual Technologies](http://www.actualtechnologies.com) or [OpenLink Software](http://uda.openlinksw.com/)).
 * use JRuby and Oracle JDBC driver.
 
-PowerPC Mac
------------
+### PowerPC Mac
 
 See [How to setup Ruby and Oracle Instant Client on Snow Leopard](http://blog.rayapps.com/2009/09/06/how-to-setup-ruby-and-oracle-instant-client-on-snow-leopard/). Note that you need to replace x86\_64 with ppc in the blog.
 
 Solaris
-=======
+-------
 
 You need a same compiler which is used to make ruby itself.
 For example, if the ruby is compiled by gcc, you need gcc. If it is compiled by Oracle Solaris Studio
@@ -83,15 +80,10 @@ as follows:
     to:   CONFIG["LDFLAGS"] = "-L. "
 
 FreeBSD
-=======
+-------
 
-There are two ways.
-
-* use ruby and instant client on linux emulator
-* use oracle8-client port
-
-linux emulator
---------------
+Oracle8-client port isn't available because it is too old.
+You need to use linux emulator.
 
 I have not run ruby-oci8 on linux emulator, but I guess it will
 run as follows. If it works, please tell me.
@@ -129,33 +121,8 @@ On freebsd:
     cd /compat/linux/usr/local
     tar xvfz ruby-1.8.x-linux.tar.gz
 
-oracle8-client port
--------------------
-
-I don't recommend this because of the following two reasons.
-
-* The oracle8-client port is made from Oracle 8.1.7.1 static library for Linux. Oracle have not supported the connectivity between 8.1.7.1 and Oracle 10g.
-* It is very unstable. When it fails to connect to an Oracle server, it is down by segmentation fault on FreeBSD 7.0 not only when using ruby-oci8, but also by a very simple test code written by C.
-
-If you try to use oracle8-client port, compile and install as follows.
-
-* install oracle8-client
-
-    cd /usr/ports/databases/oracle8-client
-    make
-    make install
-
-* set an environment variable ORACLE\_HOME
-
-    export ORACLE_HOME=/usr/local/oracle8-client
-
-The rest steps are described at {file:docs/install-full-client.md}.
-
-note: You have no need to set LD\_LIBRARY\_PATH because 
-Oracle libraries in oracle8-client port are static ones.
-
 HP-UX
-=====
+-----
 
 You need a ruby which is linked with ''libpthread'' and ''libcl''.
 
@@ -174,7 +141,7 @@ and `make install`.
 The rest steps are described at {file:docs/install-full-client.md}.
 
 Windows
-=======
+-------
 
 On some machines using a slow disk, you may get the following error.
 

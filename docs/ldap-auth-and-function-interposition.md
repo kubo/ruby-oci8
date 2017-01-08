@@ -1,4 +1,4 @@
-# @ LDAP Authentication and Function Interposition
+# @title LDAP Authentication and Function Interposition
 
 LDAP Authentication and Function Interposition
 ==============================================
