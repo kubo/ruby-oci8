@@ -8,7 +8,7 @@ Problems
 
 The following code may trigger segmentation faults or unexpected behaviours.
 
-    require 'pg'
+    require 'pg' # or any modules using LDAP such as ActiveLdap
     require 'oci8'
     
     conn = OCI8.new('username/password@dbname.example.com')
