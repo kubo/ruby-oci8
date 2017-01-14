@@ -14,11 +14,17 @@ OCIEnv *oci8_global_envhp;
 OCIEnv *oci8_make_envhp(void)
 {
     sword rv;
+    OCIEnv *envhp = NULL;
 
-    rv = OCIEnvCreate(&oci8_global_envhp, oci8_env_mode, NULL, NULL, NULL, NULL, 0, NULL);
+    rv = OCIEnvCreate(&envhp, oci8_env_mode, NULL, NULL, NULL, NULL, 0, NULL);
     if (rv != OCI_SUCCESS) {
-        oci8_raise_init_error();
+        if (envhp != NULL) {
+            oci8_env_free_and_raise(envhp, rv);
+        } else {
+            oci8_raise_init_error();
+        }
     }
+    oci8_global_envhp = envhp;
     return oci8_global_envhp;
 }
 

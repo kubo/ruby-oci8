@@ -194,7 +194,7 @@ void
 Init_oci8lib()
 {
     VALUE cOCI8;
-    OCIEnv *envhp;
+    OCIEnv *envhp = NULL;
     OCIError *errhp;
     sword rv;
 
@@ -276,7 +276,11 @@ Init_oci8lib()
     /* allocate a temporary errhp to pass Init_oci_number() */
     rv = OCIEnvCreate(&envhp, oci8_env_mode, NULL, NULL, NULL, NULL, 0, NULL);
     if (rv != OCI_SUCCESS) {
-        oci8_raise_init_error();
+        if (envhp != NULL) {
+            oci8_env_free_and_raise(envhp, rv);
+        } else {
+            oci8_raise_init_error();
+        }
     }
     rv = OCIHandleAlloc(envhp, (dvoid *)&errhp, OCI_HTYPE_ERROR, 0, NULL);
     if (rv != OCI_SUCCESS)

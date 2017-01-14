@@ -340,7 +340,8 @@ typedef struct {
 } oci8_exec_sql_var_t;
 
 #define oci8_raise(err, status, stmt) oci8_do_raise(err, status, stmt, __FILE__, __LINE__)
-#define oci8_env_raise(err, status) oci8_do_env_raise(err, status, __FILE__, __LINE__)
+#define oci8_env_raise(env, status) oci8_do_env_raise(env, status, 0, __FILE__, __LINE__)
+#define oci8_env_free_and_raise(env, status) oci8_do_env_raise(env, status, 1, __FILE__, __LINE__)
 #define oci8_raise_init_error() oci8_do_raise_init_error(__FILE__, __LINE__)
 #define oci8_raise_by_msgno(msgno, default_msg) oci8_do_raise_by_msgno(msgno, default_msg, __FILE__, __LINE__)
 
@@ -406,7 +407,7 @@ void *oci8_check_typeddata(VALUE obj, const oci8_handle_data_type_t *data_type, 
 extern VALUE eOCIException;
 extern VALUE eOCIBreak;
 void Init_oci8_error(void);
-NORETURN(void oci8_do_env_raise(OCIEnv *, sword status, const char *file, int line));
+NORETURN(void oci8_do_env_raise(OCIEnv *envhp, sword status, int free_envhp, const char *file, int line));
 NORETURN(void oci8_do_raise_init_error(const char *file, int line));
 sb4 oci8_get_error_code(OCIError *errhp);
 VALUE oci8_get_error_message(ub4 msgno, const char *default_msg);

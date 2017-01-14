@@ -172,6 +172,22 @@ sb4 oci8_get_error_code(OCIError *errhp)
     return errcode;
 }
 
+/* This is overwritten by lib/oci8/oci8.rb. */
+static VALUE oci8_error_initialize(int argc, VALUE *argv, VALUE self)
+{
+    VALUE msg;
+    VALUE code;
+    VALUE sql;
+    VALUE parse_error_offset;
+
+    rb_scan_args(argc, argv, "04", &msg, &code, &sql, &parse_error_offset);
+    rb_call_super(argc ? 1 : 0, &msg);
+    rb_ivar_set(self, oci8_id_at_code, code);
+    rb_ivar_set(self, oci8_id_at_sql, sql);
+    rb_ivar_set(self, oci8_id_at_parse_error_offset, parse_error_offset);
+    return Qnil;
+}
+
 void Init_oci8_error(void)
 {
     errbufsiz = ERRBUF_EXPAND_LEN;
@@ -201,6 +217,9 @@ void Init_oci8_error(void)
     rb_define_attr(eOCIError, "sql", 1, 0);
     rb_define_attr(eOCIError, "parse_error_offset", 1, 0);
     rb_define_alias(eOCIError, "parseErrorOffset", "parse_error_offset");
+
+    /* This is overwritten by lib/oci8/oci8.rb. */
+    rb_define_method_nodoc(eOCIError, "initialize", oci8_error_initialize, -1);
 }
 
 void oci8_do_raise(OCIError *errhp, sword status, OCIStmt *stmthp, const char *file, int line)
@@ -208,9 +227,13 @@ void oci8_do_raise(OCIError *errhp, sword status, OCIStmt *stmthp, const char *f
     rb_exc_raise(oci8_make_exc(errhp, status, OCI_HTYPE_ERROR, stmthp, file, line));
 }
 
-void oci8_do_env_raise(OCIEnv *envhp, sword status, const char *file, int line)
+void oci8_do_env_raise(OCIEnv *envhp, sword status, int free_envhp, const char *file, int line)
 {
-    rb_exc_raise(oci8_make_exc(envhp, status, OCI_HTYPE_ENV, NULL, file, line));
+    VALUE exc = oci8_make_exc(envhp, status, OCI_HTYPE_ENV, NULL, file, line);
+    if (free_envhp) {
+        OCIHandleFree(envhp, OCI_HTYPE_ENV);
+    }
+    rb_exc_raise(exc);
 }
 
 void oci8_do_raise_init_error(const char *file, int line)
