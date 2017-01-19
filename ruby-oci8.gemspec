@@ -64,11 +64,7 @@ EOS
       raise "No compiled binary are found. Run make in advance."
     when 1
       puts "Binary gem for ruby #{so_vers.first}"
-      if so_vers[0] < '2.0.0'
-        s.required_ruby_version = "~> #{so_vermin}"
-      else
-        s.required_ruby_version = "~> #{so_vermin}.0"
-      end
+      s.required_ruby_version = "~> #{so_vermin}"
     else
       puts "Binary gem for ruby #{so_vers.join(', ')}"
       s.required_ruby_version = ">= #{so_vermin}"
