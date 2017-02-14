@@ -80,9 +80,9 @@ class TestConnStr < Minitest::Test
   DESC_TEST_CASE =
     [
      # Cannot distinguish net service names from easy connect strings in this case.
-     ["sales-server", nil, nil, "sales-server"],
+     ["sales-server", nil, nil, false, "sales-server"],
      # Easy Connect string with host.
-     ["//sales-server", nil, nil, <<EOS],
+     ["//sales-server", nil, nil, false, <<EOS],
 (DESCRIPTION=
    (CONNECT_DATA=
        (SERVICE_NAME=))
@@ -92,7 +92,7 @@ class TestConnStr < Minitest::Test
        (PORT=1521)))
 EOS
      # Easy Connect string with host and port.
-     ["sales-server:3456", nil, nil, <<EOS],
+     ["sales-server:3456", nil, nil, false, <<EOS],
 (DESCRIPTION=
    (CONNECT_DATA=
        (SERVICE_NAME=))
@@ -102,7 +102,7 @@ EOS
        (PORT=3456)))
 EOS
      # The host name is sales-server and the service name is sales.
-     ["sales-server/sales", nil, nil, <<EOS],
+     ["sales-server/sales", nil, nil, false, <<EOS],
 (DESCRIPTION=
   (CONNECT_DATA=
      (SERVICE_NAME=sales))
@@ -112,7 +112,7 @@ EOS
      (PORT=1521)))
 EOS
      # Easy Connect string with IPv6 address.
-     ["[2001:0db8:0:0::200C:417A]:80/sales", nil, nil, <<EOS],
+     ["[2001:0db8:0:0::200C:417A]:80/sales", nil, nil, false, <<EOS],
 (DESCRIPTION=
   (CONNECT_DATA=
       (SERVICE_NAME=sales))
@@ -122,7 +122,7 @@ EOS
       (PORT=80)))
 EOS
      # Easy Connect string with IPv6 host address.
-     ["sales-server:80/sales", nil, nil, <<EOS],
+     ["sales-server:80/sales", nil, nil, false, <<EOS],
 (DESCRIPTION=
   (CONNECT_DATA=
       (SERVICE_NAME=sales))
@@ -132,7 +132,7 @@ EOS
       (PORT=80)))
 EOS
      # Easy Connect string with host, service name, and server.
-     ["sales-server/sales:dedicated/inst1", nil, nil, <<EOS],
+     ["sales-server/sales:dedicated/inst1", nil, nil, false, <<EOS],
 (DESCRIPTION=
   (CONNECT_DATA=
       (SERVICE_NAME=sales)
@@ -143,7 +143,7 @@ EOS
       (HOST=sales-server)
       (PORT=1521)))
 EOS
-      ["sales-server//inst1", nil, nil, <<EOS],
+      ["sales-server//inst1", nil, nil, false, <<EOS],
 (DESCRIPTION=
    (CONNECT_DATA=
       (SERVICE_NAME=)
@@ -154,7 +154,7 @@ EOS
       (PORT=1521)))
 EOS
      # 
-     ["sales-server/sales", 20, nil, <<EOS],
+     ["sales-server/sales", 20, nil, false, <<EOS],
 (DESCRIPTION=
   (CONNECT_DATA=
      (SERVICE_NAME=sales))
@@ -165,7 +165,7 @@ EOS
   (TRANSPORT_CONNECT_TIMEOUT=20))
 EOS
      # 
-     ["sales-server/sales", nil, 30, <<EOS],
+     ["sales-server/sales", nil, 30, false, <<EOS],
 (DESCRIPTION=
   (CONNECT_DATA=
      (SERVICE_NAME=sales))
@@ -176,7 +176,7 @@ EOS
   (CONNECT_TIMEOUT=30))
 EOS
      #
-     ["sales-server/sales", 20, 30, <<EOS],
+     ["sales-server/sales", 20, 30, false, <<EOS],
 (DESCRIPTION=
   (CONNECT_DATA=
      (SERVICE_NAME=sales))
@@ -187,6 +187,21 @@ EOS
   (TRANSPORT_CONNECT_TIMEOUT=20)
   (CONNECT_TIMEOUT=30))
 EOS
+     ["sales-server/sales", 20, 30, true, <<EOS],
+(DESCRIPTION=
+  (CONNECT_DATA=
+     (SERVICE_NAME=sales)
+  )
+  (ADDRESS=
+     (PROTOCOL=TCP)
+     (HOST=sales-server)
+     (PORT=1521)
+  )
+  (TRANSPORT_CONNECT_TIMEOUT=20)
+  (CONNECT_TIMEOUT=30)
+  (ENABLE=BROKEN)
+)
+EOS
     ]
 
   def test_connect_descriptor
@@ -195,9 +210,10 @@ EOS
       easy_connect_string = test_case[0]
       tcp_connnect_timeout= test_case[1]
       outbound_connnect_timeout = test_case[2]
-      expected_result = test_case[3].gsub(/\s/, '')
+      tcp_keepalive = test_case[3]
+      expected_result = test_case[4].gsub(/\s/, '')
       # use instance_eval to call a private method to_connect_descriptor
-      result = obj.instance_eval { to_connect_descriptor(easy_connect_string, tcp_connnect_timeout, outbound_connnect_timeout) }
+      result = obj.instance_eval { to_connect_descriptor(easy_connect_string, tcp_connnect_timeout, outbound_connnect_timeout, tcp_keepalive) }
       assert_equal(expected_result, result, easy_connect_string)
     end
   end
