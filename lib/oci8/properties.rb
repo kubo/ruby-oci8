@@ -17,6 +17,10 @@ class OCI8
     :connect_timeout => nil,
     :send_timeout => nil,
     :recv_timeout => nil,
+    :tcp_keepalive => false,
+    :tcp_keepalive_time => nil,
+    :tcp_keepalive_intvl => nil,
+    :tcp_keepalive_probes => nil,
   }
 
   # @private
@@ -62,6 +66,17 @@ class OCI8
         val = val.to_i
         raise ArgumentError, "The property value for :#{name} must be nil or a positive integer." if val <= 0
       end
+    when :tcp_keepalive
+      val = val ? true : false
+    when :tcp_keepalive_time
+      val = val.to_i
+      OCI8.__set_prop(4, val)
+    when :tcp_keepalive_intvl
+      val = val.to_i
+      OCI8.__set_prop(5, val)
+    when :tcp_keepalive_probes
+      val = val.to_i
+      OCI8.__set_prop(6, val)
     end
     super(name, val)
   end

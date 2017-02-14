@@ -313,9 +313,6 @@ static VALUE oci8_s_get_prop(VALUE klass, VALUE key)
  */
 static VALUE oci8_s_set_prop(VALUE klass, VALUE key, VALUE val)
 {
-#ifdef HAVE_PLTHOOK
-    static int hook_functions_installed = 0;
-#endif
     switch (NUM2INT(key)) {
     case 1:
         oci8_float_conversion_type_is_ruby = RTEST(val) ? 1 : 0;
@@ -332,12 +329,34 @@ static VALUE oci8_s_set_prop(VALUE klass, VALUE key, VALUE val)
         break;
     case 3:
 #ifdef HAVE_PLTHOOK
-        if (!hook_functions_installed) {
-            oci8_install_hook_functions();
-            hook_functions_installed = 1;
-        }
+        oci8_install_hook_functions();
+        oci8_cancel_read_at_exit = RTEST(val);
 #else
         rb_raise(rb_eNotImpError, ":cancel_read_at_exit isn't implemented on this machine.");
+#endif
+        break;
+    case 4:
+#if defined(HAVE_PLTHOOK) && defined(__linux)
+        oci8_install_hook_functions();
+        oci8_tcp_keepalive_time = NUM2INT(val);
+#else
+        rb_raise(rb_eNotImpError, ":tcp_keepalive_time isn't implemented on this machine.");
+#endif
+        break;
+    case 5:
+#if defined(HAVE_PLTHOOK) && defined(__linux)
+        oci8_install_hook_functions();
+        oci8_tcp_keepalive_intvl = NUM2INT(val);
+#else
+        rb_raise(rb_eNotImpError, ":tcp_keepalive_intvl isn't implemented on this machine.");
+#endif
+        break;
+    case 6:
+#if defined(HAVE_PLTHOOK) && defined(__linux)
+        oci8_install_hook_functions();
+        oci8_tcp_keepalive_probes = NUM2INT(val);
+#else
+        rb_raise(rb_eNotImpError, ":tcp_keepalive_probes isn't implemented on this machine.");
 #endif
         break;
     default:

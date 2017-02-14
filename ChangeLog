@@ -1,3 +1,8 @@
+2017-02-14  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/hook_funcs.c, ext/oci8/oci8.c, ext/oci8/oci8.h,
+	  lib/oci8/oci8.rb, lib/oci8/properties.rb:
+	    Add tcp_keepalive options to OCI8.properties.
+
 2017-01-14  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/env.c, ext/oci8/error.c, ext/oci8/oci8.h,
 	  ext/oci8/oci8lib.c: Fix memory leaks when `require 'oci8'` raises a LoadError.

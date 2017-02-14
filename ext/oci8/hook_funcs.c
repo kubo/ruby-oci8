@@ -11,7 +11,14 @@
 #include <sys/socket.h>
 #endif
 
-#define DEBUG_HOOK_FUNCS 1
+int oci8_cancel_read_at_exit = 0;
+#ifdef __linux
+#include <netinet/in.h>
+#include <netinet/tcp.h>
+int oci8_tcp_keepalive_time = 0;
+int oci8_tcp_keepalive_intvl = 0;
+int oci8_tcp_keepalive_probes = 0;
+#endif
 
 #ifdef WIN32
 static CRITICAL_SECTION lock;
@@ -123,11 +130,16 @@ static hook_func_entry_t tcp_functions[] = {
 static int WSAAPI hook_WSARecv(SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount, LPDWORD lpNumberOfBytesRecvd, LPDWORD lpFlags, LPWSAOVERLAPPED lpOverlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine)
 {
     socket_entry_t entry;
+    int enable_cancel = oci8_cancel_read_at_exit;
     int rv;
 
-    socket_entry_set(&entry, s);
+    if (enable_cancel) {
+        socket_entry_set(&entry, s);
+    }
     rv = WSARecv(s, lpBuffers, dwBufferCount, lpNumberOfBytesRecvd, lpFlags, lpOverlapped, lpCompletionRoutine);
-    socket_entry_clear(&entry);
+    if (enable_cancel) {
+        socket_entry_clear(&entry);
+    }
     return rv;
 }
 
@@ -153,6 +165,9 @@ static void shutdown_socket(socket_entry_t *entry)
 
 #else
 static ssize_t hook_read(int fd, void *buf, size_t count);
+#ifdef __linux
+static int hook_setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen);
+#endif
 
 #ifdef __APPLE__
 #define SO_EXT "dylib"
@@ -170,25 +185,64 @@ static const char * const files[] = {
 
 static hook_func_entry_t functions[] = {
     {"read", (void*)hook_read, NULL},
+#ifdef __linux
+    {"setsockopt", (void*)hook_setsockopt, NULL},
+#endif
     {NULL, NULL, NULL},
 };
 
 static ssize_t hook_read(int fd, void *buf, size_t count)
 {
     socket_entry_t entry;
+    int enable_cancel = oci8_cancel_read_at_exit;
     ssize_t rv;
 
-    socket_entry_set(&entry, fd);
+    if (enable_cancel) {
+        socket_entry_set(&entry, fd);
+    }
     rv = read(fd, buf, count);
-    socket_entry_clear(&entry);
+    if (enable_cancel) {
+        socket_entry_clear(&entry);
+    }
     return rv;
 }
 
+#ifdef __linux
+static int hook_setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen)
+{
+    int rv = setsockopt(sockfd, level, optname, optval, optlen);
+
+    if (rv == 0 && level == SOL_SOCKET && optname == SO_KEEPALIVE
+        && optlen == sizeof(int) && *(const int*)optval != 0) {
+        /* If Oracle client libraries enables keepalive by (ENABLE=BROKEN),
+         * set per-connection keepalive socket options to overwrite OS setting.
+         * See http://tldp.org/HOWTO/TCP-Keepalive-HOWTO/programming.html
+         */
+        if (oci8_tcp_keepalive_time > 0) {
+            setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPIDLE, &oci8_tcp_keepalive_time, sizeof(int));
+        }
+        if (oci8_tcp_keepalive_intvl > 0) {
+            setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPINTVL, &oci8_tcp_keepalive_intvl, sizeof(int));
+        }
+        if (oci8_tcp_keepalive_probes > 0) {
+            setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPCNT, &oci8_tcp_keepalive_probes, sizeof(int));
+        }
+    }
+    return rv;
+}
+#endif
+
 void oci8_install_hook_functions(void)
 {
+    static int hook_functions_installed = 0;
+
+    if (hook_functions_installed) {
+        return;
+    }
     if (replace_functions(files, functions) != 0) {
         rb_raise(rb_eRuntimeError, "No shared library is found to hook.");
     }
+    hook_functions_installed = 1;
 }
 
 static void shutdown_socket(socket_entry_t *entry)
