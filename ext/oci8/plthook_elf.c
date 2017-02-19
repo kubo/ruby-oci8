@@ -6,7 +6,7 @@
  *
  * ------------------------------------------------------
  *
- * Copyright 2013-2014 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright 2013-2016 Kubo Takehiro <kubo@jiubao.org>
  *
  * Redistribution and use in source and binary forms, with or without modification, are
  * permitted provided that the following conditions are met:
@@ -33,6 +33,9 @@
  * or implied, of the authors.
  *
  */
+#if defined(__sun) && defined(_XOPEN_SOURCE) && !defined(__EXTENSIONS__)
+#define __EXTENSIONS__
+#endif
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdarg.h>
@@ -42,6 +45,7 @@
 #include <limits.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/mman.h>
 #include <fcntl.h>
 #include <errno.h>
 #include <dlfcn.h>
@@ -59,6 +63,7 @@
 
 #if defined __linux__
 #define ELF_OSABI     ELFOSABI_SYSV
+#define ELF_OSABI_ALT ELFOSABI_LINUX
 #elif defined __sun
 #define ELF_OSABI     ELFOSABI_SOLARIS
 #elif defined __FreeBSD__
@@ -146,9 +151,17 @@ struct plthook {
     size_t dynstr_size;
     const Elf_Plt_Rel *plt;
     size_t plt_cnt;
+#ifdef PT_GNU_RELRO
+    const char *relro_start;
+    const char *relro_end;
+#endif
 };
 
 static char errmsg[512];
+
+#ifdef PT_GNU_RELRO
+static size_t page_size;
+#endif
 
 static int plthook_open_executable(plthook_t **plthook_out);
 static int plthook_open_shared_library(plthook_t **plthook_out, const char *filename);
@@ -165,6 +178,24 @@ int plthook_open(plthook_t **plthook_out, const char *filename)
     } else {
         return plthook_open_shared_library(plthook_out, filename);
     }
+}
+
+int plthook_open_by_handle(plthook_t **plthook_out, void *hndl)
+{
+    struct link_map *lmap = NULL;
+
+    if (hndl == NULL) {
+        set_errmsg("NULL handle");
+        return PLTHOOK_FILE_NOT_FOUND;
+    }
+    if (dlinfo(hndl, RTLD_DI_LINKMAP, &lmap) != 0) {
+        set_errmsg("dlinfo error");
+        return PLTHOOK_FILE_NOT_FOUND;
+    }
+    if (lmap->l_addr == 0 && *lmap->l_name == 0) {
+        return plthook_open_executable(plthook_out);
+    }
+    return plthook_open_real(plthook_out, (const char*)lmap->l_addr, lmap->l_name);
 }
 
 int plthook_open_by_address(plthook_t **plthook_out, void *address)
@@ -229,7 +260,8 @@ static int plthook_open_executable(plthook_t **plthook_out)
 #elif defined __FreeBSD__
     return plthook_open_shared_library(plthook_out, NULL);
 #else
-#error unsupported OS
+    set_errmsg("Opening the main program is not supported on this platform.");
+    return PLTHOOK_NOT_IMPLEMENTED;
 #endif
 }
 
@@ -260,6 +292,9 @@ static int plthook_open_real(plthook_t **plthook_out, const char *base, const ch
     off_t offset;
     plthook_t *plthook;
     int rv;
+#ifdef PT_GNU_RELRO
+    size_t idx;
+#endif
 
     if (base == NULL) {
         set_errmsg("The base address is zero.");
@@ -330,6 +365,29 @@ static int plthook_open_real(plthook_t **plthook_out, const char *base, const ch
         rv = PLTHOOK_INVALID_FILE_FORMAT;
         goto error_exit;
     }
+#ifdef PT_GNU_RELRO
+    if (page_size == 0) {
+        page_size = sysconf(_SC_PAGESIZE);
+    }
+    offset = ehdr->e_phoff;
+    if ((rv = lseek(fd, offset, SEEK_SET)) != offset) {
+        set_errmsg("failed to seek to the program header table.");
+        rv = PLTHOOK_INVALID_FILE_FORMAT;
+        goto error_exit;
+    }
+    for (idx = 0; idx < ehdr->e_phnum; idx++) {
+        Elf_Phdr phdr;
+        if (read(fd, &phdr, sizeof(phdr)) != sizeof(phdr)) {
+            set_errmsg("failed to read the program header table.");
+            rv = PLTHOOK_INVALID_FILE_FORMAT;
+            goto error_exit;
+        }
+        if (phdr.p_type == PT_GNU_RELRO) {
+            plthook->relro_start = plthook->base + phdr.p_vaddr;
+            plthook->relro_end = plthook->relro_start + phdr.p_memsz;
+        }
+    }
+#endif
     close(fd);
     fd = -1;
 
@@ -428,10 +486,26 @@ int plthook_replace(plthook_t *plthook, const char *funcname, void *funcaddr, vo
     while ((rv = plthook_enum(plthook, &pos, &name, &addr)) == 0) {
         if (strncmp(name, funcname, funcnamelen) == 0) {
             if (name[funcnamelen] == '\0' || name[funcnamelen] == '@') {
+#ifdef PT_GNU_RELRO
+                void *maddr = NULL;
+                if (plthook->relro_start <= (char*)addr && (char*)addr < plthook->relro_end) {
+                    maddr = (void*)((size_t)addr & ~(page_size - 1));
+                    if (mprotect(maddr, page_size, PROT_READ | PROT_WRITE) != 0) {
+                        set_errmsg("Could not change the process memory protection at %p: %s",
+                                   maddr, strerror(errno));
+                        return PLTHOOK_INTERNAL_ERROR;
+                    }
+                }
+#endif
                 if (oldfunc) {
                     *oldfunc = *addr;
                 }
                 *addr = funcaddr;
+#ifdef PT_GNU_RELRO
+                if (maddr != NULL) {
+                    mprotect(maddr, page_size, PROT_READ);
+                }
+#endif
                 return 0;
             }
         }
@@ -477,8 +551,15 @@ static int check_elf_header(const Elf_Ehdr *ehdr)
         return PLTHOOK_INVALID_FILE_FORMAT;
     }
     if (ehdr->e_ident[EI_OSABI] != ELF_OSABI) {
+#ifdef ELF_OSABI_ALT
+        if (ehdr->e_ident[EI_OSABI] != ELF_OSABI_ALT) {
+            set_errmsg("invalid OS ABI: 0x%02x", ehdr->e_ident[EI_OSABI]);
+            return PLTHOOK_INVALID_FILE_FORMAT;
+        }
+#else
         set_errmsg("invalid OS ABI: 0x%02x", ehdr->e_ident[EI_OSABI]);
         return PLTHOOK_INVALID_FILE_FORMAT;
+#endif
     }
     if (ehdr->e_type != ET_EXEC && ehdr->e_type != ET_DYN) {
         set_errmsg("invalid file type: 0x%04x", ehdr->e_type);
