@@ -517,11 +517,10 @@ void oci8_install_hook_functions(void);
 void oci8_shutdown_sockets(void);
 #ifdef HAVE_PLTHOOK
 extern int oci8_cancel_read_at_exit;
-#ifdef __linux
 extern int oci8_tcp_keepalive_time;
-extern int oci8_tcp_keepalive_intvl;
-extern int oci8_tcp_keepalive_probes;
-#endif
+#else
+#define oci8_cancel_read_at_exit (-1)
+#define oci8_tcp_keepalive_time (-1)
 #endif
 
 #define OCI8StringValue(v) do { \

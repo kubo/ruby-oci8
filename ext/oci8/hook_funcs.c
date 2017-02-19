@@ -9,21 +9,15 @@
 #ifndef WIN32
 #include <unistd.h>
 #include <sys/socket.h>
-#endif
-
-int oci8_cancel_read_at_exit = 0;
-#ifdef __linux
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-int oci8_tcp_keepalive_time = 0;
-int oci8_tcp_keepalive_intvl = 0;
-int oci8_tcp_keepalive_probes = 0;
 #endif
 
 #ifdef WIN32
 static CRITICAL_SECTION lock;
 #define LOCK(lock) EnterCriticalSection(lock)
 #define UNLOCK(lock) LeaveCriticalSection(lock)
+typedef int socklen_t;
 #else
 static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 #define LOCK(lock) pthread_mutex_lock(lock)
@@ -31,6 +25,29 @@ static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 #define SOCKET int
 #define INVALID_SOCKET (-1)
 #endif
+
+#if defined(__APPLE__) && defined(TCP_KEEPALIVE) /* macOS */
+#define USE_TCP_KEEPALIVE
+#define SUPPORT_TCP_KEEPALIVE_TIME
+#elif defined(__sun) && defined(TCP_KEEPALIVE_THRESHOLD) /* Solaris */
+#define USE_TCP_KEEPALIVE_THRESHOLD
+#define SUPPORT_TCP_KEEPALIVE_TIME
+#elif defined(TCP_KEEPIDLE) /* Linux, etc */
+#define USE_TCP_KEEPIDLE
+#define SUPPORT_TCP_KEEPALIVE_TIME
+#elif defined(WIN32) /* Windows */
+#define SUPPORT_TCP_KEEPALIVE_TIME
+#endif
+
+int oci8_cancel_read_at_exit = 0;
+
+#ifdef SUPPORT_TCP_KEEPALIVE_TIME
+int oci8_tcp_keepalive_time = 0;
+static int hook_setsockopt(SOCKET sockfd, int level, int optname, const void *optval, socklen_t optlen);
+#else
+int oci8_tcp_keepalive_time = -1;
+#endif
+
 
 typedef struct {
     const char *func_name;
@@ -100,6 +117,16 @@ static int replace_functions(const char * const *files, hook_func_entry_t *funct
 
 #ifdef WIN32
 
+#ifndef _MSC_VER
+/* setsockopt() in ws2_32.dll */
+#define setsockopt rboci_setsockopt
+typedef int (WSAAPI *setsockopt_t)(SOCKET, int, int, const void *, int);
+static setsockopt_t setsockopt;
+#endif
+
+/* system-wide keepalive interval */
+static DWORD keepalive_interval;
+
 static int locK_is_initialized;
 
 static int WSAAPI hook_WSARecv(SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount, LPDWORD lpNumberOfBytesRecvd, LPDWORD lpFlags, LPWSAOVERLAPPED lpOverlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine);
@@ -123,6 +150,7 @@ static const char * const tcp_func_files[] = {
 
 static hook_func_entry_t tcp_functions[] = {
     {"WSARecv", (void*)hook_WSARecv, NULL},
+    {"setsockopt", (void*)hook_setsockopt, NULL},
     {NULL, NULL, NULL},
 };
 
@@ -133,11 +161,11 @@ static int WSAAPI hook_WSARecv(SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount
     int enable_cancel = oci8_cancel_read_at_exit;
     int rv;
 
-    if (enable_cancel) {
+    if (enable_cancel > 0) {
         socket_entry_set(&entry, s);
     }
     rv = WSARecv(s, lpBuffers, dwBufferCount, lpNumberOfBytesRecvd, lpFlags, lpOverlapped, lpCompletionRoutine);
-    if (enable_cancel) {
+    if (enable_cancel > 0) {
         socket_entry_clear(&entry);
     }
     return rv;
@@ -145,12 +173,48 @@ static int WSAAPI hook_WSARecv(SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount
 
 void oci8_install_hook_functions()
 {
+    static int hook_functions_installed = 0;
+    HKEY hKey;
+    DWORD type;
+    DWORD data;
+    DWORD cbData = sizeof(data);
+    const char *reg_key = "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters";
+
+    if (hook_functions_installed) {
+        return;
+    }
+
     InitializeCriticalSectionAndSpinCount(&lock, 5000);
     locK_is_initialized = 1;
+
+#ifndef _MSC_VER
+    /* Get setsockopt in ws2_32.dll.
+     * setsockopt used by mingw compiler isn't same with that in ws2_32.dll.
+     */
+    setsockopt = (setsockopt_t)GetProcAddress(GetModuleHandleA("WS2_32.DLL"), "setsockopt");
+    if (setsockopt == NULL){
+        rb_raise(rb_eRuntimeError, "setsockopt isn't found in WS2_32.DLL");
+    }
+#endif
+
+    /* Get system-wide keepalive interval parameter.
+     *  https://technet.microsoft.com/en-us/library/cc957548.aspx
+     */
+    if (RegOpenKeyExA(HKEY_LOCAL_MACHINE, reg_key, 0, KEY_QUERY_VALUE, &hKey) != 0) {
+        rb_raise(rb_eRuntimeError, "failed to open the registry key HKLM\\%s", reg_key);
+    }
+    keepalive_interval = 1000; /* default value when the following entry isn't found. */
+    if (RegQueryValueEx(hKey, "KeepAliveInterval", NULL, &type, (LPBYTE)&data, &cbData) == 0) {
+        if (type == REG_DWORD) {
+            keepalive_interval = data;
+        }
+    }
+    RegCloseKey(hKey);
 
     if (replace_functions(tcp_func_files, tcp_functions) != 0) {
         rb_raise(rb_eRuntimeError, "No DLL is found to hook.");
     }
+    hook_functions_installed = 1;
 }
 
 static void shutdown_socket(socket_entry_t *entry)
@@ -165,9 +229,6 @@ static void shutdown_socket(socket_entry_t *entry)
 
 #else
 static ssize_t hook_read(int fd, void *buf, size_t count);
-#ifdef __linux
-static int hook_setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen);
-#endif
 
 #ifdef __APPLE__
 #define SO_EXT "dylib"
@@ -185,7 +246,7 @@ static const char * const files[] = {
 
 static hook_func_entry_t functions[] = {
     {"read", (void*)hook_read, NULL},
-#ifdef __linux
+#ifdef SUPPORT_TCP_KEEPALIVE_TIME
     {"setsockopt", (void*)hook_setsockopt, NULL},
 #endif
     {NULL, NULL, NULL},
@@ -197,40 +258,15 @@ static ssize_t hook_read(int fd, void *buf, size_t count)
     int enable_cancel = oci8_cancel_read_at_exit;
     ssize_t rv;
 
-    if (enable_cancel) {
+    if (enable_cancel > 0) {
         socket_entry_set(&entry, fd);
     }
     rv = read(fd, buf, count);
-    if (enable_cancel) {
+    if (enable_cancel > 0) {
         socket_entry_clear(&entry);
     }
     return rv;
 }
-
-#ifdef __linux
-static int hook_setsockopt(int sockfd, int level, int optname, const void *optval, socklen_t optlen)
-{
-    int rv = setsockopt(sockfd, level, optname, optval, optlen);
-
-    if (rv == 0 && level == SOL_SOCKET && optname == SO_KEEPALIVE
-        && optlen == sizeof(int) && *(const int*)optval != 0) {
-        /* If Oracle client libraries enables keepalive by (ENABLE=BROKEN),
-         * set per-connection keepalive socket options to overwrite OS setting.
-         * See http://tldp.org/HOWTO/TCP-Keepalive-HOWTO/programming.html
-         */
-        if (oci8_tcp_keepalive_time > 0) {
-            setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPIDLE, &oci8_tcp_keepalive_time, sizeof(int));
-        }
-        if (oci8_tcp_keepalive_intvl > 0) {
-            setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPINTVL, &oci8_tcp_keepalive_intvl, sizeof(int));
-        }
-        if (oci8_tcp_keepalive_probes > 0) {
-            setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPCNT, &oci8_tcp_keepalive_probes, sizeof(int));
-        }
-    }
-    return rv;
-}
-#endif
 
 void oci8_install_hook_functions(void)
 {
@@ -248,6 +284,41 @@ void oci8_install_hook_functions(void)
 static void shutdown_socket(socket_entry_t *entry)
 {
     shutdown(entry->sock, SHUT_RDWR);
+}
+#endif
+
+#ifdef SUPPORT_TCP_KEEPALIVE_TIME
+static int hook_setsockopt(SOCKET sockfd, int level, int optname, const void *optval, socklen_t optlen)
+{
+    int rv = setsockopt(sockfd, level, optname, optval, optlen);
+
+    if (rv == 0 && level == SOL_SOCKET && optname == SO_KEEPALIVE
+        && optlen == sizeof(int) && *(const int*)optval != 0) {
+        /* If Oracle client libraries enables keepalive by (ENABLE=BROKEN),
+         * set per-connection keepalive socket options to overwrite
+         * system-wide setting.
+         */
+        if (oci8_tcp_keepalive_time > 0) {
+#if defined(USE_TCP_KEEPALIVE) /* macOS */
+            setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPALIVE, &oci8_tcp_keepalive_time, sizeof(int));
+#elif defined(USE_TCP_KEEPALIVE_THRESHOLD) /* Solaris */
+            unsigned int millisec = oci8_tcp_keepalive_time * 1000;
+            setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPALIVE_THRESHOLD, &millisec, sizeof(millisec));
+#elif defined(USE_TCP_KEEPIDLE) /* Linux, etc */
+            setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPIDLE, &oci8_tcp_keepalive_time, sizeof(int));
+#elif defined(WIN32) /* Windows */
+            struct tcp_keepalive vals;
+            DWORD dummy;
+
+            vals.onoff = 1;
+            vals.keepalivetime = oci8_tcp_keepalive_time * 1000;
+            vals.keepaliveinterval = keepalive_interval;
+            WSAIoctl(sockfd, SIO_KEEPALIVE_VALS, &vals, sizeof(vals), NULL, 0,
+                     &dummy, NULL, NULL);
+#endif
+        }
+    }
+    return rv;
 }
 #endif
 

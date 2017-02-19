@@ -328,35 +328,21 @@ static VALUE oci8_s_set_prop(VALUE klass, VALUE key, VALUE val)
         oci8_env_mode = NUM2UINT(val);
         break;
     case 3:
+        if (oci8_cancel_read_at_exit == -1) {
+            rb_raise(rb_eNotImpError, "OCI8.properties[:cancel_read_at_exit] isn't available.");
+        }
 #ifdef HAVE_PLTHOOK
         oci8_install_hook_functions();
-        oci8_cancel_read_at_exit = RTEST(val);
-#else
-        rb_raise(rb_eNotImpError, ":cancel_read_at_exit isn't implemented on this machine.");
+        oci8_cancel_read_at_exit = RTEST(val) ? 1 : 0;
 #endif
         break;
     case 4:
-#if defined(HAVE_PLTHOOK) && defined(__linux)
+        if (oci8_tcp_keepalive_time == -1) {
+            rb_raise(rb_eNotImpError, "OCI8.properties[:tcp_keepalive_time] isn't available.");
+        }
+#ifdef HAVE_PLTHOOK
         oci8_install_hook_functions();
-        oci8_tcp_keepalive_time = NUM2INT(val);
-#else
-        rb_raise(rb_eNotImpError, ":tcp_keepalive_time isn't implemented on this machine.");
-#endif
-        break;
-    case 5:
-#if defined(HAVE_PLTHOOK) && defined(__linux)
-        oci8_install_hook_functions();
-        oci8_tcp_keepalive_intvl = NUM2INT(val);
-#else
-        rb_raise(rb_eNotImpError, ":tcp_keepalive_intvl isn't implemented on this machine.");
-#endif
-        break;
-    case 6:
-#if defined(HAVE_PLTHOOK) && defined(__linux)
-        oci8_install_hook_functions();
-        oci8_tcp_keepalive_probes = NUM2INT(val);
-#else
-        rb_raise(rb_eNotImpError, ":tcp_keepalive_probes isn't implemented on this machine.");
+        oci8_tcp_keepalive_time = NIL_P(val) ? 0 : NUM2INT(val);
 #endif
         break;
     default:
