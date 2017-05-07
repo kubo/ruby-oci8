@@ -4,88 +4,37 @@ require 'mkmf'
 # compatibility for ruby-1.9
 RbConfig = Config unless defined? RbConfig
 
-module MiniRegistry
-  class MiniRegistryError < StandardError
-    attr_reader :api_name
-    attr_reader :code
-    def initialize(api_name, code)
-      @api_name = api_name
-      @code = code
-    end
-  end
-  if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw32|bccwin32/
-    # Windows
-    require 'Win32API' # raise LoadError when UNIX.
+if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw32|bccwin32/
+  # Windows
+  require 'win32/registry'
+  module Registry
 
-    # I looked in Win32Module by MoonWolf <URL:http://www.moonwolf.com/ruby/>,
-    # copy the minimum code and reorganize it.
-    ERROR_SUCCESS = 0
-    ERROR_FILE_NOT_FOUND = 2
-    ERROR_NO_MORE_ITEMS = 259
-
-    HKEY_LOCAL_MACHINE = 0x80000002
-    KEY_ENUMERATE_SUB_KEYS = 0x0008
-    KEY_QUERY_VALUE = 0x0001
-    RegOpenKeyExA = Win32API.new('advapi32', 'RegOpenKeyExA', 'LPLLP', 'L')
-    RegEnumKeyExA = Win32API.new('advapi32', 'RegEnumKeyExA', 'LLPPPPPP', 'L')
-    RegQueryValueExA = Win32API.new('advapi32','RegQueryValueExA','LPPPPP','L')
-    RegCloseKey = Win32API.new('advapi32', 'RegCloseKey', 'L', 'L')
-
-    def self.get_str_value(hKey, name)
-      lpcbData = [0].pack('L')
-      code = RegQueryValueExA.call(hKey, name, nil, nil, nil, lpcbData)
-      if code == ERROR_FILE_NOT_FOUND
-        return nil
-      elsif code != ERROR_SUCCESS
-        raise MiniRegistryError.new("Win32::RegQueryValueExA",code)
+    class OracleHome
+      attr_reader :name
+      attr_reader :path
+      def initialize(name, path)
+        @name = name
+        @path = path
       end
-      len = lpcbData.unpack('L')[0]
-      lpType = [0].pack('L')
-      lpData = "\0"*len
-      lpcbData = [len].pack('L')
-      code = RegQueryValueExA.call(hKey, name, nil, lpType, lpData, lpcbData)
-      if code != ERROR_SUCCESS
-        raise MiniRegistryError.new("Win32::RegQueryValueExA",code)
-      end
-      lpData.unpack('Z*')[0]
     end
 
-    def self.enum_homes
-      phkResult = [0].pack('L')
-      code = RegOpenKeyExA.call(HKEY_LOCAL_MACHINE, 'SOFTWARE\ORACLE', 0, 0x20019, phkResult)
-      if code != ERROR_SUCCESS
-        raise MiniRegistryError.new("Win32::RegOpenKeyExA", code)
-      end
-      hKey = phkResult.unpack('L')[0]
-      idx = 0
-      maxkeylen = 256
-      loop do
-        lpName = "\0" * maxkeylen
-        lpcName = [maxkeylen].pack('L')
-        code = RegEnumKeyExA.call(hKey, idx, lpName, lpcName, nil, nil, nil, nil);
-        break if code == ERROR_NO_MORE_ITEMS
-        if code != ERROR_SUCCESS
-          RegCloseKey.call(hKey)
-          raise MiniRegistryError.new("Win32::RegEnumKeyEx", code)
+    def self.oracle_homes
+      homes = []
+      Win32::Registry::HKEY_LOCAL_MACHINE.open('SOFTWARE\Oracle') do |key|
+        key.each_key do |subkey_name|
+          subkey = key.open(subkey_name)
+          begin
+            homes << OracleHome.new(subkey['ORACLE_HOME_NAME'], subkey['ORACLE_HOME'].chomp('\\'))
+          rescue Win32::Registry::Error
+            # ignore errors
+          end
         end
-        code = RegOpenKeyExA.call(hKey, lpName, 0, KEY_QUERY_VALUE, phkResult)
-        if code != ERROR_SUCCESS
-          RegCloseKey.call(hKey)
-          raise MiniRegistryError.new("Win32::RegEnumKeyEx", code)
-        end
-        hSubkey = phkResult.unpack('L')[0]
-
-        name = get_str_value(hSubkey, 'ORACLE_HOME_NAME')
-        path = get_str_value(hSubkey, 'ORACLE_HOME')
-        yield name, path
-        RegCloseKey.call(hSubkey)
-        idx += 1
       end
-      RegCloseKey.call(hKey)
+      homes
     end
 
   end
-end # module MiniRegistry
+end
 
 # minimal implementation to read information of a shared object.
 class MiniSOReader
@@ -856,11 +805,8 @@ class OraConfFC < OraConf
     def get_home()
       oracle_home = ENV['ORACLE_HOME']
       if oracle_home.nil?
-        struct = Struct.new("OracleHome", :name, :path)
-        oracle_homes = []
-        MiniRegistry.enum_homes do |name, path|
-          path.chomp!("\\") if path
-          oracle_homes << struct.new(name, path) if is_valid_home?(path)
+        oracle_homes = Registry::oracle_homes.select do |home|
+          is_valid_home?(home.path)
         end
         if oracle_homes.empty?
           raise <<EOS

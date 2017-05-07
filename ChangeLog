@@ -1,3 +1,8 @@
+2017-05-07  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: Use Win32::Registry instead of Win32API
+	    to compile ruby-oci8 on the latest cygwin.
+	    (github issue #167)
+
 2017-02-14  Kubo Takehiro <kubo@jiubao.org>
 	* test/test_connstr.rb: fix test to pass the previous commit.
 
