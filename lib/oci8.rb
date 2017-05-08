@@ -69,6 +69,14 @@ else
 end
 
 begin
+  require 'ruby_installer/runtime' # RubyInstaller2 for Windows
+  ENV['PATH'].split(File::PATH_SEPARATOR).each do |path|
+    RubyInstaller::Runtime.add_dll_directory(path) if File.exist?(File.join(path, 'OCI.DLL'))
+  end
+rescue LoadError
+end
+
+begin
   require so_basename
 rescue LoadError, OCIError
   require 'oci8/check_load_error'

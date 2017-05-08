@@ -1,3 +1,7 @@
+2017-05-08  Kubo Takehiro <kubo@jiubao.org>
+	* lib/oci8.rb: Fix for RubyInstaller2 for Windows.
+	    https://github.com/oneclick/rubyinstaller2/issues/11
+
 2017-05-07  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: Use Win32::Registry instead of Win32API
 	    to compile ruby-oci8 on the latest cygwin.
