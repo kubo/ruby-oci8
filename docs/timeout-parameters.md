@@ -30,6 +30,9 @@ The next two parameters `send_timeout` and `recv_timeout` are available on Oracl
 or upper. Use these parameters to prevent a ruby process from being blocked by poor quality network.
 Otherwise, the ruby process may be blocked until TCP keepalive time (2 hours).
 
+See {file:docs/hanging-after-inactivity.md Hanging After a Long Period of Inactivity}
+for TCP keepalive time.
+
 tcp_connect_timeout
 -------------------
 

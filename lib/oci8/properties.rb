@@ -175,6 +175,18 @@ class OCI8
   #
   #     *Since:* 2.2.2
   #
+  # [:tcp_keepalive]
+  #
+  #     See {file:docs/hanging-after-inactivity.md.md}
+  #
+  #     *Since:* 2.2.4
+  #
+  # [:tcp_keepalive_time]
+  #
+  #     See {file:docs/hanging-after-inactivity.md.md}
+  #
+  #     *Since:* 2.2.4
+  #
   # @return [a customized Hash]
   # @since 2.0.5
   #
