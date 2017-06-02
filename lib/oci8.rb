@@ -85,7 +85,7 @@ rescue LoadError, OCIError
 end
 
 require 'oci8/version.rb'
-if OCI8::VERSION != OCI8::LIB_VERSION
+if OCI8::VERSION.split('.').take(3).join('.') != OCI8::LIB_VERSION.split('.').take(3).join('.')
   require 'rbconfig'
   so_name = so_basename + "." + RbConfig::CONFIG['DLEXT']
   raise "VERSION MISMATCH! #{so_name} version is #{OCI8::LIB_VERSION}, but oci8.rb version is #{OCI8::VERSION}."
