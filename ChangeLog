@@ -1,4 +1,8 @@
 2017-06-06  Kubo Takehiro <kubo@jiubao.org>
+	* docs/hanging-after-inactivity.md: revise
+	* dist-files: add docs/hanging-after-inactivity.md.
+
+2017-06-06  Kubo Takehiro <kubo@jiubao.org>
 	* mkpkg-win32.rb: Use RubyInstaller2 to compile binary gems for
 	    ruby 2.4 on Windows.
 

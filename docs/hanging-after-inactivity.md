@@ -15,18 +15,38 @@ packets whose keepalive time parameter is smaller than the inactive
 connection timeout in the firewall.
 
 TCP keepalive is enabled by [(ENABLE=broken)][] in a connect
-descriptor such as `(DESCRIPTION=(ENABLE=broken)...`.
-If you use easy connect naming such as `//host/service_name`,
-ruby-oci8 sets the parameter on behalf of you when
-`OCI8.properties[:tcp_keepalive] = true`. (This is available since
-ruby-oci8 2.2.4.)
+descriptor. If you use easy connect naming such as `//hostname/service_name`,
+ruby-oci8 sets the parameter on behalf of you when the `tcp_keepalive`
+property is set. (This is available since ruby-oci8 2.2.4.)
 
-The default TCP keepalive time is two hours, which is usually larger
+    OCI8.properties[:tcp_keepalive] = true
+    conn = OCI8.new(username, password, '//hostname/service_name')
+
+This is equivalent to the following:
+
+    connect_descriptor = <<EOS
+    (DESCRIPTION= 
+      (ENABLE=broken)
+      (ADDRESS=
+        (PROTOCOL=tcp)
+        (HOST=hostname)
+        (PORT=1521)
+      )
+      (CONNECT_DATA=
+        (SERVICE_NAME=service_name)
+      )
+    )
+    EOS
+    conn = OCI8.new(username, password, connect_descriptor)
+
+The default TCP keepalive time is two hours, which may be larger
 than the inactive connection timeout in the firewall. The default
 value in the system is configurable via [procfs and sysctl on Linux][]
 or [registry parameters on Windows][]. If you have no privilege to
 customize the system, you can change it in an application layer
-by `OCI8.properties[:tcp_keepalive_time] = keepalive_time_in_second`.
+by the tcp_keepalive_time property.
+
+    OCI8.properties[:tcp_keepalive_time] = 600 # 10 minutes
 
 `OCI8.properties[:tcp_keepalive_time]` is supported on the following
 platforms since ruby-oci8 2.2.4.
@@ -34,7 +54,7 @@ platforms since ruby-oci8 2.2.4.
 * Linux i386 and x86_64
 * macOS
 * Windows x86 and x64
-* Solaris x86_64.
+* Solaris x86_64
 
 It may be supported on the following platforms if someone helps me
 to fix [plthook][] used by ruby-oci8.
@@ -44,12 +64,14 @@ to fix [plthook][] used by ruby-oci8.
 * Solaris SPARC
 
 This feature is implemented with hackish way. When
-`OCI8.properties[:tcp_keepalive_time]` is set, Oracle client library's
+`tcp_keepalive_time` is set, Oracle client library's
 procedure linkage table is modified to intercept [setsockopt][] system
 calls. When Oracle client library issues a system call which enables
 TCP keepalive, ruby-oci8 changes the TCP keepalive time of the
-connection immediately after the system call. I hope that Oracle adds
-a new OCI handle attribute to support this feature natively in the future.
+connection immediately after the system call.
+
+I hope that Oracle adds a new OCI handle attribute to support this
+feature natively in the future.
 
 [(ENABLE=broken)]: https://docs.oracle.com/database/121/NETRF/tnsnames.htm#CHDCDGCE
 [procfs and sysctl on Linux]: http://tldp.org/HOWTO/TCP-Keepalive-HOWTO/usingkeepalive.html
