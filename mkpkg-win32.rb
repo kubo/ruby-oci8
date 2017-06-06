@@ -15,20 +15,22 @@ when '32'
      'c:\ruby\ruby-2.2.1-i386-mingw32',
      'c:\ruby\ruby-2.3.0-i386-mingw32',
      'c:\ruby\ruby-2.4.0-i386-mingw32',
+     'c:\ruby\rubyinstaller-2.4.1-1-x86',
     ]
 
   $oracle_path = 'c:\oracle\instantclient_12_1-win32'
-  $devkit_tdm_path = ['c:\ruby\devkit-tdm-32\bin', 'c:\ruby\devkit-tdm-32\mingw\bin']
-  $devkit_mingw64_path = ['c:\ruby\devkit-mingw64-32\bin', 'c:\ruby\devkit-mingw64-32\mingw\bin']
+  $devkit_tdm_setup = 'c:\ruby\devkit-tdm-32\devkitvars.bat'
+  $devkit_mingw64_setup = 'c:\ruby\devkit-mingw64-32\devkitvars.bat'
+  $ridk_setup = 'ridk enable'
 
   $build_ruby_dirs =
     [
-     ['c:\ruby\ruby-1.9.1-p430-i386-mingw32', $devkit_tdm_path],
-     ['c:\ruby\ruby-2.0.0-p0-i386-mingw32', $devkit_mingw64_path],
-     ['c:\ruby\ruby-2.1.3-i386-mingw32', $devkit_mingw64_path],
-     ['c:\ruby\ruby-2.2.1-i386-mingw32', $devkit_mingw64_path],
-     ['c:\ruby\ruby-2.3.0-i386-mingw32', $devkit_mingw64_path],
-     ['c:\ruby\ruby-2.4.0-i386-mingw32', $devkit_mingw64_path],
+     ['c:\ruby\ruby-1.9.1-p430-i386-mingw32', $devkit_tdm_setup],
+     ['c:\ruby\ruby-2.0.0-p0-i386-mingw32', $devkit_mingw64_setup],
+     ['c:\ruby\ruby-2.1.3-i386-mingw32', $devkit_mingw64_setup],
+     ['c:\ruby\ruby-2.2.1-i386-mingw32', $devkit_mingw64_setup],
+     ['c:\ruby\ruby-2.3.0-i386-mingw32', $devkit_mingw64_setup],
+     ['c:\ruby\rubyinstaller-2.4.1-1-x86', $ridk_setup],
     ]
 
 when '64'
@@ -41,17 +43,19 @@ when '64'
      'c:\ruby\ruby-2.2.1-x64-mingw32',
      'c:\ruby\ruby-2.3.0-x64-mingw32',
      'c:\ruby\ruby-2.4.0-x64-mingw32',
+     'c:\ruby\rubyinstaller-2.4.1-1-x64',
     ]
 
   $oracle_path = 'c:\oracle\instantclient_12_1-win64'
-  $devkit_mingw64_path = ['c:\ruby\devkit-mingw64-64\bin', 'c:\ruby\devkit-mingw64-64\mingw\bin']
+  $devkit_mingw64_setup = 'c:\ruby\devkit-mingw64-64\devkitvars.bat'
+  $ridk_setup = 'ridk enable'
   $build_ruby_dirs =
     [
-     ['c:\ruby\ruby-2.0.0-p0-x64-mingw32', $devkit_mingw64_path],
-     ['c:\ruby\ruby-2.1.3-x64-mingw32', $devkit_mingw64_path],
-     ['c:\ruby\ruby-2.2.1-x64-mingw32', $devkit_mingw64_path],
-     ['c:\ruby\ruby-2.3.0-x64-mingw32', $devkit_mingw64_path],
-     ['c:\ruby\ruby-2.4.0-x64-mingw32', $devkit_mingw64_path],
+     ['c:\ruby\ruby-2.0.0-p0-x64-mingw32', $devkit_mingw64_setup],
+     ['c:\ruby\ruby-2.1.3-x64-mingw32', $devkit_mingw64_setup],
+     ['c:\ruby\ruby-2.2.1-x64-mingw32', $devkit_mingw64_setup],
+     ['c:\ruby\ruby-2.3.0-x64-mingw32', $devkit_mingw64_setup],
+     ['c:\ruby\rubyinstaller-2.4.1-1-x64', $ridk_setup],
     ]
 else
   puts "#{ARGV[0]} (32|64)"
@@ -92,10 +96,9 @@ def make_gem
     File.delete file
   end
 
-  $build_ruby_dirs.each do |ruby, devkit|
-    prepend_path(ruby, devkit) do
-      run_cmd("ruby setup.rb config -- --with-runtime-check")
-      run_cmd("ruby setup.rb setup")
+  $build_ruby_dirs.each do |ruby, dev_setup|
+    prepend_path(ruby) do
+      run_cmd("#{dev_setup} && ruby setup.rb config -- --with-runtime-check && ruby setup.rb setup")
     end
   end
 
@@ -124,7 +127,7 @@ def install_and_test
   end
 end
 
-make_gem
-ENV['TNS_ADMIN'] = 'c:\oraclexe\app\oracle\producet\11.2.0\server\network\admin'
+#make_gem
+ENV['TNS_ADMIN'] = 'c:\oraclexe\app\oracle\product\11.2.0\server\network\admin'
 ENV['LOCAL'] = 'XE'
 install_and_test
