@@ -127,7 +127,7 @@ def install_and_test
   end
 end
 
-#make_gem
+make_gem
 ENV['TNS_ADMIN'] = 'c:\oraclexe\app\oracle\product\11.2.0\server\network\admin'
 ENV['LOCAL'] = 'XE'
 install_and_test
