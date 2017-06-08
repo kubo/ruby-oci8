@@ -1,3 +1,7 @@
+2017-06-08  Kubo Takehiro <kubo@jiubao.org>
+	* lib/oci8.rb: Remove added dll directory after 'require oci8lib.so'.
+	    (RubyInstaller2 for Windows only)
+
 2017-06-06  Kubo Takehiro <kubo@jiubao.org>
 	* docs/hanging-after-inactivity.md: revise
 	* dist-files: add docs/hanging-after-inactivity.md.

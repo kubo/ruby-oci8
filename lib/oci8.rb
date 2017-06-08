@@ -1,4 +1,3 @@
-
 #   --*- ruby -*--
 # This is based on yoshidam's oracle.rb.
 #
@@ -68,10 +67,38 @@ else
   raise 'unsupported ruby engine: ' + RUBY_ENGINE
 end
 
+dll_dir = nil
 begin
   require 'ruby_installer/runtime' # RubyInstaller2 for Windows
+
+  dll_arch = proc do |file|
+    begin
+      File.open(file, 'rb') do |f|
+        if f.read(2) == 'MZ' # IMAGE_DOS_HEADER.e_magic
+          f.seek(60, IO::SEEK_SET)
+          pe_offset = f.read(4).unpack('V')[0] # IMAGE_DOS_HEADER.e_lfanew
+          f.seek(pe_offset)
+          if f.read(4) == "PE\000\000" # IMAGE_NT_HEADERS.Signature
+            case f.read(2).unpack('v')[0] # IMAGE_FILE_HEADER.Machine
+            when 0x014c # IMAGE_FILE_MACHINE_I386
+              :x86
+            when 0x8664 # IMAGE_FILE_MACHINE_AMD64
+              :x64
+            end
+          end
+        end
+      end
+    rescue
+      nil
+    end
+  end
+
+  ruby_arch = [nil].pack('P').size == 8 ? :x64 : :x86
   ENV['PATH'].split(File::PATH_SEPARATOR).each do |path|
-    RubyInstaller::Runtime.add_dll_directory(path) if File.exist?(File.join(path, 'OCI.DLL'))
+    if dll_arch.call(File.join(path, 'OCI.DLL')) == ruby_arch
+      dll_dir = RubyInstaller::Runtime.add_dll_directory(path)
+      break
+    end
   end
 rescue LoadError
 end
@@ -82,6 +109,8 @@ rescue LoadError, OCIError
   require 'oci8/check_load_error'
   OCI8::Util::check_load_error($!)
   raise
+ensure
+  dll_dir.remove if dll_dir
 end
 
 require 'oci8/version.rb'
