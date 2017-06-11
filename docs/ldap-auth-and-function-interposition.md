@@ -44,13 +44,13 @@ The reverse may cause same results by the following code.
 
 ### Note for macOS
 
-Libraries in two-level namespaces are free from function interpositions on macOS.
+Libraries in two-level namespaces are free from function interposition on macOS.
 See the second paragraph of [this document][mach-o]. If `TWOLEVEL` is
 found in the output of `otool -hV /path/to/library`, it is in a
 two-level namespace. Otherwise it is in a single-level (flat) namespace.
 
 Oracle client library (`libclntsh.dylib.12.1`) is in a flat namespace.
-It suffers from function interpositions.
+It suffers from function interposition.
 
     $ otool -hV libclntsh.dylib.12.1
     Mach header
@@ -75,7 +75,7 @@ The OS-supplied LDAP library is in a two-level namespace.
           magic cputype cpusubtype  caps    filetype ncmds sizeofcmds      flags
     MH_MAGIC_64  X86_64        ALL  0x00       DYLIB    22       2528   NOUNDEFS DYLDLINK TWOLEVEL NO_REEXPORTED_DYLIBS APP_EXTENSION_SAFE
 
-As a result, the PostgreSQL client library is free from function interpositions.
+As a result, the PostgreSQL client library is free from function interposition.
 
 Solution 1
 ----------
@@ -95,15 +95,14 @@ is loaded before `libldap_r.so`.
 Don't connect to PostgreSQL using LDAP because `libpq.so` tries to use
 LDAP functions in `libldap_r.so` but faultily uses functions in `libclntsh.so`.
 
-Note for macOS: This fixes all function interpositions issues if the LDAP library
+Note for macOS: This fixes all function interposition issues if the LDAP library
 in a two-level namespace.
 
 Solution 2
 ----------
 
 If LDAP is used to connect to both Oracle and PostgreSQL and the platform
-is Linux or macOS, use the latest code in [github][], which will be included
-in the next ruby-oci8 release, and use the following code.
+is Linux or macOS, use ruby-oci8 2.2.4 or later and use the following code.
 
     require 'pg'
     require 'oci8' # This must be after "require 'pg'".
@@ -115,11 +114,10 @@ in the next ruby-oci8 release, and use the following code.
 PostgreSQL client library uses LDAP functions in `libldap_r.so` because `libldap_r.so`
 is loaded before `libclntsh.so`.
 
-Oracle client library uses LDAP functions in `libclntsh.so` because ruby-oci8 in
-[github][] forcedly modifies PLT (Procedure Linkage Table) entries to point to
+Oracle client library uses LDAP functions in `libclntsh.so` because ruby-oci8
+forcedly modifies PLT (Procedure Linkage Table) entries to point to
 functions in `libclntsh.so` if they point to functions in other libraries.
 (PLT is equivalent to IAT (Import Address Table) on Windows.)
 
-[github]: https://github.com/kubo/ruby-oci8/
 [mach-o]: https://developer.apple.com/library/content/documentation/DeveloperTools/Conceptual/MachOTopics/1-Articles/executing_files.html
 [brew]: http://brew.sh/

@@ -24,19 +24,7 @@ property is set. (This is available since ruby-oci8 2.2.4.)
 
 This is equivalent to the following:
 
-    connect_descriptor = <<EOS
-    (DESCRIPTION= 
-      (ENABLE=broken)
-      (ADDRESS=
-        (PROTOCOL=tcp)
-        (HOST=hostname)
-        (PORT=1521)
-      )
-      (CONNECT_DATA=
-        (SERVICE_NAME=service_name)
-      )
-    )
-    EOS
+    connect_descriptor = "(DESCRIPTION=(ENABLE=broken)(ADDRESS=(PROTOCOL=tcp)(HOST=hostname)(PORT=1521))(CONNECT_DATA=(SERVICE_NAME=service_name)))"
     conn = OCI8.new(username, password, connect_descriptor)
 
 The default TCP keepalive time is two hours, which may be larger
@@ -55,13 +43,6 @@ platforms since ruby-oci8 2.2.4.
 * macOS
 * Windows x86 and x64
 * Solaris x86_64
-
-It may be supported on the following platforms if someone helps me
-to fix [plthook][] used by ruby-oci8.
-
-* HP-UX IA64
-* HP-UX PA-RISC 64
-* Solaris SPARC
 
 This feature is implemented with hackish way. When
 `tcp_keepalive_time` is set, Oracle client library's

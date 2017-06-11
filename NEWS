@@ -1,5 +1,44 @@
 # @markup markdown
 
+2.2.4
+=====
+
+New Features
+------------
+
+### TCP keepalive parameters
+
+`tcp_keepalive` and `tcp_keepalive_time` parameters were added.
+This may fix hanging caused by a firewall after a long period of inactivity
+
+See {file:docs/hanging-after-inactivity.md this document} for more detail.
+
+### Workaround of function interposition on Linux and macOS
+
+When both `oci8` and `pg` are required and LDAP authentication is used,
+it may trigger segmentation faults or unexpected behaviours.
+This issue was fixed by forcibly modified PLT (Procedure Linkage Table)
+entries in the Oracle client library.
+
+See {file:docs/ldap-auth-and-function-interposition.md this document} for more detail.
+
+Fixed Issues
+------------
+
+### Support RubyInstaller2 for Windows
+
+Fix for RubyInstaller2 for Windows as suggested [here](https://github.com/oneclick/rubyinstaller2/wiki/For-gem-developers#dll-loading).
+
+### Fix for latest cygwin
+
+Use Win32::Registry instead of Win32API to compile ruby-oci8 on the latest cygwin.
+
+(contributed by tomasjura. [github issue #167](https://github.com/kubo/ruby-oci8/issues/167))
+
+### Removed too specific ruby version constraint in binary gems.
+
+(contributed by davidbrs. [github issue #156](https://github.com/kubo/ruby-oci8/issues/156))
+
 2.2.3
 =====
 
