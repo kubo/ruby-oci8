@@ -33,6 +33,8 @@ when '32'
      ['c:\ruby\rubyinstaller-2.4.1-1-x86', $ridk_setup],
     ]
 
+  $cygwin_dir = 'c:\cygwin'
+
 when '64'
   $platform = 'x64'
   $ruby_base_dirs =
@@ -57,6 +59,8 @@ when '64'
      ['c:\ruby\ruby-2.3.0-x64-mingw32', $devkit_mingw64_setup],
      ['c:\ruby\rubyinstaller-2.4.1-1-x64', $ridk_setup],
     ]
+
+  $cygwin_dir = 'c:\cygwin64'
 else
   puts "#{ARGV[0]} (32|64)"
   exit 0
@@ -127,7 +131,16 @@ def install_and_test
   end
 end
 
+def test_on_cygwin
+  prepend_path($cygwin_dir) do
+    run_cmd("ruby setup.rb config")
+    run_cmd("ruby setup.rb setup")
+    run_cmd("ruby -Iext/oci8 -Ilib -I. test/test_all.rb", false)
+  end
+end
+
 make_gem
 ENV['TNS_ADMIN'] = 'c:\oraclexe\app\oracle\product\11.2.0\server\network\admin'
 ENV['LOCAL'] = 'XE'
 install_and_test
+test_on_cygwin

@@ -1,4 +1,9 @@
 2017-06-16  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/extconf.rb, ext/oci8/hook_funcs.c, ext/oci8/oci8lib.c:
+	    Fix to pass compilation on cygwin.
+	* mkpkg-win32.rb: Add tests on cygwin.
+
+2017-06-16  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/hook_funcs.c: Fix the calling convention of setsockopt
 	    on Windows x86.
 

@@ -71,7 +71,7 @@ static VALUE bind_base_alloc(VALUE klass)
     rb_raise(rb_eNameError, "private method `new' called for %s:Class", rb_class2name(klass));
 }
 
-#if defined(HAVE_PLTHOOK) && !defined(WIN32)
+#if defined(HAVE_PLTHOOK) && !defined(WIN32) && !defined(__CYGWIN__)
 static const char *find_libclntsh(void *handle)
 {
     void *symaddr = dlsym(handle, "OCIEnvCreate");
@@ -226,7 +226,7 @@ Init_oci8lib()
         oracle_client_version = ORAVERNUM(major, minor, update, patch, port_update);
     }
 #endif
-#if defined(HAVE_PLTHOOK) && !defined(WIN32)
+#if defined(HAVE_PLTHOOK) && !defined(WIN32) && !defined(__CYGWIN__)
     rebind_internal_symbols();
 #endif
 

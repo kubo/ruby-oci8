@@ -160,6 +160,7 @@ if xsystem(cc_command("").gsub(CONFTEST_C, File.dirname(__FILE__) + "/" + plthoo
   $objs << "hook_funcs.o"
   $defs << "-DHAVE_PLTHOOK"
   have_library('dbghelp', 'ImageDirectoryEntryToData', ['windows.h', 'dbghelp.h']) if RUBY_PLATFORM =~ /cygwin/
+  $libs += ' -lws2_32' if RUBY_PLATFORM =~ /cygwin/
 else
   puts "no"
 end

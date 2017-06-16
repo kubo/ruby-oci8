@@ -4,16 +4,26 @@
  *
  * Copyright (C) 2015 Kubo Takehiro <kubo@jiubao.org>
  */
+#if defined(_WIN32) || defined(__CYGWIN__)
+#define WINDOWS
+#include <winsock2.h>
+#endif
 #include "oci8.h"
 #include "plthook.h"
-#ifndef WIN32
+#ifdef __CYGWIN__
+#undef boolean /* boolean defined in oratypes.h coflicts with that in windows.h */
+#endif
+#ifdef WINDOWS
+#include <windows.h>
+#include <mstcpip.h>
+#else
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
 #endif
 
-#ifdef WIN32
+#ifdef WINDOWS
 static CRITICAL_SECTION lock;
 #define LOCK(lock) EnterCriticalSection(lock)
 #define UNLOCK(lock) LeaveCriticalSection(lock)
@@ -36,7 +46,7 @@ static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 #elif defined(TCP_KEEPIDLE) /* Linux, etc */
 #define USE_TCP_KEEPIDLE
 #define SUPPORT_TCP_KEEPALIVE_TIME
-#elif defined(WIN32) /* Windows */
+#elif defined(WINDOWS)
 #define SUPPORT_TCP_KEEPALIVE_TIME
 #endif
 
@@ -116,7 +126,7 @@ static int replace_functions(const char * const *files, hook_func_entry_t *funct
     return -1;
 }
 
-#ifdef WIN32
+#ifdef WINDOWS
 
 #ifndef _MSC_VER
 /* setsockopt() in ws2_32.dll */
@@ -307,7 +317,7 @@ static int WSAAPI hook_setsockopt(SOCKET sockfd, int level, int optname, const v
             setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPALIVE_THRESHOLD, &millisec, sizeof(millisec));
 #elif defined(USE_TCP_KEEPIDLE) /* Linux, etc */
             setsockopt(sockfd, IPPROTO_TCP, TCP_KEEPIDLE, &oci8_tcp_keepalive_time, sizeof(int));
-#elif defined(WIN32) /* Windows */
+#elif defined(WINDOWS)
             struct tcp_keepalive vals;
             DWORD dummy;
 
@@ -327,7 +337,7 @@ void oci8_shutdown_sockets(void)
 {
     socket_entry_t *entry;
 
-#ifdef WIN32
+#ifdef WINDOWS
     if (!locK_is_initialized) {
         return;
     }
