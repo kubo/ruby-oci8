@@ -24,6 +24,7 @@ static pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 #define UNLOCK(lock) pthread_mutex_unlock(lock)
 #define SOCKET int
 #define INVALID_SOCKET (-1)
+#define WSAAPI
 #endif
 
 #if defined(__APPLE__) && defined(TCP_KEEPALIVE) /* macOS */
@@ -43,7 +44,7 @@ int oci8_cancel_read_at_exit = 0;
 
 #ifdef SUPPORT_TCP_KEEPALIVE_TIME
 int oci8_tcp_keepalive_time = 0;
-static int hook_setsockopt(SOCKET sockfd, int level, int optname, const void *optval, socklen_t optlen);
+static int WSAAPI hook_setsockopt(SOCKET sockfd, int level, int optname, const void *optval, socklen_t optlen);
 #else
 int oci8_tcp_keepalive_time = -1;
 #endif
@@ -288,7 +289,7 @@ static void shutdown_socket(socket_entry_t *entry)
 #endif
 
 #ifdef SUPPORT_TCP_KEEPALIVE_TIME
-static int hook_setsockopt(SOCKET sockfd, int level, int optname, const void *optval, socklen_t optlen)
+static int WSAAPI hook_setsockopt(SOCKET sockfd, int level, int optname, const void *optval, socklen_t optlen)
 {
     int rv = setsockopt(sockfd, level, optname, optval, optlen);
 
