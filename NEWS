@@ -1,5 +1,20 @@
 # @markup markdown
 
+2.2.4.1
+=======
+
+Fixed issue
+-----------
+
+### Fix invalid function calls when TCP keepalive time parameter is set on Windows x86
+
+When TCP keepalive time parameter is set, The win32 API `setsockopt` was hooked
+with incorrect calling convention on Windows x86. As far as I checked it doesn't
+cause bad effects. But it is by chance. If the code in `oci.dll` is optimized
+differently, it may cause unexpected behavior.
+
+### Fix compilation errors in 2.2.4 on cygwin
+
 2.2.4
 =====
 

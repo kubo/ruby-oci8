@@ -177,13 +177,13 @@ class OCI8
   #
   # [:tcp_keepalive]
   #
-  #     See {file:docs/hanging-after-inactivity.md.md}
+  #     See {file:docs/hanging-after-inactivity.md}
   #
   #     *Since:* 2.2.4
   #
   # [:tcp_keepalive_time]
   #
-  #     See {file:docs/hanging-after-inactivity.md.md}
+  #     See {file:docs/hanging-after-inactivity.md}
   #
   #     *Since:* 2.2.4
   #
