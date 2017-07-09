@@ -75,6 +75,21 @@ retry:
     return rb_external_str_new_with_enc(errbuf, len, oci8_encoding);
 }
 
+/*
+ * Don't call rb_class_new_instance() with more than one argument in this function.
+ * This may be called before OCIError#initialize is defined in lib/oci8/oci8.rb.
+ */
+static VALUE oci_exception_new(VALUE klass, VALUE msg, VALUE code, VALUE sql, VALUE parse_error_offset)
+{
+    VALUE obj = rb_class_new_instance(NIL_P(msg) ? 0 : 1, &msg, klass);
+    if (rb_obj_is_kind_of(obj, eOCIError)) {
+        rb_ivar_set(obj, oci8_id_at_code, code);
+        rb_ivar_set(obj, oci8_id_at_sql, sql);
+        rb_ivar_set(obj, oci8_id_at_parse_error_offset, parse_error_offset);
+    }
+    return obj;
+}
+
 static VALUE oci8_make_exc(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp, const char *file, int line)
 {
     VALUE exc;
@@ -84,24 +99,19 @@ static VALUE oci8_make_exc(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp
     VALUE parse_error_offset = Qnil;
     VALUE sql = Qnil;
     int rv;
-    VALUE args[4];
-    int numarg = 1;
 
     switch (status) {
     case OCI_ERROR:
         exc = eOCIError;
         msg = get_error_msg(errhp, type, "Error", &errcode);
-        numarg = 4;
         break;
     case OCI_SUCCESS_WITH_INFO:
         exc = eOCISuccessWithInfo;
         msg = get_error_msg(errhp, type, "Error", &errcode);
-        numarg = 4;
         break;
     case OCI_NO_DATA:
         exc = eOCINoData;
         msg = get_error_msg(errhp, type, "No Data", &errcode);
-        numarg = 4;
         break;
     case OCI_INVALID_HANDLE:
         exc = eOCIInvalidHandle;
@@ -138,11 +148,7 @@ static VALUE oci8_make_exc(dvoid *errhp, sword status, ub4 type, OCIStmt *stmthp
             sql = rb_external_str_new_with_enc(TO_CHARPTR(text), size, oci8_encoding);
         }
     }
-    args[0] = msg;
-    args[1] = INT2FIX(errcode);
-    args[2] = sql;
-    args[3] = parse_error_offset;
-    exc = rb_class_new_instance(numarg, args, exc);
+    exc = oci_exception_new(exc, msg, INT2FIX(errcode), sql, parse_error_offset);
     return set_backtrace(exc, file, line);
 }
 
@@ -170,22 +176,6 @@ sb4 oci8_get_error_code(OCIError *errhp)
     sb4 errcode = -1;
     OCIErrorGet(oci8_errhp, 1, NULL, &errcode, NULL, 0, OCI_HTYPE_ERROR);
     return errcode;
-}
-
-/* This is overwritten by lib/oci8/oci8.rb. */
-static VALUE oci8_error_initialize(int argc, VALUE *argv, VALUE self)
-{
-    VALUE msg;
-    VALUE code;
-    VALUE sql;
-    VALUE parse_error_offset;
-
-    rb_scan_args(argc, argv, "04", &msg, &code, &sql, &parse_error_offset);
-    rb_call_super(argc ? 1 : 0, &msg);
-    rb_ivar_set(self, oci8_id_at_code, code);
-    rb_ivar_set(self, oci8_id_at_sql, sql);
-    rb_ivar_set(self, oci8_id_at_parse_error_offset, parse_error_offset);
-    return Qnil;
 }
 
 void Init_oci8_error(void)
@@ -217,9 +207,6 @@ void Init_oci8_error(void)
     rb_define_attr(eOCIError, "sql", 1, 0);
     rb_define_attr(eOCIError, "parse_error_offset", 1, 0);
     rb_define_alias(eOCIError, "parseErrorOffset", "parse_error_offset");
-
-    /* This is overwritten by lib/oci8/oci8.rb. */
-    rb_define_method_nodoc(eOCIError, "initialize", oci8_error_initialize, -1);
 }
 
 void oci8_do_raise(OCIError *errhp, sword status, OCIStmt *stmthp, const char *file, int line)
@@ -278,11 +265,9 @@ VALUE oci8_get_error_message(ub4 msgno, const char *default_msg)
 void oci8_do_raise_by_msgno(ub4 msgno, const char *default_msg, const char *file, int line)
 {
     VALUE msg = oci8_get_error_message(msgno, default_msg);
-    VALUE args[2];
-    args[0] = msg;
-    args[1] = INT2FIX(-1);
+    VALUE exc = oci_exception_new(eOCIError, msg, INT2FIX(-1), Qnil, Qnil);
 
-    rb_exc_raise(set_backtrace(rb_class_new_instance(2, args, eOCIError), file, line));
+    rb_exc_raise(set_backtrace(exc, file, line));
 }
 
 void oci8_check_error_(sword status, oci8_base_t *base, OCIStmt *stmthp, const char *file, int line)

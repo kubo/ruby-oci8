@@ -1,3 +1,8 @@
+2017-07-09  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/error.c: Delete OCIError#initialize defined by C code
+	    to suppress warning: method redefined; discarding old initialize.
+	    (github issue #168)
+
 2017-06-17  Kubo Takehiro <kubo@jiubao.org>
 	* NEWS: Add changes between 2.2.4 and 2.2.4.1
 	* lib/oci8/version.rb: Update to 2.2.4.1
