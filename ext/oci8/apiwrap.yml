@@ -321,13 +321,6 @@ OCILobLocatorIsInit:
             - CONST OCILobLocator *locp
             - boolean *is_initialized
 
-# round trip: 1
-OCILogoff:
-  :version: 800
-  :args:
-            - OCISvcCtx *svchp
-            - OCIError *errhp
-
 # round trip: 0
 OCINumberAbs:
   :version: 800
@@ -1148,21 +1141,6 @@ OCIIntervalSetYearMonth:
             - sb4 yr
             - sb4 mnth
             - OCIInterval *result
-
-# round trip: 1
-OCILogon2_nb:
-  :version: 900
-  :args:
-            - OCIEnv *envhp
-            - OCIError *errhp
-            - OCISvcCtx **svchp
-            - CONST text *username
-            - ub4 uname_len
-            - CONST text *password
-            - ub4 passwd_len
-            - CONST text *dbname
-            - ub4 dbname_len
-            - ub4 mode
 
 # round trip: 0 (not docmented. I guess.)
 OCIRowidToChar:

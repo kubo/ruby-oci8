@@ -113,7 +113,7 @@ class OCI8
     if dbname.is_a? OCI8::ConnectionPool
       @pool = dbname # to prevent GC from freeing the connection pool.
       dbname = dbname.send(:pool_name)
-      attach_mode |= 0x0200 # OCI_CPOOL and OCI_LOGON2_CPOOL
+      attach_mode |= 0x0200 # OCI_CPOOL
     else
       tcp_connect_timeout = OCI8::properties[:tcp_connect_timeout]
       connect_timeout = OCI8::properties[:connect_timeout]
@@ -124,32 +124,27 @@ class OCI8
     end
     if stmt_cache_size
       # enable statement caching
-      attach_mode |= 0x0004 # OCI_STMT_CACHE and OCI_LOGON2_STMTCACHE
+      attach_mode |= 0x0004 # OCI_STMT_CACHE
     end
 
-    if true
-      # logon by the OCI function OCISessionBegin().
-      allocate_handles()
-      @session_handle.send(:attr_set_string, OCI_ATTR_USERNAME, username) if username
-      @session_handle.send(:attr_set_string, OCI_ATTR_PASSWORD, password) if password
-      if @@oracle_client_version >= ORAVER_11_1
-        # Sets the driver name displayed in V$SESSION_CONNECT_INFO.CLIENT_DRIVER
-        # if both the client and the server are Oracle 11g or upper.
-        # Only the first 8 chracters "ruby-oci" are displayed when the Oracle
-        # server version is lower than 12.0.1.2.
-        # 424: OCI_ATTR_DRIVER_NAME
-        @session_handle.send(:attr_set_string, 424, "ruby-oci8 : #{OCI8::VERSION}")
-      end
-      server_attach(dbname, attach_mode)
-      if OCI8.oracle_client_version >= OCI8::ORAVER_11_1
-        self.send_timeout = OCI8::properties[:send_timeout] if OCI8::properties[:send_timeout]
-        self.recv_timeout = OCI8::properties[:recv_timeout] if OCI8::properties[:recv_timeout]
-      end
-      session_begin(cred ? cred : OCI_CRED_RDBMS, auth_mode)
-    else
-      # logon by the OCI function OCILogon2().
-      logon2(username, password, dbname, attach_mode)
+    # logon by the OCI function OCISessionBegin().
+    allocate_handles()
+    @session_handle.send(:attr_set_string, OCI_ATTR_USERNAME, username) if username
+    @session_handle.send(:attr_set_string, OCI_ATTR_PASSWORD, password) if password
+    if @@oracle_client_version >= ORAVER_11_1
+      # Sets the driver name displayed in V$SESSION_CONNECT_INFO.CLIENT_DRIVER
+      # if both the client and the server are Oracle 11g or upper.
+      # Only the first 8 chracters "ruby-oci" are displayed when the Oracle
+      # server version is lower than 12.0.1.2.
+      # 424: OCI_ATTR_DRIVER_NAME
+      @session_handle.send(:attr_set_string, 424, "ruby-oci8 : #{OCI8::VERSION}")
     end
+    server_attach(dbname, attach_mode)
+    if OCI8.oracle_client_version >= OCI8::ORAVER_11_1
+      self.send_timeout = OCI8::properties[:send_timeout] if OCI8::properties[:send_timeout]
+      self.recv_timeout = OCI8::properties[:recv_timeout] if OCI8::properties[:recv_timeout]
+    end
+    session_begin(cred ? cred : OCI_CRED_RDBMS, auth_mode)
 
     if stmt_cache_size
       # set statement cache size

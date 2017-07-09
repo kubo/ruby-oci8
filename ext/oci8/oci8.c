@@ -425,49 +425,6 @@ static VALUE oci8_parse_connect_string(VALUE self, VALUE conn_str)
 }
 
 /*
- * Logoff strategy for sessions connected by OCILogon.
- */
-typedef struct {
-    OCISvcCtx *svchp;
-    OCISession *usrhp;
-    OCIServer *srvhp;
-} simple_logoff_arg_t;
-
-static void *simple_logoff_prepare(oci8_svcctx_t *svcctx)
-{
-    simple_logoff_arg_t *sla = xmalloc(sizeof(simple_logoff_arg_t));
-    sla->svchp = svcctx->base.hp.svc;
-    sla->usrhp = svcctx->usrhp;
-    sla->srvhp = svcctx->srvhp;
-    svcctx->usrhp = NULL;
-    svcctx->srvhp = NULL;
-    return sla;
-}
-
-static void *simple_logoff_execute(void *arg)
-{
-    simple_logoff_arg_t *sla = (simple_logoff_arg_t *)arg;
-    OCIError *errhp = oci8_errhp;
-    boolean txn = TRUE;
-    sword rv;
-
-    if (oracle_client_version >= ORAVER_12_1) {
-        OCIAttrGet(sla->usrhp, OCI_HTYPE_SESSION, &txn, NULL, OCI_ATTR_TRANSACTION_IN_PROGRESS, errhp);
-    }
-    if (txn) {
-        OCITransRollback(sla->svchp, errhp, OCI_DEFAULT);
-    }
-    rv = OCILogoff(sla->svchp, errhp);
-    xfree(sla);
-    return (void*)(VALUE)rv;
-}
-
-static const oci8_logoff_strategy_t simple_logoff = {
-    simple_logoff_prepare,
-    simple_logoff_execute,
-};
-
-/*
  * Logoff strategy for sessions connected by OCIServerAttach and OCISessionBegin.
  */
 
@@ -530,61 +487,6 @@ static const oci8_logoff_strategy_t complex_logoff = {
     complex_logoff_prepare,
     complex_logoff_execute,
 };
-
-/*
- * @overload logon2(username, password, dbname, mode)
- *
- *  Creates a simple logon session by the OCI function OCILogon2().
- *
- *  @param [String] username
- *  @param [String] password
- *  @param [String] dbname
- *  @param [Integer] mode
- *  @private
- */
-static VALUE oci8_logon2(VALUE self, VALUE username, VALUE password, VALUE dbname, VALUE mode)
-{
-    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
-    ub4 logon2_mode;
-
-    if (svcctx->logoff_strategy != NULL) {
-        rb_raise(rb_eRuntimeError, "Could not reuse the session.");
-    }
-
-    /* check arugmnets */
-    OCI8SafeStringValue(username);
-    OCI8SafeStringValue(password);
-    if (!NIL_P(dbname)) {
-        OCI8SafeStringValue(dbname);
-    }
-    logon2_mode = NUM2UINT(mode);
-
-    /* logon */
-    svcctx->base.type = OCI_HTYPE_SVCCTX;
-    chker2(OCILogon2_nb(svcctx, oci8_envhp, oci8_errhp, &svcctx->base.hp.svc,
-                        RSTRING_ORATEXT(username), RSTRING_LEN(username),
-                        RSTRING_ORATEXT(password), RSTRING_LEN(password),
-                        NIL_P(dbname) ? NULL : RSTRING_ORATEXT(dbname),
-                        NIL_P(dbname) ? 0 : RSTRING_LEN(dbname), logon2_mode),
-           &svcctx->base);
-    svcctx->logoff_strategy = &simple_logoff;
-
-    if (logon2_mode & OCI_LOGON2_CPOOL) {
-        svcctx->state |= OCI8_STATE_CPOOL;
-    }
-
-    /* setup the session handle */
-    chker2(OCIAttrGet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, &svcctx->usrhp, 0, OCI_ATTR_SESSION, oci8_errhp),
-           &svcctx->base);
-    copy_session_handle(svcctx);
-
-    /* setup the server handle */
-    chker2(OCIAttrGet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX, &svcctx->srvhp, 0, OCI_ATTR_SERVER, oci8_errhp),
-           &svcctx->base);
-    copy_server_handle(svcctx);
-
-    return Qnil;
-}
 
 /*
  * @overload allocate_handles()
@@ -1107,7 +1009,6 @@ void Init_oci8(VALUE *out)
     rb_define_singleton_method_nodoc(cOCI8, "__set_prop", oci8_s_set_prop, 2);
     rb_define_singleton_method(cOCI8, "error_message", oci8_s_error_message, 1);
     rb_define_private_method(cOCI8, "parse_connect_string", oci8_parse_connect_string, 1);
-    rb_define_private_method(cOCI8, "logon2", oci8_logon2, 4);
     rb_define_private_method(cOCI8, "allocate_handles", oci8_allocate_handles, 0);
     rb_define_private_method(cOCI8, "server_attach", oci8_server_attach, 2);
     rb_define_private_method(cOCI8, "session_begin", oci8_session_begin, 2);
