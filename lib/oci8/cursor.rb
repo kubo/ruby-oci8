@@ -516,14 +516,13 @@ class OCI8
       # http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/ociaahan.htm#sthref5494
       num_cols = attr_get_ub4(18) # OCI_ATTR_PARAM_COUNT(18)
       1.upto(num_cols) do |i|
-        parm = __paramGet(i)
-        define_one_column(i, parm) unless @define_handles[i - 1]
-        @column_metadata[i - 1] = parm
+        define_one_column(i) unless @define_handles[i - 1]
       end
       num_cols
     end
 
-    def define_one_column(pos, param)
+    def define_one_column(pos)
+      param = @column_metadata[pos - 1] = __paramGet(pos)
       bindobj = make_bind_object(param)
       __define(pos, bindobj)
       if old = @define_handles[pos - 1]
