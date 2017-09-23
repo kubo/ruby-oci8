@@ -125,7 +125,8 @@ class OCI8
       case type
       when :select_stmt
         __execute(0)
-        define_columns()
+        define_columns() if @column_metadata.size == 0
+        @column_metadata.size
       else
         __execute(1)
         row_count
@@ -526,9 +527,6 @@ class OCI8
     def define_one_column(pos, param)
       bindobj = make_bind_object(param)
       __define(pos, bindobj)
-      if old = @define_handles[pos - 1]
-        old.send(:free)
-      end
       @define_handles[pos - 1] = bindobj
     end
 
