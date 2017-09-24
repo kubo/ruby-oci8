@@ -1,3 +1,7 @@
+2017-09-24  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/oci8lib.c: Try to load $ORACLE_HOME/lib/libclntsh.so also
+	    when runtime api check is enabled on Unix.
+
 2017-09-23  Kubo Takehiro <kubo@jiubao.org>
 	* lib/oci8/cursor.rb: Don't call unnecessary __paramGet(i) when a
 	    cursor is executed more than once.

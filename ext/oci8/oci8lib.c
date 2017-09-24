@@ -600,8 +600,6 @@ void *oci8_find_symbol(const char *symbol_name)
             "libclntsh.sl.12.1",
             "libclntsh.sl.11.1",
             "libclntsh.sl.10.1",
-            "libclntsh.sl.9.0",
-            "libclntsh.sl.8.0",
 #elif defined(__APPLE__)
             /* Mac OS X */
             "libclntsh.dylib.12.1",
@@ -612,11 +610,19 @@ void *oci8_find_symbol(const char *symbol_name)
             "libclntsh.so.12.1",
             "libclntsh.so.11.1",
             "libclntsh.so.10.1",
-            "libclntsh.so.9.0",
-            "libclntsh.so.8.0",
 #endif
         };
 #define NUM_SONAMES (sizeof(sonames)/sizeof(sonames[0]))
+#if defined(_AIX) /* AIX */
+#define BASE_SONAME "libclntsh.a(shr.o)"
+#elif defined(__hppa) /* HP-UX(PA-RISC) */
+#define BASE_SONAME "libclntsh.sl"
+#elif !defined(__CYGWIN__) && !defined(__APPLE__)
+#define BASE_SONAME "libclntsh.so"
+#endif
+#ifdef BASE_SONAME
+        VALUE base_soname = Qnil;
+#endif
         size_t idx;
         volatile VALUE err = rb_ary_new();
 
@@ -632,6 +638,19 @@ void *oci8_find_symbol(const char *symbol_name)
             }
             rb_ary_push(err, rb_locale_str_new_cstr(dlerror()));
         }
+#ifdef BASE_SONAME
+        if (handle == NULL) {
+            char *oracle_home = getenv("ORACLE_HOME");
+            if (oracle_home != NULL) {
+                base_soname = rb_str_buf_new_cstr(oracle_home);
+                base_soname = rb_str_buf_cat2(base_soname, "/lib/" BASE_SONAME);
+                handle = dlopen(StringValueCStr(base_soname), DLOPEN_FLAG);
+                if (handle == NULL) {
+                    rb_ary_push(err, rb_locale_str_new_cstr(dlerror()));
+                }
+            }
+        }
+#endif
         if (handle == NULL) {
             VALUE msg;
             const VALUE *arr = RARRAY_CONST_PTR(err);
@@ -652,6 +671,13 @@ void *oci8_find_symbol(const char *symbol_name)
                 rb_str_buf_append(msg, arr[idx]);
                 rb_str_buf_cat2(msg, ";");
             }
+#ifdef BASE_SONAME
+            if (!NIL_P(base_soname)) {
+                rb_str_buf_cat2(msg, " ");
+                rb_str_buf_append(msg, arr[idx]);
+                rb_str_buf_cat2(msg, ";");
+            }
+#endif
             rb_exc_raise(rb_exc_new3(rb_eLoadError, msg));
         }
     }
