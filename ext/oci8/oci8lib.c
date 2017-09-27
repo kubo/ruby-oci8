@@ -558,6 +558,24 @@ static VALUE ensure_func(cb_arg_t *arg)
 
 #ifndef _WIN32
 #include <dlfcn.h>
+static void *load_file(const char *filename, int flags, VALUE errors)
+{
+    void *handle = dlopen(filename, flags);
+
+    if (handle == NULL) {
+        char *err = dlerror();
+        VALUE msg;
+
+        if (strstr(err, filename) == NULL) {
+            msg = rb_sprintf("%s: %s", filename, err);
+            msg = rb_enc_associate_index(msg, rb_locale_encindex());
+        } else {
+            msg = rb_locale_str_new_cstr(err);
+        }
+        rb_ary_push(errors, msg);
+    }
+    return handle;
+}
 #endif
 
 void *oci8_find_symbol(const char *symbol_name)
@@ -620,64 +638,28 @@ void *oci8_find_symbol(const char *symbol_name)
 #elif !defined(__CYGWIN__) && !defined(__APPLE__)
 #define BASE_SONAME "libclntsh.so"
 #endif
-#ifdef BASE_SONAME
-        VALUE base_soname = Qnil;
-#endif
         size_t idx;
-        volatile VALUE err = rb_ary_new();
+        VALUE err = rb_ary_new();
 
 #ifdef _AIX
 #define DLOPEN_FLAG (RTLD_LAZY|RTLD_GLOBAL|RTLD_MEMBER)
 #else
 #define DLOPEN_FLAG (RTLD_LAZY|RTLD_GLOBAL)
 #endif
-        for (idx = 0; idx < NUM_SONAMES; idx++) {
-            handle = dlopen(sonames[idx], DLOPEN_FLAG);
-            if (handle != NULL) {
-                break;
-            }
-            rb_ary_push(err, rb_locale_str_new_cstr(dlerror()));
-        }
 #ifdef BASE_SONAME
-        if (handle == NULL) {
-            char *oracle_home = getenv("ORACLE_HOME");
-            if (oracle_home != NULL) {
-                base_soname = rb_str_buf_new_cstr(oracle_home);
-                base_soname = rb_str_buf_cat2(base_soname, "/lib/" BASE_SONAME);
-                handle = dlopen(StringValueCStr(base_soname), DLOPEN_FLAG);
-                if (handle == NULL) {
-                    rb_ary_push(err, rb_locale_str_new_cstr(dlerror()));
-                }
-            }
-        }
-#endif
-        if (handle == NULL) {
-            VALUE msg;
-            const VALUE *arr = RARRAY_CONST_PTR(err);
+        char *oracle_home = getenv("ORACLE_HOME");
 
-            msg = rb_str_buf_new(NUM_SONAMES * 50);
-            for (idx = 0; idx < NUM_SONAMES; idx++) {
-                const char *errmsg = RSTRING_PTR(arr[idx]);
-                if (idx != 0) {
-                    rb_str_buf_cat2(msg, " ");
-                }
-                if (strstr(errmsg, sonames[idx]) == NULL) {
-                    /* prepend "soname: " if soname is not found in
-                     * the error message.
-                     */
-                    rb_str_buf_cat2(msg, sonames[idx]);
-                    rb_str_buf_cat2(msg, ": ");
-                }
-                rb_str_buf_append(msg, arr[idx]);
-                rb_str_buf_cat2(msg, ";");
-            }
-#ifdef BASE_SONAME
-            if (!NIL_P(base_soname)) {
-                rb_str_buf_cat2(msg, " ");
-                rb_str_buf_append(msg, arr[idx]);
-                rb_str_buf_cat2(msg, ";");
-            }
+        if (oracle_home != NULL) {
+            VALUE fname = rb_str_buf_cat2(rb_str_buf_new_cstr(oracle_home),  "/lib/" BASE_SONAME);
+            handle = load_file(StringValueCStr(fname), DLOPEN_FLAG, err);
+            RB_GC_GUARD(fname);
+        }
 #endif
+        for (idx = 0; handle == NULL && idx < NUM_SONAMES; idx++) {
+            handle = load_file(sonames[idx], DLOPEN_FLAG, err);
+        }
+        if (handle == NULL) {
+            VALUE msg = rb_ary_join(err, rb_usascii_str_new_cstr("; "));
             rb_exc_raise(rb_exc_new3(rb_eLoadError, msg));
         }
     }
