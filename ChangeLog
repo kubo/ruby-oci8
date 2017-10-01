@@ -1,3 +1,8 @@
+2017-10-01  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/plthook_elf.c: Update plthook to use prelinked
+	    libclntsh.so on Linux.
+	    (github issue #172)
+
 2017-09-27  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/oci8lib.c: Change order to load libclntsh when runtime
 	    api check is enabled on Unix.
