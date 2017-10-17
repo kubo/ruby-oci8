@@ -1,3 +1,7 @@
+2017-10-17  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/ocinumber.c, test/test_oranumber.rb:
+	    Add OraNumber#has_fractional_part?.
+
 2017-10-01  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/plthook_elf.c: Update plthook to use prelinked
 	    libclntsh.so on Linux.

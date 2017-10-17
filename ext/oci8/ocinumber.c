@@ -1441,17 +1441,17 @@ static VALUE onum_to_d_real(OCINumber *num, OCIError *errhp)
 }
 
 /*
- * @overload has_decimal_part?
+ * @overload has_fractional_part?
  *
- *  Returns <code>true</code> if <i>self</i> has a decimal part.
+ *  Returns <code>true</code> if <i>self</i> has a fractional part.
  *
  *  @example
- *    OraNumber(10).has_decimal_part?   # => false
- *    OraNumber(10.1).has_decimal_part? # => true
+ *    OraNumber(10).has_fractional_part?   # => false
+ *    OraNumber(10.1).has_fractional_part? # => true
  *
- *  @since 2.0.5
+ *  @since 2.2.5
  */
-static VALUE onum_has_decimal_part_p(VALUE self)
+static VALUE onum_has_fractional_part_p(VALUE self)
 {
     OCIError *errhp = oci8_errhp;
     boolean result;
@@ -1873,7 +1873,7 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
     rb_define_method(cOCINumber, "to_f", onum_to_f, 0);
     rb_define_method(cOCINumber, "to_r", onum_to_r, 0);
     rb_define_method(cOCINumber, "to_d", onum_to_d, 0);
-    rb_define_method(cOCINumber, "has_decimal_part?", onum_has_decimal_part_p, 0);
+    rb_define_method(cOCINumber, "has_fractional_part?", onum_has_fractional_part_p, 0);
     rb_define_method(cOCINumber, "to_onum", onum_to_onum, 0);
 
     rb_define_method(cOCINumber, "zero?", onum_zero_p, 0);
@@ -1902,6 +1902,10 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
     dummy2 = rb_define_class_under(mOCI8BindType, "Integer", cOCI8BindTypeBase);
     dummy3 = rb_define_class_under(mOCI8BindType, "Float", cOCI8BindTypeBase);
 #endif
+
+    /* The following method definition is for backward-compatibility.
+       I misunderstood the name of numbers after a decimal point. */
+    rb_define_method_nodoc(cOCINumber, "has_decimal_part?", onum_has_fractional_part_p, 0);
 }
 
 /*

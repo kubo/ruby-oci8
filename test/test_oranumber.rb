@@ -738,9 +738,9 @@ EOS
     LARGE_RANGE_VALUES
   end
 
-  def test_has_decimal_part
-    assert_equal(false, OraNumber(10.0).has_decimal_part?)
-    assert_equal(true,  OraNumber(10.1).has_decimal_part?)
+  def test_has_fractional_part
+    assert_equal(false, OraNumber(10.0).has_fractional_part?)
+    assert_equal(true,  OraNumber(10.1).has_fractional_part?)
   end
 
   def test_float_conversion_type_ruby

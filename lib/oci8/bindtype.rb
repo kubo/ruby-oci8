@@ -49,7 +49,7 @@ class OCI8
 
     class BasicNumberType < OCI8::BindType::OraNumber
       def get()
-        (val = super()) && (val.has_decimal_part? ? val.to_f : val.to_i)
+        (val = super()) && (val.has_fractional_part? ? val.to_f : val.to_i)
       end
     end
 
