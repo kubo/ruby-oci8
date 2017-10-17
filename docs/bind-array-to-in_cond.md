@@ -27,7 +27,7 @@ The above code is rewritten as follows:
 
     ids = [ ... ] # an arbitrary-length array containing user IDs.
     
-    in_cond = OCI8::in_cond(:id, ids)]
+    in_cond = OCI8::in_cond(:id, ids)
     cursor = conn.exec("select * from users where id in (#{in_cond.names})", *in_cond.values)
 
 or
