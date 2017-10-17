@@ -1,4 +1,9 @@
 2017-10-17  Kubo Takehiro <kubo@jiubao.org>
+	* lib/oci8/check_load_error.rb: Fix LoadError while trying to check
+	    errors in "require 'oci8lib_230.so'" on cygwin 2.8 or later.
+	    (related to github issue #176)
+
+2017-10-17  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/ocinumber.c, test/test_oranumber.rb:
 	    Add OraNumber#has_fractional_part?.
 

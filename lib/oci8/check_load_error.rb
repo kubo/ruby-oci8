@@ -8,9 +8,9 @@ class OCI8
 
       require 'Win32API'
       MAX_PATH = 260
-      GetModuleFileNameA = Win32API.new('kernel32', 'GetModuleFileNameA', 'PPL', 'L')
-      GetSystemDirectoryA = Win32API.new('kernel32', 'GetSystemDirectoryA', 'PL', 'L')
-      GetWindowsDirectoryA = Win32API.new('kernel32', 'GetWindowsDirectoryA', 'PL', 'L')
+      GetModuleFileNameA = Win32API.new('kernel32.dll', 'GetModuleFileNameA', 'PPL', 'L')
+      GetSystemDirectoryA = Win32API.new('kernel32.dll', 'GetSystemDirectoryA', 'PL', 'L')
+      GetWindowsDirectoryA = Win32API.new('kernel32.dll', 'GetWindowsDirectoryA', 'PL', 'L')
 
       def self.check_os_specific_load_error(exc)
         case exc.message
