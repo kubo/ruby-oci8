@@ -1,4 +1,8 @@
 2017-10-17  Kubo Takehiro <kubo@jiubao.org>
+	* lib/oci8/check_load_error.rb: Check error reason when loading
+	    failed with 'The specified module could not be found' on Windows.
+
+2017-10-17  Kubo Takehiro <kubo@jiubao.org>
 	* lib/oci8/check_load_error.rb: Fix LoadError while trying to check
 	    errors in "require 'oci8lib_230.so'" on cygwin 2.8 or later.
 	    (related to github issue #176)

@@ -11,13 +11,25 @@ class OCI8
       GetModuleFileNameA = Win32API.new('kernel32.dll', 'GetModuleFileNameA', 'PPL', 'L')
       GetSystemDirectoryA = Win32API.new('kernel32.dll', 'GetSystemDirectoryA', 'PL', 'L')
       GetWindowsDirectoryA = Win32API.new('kernel32.dll', 'GetWindowsDirectoryA', 'PL', 'L')
+      LoadLibraryExA = Win32API.new('kernel32.dll', 'LoadLibraryExA', 'PPL', 'P')
+      FreeLibrary = Win32API.new('kernel32.dll', 'FreeLibrary', 'P', 'L')
+      LOAD_LIBRARY_AS_IMAGE_RESOURCE = 0x00000020
 
       def self.check_os_specific_load_error(exc)
         case exc.message
-        when /^193: / # "193: %1 is not a valid Win32 application." in English
+        when /^OCI\.DLL: 193\(/, /^193: / # "OCI.DLL: 193(%1 is not a valid Win32 application.)" in English
           check_win32_pe_arch(exc.message.split(' - ')[1], "ruby-oci8")
           dll_load_path_list.each do |path|
             check_win32_pe_arch(File.join(path, '\OCI.DLL'), "Oracle client")
+          end
+        when /^OCI.DLL: 126\(/, /^126: / # "OCI.DLL: 126(The specified module could not be found.)" in English
+          handle = LoadLibraryExA.call('OCI.DLL', nil, LOAD_LIBRARY_AS_IMAGE_RESOURCE)
+          unless handle.null?
+            FreeLibrary.call(handle)
+            raise LoadError, <<EOS
+OCI.DLL is in the PATH but its dependent modules are not found.
+See http://www.rubydoc.info/github/kubo/ruby-oci8/file/docs/install-instant-client.md#Windows
+EOS
           end
         end
       end # self.check_os_specific_load_error
