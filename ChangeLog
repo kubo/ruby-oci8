@@ -1,3 +1,7 @@
+2017-10-18  Kubo Takehiro <kubo@jiubao.org>
+	* docs/number-type-mapping.md, README.md, dist-files: Add document
+	    about the mapping between Oracle number types and Ruby classes.
+
 2017-10-17  Kubo Takehiro <kubo@jiubao.org>
 	* lib/oci8/check_load_error.rb: Check error reason when loading
 	    failed with 'The specified module could not be found' on Windows.

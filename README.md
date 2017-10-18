@@ -24,7 +24,9 @@ See {file:NEWS}.
 Sample one-liner
 ----------------
 
-Connect to scott/tiger, select `emp` and print as CSV format.
+When you have an Oracle database server to which `sqlplus scott/tiger` can connect
+and `scott` user has `emp` table, you can select `emp` and print rows
+as CSV by the followig one liner.
 
     ruby -r oci8 -e "OCI8.new('scott', 'tiger').exec('select * from emp') do |r| puts r.join(','); end"
 
@@ -50,6 +52,7 @@ Report issues
 Other documents
 ---------------
 
+* {file:docs/number-type-mapping.md Number Type Mapping between Oracle and Ruby}
 * {file:docs/timeout-parameters.md Timeout Parameters}
 * {file:docs/conflicts-local-connections-and-processes.md Conflicts between Local Connections and Child Process Handling on Unix}
 * {file:docs/hanging-after-inactivity.md Hanging After a Long Period of Inactivity}
