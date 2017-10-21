@@ -83,10 +83,12 @@ lib/ruby-oci8.rb
 test/README
 test/config.rb
 test/setup_test_object.sql
+test/setup_test_package.sql
 test/test_all.rb
 test/test_appinfo.rb
 test/test_array_dml.rb
 test/test_bind_array.rb
+test/test_bind_boolean.rb
 test/test_bind_raw.rb
 test/test_bind_string.rb
 test/test_bind_time.rb

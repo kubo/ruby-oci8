@@ -1,5 +1,63 @@
 # @markup markdown
 
+2.2.5
+=====
+
+New Features
+------------
+
+### Try to load $ORACLE_HOME/lib/libclntsh.so also when runtime api check is enabled on Unix.
+
+When ruby-oci8 is configured with `--with-runtime-check`, it loads Oracle client
+library and checks available functions in the library at runtime. This feature was
+added to release Windows binary gems which cannot know Oracle version at compile time.
+This is available also on Unix. However it tries to load libraries in LD_LIBRARY_PATH only.
+From this version, it tries to load $ORACLE_HOME/lib/libclntsh.so also.
+
+### Check error reasons when loading failed with 'The specified module could not be found' on Windows.
+
+The error messages are same when OCI.DLL isn't found and when Visual
+C++ runtime library depended on by OCI.DLL isn't found. From this
+version, ruby-oci8 distinguishes the difference and prints other message
+for the latter case.
+
+Fixed issue
+-----------
+
+### Fix segmentation fault when Oracle client library is prelinked.
+
+When Oracle instant client rpm package is used on RHEL5 or RHEL6,
+Oracle client library is modified by [prelink][] and ruby-oci8 crashed
+with segmentation fault. This is not due to Oracle, but due to
+plthook used by ruby-oci8. The plthook was fixed to work with
+prelinked libraries.
+(github issue #172)
+
+[prelink]: https://en.wikipedia.org/wiki/Prelink#Linux
+
+### Fix not to hide the original error message of LoadError on recent cygwin.
+
+Ruby-oci8 tries to check error messages when `require 'oci8lib_xxx.so` fails.
+However the message was hidden by an exception while checking on cygwin.
+(github issue #176)
+
+### Don't call unnecessary __paramGet(i) when a cursor is executed more than once.
+
+pointed by OMOTO Kenji
+(github issue #171)
+
+### Suppress warning: method redefined; discarding old initialize.
+
+(github issue #168)
+
+Other Changes
+-------------
+
+### Add document about the mapping between Oracle number types and Ruby classes.
+
+See {file:docs/number-type-mapping.md Number Type Mapping between Oracle and Ruby}.
+(github issue #173)
+
 2.2.4.1
 =======
 

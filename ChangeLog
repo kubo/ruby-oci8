@@ -1,3 +1,9 @@
+2017-10-21  Kubo Takehiro <kubo@jiubao.org>
+	* NEWS: Add changes between 2.2.4.1 and 2.2.5
+	* lib/oci8/version.rb: Update to 2.2.5
+	* docs/number-type-mapping.md: minor fix
+	* dist-files: Add files.
+
 2017-10-18  Kubo Takehiro <kubo@jiubao.org>
 	* docs/number-type-mapping.md, README.md, dist-files: Add document
 	    about the mapping between Oracle number types and Ruby classes.

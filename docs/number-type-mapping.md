@@ -73,8 +73,7 @@ in the above table.
 If you want to fetch numbers as Integer or Float by its actual value, use
 the following code:
 
-    # Fetch numbers as Integer when fetched number doesn't has
-    # fractional part. Otherwise, Float.
-    # For example when a column contains 10.0 and 10.1, they are
-    # fetched as Integer and Float respectively.
+    # Fetch numbers as Integer when their fractional part is zero.
+    # Otherwise, Float. For example when a column contains 10 and
+    # 10.1, they are fetched as Integer and Float respectively.
     OCI8::BindType::Mapping[:number] = OCI8::BindType::BasicNumberType
