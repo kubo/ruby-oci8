@@ -7,10 +7,12 @@ class TestBreak < Minitest::Test
 
   def setup
     @conn = get_oci8_connection
+    Thread.report_on_exception, @original_report_on_exception = false, Thread.report_on_exception if Thread.respond_to?(:report_on_exception)
   end
 
   def teardown
     @conn.logoff
+    Thread.report_on_exception = @original_report_on_exception if Thread.respond_to?(:report_on_exception)
   end
 
   def report(str)
