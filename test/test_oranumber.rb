@@ -702,12 +702,12 @@ EOS
   def test_new_from_bigdecimal
     ["+Infinity", "-Infinity", "NaN"].each do |n|
       assert_raises TypeError do
-        OraNumber.new(BigDecimal.new(n))
+        OraNumber.new(BigDecimal(n))
       end
     end
 
     LARGE_RANGE_VALUES.each do |val|
-      assert_equal(val, OraNumber.new(BigDecimal.new(val)).to_s)
+      assert_equal(val, OraNumber.new(BigDecimal(val)).to_s)
     end
   end
 
