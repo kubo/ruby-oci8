@@ -5,7 +5,7 @@ machine:
   # Version of ruby to use
   ruby:
     version:
-      2.4.0
+      2.5.0
 
   # Add some environment variables
   environment:
@@ -23,8 +23,6 @@ machine:
 
 ## Customize dependencies
 dependencies:
-  pre:
-    - rvm install 2.4.0
   override:
     - cisetup/oracle/download.sh
     - cisetup/oracle/install.sh
