@@ -77,6 +77,7 @@ class TestCLob < Minitest::Test
   # https://github.com/kubo/ruby-oci8/issues/20
   def test_github_issue_20
     lob1 = OCI8::CLOB.new(@conn, ' '  * (1024 * 1024))
+    lob1.read(1) # to suppress `warning: assigned but unused variable - lob1`
     begin
       lob2 = OCI8::CLOB.new(@conn, ' '  * (128 * 1024 * 1024))
     rescue OCIError

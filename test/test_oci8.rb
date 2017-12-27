@@ -58,7 +58,6 @@ EOS
     @conn.exec('CREATE TABLE test_table (id number(38), lng long)')
     test_data1 = 'a' * 70000
     test_data2 = 'b' * 3000
-    test_data3 = nil
     test_data4 = 'c' * 70000
     @conn.exec('insert into test_table values (:1, :2)', 1, test_data1)
     @conn.exec('insert into test_table values (:1, :2)', 2, [test_data2, :long])
