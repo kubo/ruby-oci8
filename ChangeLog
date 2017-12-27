@@ -1,4 +1,8 @@
 2017-12-27  Kubo Takehiro <kubo@jiubao.org>
+	* mkpkg-win32.rb: Remove '-rubygems' in the command line to run tests.
+	    `ubygems.rb` was removed in ruby 2.5.
+
+2017-12-27  Kubo Takehiro <kubo@jiubao.org>
 	* NEWS: Add changes between 2.2.5 and 2.2.5.1
 	* lib/oci8/version.rb: Update to 2.2.5.1
 	* mkpkg-win32.rb: Build binary gems for ruby 2.5.

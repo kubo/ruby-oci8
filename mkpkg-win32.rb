@@ -1,3 +1,5 @@
+require 'fileutils'
+
 $ruby_oci8_version = open('lib/oci8/version.rb').readlines.collect do |line|
   (line =~ /VERSION = "([^"]*)"/) && $1
 end.compact[0]
@@ -65,6 +67,15 @@ when '64'
     ]
 
   $cygwin_dir = 'c:\cygwin64'
+when 'all'
+  FileUtils.cp_r('.', 'c:\build\ruby-oci8-build-64')
+  FileUtils.cp_r('.', 'c:\build\ruby-oci8-build-32')
+  Dir.chdir('c:\build\ruby-oci8-build-64') do
+    system('ruby mkpkg-win32.rb 64')
+  end
+  Dir.chdir('c:\build\ruby-oci8-build-32') do
+    system('ruby mkpkg-win32.rb 32')
+  end
 else
   puts "#{ARGV[0]} (32|64)"
   exit 0
@@ -130,7 +141,7 @@ def install_and_test
         end
       end
       run_cmd("gem install ./#{$gem_package} --no-rdoc --no-ri --local")
-      run_cmd("ruby -rubygems -I. test/test_all.rb", false)
+      run_cmd("ruby -I. test/test_all.rb", false)
     end
   end
 end
