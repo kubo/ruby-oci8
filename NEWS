@@ -1,5 +1,15 @@
 # @markup markdown
 
+2.2.5.1
+=======
+
+No updates except tests. The version number was changed just to release
+binary gems for ruby 2.5 on Windows.
+
+### Suppress warnings in tests with ruby 2.5
+
+(github issue #180, #181)
+
 2.2.5
 =====
 

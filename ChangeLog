@@ -1,4 +1,9 @@
 2017-12-27  Kubo Takehiro <kubo@jiubao.org>
+	* NEWS: Add changes between 2.2.5 and 2.2.5.1
+	* lib/oci8/version.rb: Update to 2.2.5.1
+	* mkpkg-win32.rb: Build binary gems for ruby 2.5.
+
+2017-12-27  Kubo Takehiro <kubo@jiubao.org>
 	* test/test_clob.rb, test/test_oci8.rb: Suppress `warning: assigned but unused variable`
 
 2017-12-26  Yasuo Honda <yasuo.honda@gmail.com>

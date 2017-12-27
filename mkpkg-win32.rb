@@ -16,6 +16,7 @@ when '32'
      'c:\ruby\ruby-2.3.0-i386-mingw32',
      'c:\ruby\ruby-2.4.0-i386-mingw32',
      'c:\ruby\rubyinstaller-2.4.1-1-x86',
+     'c:\ruby\rubyinstaller-2.5.0-1-x86',
     ]
 
   $oracle_path = 'c:\oracle\instantclient_12_1-win32'
@@ -31,6 +32,7 @@ when '32'
      ['c:\ruby\ruby-2.2.1-i386-mingw32', $devkit_mingw64_setup],
      ['c:\ruby\ruby-2.3.0-i386-mingw32', $devkit_mingw64_setup],
      ['c:\ruby\rubyinstaller-2.4.1-1-x86', $ridk_setup],
+     ['c:\ruby\rubyinstaller-2.5.0-1-x86', $ridk_setup],
     ]
 
   $cygwin_dir = 'c:\cygwin'
@@ -46,6 +48,7 @@ when '64'
      'c:\ruby\ruby-2.3.0-x64-mingw32',
      'c:\ruby\ruby-2.4.0-x64-mingw32',
      'c:\ruby\rubyinstaller-2.4.1-1-x64',
+     'c:\ruby\rubyinstaller-2.5.0-1-x64',
     ]
 
   $oracle_path = 'c:\oracle\instantclient_12_1-win64'
@@ -58,6 +61,7 @@ when '64'
      ['c:\ruby\ruby-2.2.1-x64-mingw32', $devkit_mingw64_setup],
      ['c:\ruby\ruby-2.3.0-x64-mingw32', $devkit_mingw64_setup],
      ['c:\ruby\rubyinstaller-2.4.1-1-x64', $ridk_setup],
+     ['c:\ruby\rubyinstaller-2.5.0-1-x64', $ridk_setup],
     ]
 
   $cygwin_dir = 'c:\cygwin64'
