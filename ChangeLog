@@ -1,3 +1,8 @@
+2018-01-23  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/object.c, ext/oci8/oci8.h, lib/oci8/object.rb:
+	    Add timestamp data type support in object type attributes.
+	    (github issue #185)
+
 2017-12-27  Kubo Takehiro <kubo@jiubao.org>
 	* mkpkg-win32.rb: Remove '-rubygems' in the command line to run tests.
 	    `ubygems.rb` was removed in ruby 2.5.

@@ -489,8 +489,8 @@ OCINumber *oci8_dbl_to_onum(OCINumber *result, double dbl, OCIError *errhp);
 void Init_oci_datetime(void);
 VALUE oci8_make_ocidate(OCIDate *od);
 OCIDate *oci8_set_ocidate(OCIDate *od, VALUE val);
-VALUE oci8_make_ocidatetime(OCIDateTime *dttm);
-OCIDateTime *oci8_set_ocidatetime(OCIDateTime *dttm, VALUE val);
+VALUE oci8_make_ocitimestamp(OCIDateTime *dttm, boolean have_tz);
+OCIDateTime *oci8_set_ocitimestamp_tz(OCIDateTime *dttm, VALUE val, VALUE svc);
 VALUE oci8_make_interval_ym(OCIInterval *s);
 VALUE oci8_make_interval_ds(OCIInterval *s);
 

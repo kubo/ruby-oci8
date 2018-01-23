@@ -44,6 +44,7 @@ enum {
     ATTR_FLOAT,
     ATTR_INTEGER,
     ATTR_OCIDATE,
+    ATTR_OCITIMESTAMP,
     ATTR_BINARY_DOUBLE,
     ATTR_BINARY_FLOAT,
     ATTR_NAMED_TYPE,
@@ -235,6 +236,8 @@ static VALUE get_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *dat
         return oci8_make_integer((OCINumber *)data, oci8_errhp);
     case ATTR_OCIDATE:
         return oci8_make_ocidate((OCIDate *)data);
+    case ATTR_OCITIMESTAMP:
+        return oci8_make_ocitimestamp(*(OCIDateTime**)data, FALSE);
     case ATTR_BINARY_DOUBLE:
         return rb_float_new(*(double*)data);
     case ATTR_BINARY_FLOAT:
@@ -413,6 +416,12 @@ static VALUE oci8_named_coll_set_coll_element(VALUE self, VALUE datatype, VALUE 
     case ATTR_OCIDATE:
         cb_data.indp = &cb_data.ind;
         break;
+    case ATTR_OCITIMESTAMP:
+        chker2(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->hp.svc, OCI_TYPECODE_TIMESTAMP, NULL, NULL, OCI_DURATION_SESSION, TRUE, &cb_data.data.ptr),
+               svcctx);
+        chker2(OCIObjectGetInd(oci8_envhp, oci8_errhp, cb_data.data.ptr, (dvoid**)&cb_data.indp),
+               svcctx);
+        break;
     case ATTR_BINARY_DOUBLE:
         cb_data.data.dbl = 0.0;
         cb_data.indp = &cb_data.ind;
@@ -507,6 +516,7 @@ static VALUE set_coll_element_ensure(set_coll_element_cb_data_t *cb_data)
     switch (FIX2INT(datatype)) {
     case ATTR_STRING:
     case ATTR_RAW:
+    case ATTR_OCITIMESTAMP:
     case ATTR_NAMED_TYPE:
     case ATTR_NAMED_COLLECTION:
         if (cb_data->data.ptr != NULL) {
@@ -557,6 +567,9 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
         break;
     case ATTR_OCIDATE:
         oci8_set_ocidate((OCIDate*)data, val);
+        break;
+    case ATTR_OCITIMESTAMP:
+        oci8_set_ocitimestamp_tz(*(OCIDateTime **)data, val, Qnil);
         break;
     case ATTR_BINARY_DOUBLE:
         *(double*)data = NUM2DBL(val);
@@ -817,6 +830,8 @@ void Init_oci_object(VALUE cOCI8)
     rb_define_const(cOCI8TDO, "ATTR_INTEGER", INT2FIX(ATTR_INTEGER));
     /* @private */
     rb_define_const(cOCI8TDO, "ATTR_OCIDATE", INT2FIX(ATTR_OCIDATE));
+    /* @private */
+    rb_define_const(cOCI8TDO, "ATTR_OCITIMESTAMP", INT2FIX(ATTR_OCITIMESTAMP));
     /* @private */
     rb_define_const(cOCI8TDO, "ATTR_BINARY_DOUBLE", INT2FIX(ATTR_BINARY_DOUBLE));
     /* @private */
