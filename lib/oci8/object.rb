@@ -494,9 +494,14 @@ EOS
          Proc.new do |val| array_to_time(val, :local) end, # get_proc
         ]
       when :timestamp
-        [ATTR_OCITIMESTAMP, con, SIZE_OF_POINTER, 2, ALIGNMENT_OF_POINTER,
+        [ATTR_TIMESTAMP, con, SIZE_OF_POINTER, 2, ALIGNMENT_OF_POINTER,
          Proc.new do |val| datetime_to_array(val, :timestamp) end, # set_proc
          Proc.new do |val| array_to_time(val, :local) end, # get_proc
+        ]
+      when :timestamp_tz
+        [ATTR_TIMESTAMP_TZ, con, SIZE_OF_POINTER, 2, ALIGNMENT_OF_POINTER,
+         Proc.new do |val| datetime_to_array(val, :timestamp_tz) end, # set_proc
+         Proc.new do |val| array_to_time(val, nil) end, # get_proc
         ]
       when :binary_double
         [ATTR_BINARY_DOUBLE, nil, SIZE_OF_DOUBLE, 2, ALIGNMENT_OF_DOUBLE]

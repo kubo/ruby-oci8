@@ -1,6 +1,12 @@
 require 'oci8'
 require File.dirname(__FILE__) + '/config'
 
+class Time
+  def inspect
+    self.strftime("%Y-%m-%d %H:%M:%S.%N %:z")
+  end
+end
+
 conn = OCI8.new($dbuser, $dbpass, $dbname)
 error_message = nil
 begin
@@ -22,7 +28,7 @@ begin
 
   begin
     version = RbTestObj.test_object_version(conn)
-    error_message = "Invalid test object version" if version != 3
+    error_message = "Invalid test object version" if version != 4
   rescue NoMethodError
     raise unless $!.to_s.include?('test_object_version')
     error_message = "rb_test_obj.test_object_version is not declared."
@@ -100,7 +106,8 @@ class TestObj1 < Minitest::Test
     attr_reader :obj_array_val
     attr_reader :obj_ary_of_ary_val
     attr_reader :date_val
-#    attr_reader :date_array_val
+    attr_reader :timestamp_val
+    attr_reader :timestamp_tz_val
 
     attr_accessor :assertions
 
@@ -109,16 +116,28 @@ class TestObj1 < Minitest::Test
       @assertions = 0
     end
 
-    def to_test_date(n)
+    def to_test_datetime(n, type)
       year = (1990 + n).round
       month = (n.round * 5) % 12 + 1
       mday = (n.round * 7) % 27 + 1
       hour = (n.round * 9) % 24
       minute = (n.round * 11) % 60
       sec = (n.round * 13) % 60
-      convert_to_time(year, month, mday, hour, minute, sec, 0, nil)
+      nsec = if type == :date
+               0
+             else
+               ((n.round * 333_333_333) % 1_000_000_000).to_r / 1_000_000_000
+             end
+      tz = if type == :timestamp_tz
+             tzh = (n.round * 15) % 24 - 11
+             tzm = (n.round * 17) % 60
+             format('%+03d:%02d', tzh, tzm)
+           else
+             nil
+           end
+      convert_to_time(year, month, mday, hour, minute, sec, nsec, tz)
     end
-    private :to_test_date
+    private :to_test_datetime
 
     def next
       @n += 1.2
@@ -135,7 +154,9 @@ class TestObj1 < Minitest::Test
       @nclob_val = @str_val
       @blob_val = @str_val
       @obj_val = ExpectedValObjElem.new(@int_val, @int_val + 1)
-      @date_val = to_test_date(@n)
+      @date_val = to_test_datetime(@n, :date)
+      @timestamp_val = to_test_datetime(@n, :timestamp)
+      @timestamp_tz_val = to_test_datetime(@n, :timestamp_tz)
       if @int_val == 1
         @int_array_val = nil
         @flt_array_val = nil
@@ -199,7 +220,8 @@ class TestObj1 < Minitest::Test
         obj_array_val = val[18]
         obj_ary_of_ary_val = val[19]
         date_val = val[20]
-#        date_array_val = val[18]
+        timestamp_val = val[21]
+        timestamp_tz_val = val[22]
       else
         assert_instance_of(RbTestObj, val)
         int_val = val.int_val
@@ -223,7 +245,8 @@ class TestObj1 < Minitest::Test
         obj_array_val = val.obj_array_val
         obj_ary_of_ary_val = val.obj_ary_of_ary_val
         date_val = val.date_val
-#        date_array_val = val.date_array_val
+        timestamp_val = val.timestamp_val
+        timestamp_tz_val = val.timestamp_tz_val
       end
 
       assert_equal(@int_val, int_val)
@@ -267,7 +290,8 @@ class TestObj1 < Minitest::Test
         assert_nil(obj_ary_of_ary_val)
       end
       assert_equal(@date_val, date_val)
-#      assert_equal(@date_array_val, date_array_val && date_array_val.to_ary)
+      assert_equal(@timestamp_val, timestamp_val)
+      assert_equal(@timestamp_tz_val, timestamp_tz_val)
     end
 
     def assert_array_in_delta(exp, val)

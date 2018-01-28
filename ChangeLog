@@ -1,3 +1,10 @@
+2018-01-28  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/object.c, lib/oci8/object.rb: Add timestamp with time zone
+	    data type support in object type attributes.
+	    (github issue #185)
+	* test/setup_test_object.sql, test/test_object.rb: Add tests for
+	    timestamp and timestamp with time zone.
+
 2018-01-23  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/object.c, ext/oci8/oci8.h, lib/oci8/object.rb:
 	    Add timestamp data type support in object type attributes.

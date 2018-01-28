@@ -61,6 +61,8 @@ create type rb_test_obj as object (
   obj_array_val rb_test_obj_elem_array,
   obj_ary_of_ary_val rb_test_obj_elem_ary_of_ary,
   date_val date,
+  timestamp_val timestamp(9),
+  timestamp_tz_val timestamp(9) with time zone,
 --  date_array_val rb_test_date_array,
 
   constructor function rb_test_obj(n number) return self as result,
@@ -72,19 +74,23 @@ create type rb_test_obj as object (
   member procedure member_proc(n in integer)
 )
 /
-create or replace type body rb_test_obj is
-
+create type body rb_test_obj is
   constructor function rb_test_obj(n number) return self as result is
-    function to_test_date(n number) return date is
-    begin
-      return to_date(to_char(1990 + n, 'FM0000') ||
-                     to_char(mod(round(n) * 5, 12) + 1, 'FM00') ||
-                     to_char(mod(round(n) * 7, 27) + 1, 'FM00') ||
-                     to_char(mod(round(n) * 9, 24), 'FM00') ||
-                     to_char(mod(round(n) * 11, 60), 'FM00') ||
-                     to_char(mod(round(n) * 13, 60), 'FM00'), 'yyyymmddhh24miss');
-    end;
+    str varchar(28);
+    ts timestamp(9);
+    ts_tz timestamp(9) with time zone;
   begin
+    str := to_char(1990 + n, 'FM0000') ||
+                   to_char(mod(round(n) * 5, 12) + 1, 'FM00') ||
+                   to_char(mod(round(n) * 7, 27) + 1, 'FM00') ||
+                   to_char(mod(round(n) * 9, 24), 'FM00') ||
+                   to_char(mod(round(n) * 11, 60), 'FM00') ||
+                   to_char(mod(round(n) * 13, 60), 'FM00') ||
+                   to_char(mod(round(n) * 333333333, 1000000000), 'FM000000000');
+    ts := to_timestamp(str, 'yyyymmddhh24missff9');
+    str := str || to_char(mod(round(n) * 15, 24) - 11, 'FMS00') ||
+                  to_char(mod(round(n) * 17, 60), 'FM00');
+    ts_tz := to_timestamp_tz(str, 'yyyymmddhh24missff9tzhtzm');
     self.int_val := n;
     self.flt_val := n;
     self.num_val := n;
@@ -96,7 +102,9 @@ create or replace type body rb_test_obj is
     self.nclob_val := to_clob(n);
     self.blob_val := to_blob(utl_raw.cast_to_raw(to_char(n)));
     self.obj_val := rb_test_obj_elem(n, n + 1);
-    self.date_val := to_test_date(n);
+    self.date_val := ts;
+    self.timestamp_val := ts;
+    self.timestamp_tz_val := ts_tz;
     if self.int_val != 1 then
       self.int_array_val := rb_test_int_array(n, n + 1, n + 2);
       self.flt_array_val := rb_test_flt_array(n, n + 1, n + 2);
@@ -120,7 +128,7 @@ create or replace type body rb_test_obj is
 
   static function test_object_version return integer is
   begin
-    return 3;
+    return 4;
   end;
 
   static function class_func(n number) return rb_test_obj is
