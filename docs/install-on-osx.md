@@ -39,7 +39,7 @@ Download the following packages from [Oracle Technology Network][]
 
 * Instant Client Package - Basic (`instantclient-basic-macos.x64-12.1.0.2.0.zip`) or Basic Lite (`instantclient-basiclite-macos.x64-12.1.0.2.0.zip`)
 * Instant Client Package - SDK (`instantclient-sdk-macos.x64-12.1.0.2.0.zip`)
-* Instant Client Package - SQL*Plus (`instantclient-sdk-macos.x64-12.1.0.2.0.zip`) (optionally) 
+* Instant Client Package - SQL*Plus (`instantclient-sqlplus-macos.x64-12.1.0.2.0.zip`) (optionally) 
 
 ### Install Oracle Instant Client Packages via Homebrew
 
