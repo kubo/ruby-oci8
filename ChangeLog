@@ -1,3 +1,11 @@
+2018-08-12  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/lob.c, test/test_clob.rb: LOB#sync, LOB#sync= and LOB#flush
+	    do nothing now. They have not worked by mistake from the beginning
+	    because incorrect arguments has been passed to OCILobOpen().
+	    Moreover it crashed Oracle 18c server-side processes and caused
+	    "ORA-03113: end-of-file on communication channel."
+	    (github issue #198)
+
 2018-01-28  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/object.c, lib/oci8/object.rb: Add timestamp with time zone
 	    data type support in object type attributes.

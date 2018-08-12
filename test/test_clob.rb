@@ -24,22 +24,6 @@ class TestCLob < Minitest::Test
     lob.close
   end
 
-  def test_insert_with_flush
-    filename = File.basename($lobfile)
-    @conn.exec("DELETE FROM test_table WHERE filename = :1", filename)
-    @conn.exec("INSERT INTO test_table(filename, content) VALUES (:1, EMPTY_CLOB())", filename)
-    cursor = @conn.exec("SELECT content FROM test_table WHERE filename = :1 FOR UPDATE", filename)
-    lob = cursor.fetch[0]
-    lob.sync = false
-    open($lobfile) do |f|
-      while s = f.read(1000)
-        lob.write(s)
-      end
-    end
-    lob.flush
-    lob.close
-  end
-
   def test_insert_symbol
     filename = 'test_symbol'
     value = :foo_bar

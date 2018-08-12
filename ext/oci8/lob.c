@@ -26,8 +26,6 @@ static VALUE seek_end;
 
 enum state {
     S_NO_OPEN_CLOSE,
-    S_OPEN,
-    S_CLOSE,
     S_BFILE_CLOSE,
     S_BFILE_OPEN,
 };
@@ -266,28 +264,6 @@ static ub8 oci8_lob_get_length(oci8_lob_t *lob)
     return len;
 }
 
-static void lob_open(oci8_lob_t *lob)
-{
-    if (lob->state == S_CLOSE) {
-        oci8_svcctx_t *svcctx = check_svcctx(lob);
-
-        chker2(OCILobOpen_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, OCI_DEFAULT),
-               &svcctx->base);
-        lob->state = S_OPEN;
-    }
-}
-
-static void lob_close(oci8_lob_t *lob)
-{
-    if (lob->state == S_OPEN) {
-        oci8_svcctx_t *svcctx = check_svcctx(lob);
-
-        chker2(OCILobClose_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob),
-               &svcctx->base);
-        lob->state = S_CLOSE;
-    }
-}
-
 static void bfile_close(oci8_lob_t *lob)
 {
     if (lob->state == S_BFILE_OPEN) {
@@ -368,7 +344,6 @@ static void bfile_close(oci8_lob_t *lob)
 static VALUE oci8_lob_close(VALUE self)
 {
     oci8_lob_t *lob = TO_LOB(self);
-    lob_close(lob);
     oci8_base_free(&lob->base);
     return self;
 }
@@ -591,7 +566,6 @@ static VALUE oci8_lob_truncate(VALUE self, VALUE len)
     oci8_lob_t *lob = TO_LOB(self);
     oci8_svcctx_t *svcctx = check_svcctx(lob);
 
-    lob_open(lob);
     chker2(OCILobTrim2_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, lob->base.hp.lob, NUM2ULL(len)),
            &svcctx->base);
     return self;
@@ -740,7 +714,6 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
     } while (rv == OCI_NEED_DATA);
 
     if (pos >= lob_length) {
-        lob_close(lob);
         bfile_close(lob);
     }
     lob->pos = pos;
@@ -781,7 +754,6 @@ static VALUE oci8_lob_write(VALUE self, VALUE data)
     ub8 byte_amt;
     ub8 char_amt;
 
-    lob_open(lob);
     if (TYPE(data) != T_STRING) {
         str = rb_obj_as_string(data);
     } else {
@@ -809,40 +781,32 @@ static VALUE oci8_lob_write(VALUE self, VALUE data)
 }
 
 /*
- *  @deprecated I'm not sure that this is what the name indicates.
+ *  @deprecated LOB#sync had not worked by mistake. Do nothing now.
  *  @private
  */
 static VALUE oci8_lob_get_sync(VALUE self)
 {
-    oci8_lob_t *lob = TO_LOB(self);
-    return (lob->state == S_NO_OPEN_CLOSE) ? Qtrue : Qfalse;
+    rb_warning("LOB#sync had not worked by mistake. Do nothing now.");
+    return Qfalse;
 }
 
 /*
- *  @deprecated I'm not sure that this is what the name indicates.
+ *  @deprecated LOB#sync had not worked by mistake. Do nothing now.
  *  @private
  */
 static VALUE oci8_lob_set_sync(VALUE self, VALUE b)
 {
-    oci8_lob_t *lob = TO_LOB(self);
-    if (RTEST(b)) {
-        lob_close(lob);
-        lob->state = S_NO_OPEN_CLOSE;
-    } else {
-        if (lob->state == S_NO_OPEN_CLOSE)
-            lob->state = S_CLOSE;
-    }
+    rb_warning("LOB#sync had not worked by mistake. Do nothing now.");
     return b;
 }
 
 /*
- *  @deprecated I'm not sure that this is what the name indicates.
+ *  @deprecated LOB#flush had not worked by mistake. Do nothing now.
  *  @private
  */
 static VALUE oci8_lob_flush(VALUE self)
 {
-    oci8_lob_t *lob = TO_LOB(self);
-    lob_close(lob);
+    rb_warning("LOB#flush had not worked by mistake. Do nothing now.");
     return self;
 }
 
