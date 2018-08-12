@@ -60,6 +60,9 @@ class TestCLob < Minitest::Test
 
   # https://github.com/kubo/ruby-oci8/issues/20
   def test_github_issue_20
+    # Skip this test if FULLTEST isn't set because it takes 4 minutes in my Linux box.
+    return if ENV['FULLTEST']
+
     lob1 = OCI8::CLOB.new(@conn, ' '  * (1024 * 1024))
     lob1.read(1) # to suppress `warning: assigned but unused variable - lob1`
     begin

@@ -1,4 +1,8 @@
 2018-08-12  Kubo Takehiro <kubo@jiubao.org>
+	* test/test_clob.rb: Skip TestCLob#test_github_issue_20 because it
+	    takes 4 minutes to test it in my Linux box.
+
+2018-08-12  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/lob.c, test/test_clob.rb: LOB#sync, LOB#sync= and LOB#flush
 	    do nothing now. They have not worked by mistake from the beginning
 	    because incorrect arguments has been passed to OCILobOpen().
