@@ -21,8 +21,23 @@ extern "C"
 }
 #endif
 
+/*
+ * Oracle version number format in 32-bit integer.
+ *
+ * Oracle 12c or earier                     Oracle 18c or later
+ *
+ * hexadecimal ->  dotted version number    hexadecimal ->  dotted version number
+ *  0c102304   ->  12.1.2.3.4                12012034   ->  18.1.2.3.4
+ *                 ^  ^ ^ ^ ^                               ^  ^ ^ ^ ^
+ *  0c ------------'  | | | |  2 bytes       12 ------------'  | | | |  2 bytes
+ *    1 --------------' | | |  1 byte          01 -------------' | | |  2 bytes
+ *     02 --------------' | |  2 bytes           2 --------------' | |  1 byte
+ *       3 ---------------' |  1 byte             03 --------------' |  2 bytes
+ *        04 ---------------'  2 bytes              4 ---------------'  1 byte
+ */
 #define ORAVERNUM(major, minor, update, patch, port_update) \
-    (((major) << 24) | ((minor) << 20) | ((update) << 12) | ((patch) << 8) | (port_update))
+    (((major) >= 18) ? (((major) << 24) | ((minor) << 16) | ((update) << 12) | ((patch) << 4) | (port_update)) \
+                     : (((major) << 24) | ((minor) << 20) | ((update) << 12) | ((patch) << 8) | (port_update)))
 
 #define ORAVER_8_0 ORAVERNUM(8, 0, 0, 0, 0)
 #define ORAVER_8_1 ORAVERNUM(8, 1, 0, 0, 0)
@@ -32,6 +47,7 @@ extern "C"
 #define ORAVER_10_2 ORAVERNUM(10, 2, 0, 0, 0)
 #define ORAVER_11_1 ORAVERNUM(11, 1, 0, 0, 0)
 #define ORAVER_12_1 ORAVERNUM(12, 1, 0, 0, 0)
+#define ORAVER_18 ORAVERNUM(18, 0, 0, 0, 0)
 
 #include "extconf.h"
 #include <ruby/encoding.h>
@@ -316,6 +332,7 @@ typedef struct oci8_svcctx {
     const oci8_logoff_strategy_t *logoff_strategy;
     OCISession *usrhp;
     OCIServer *srvhp;
+    ub4 server_version;
     rb_pid_t pid;
     unsigned char state;
     char is_autocommit;

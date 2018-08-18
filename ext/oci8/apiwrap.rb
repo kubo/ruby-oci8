@@ -35,7 +35,11 @@ class FuncDef
     ver_major = (ver / 100)
     ver_minor = (ver / 10) % 10
     ver_update = ver % 10
-    @version = ((ver_major << 24) | (ver_minor << 20) | (ver_update << 12))
+    @version = if ver_major >= 18
+                 ((ver_major << 24) | (ver_minor << 16) | (ver_update << 12))
+               else
+                 ((ver_major << 24) | (ver_minor << 20) | (ver_update << 12))
+               end
     case @version
     when 0x08000000; @version_num = 'ORAVER_8_0'
     when 0x08100000; @version_num = 'ORAVER_8_1'
@@ -44,6 +48,7 @@ class FuncDef
     when 0x0a100000; @version_num = 'ORAVER_10_1'
     when 0x0a200000; @version_num = 'ORAVER_10_2'
     when 0x0b100000; @version_num = 'ORAVER_11_1'
+    when 0x12000000; @version_num = 'ORAVER_18'
     end
     @version_str = "#{ver_major}.#{ver_minor}.#{ver_update}"
     @ret = val[:ret] || 'sword'

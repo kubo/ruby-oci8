@@ -66,6 +66,12 @@ class OCI8
         major, minor, update, patch, port_update = arg.split('.').collect do |v|
           v.to_i
         end
+      elsif arg >= 0x12000000
+        major  = (arg & 0xFF000000) >> 24
+        minor  = (arg & 0x00FF0000) >> 16
+        update = (arg & 0x0000F000) >> 12
+        patch  = (arg & 0x00000FF0) >>  4
+        port_update = (arg & 0x0000000F)
       elsif arg >= 0x08000000
         major  = (arg & 0xFF000000) >> 24
         minor  = (arg & 0x00F00000) >> 20
@@ -80,7 +86,11 @@ class OCI8
       @update = update || 0
       @patch = patch || 0
       @port_update = port_update || 0
-      @vernum = (@major << 24) | (@minor << 20) | (@update << 12) | (@patch << 8) | @port_update
+      @vernum = if @major >= 18
+                  (@major << 24) | (@minor << 16) | (@update << 12) | (@patch << 4) | @port_update
+                else
+                  (@major << 24) | (@minor << 20) | (@update << 12) | (@patch << 8) | @port_update
+                end
     end
 
     # Compares +self+ and +other+.

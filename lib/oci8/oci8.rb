@@ -340,6 +340,12 @@ class OCI8
 
   # Returns the Oracle server version.
   #
+  # When the Oracle client version is 12c or earlier and
+  # the Oracle server version is 18c or later, this method
+  # doesn't return *full* version number such as '18.3.0.0.0'.
+  # It returns version number whose number components after
+  # the first dot are zeros such as '18.0.0.0.0'.
+  #
   # @see OCI8.oracle_client_version
   # @return [OCI8::OracleVersion]
   def oracle_server_version

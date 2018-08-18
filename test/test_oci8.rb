@@ -496,4 +496,18 @@ EOS
       assert_equal(expected_value, driver_name)
     end
   end
+
+  def test_server_version
+    cursor = @conn.exec("select * from product_component_version where product like 'Oracle Database %'")
+    row = cursor.fetch_hash
+    cursor.close
+    ver = if OCI8::oracle_client_version >= OCI8::ORAVER_18
+            row['VERSION_FULL'] || row['VERSION']
+          else
+            # OCI8#oracle_server_version could not get infomation corresponding
+            # to VERSION_FULL when the Oracle client version is below 18.1.
+            row['VERSION']
+          end
+    assert_equal(ver, @conn.oracle_server_version.to_s)
+  end
 end # TestOCI8

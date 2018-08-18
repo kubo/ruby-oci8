@@ -1,4 +1,10 @@
 2018-08-18  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/apiwrap.rb, ext/oci8/apiwrap.yml, ext/oci8/oci8.c,
+	  ext/oci8/oci8.h, lib/oci8/oci8.rb, lib/oci8/oracle_version.rb,
+	  test/test_oci8.rb: Fix OCI8#oracle_server_version to get
+	    full version of Oracle 18c.
+
+2018-08-18  Kubo Takehiro <kubo@jiubao.org>
 	* lib/oci8/metadata.rb: Update doc comments of OCI8::Metadata::ArgBase#level
 	    and OCI8::Metadata::ArgBase#arguments.
 	* test/test_package_type.rb, lib/oci8.rb: Fix to pass tests on Oracle 18c.

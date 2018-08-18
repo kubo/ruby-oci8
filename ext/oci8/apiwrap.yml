@@ -1286,3 +1286,17 @@ OCIPing_nb:
             - OCISvcCtx *svchp
             - OCIError *errhp
             - ub4 mode
+
+#
+# Oracle 18.1
+#
+OCIServerRelease2:
+  :version: 1800
+  :args:
+            - dvoid *hndlp
+            - OCIError *errhp
+            - OraText *bufp
+            - ub4 bufsz
+            - ub1 hndltype
+            - ub4 *version
+            - ub4 mode

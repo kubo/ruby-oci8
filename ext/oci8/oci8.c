@@ -582,6 +582,8 @@ static VALUE oci8_server_attach(VALUE self, VALUE dbname, VALUE attach_mode)
 static VALUE oci8_session_begin(VALUE self, VALUE cred, VALUE mode)
 {
     oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
+    char buf[100];
+    ub4 version;
 
     if (svcctx->logoff_strategy != &complex_logoff) {
         rb_raise(rb_eRuntimeError, "Use this method only for the service context handle created by OCI8#server_handle().");
@@ -604,6 +606,16 @@ static VALUE oci8_session_begin(VALUE self, VALUE cred, VALUE mode)
                       oci8_errhp),
            &svcctx->base);
     svcctx->state |= OCI8_STATE_SESSION_BEGIN_WAS_CALLED;
+    if (have_OCIServerRelease2) {
+        chker2(OCIServerRelease2(svcctx->base.hp.ptr, oci8_errhp, (text*)buf,
+                                 sizeof(buf), (ub1)svcctx->base.type, &version, OCI_DEFAULT),
+               &svcctx->base);
+    } else {
+        chker2(OCIServerRelease(svcctx->base.hp.ptr, oci8_errhp, (text*)buf,
+                                sizeof(buf), (ub1)svcctx->base.type, &version),
+               &svcctx->base);
+    }
+    svcctx->server_version = version;
     return Qnil;
 }
 
@@ -796,11 +808,8 @@ static VALUE oci8_break(VALUE self)
 static VALUE oci8_oracle_server_vernum(VALUE self)
 {
     oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
-    char buf[100];
-    ub4 version;
 
-    chker2(OCIServerRelease(svcctx->base.hp.ptr, oci8_errhp, (text*)buf, sizeof(buf), (ub1)svcctx->base.type, &version), &svcctx->base);
-    return UINT2NUM(version);
+    return UINT2NUM(svcctx->server_version);
 }
 
 /*
