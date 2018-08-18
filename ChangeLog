@@ -1,4 +1,9 @@
 2018-08-18  Kubo Takehiro <kubo@jiubao.org>
+	* test/test_oci8.rb: Fix to pass a test when the client is 11g
+	    and the server is 18c. client_driver in v$session_connect_info
+	    has an extra space at the end.
+
+2018-08-18  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/apiwrap.rb, ext/oci8/apiwrap.yml, ext/oci8/oci8.c,
 	  ext/oci8/oci8.h, lib/oci8/oci8.rb, lib/oci8/oracle_version.rb,
 	  test/test_oci8.rb: Fix OCI8#oracle_server_version to get

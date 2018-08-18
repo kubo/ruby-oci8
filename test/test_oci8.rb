@@ -491,7 +491,7 @@ EOS
                        else
                          raise "Unknown column size #{column_size}"
                        end
-      driver_name = cursor.fetch[0]
+      driver_name = cursor.fetch[0].strip
       cursor.close
       assert_equal(expected_value, driver_name)
     end
