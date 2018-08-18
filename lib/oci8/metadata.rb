@@ -1503,7 +1503,11 @@ class OCI8
         attr_get_sb1(OCI_ATTR_SCALE)
       end
 
-      # The datatype levels. This attribute always returns zero.
+      # The nest level.
+      #
+      # Oracle manual says that it always returns zero. However it returns
+      # the depth of {OCI8::ArgBase#arguments} calls when #arguments returns
+      # a non-empty array.
       def level
         attr_get_ub2(OCI_ATTR_LEVEL)
       end
@@ -1607,6 +1611,10 @@ class OCI8
 
       # The list of arguments at the next level (when the argument is
       # of a record or table type).
+      #
+      # This method returns an array containing type information when
+      # the type is a user-defined type and the Oracle server version
+      # is 12c or earlier. Otherwise, it returns an empty array.
       def arguments
         @arguments ||= list_arguments.to_a
       end

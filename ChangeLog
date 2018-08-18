@@ -1,3 +1,10 @@
+2018-08-18  Kubo Takehiro <kubo@jiubao.org>
+	* lib/oci8/metadata.rb: Update doc comments of OCI8::Metadata::ArgBase#level
+	    and OCI8::Metadata::ArgBase#arguments.
+	* test/test_package_type.rb, lib/oci8.rb: Fix to pass tests on Oracle 18c.
+	    Detailed user-defined type information used in arguments isn't available
+	    on Oracle 18c.
+
 2018-08-12  Kubo Takehiro <kubo@jiubao.org>
 	* test/test_clob.rb: Skip TestCLob#test_github_issue_20 because it
 	    takes 4 minutes to test it in my Linux box.

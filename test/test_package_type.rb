@@ -639,7 +639,11 @@ class TestPackageType < Minitest::Test
           :sub_name => "TABLE_OF_PLS_INTEGER",
           :link => "",
           #:type_metadata => nil,
-          :arguments => {
+          :arguments => ($oracle_server_version >= OCI8::ORAVER_18) ?
+          {
+            :class => Array,
+            :size => 0,
+          } : {
             :class => Array,
             :size => 1,
             [0] => {
@@ -729,7 +733,11 @@ class TestPackageType < Minitest::Test
           :sub_name => "TABLE_OF_REC1",
           :link => "",
           #:type_metadata => nil,
-          :arguments => {
+          :arguments => ($oracle_server_version >= OCI8::ORAVER_18) ?
+          {
+            :class => Array,
+            :size => 0,
+          } : {
             :class => Array,
             :size => 1,
             [0] => {
@@ -846,7 +854,11 @@ class TestPackageType < Minitest::Test
           :sub_name => "TABLE_OF_REC1",
           :link => "",
           #:type_metadata => nil,
-          :arguments => {
+          :arguments => ($oracle_server_version >= OCI8::ORAVER_18) ?
+          {
+            :class => Array,
+            :size => 0,
+          } : {
             :class => Array,
             :size => 1,
             [0] => {
