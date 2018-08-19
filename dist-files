@@ -109,4 +109,5 @@ test/test_oracle_version.rb
 test/test_oradate.rb
 test/test_oranumber.rb
 test/test_package_type.rb
+test/test_properties.rb
 test/test_rowid.rb

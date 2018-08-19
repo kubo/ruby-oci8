@@ -1,3 +1,10 @@
+2018-08-19  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/hook_funcs.c: Not depend on Oracle version number
+	   in library name when hooking functions.
+	   (rsim/oracle-enhanced#1754)
+	* test/test_all.rb, test/test_properties.rb, dist-files:
+	   Add tests for hooking.
+
 2018-08-18  Kubo Takehiro <kubo@jiubao.org>
 	* test/test_oci8.rb: Fix to pass a test when the client is 11g
 	    and the server is 18c. client_driver in v$session_connect_info

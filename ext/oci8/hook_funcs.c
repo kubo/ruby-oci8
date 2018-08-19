@@ -2,7 +2,7 @@
 /*
  * hook.c
  *
- * Copyright (C) 2015 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2015-2018 Kubo Takehiro <kubo@jiubao.org>
  */
 #if defined(_WIN32) || defined(__CYGWIN__)
 #define WINDOWS
@@ -12,15 +12,19 @@
 #include "plthook.h"
 #ifdef __CYGWIN__
 #undef boolean /* boolean defined in oratypes.h coflicts with that in windows.h */
+#define stricmp strcasecmp
+#define strnicmp strncasecmp
 #endif
 #ifdef WINDOWS
 #include <windows.h>
 #include <mstcpip.h>
+#include <tlhelp32.h>
 #else
 #include <unistd.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
+#include <dlfcn.h>
 #endif
 
 #ifdef WINDOWS
@@ -59,6 +63,7 @@ static int WSAAPI hook_setsockopt(SOCKET sockfd, int level, int optname, const v
 int oci8_tcp_keepalive_time = -1;
 #endif
 
+static char hook_errmsg[512];
 
 typedef struct {
     const char *func_name;
@@ -95,35 +100,33 @@ static void socket_entry_clear(socket_entry_t *entry)
     UNLOCK(&lock);
 }
 
-static int replace_functions(const char * const *files, hook_func_entry_t *functions)
+static int replace_functions(void *addr, const char *file, hook_func_entry_t *functions)
 {
+    plthook_t *ph;
     int i;
+    int rv = 0;
 
-    for (i = 0; files[i] != NULL; i++) {
-        const char *file = files[i];
-        plthook_t *ph;
-        if (plthook_open(&ph, file) == 0) {
-            int j;
-            int rv = 0;
+    if (plthook_open_by_address(&ph, addr) != 0) {
+        strncpy(hook_errmsg, plthook_error(), sizeof(hook_errmsg));
+        return -1;
+    }
 
-            /* install hooks */
-            for (j = 0; functions[j].func_name != NULL ; j++) {
-                hook_func_entry_t *function = &functions[j];
-                rv = plthook_replace(ph, function->func_name, function->func_addr, &function->old_func_addr);
-                if (rv != 0) {
-                    while (--j >= 0) {
-                        /*restore hooked fuction address */
-                        plthook_replace(ph, functions[j].func_name, functions[j].old_func_addr, NULL);
-                    }
-                    plthook_close(ph);
-                    rb_raise(rb_eRuntimeError, "Could not replace function %s in %s", function->func_name, file);
-                }
+    /* install hooks */
+    for (i = 0; functions[i].func_name != NULL ; i++) {
+        hook_func_entry_t *function = &functions[i];
+        rv = plthook_replace(ph, function->func_name, function->func_addr, &function->old_func_addr);
+        if (rv != 0) {
+            strncpy(hook_errmsg, plthook_error(), sizeof(hook_errmsg));
+            while (--i >= 0) {
+                /*restore hooked fuction address */
+                plthook_replace(ph, functions[i].func_name, functions[i].old_func_addr, NULL);
             }
-            plthook_close(ph);
-            return 0;
+            snprintf(hook_errmsg, sizeof(hook_errmsg), "Could not replace function %s in %s", function->func_name, file);
+            break;
         }
     }
-    return -1;
+    plthook_close(ph);
+    return rv;
 }
 
 #ifdef WINDOWS
@@ -141,23 +144,6 @@ static DWORD keepalive_interval;
 static int locK_is_initialized;
 
 static int WSAAPI hook_WSARecv(SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount, LPDWORD lpNumberOfBytesRecvd, LPDWORD lpFlags, LPWSAOVERLAPPED lpOverlapped, LPWSAOVERLAPPED_COMPLETION_ROUTINE lpCompletionRoutine);
-
-static const char * const tcp_func_files[] = {
-    /* full client */
-    "orantcp12.dll",
-    "orantcp11.dll",
-    "orantcp10.dll",
-    "orantcp9.dll",
-    /* instant client basic */
-    "oraociei12.dll",
-    "oraociei11.dll",
-    "oraociei10.dll",
-    /* instant client basic lite */
-    "oraociicus12.dll",
-    "oraociicus11.dll",
-    "oraociicus10.dll",
-    NULL,
-};
 
 static hook_func_entry_t tcp_functions[] = {
     {"WSARecv", (void*)hook_WSARecv, NULL},
@@ -190,6 +176,9 @@ void oci8_install_hook_functions()
     DWORD data;
     DWORD cbData = sizeof(data);
     const char *reg_key = "SYSTEM\\CurrentControlSet\\Services\\Tcpip\\Parameters";
+    HANDLE hSnapshot;
+    MODULEENTRY32 me;
+    BOOL module_found = FALSE;
 
     if (hook_functions_installed) {
         return;
@@ -222,7 +211,32 @@ void oci8_install_hook_functions()
     }
     RegCloseKey(hKey);
 
-    if (replace_functions(tcp_func_files, tcp_functions) != 0) {
+    hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, GetCurrentProcessId());
+    me.dwSize = sizeof(me);
+    if (Module32First(hSnapshot, &me)) {
+        do {
+            const char *p = NULL;
+            if (strnicmp(me.szModule, "orantcp", 7) == 0) { // ORACLE_HOME-based client
+                p = me.szModule + 7;
+            } else if (strnicmp(me.szModule, "oraociei", 8) == 0) { // instant client basic
+                p = me.szModule + 8;
+            } else if (strnicmp(me.szModule, "oraociicus", 10) == 0) { // instant client basic lite
+                p = me.szModule + 10;
+            }
+            if (p != NULL && ('1' <= *p && *p <= '9') && ('0' <= *(p + 1) && *(p + 1) <= '9')
+                && stricmp(p + 2, ".dll") == 0) {
+                if (GetProcAddress((HMODULE)me.modBaseAddr, "nttini") != NULL) {
+                    module_found = TRUE;
+                    if (replace_functions(me.modBaseAddr, me.szExePath, tcp_functions) != 0) {
+                        CloseHandle(hSnapshot);
+                        rb_raise(rb_eRuntimeError, "Hook error: %s", hook_errmsg);
+                    }
+                }
+            }
+        } while (Module32Next(hSnapshot, &me));
+    }
+    CloseHandle(hSnapshot);
+    if (!module_found) {
         rb_raise(rb_eRuntimeError, "No DLL is found to hook.");
     }
     hook_functions_installed = 1;
@@ -240,20 +254,6 @@ static void shutdown_socket(socket_entry_t *entry)
 
 #else
 static ssize_t hook_read(int fd, void *buf, size_t count);
-
-#ifdef __APPLE__
-#define SO_EXT "dylib"
-#else
-#define SO_EXT "so"
-#endif
-
-static const char * const files[] = {
-    "libclntsh." SO_EXT ".12.1",
-    "libclntsh." SO_EXT ".11.1",
-    "libclntsh." SO_EXT ".10.1",
-    "libclntsh." SO_EXT ".9.0",
-    NULL,
-};
 
 static hook_func_entry_t functions[] = {
     {"read", (void*)hook_read, NULL},
@@ -279,15 +279,43 @@ static ssize_t hook_read(int fd, void *buf, size_t count)
     return rv;
 }
 
+static void *ocifunc_addr(void *dlsym_handle, const char **file)
+{
+    void *addr = dlsym(dlsym_handle, "OCIEnvCreate");
+    Dl_info dli;
+
+    if (addr == NULL) {
+        return NULL;
+    }
+    if (dladdr(addr, &dli) == 0) {
+        return NULL;
+    }
+    if (strstr(dli.dli_fname, "/libclntsh.so") == 0) {
+        return NULL;
+    }
+    *file = dli.dli_fname;
+    return addr;
+}
+
 void oci8_install_hook_functions(void)
 {
     static int hook_functions_installed = 0;
+    void *addr;
+    const char *file;
 
     if (hook_functions_installed) {
         return;
     }
-    if (replace_functions(files, functions) != 0) {
+    addr = ocifunc_addr(RTLD_DEFAULT, &file);
+    if (addr == NULL) {
+        /* OCI symbols may be hooked by LD_PRELOAD. */
+        addr = ocifunc_addr(RTLD_NEXT, &file);
+    }
+    if (addr == NULL) {
         rb_raise(rb_eRuntimeError, "No shared library is found to hook.");
+    }
+    if (replace_functions(addr, file, functions) != 0) {
+        rb_raise(rb_eRuntimeError, "Hook error: %s", hook_errmsg);
     }
     hook_functions_installed = 1;
 }

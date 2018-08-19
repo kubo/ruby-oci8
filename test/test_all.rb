@@ -26,6 +26,7 @@ require "#{srcdir}/test_oracle_version"
 require "#{srcdir}/test_error"
 require "#{srcdir}/test_connection_pool"
 require "#{srcdir}/test_object"
+require "#{srcdir}/test_properties.rb"
 
 if OCI8.respond_to? :encoding
   require "#{srcdir}/test_encoding"
