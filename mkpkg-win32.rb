@@ -16,7 +16,6 @@ when '32'
      'c:\ruby\ruby-2.1.3-i386-mingw32',
      'c:\ruby\ruby-2.2.1-i386-mingw32',
      'c:\ruby\ruby-2.3.0-i386-mingw32',
-     'c:\ruby\ruby-2.4.0-i386-mingw32',
      'c:\ruby\rubyinstaller-2.4.1-1-x86',
      'c:\ruby\rubyinstaller-2.5.0-1-x86',
     ]
@@ -48,7 +47,6 @@ when '64'
      'c:\ruby\ruby-2.1.3-x64-mingw32',
      'c:\ruby\ruby-2.2.1-x64-mingw32',
      'c:\ruby\ruby-2.3.0-x64-mingw32',
-     'c:\ruby\ruby-2.4.0-x64-mingw32',
      'c:\ruby\rubyinstaller-2.4.1-1-x64',
      'c:\ruby\rubyinstaller-2.5.0-1-x64',
     ]

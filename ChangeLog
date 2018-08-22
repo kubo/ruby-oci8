@@ -1,4 +1,9 @@
 2018-08-22  Kubo Takehiro <kubo@jiubao.org>
+	* NEWS: Add changes between 2.2.5.1 and 2.2.6
+	* lib/oci8/version.rb: Update to 2.2.6
+	* mkpkg-win32.rb: Don't test with self-build ruby 2.4.
+
+2018-08-22  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/oci8lib.c: Load a Oracle client library which doesn't have
 	    version number suffix also on Unix when runtime-check is enabled.
 	    Oracle version numbers are incremented yearly sice Oracle 18c.

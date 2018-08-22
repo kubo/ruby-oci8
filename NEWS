@@ -1,5 +1,44 @@
 # @markup markdown
 
+2.2.6
+=====
+
+This release fixed issues about Oracle 18c except one.
+
+Fixed issue
+-----------
+
+### Setting some properties failed with Oracle 18c client
+
+Setting `OCI8::properties[:tcp_keepalive_time]` or `OCI8::properties[:cancel_read_at_exit]`
+failed with the error message "No shared library is found to hook" when Oracle
+client version is 18c.
+(rsim/oracle-enhanced#1754)
+
+### Fix `OCI8#oracle_server_version` to get full version of Oracle 18c
+
+`OCI8#oracle_server_version` returned Oracle version number whose
+number components after the first dot are zeros such as '18.0.0.0.0'
+even when the server version is `18.3.0.0.0`. This issue was fixed by
+using a new OCI function. However the function is available since
+Oracle 18c client. So when the Oracle client version is 12c or earlier
+and the Oracle server version is 18c or later, it cannot get the *full*
+Oracle version number.
+
+### Fix tests when the Oracle server version is 18c.
+
+### LOB#sync, LOB#sync= and LOB#flush do nothing now.
+
+They have not worked by mistake from the beginning because incorrect
+arguments has been passed to OCILobOpen(). Moreover it crashed Oracle
+18c server-side processes and caused "ORA-03113: end-of-file on
+communication channel."
+(github issue #198)
+
+### `unsupported typecode timestamp` when timestamp with time zone is in object type attributes.
+
+(github issue #185)
+
 2.2.5.1
 =======
 
