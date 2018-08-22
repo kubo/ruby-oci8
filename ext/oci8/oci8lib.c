@@ -620,11 +620,13 @@ void *oci8_find_symbol(const char *symbol_name)
             "libclntsh.sl.10.1",
 #elif defined(__APPLE__)
             /* Mac OS X */
+            "libclntsh.dylib",
             "libclntsh.dylib.12.1",
             "libclntsh.dylib.11.1",
             "libclntsh.dylib.10.1",
 #else
             /* Linux, Solaris and HP-UX(IA64) */
+            "libclntsh.so",
             "libclntsh.so.12.1",
             "libclntsh.so.11.1",
             "libclntsh.so.10.1",

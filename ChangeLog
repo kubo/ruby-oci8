@@ -1,4 +1,9 @@
 2018-08-22  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/oci8lib.c: Load a Oracle client library which doesn't have
+	    version number suffix also on Unix when runtime-check is enabled.
+	    Oracle version numbers are incremented yearly sice Oracle 18c.
+
+2018-08-22  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/hook_funcs.c, ext/oci8/win32.c: Suppress warnings:
 	   "'raise_error' defined but not used" and "'strncpy' specified
 	   bound 512 equals destination size".
