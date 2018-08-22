@@ -107,7 +107,8 @@ static int replace_functions(void *addr, const char *file, hook_func_entry_t *fu
     int rv = 0;
 
     if (plthook_open_by_address(&ph, addr) != 0) {
-        strncpy(hook_errmsg, plthook_error(), sizeof(hook_errmsg));
+        strncpy(hook_errmsg, plthook_error(), sizeof(hook_errmsg) - 1);
+        hook_errmsg[sizeof(hook_errmsg) - 1] = '\0';
         return -1;
     }
 
@@ -116,7 +117,8 @@ static int replace_functions(void *addr, const char *file, hook_func_entry_t *fu
         hook_func_entry_t *function = &functions[i];
         rv = plthook_replace(ph, function->func_name, function->func_addr, &function->old_func_addr);
         if (rv != 0) {
-            strncpy(hook_errmsg, plthook_error(), sizeof(hook_errmsg));
+            strncpy(hook_errmsg, plthook_error(), sizeof(hook_errmsg) - 1);
+            hook_errmsg[sizeof(hook_errmsg) - 1] = '\0';
             while (--i >= 0) {
                 /*restore hooked fuction address */
                 plthook_replace(ph, functions[i].func_name, functions[i].old_func_addr, NULL);

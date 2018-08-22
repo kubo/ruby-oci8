@@ -21,26 +21,6 @@
  *  @private
  */
 
-NORETURN(static void raise_error(void));
-
-static void raise_error(void)
-{
-    char msg[1024];
-    int err = GetLastError();
-    char *p;
-
-    sprintf(msg, "%d: ", err);
-    FormatMessage(FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                  NULL, err, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-                  msg + strlen(msg), sizeof(msg) - strlen(msg), NULL);
-    for (p = msg; *p != '\0'; p++) {
-        if (*p == '\n' || *p == '\r') {
-            *p = ' ';
-        }
-    }
-    rb_raise(rb_eRuntimeError, "%s", msg);
-}
-
 typedef struct {
     HKEY hKey;
     HKEY hSubKey;

@@ -1,6 +1,11 @@
+2018-08-22  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/hook_funcs.c, ext/oci8/win32.c: Suppress warnings:
+	   "'raise_error' defined but not used" and "'strncpy' specified
+	   bound 512 equals destination size".
+
 2018-08-19  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/hook_funcs.c: Not depend on Oracle version number
-	   in library name when hooking functions.
+	   of Oracle client file name suffix when hooking functions.
 	   (rsim/oracle-enhanced#1754)
 	* test/test_all.rb, test/test_properties.rb, dist-files:
 	   Add tests for hooking.
