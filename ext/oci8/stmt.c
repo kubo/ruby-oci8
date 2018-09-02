@@ -111,12 +111,24 @@ static VALUE oci8_define_by_pos(VALUE self, VALUE vposition, VALUE vbindobj)
     oci8_bind_t *obind = TO_BIND(vbindobj);
     const oci8_bind_data_type_t *data_type;
     sword status;
+    void *valuep;
+    void *indp;
+    ub4 mode;
 
     if (obind->base.hp.dfn != NULL) {
         oci8_base_free(&obind->base); /* TODO: OK? */
     }
     data_type = (const oci8_bind_data_type_t *)obind->base.data_type;
-    status = OCIDefineByPos(stmt->base.hp.stmt, &obind->base.hp.dfn, oci8_errhp, position, obind->valuep, obind->value_sz, data_type->dty, NIL_P(obind->tdo) ? obind->u.inds : NULL, NULL, 0, OCI_DEFAULT);
+    if (obind->value_sz != SB4MAXVAL) {
+        valuep = obind->valuep;
+        indp = NIL_P(obind->tdo) ? obind->u.inds : NULL;
+        mode = OCI_DEFAULT;
+    } else {
+        valuep = NULL;
+        indp = NULL;
+        mode = OCI_DYNAMIC_FETCH;
+    }
+    status = OCIDefineByPos(stmt->base.hp.stmt, &obind->base.hp.dfn, oci8_errhp, position, valuep, obind->value_sz, data_type->dty, indp, NULL, 0, mode);
     if (status != OCI_SUCCESS) {
         chker3(status, &stmt->base, stmt->base.hp.ptr);
     }
@@ -151,7 +163,9 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     oci8_bind_t *obind;
     const oci8_bind_data_type_t *data_type;
     sword status;
+    void *valuep;
     void *indp;
+    ub4 mode;
 
     if (NIL_P(vplaceholder)) { /* 1 */
         placeholder_ptr = NULL;
@@ -185,11 +199,19 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     }
     data_type = (const oci8_bind_data_type_t *)obind->base.data_type;
 
-    indp = NIL_P(obind->tdo) ? obind->u.inds : NULL;
-    if (placeholder_ptr == (char*)-1) {
-        status = OCIBindByPos(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, position, obind->valuep, obind->value_sz, data_type->dty, indp, NULL, 0, 0, 0, OCI_DEFAULT);
+    if (obind->value_sz != SB4MAXVAL) {
+        valuep = obind->valuep;
+        indp = NIL_P(obind->tdo) ? obind->u.inds : NULL;
+        mode = OCI_DEFAULT;
     } else {
-        status = OCIBindByName(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, TO_ORATEXT(placeholder_ptr), placeholder_len, obind->valuep, obind->value_sz, data_type->dty, indp, NULL, 0, 0, 0, OCI_DEFAULT);
+        valuep = NULL;
+        indp = NULL;
+        mode = OCI_DATA_AT_EXEC;
+    }
+    if (placeholder_ptr == (char*)-1) {
+        status = OCIBindByPos(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, position, valuep, obind->value_sz, data_type->dty, indp, NULL, 0, 0, 0, mode);
+    } else {
+        status = OCIBindByName(stmt->base.hp.stmt, &obind->base.hp.bnd, oci8_errhp, TO_ORATEXT(placeholder_ptr), placeholder_len, valuep, obind->value_sz, data_type->dty, indp, NULL, 0, 0, 0, mode);
     }
     if (status != OCI_SUCCESS) {
         chker3(status, &stmt->base, stmt->base.hp.stmt);

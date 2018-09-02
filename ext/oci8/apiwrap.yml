@@ -84,6 +84,17 @@ OCIBindByPos:
             - ub4 mode
 
 # round trip: 0
+OCIBindDynamic:
+  :version: 800
+  :args:
+            - OCIBind *bindp
+            - OCIError *errhp
+            - void  *ictxp
+            - OCICallbackInBind icbfp
+            - void  *octxp
+            - OCICallbackOutBind ocbfp
+
+# round trip: 0
 OCIBindObject:
   :version: 800
   :args:
@@ -179,6 +190,15 @@ OCIDefineByPos:
             - ub2 *rlenp
             - ub2 *rcodep
             - ub4 mode
+
+# round trip: 0
+OCIDefineDynamic:
+  :version: 800
+  :args:
+            - OCIDefine *defnp
+            - OCIError *errhp
+            - dvoid *octxp
+            - OCICallbackDefine ocbfp
 
 # round trip: 0
 OCIDefineObject:

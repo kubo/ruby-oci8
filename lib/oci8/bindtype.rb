@@ -172,20 +172,6 @@ class OCI8
       end
     end
 
-    class Long < OCI8::BindType::String
-      def self.create(con, val, param, max_array_size)
-        param = {:length => con.long_read_len, :char_semantics => true}
-        super(con, val, param, max_array_size)
-      end
-    end
-
-    class LongRaw < OCI8::BindType::RAW
-      def self.create(con, val, param, max_array_size)
-        param = {:length => con.long_read_len, :char_semantics => false}
-        self.new(con, val, param, max_array_size)
-      end
-    end
-
     class CLOB
       def self.create(con, val, param, max_array_size)
         if param.is_a? OCI8::Metadata::Base and param.charset_form == :nchar

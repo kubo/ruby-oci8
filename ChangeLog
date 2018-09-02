@@ -1,3 +1,9 @@
+2018-09-02  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml, ext/oci8/bind.c, ext/oci8/stmt.c,
+	  lib/oci8/bindtype.rb, test/test_oci8.rb: Rewrite OCI8::BindType::Long
+	    and OCI8::BindType::LongRaw to handle up to 2 gigabyte data using
+	    dynamically allocated buffers.
+
 2018-08-22  Kubo Takehiro <kubo@jiubao.org>
 	* NEWS: Add changes between 2.2.5.1 and 2.2.6
 	* lib/oci8/version.rb: Update to 2.2.6

@@ -25,53 +25,142 @@ EOS
     drop_table('test_rename_table')
   end
 
-  # USE_DYNAMIC_FETCH doesn't work well...
-  # This test is disabled.
-  def _test_long_type
-    drop_table('test_table')
-    @conn.exec('CREATE TABLE test_table (id number(38), lng long)')
-    test_data1 = 'a' * 70000
-    test_data2 = 'b' * 3000
-    test_data3 = nil
-    test_data4 = 'c' * 70000
-    @conn.exec('insert into test_table values (:1, :2)', 1, test_data1)
-    @conn.exec('insert into test_table values (:1, :2)', 2, [test_data2, :long])
-    @conn.exec('insert into test_table values (:1, :2)', 3, [nil, :long])
-    @conn.exec('insert into test_table values (:1, :2)', 4, [test_data4, :long])
+  # Set `OCI8::BindType::Base.initial_chunk_size = 5` to
+  # use the following test data.
+  LONG_TEST_DATA = [
+    # initial chunk size: 5 (total buffer size: 5)
+    'a' * 4, 'b' * 5, 'c' * 6, 'd' * 5, 'e' * 4,
+    # second chunk size: 10 (total buffer size: 15)
+    'f' * 14, 'g' * 15, 'h' * 16, 'i' * 15, 'j' * 14,
+    # third chunk size: 20 (total buffer size: 35)
+    'k' * 34, 'l' * 35, 'm' * 36, 'n' * 35, 'o' * 34,
+    # use data around initial chunk size again
+    'p' * 4, 'q' * 5, 'r' * 6, 's' * 5, 't' * 4,
+    # special data
+    '', nil,
+  ]
 
-    [8000, 65535, 65536, 80000].each do |read_len|
-      @conn.long_read_len = read_len
-      cursor = @conn.parse('SELECT lng from test_table order by id')
-      cursor.exec
-      assert_equal(test_data1, cursor.fetch[0])
-      assert_equal(test_data2, cursor.fetch[0])
-      assert_equal(test_data3, cursor.fetch[0])
-      assert_equal(test_data4, cursor.fetch[0])
-      cursor.close
+  def test_long_type
+    clob_bind_type = OCI8::BindType::Mapping[:clob]
+    blob_bind_type = OCI8::BindType::Mapping[:blob]
+    initial_cunk_size = OCI8::BindType::Base.initial_chunk_size
+    begin
+      OCI8::BindType::Base.initial_chunk_size = 5
+      @conn.prefetch_rows = LONG_TEST_DATA.size / 3
+      drop_table('test_table')
+      ascii_enc = Encoding.find('US-ASCII')
+      0.upto(1) do |i|
+        if i == 0
+          @conn.exec("CREATE TABLE test_table (id number(38), long_column long, clob_column clob)")
+          cursor = @conn.parse('insert into test_table values (:1, :2, :3)')
+          cursor.bind_param(1, nil, Integer)
+          cursor.bind_param(2, nil, :long)
+          cursor.bind_param(3, nil, :clob)
+          lob = OCI8::CLOB.new(@conn, '')
+          enc = Encoding.default_internal || OCI8.encoding
+        else
+          @conn.exec("CREATE TABLE test_table (id number(38), long_raw_column long raw, blob_column blob)")
+          cursor = @conn.parse('insert into test_table values (:1, :2, :3)')
+          cursor.bind_param(1, nil, Integer)
+          cursor.bind_param(2, nil, :long_raw)
+          cursor.bind_param(3, nil, :blob)
+          lob = OCI8::BLOB.new(@conn, '')
+          enc = Encoding.find('ASCII-8BIT')
+        end
+
+        LONG_TEST_DATA.each_with_index do |data, index|
+          cursor[1] = index
+          cursor[2] = data
+          if data.nil?
+            cursor[3] = nil
+          else
+            lob.rewind
+            lob.write(data)
+            lob.size = data.size
+            cursor[3] = lob
+          end
+          cursor.exec
+        end
+        cursor.close
+
+        cursor = @conn.parse('SELECT * from test_table order by id')
+        cursor.exec
+        LONG_TEST_DATA.each_with_index do |data, index|
+          row = cursor.fetch
+          assert_equal(index, row[0])
+          if data.nil?
+            assert_nil(row[1])
+            assert_nil(row[2])
+          elsif data.empty?
+            # '' is inserted to the long or long raw column as null.
+            assert_nil(row[1])
+            # '' is inserted to the clob or blob column as an empty clob.
+            # It is fetched as '' when the data is read using a LOB locator.
+            assert_equal(data, clob_data = row[2].read)
+            assert_equal(ascii_enc, clob_data.encoding)
+          else
+            assert_equal(data, row[1])
+            assert_equal(data, clob_data = row[2].read)
+            assert_equal(enc, row[1].encoding)
+            assert_equal(enc, clob_data.encoding)
+          end
+        end
+        assert_nil(cursor.fetch)
+        cursor.close
+
+        begin
+          OCI8::BindType::Mapping[:clob] = OCI8::BindType::Long
+          OCI8::BindType::Mapping[:blob] = OCI8::BindType::LongRaw
+          cursor = @conn.parse('SELECT * from test_table order by id')
+          cursor.exec
+          LONG_TEST_DATA.each_with_index do |data, index|
+            row = cursor.fetch
+            assert_equal(index, row[0])
+            if data.nil?
+              assert_nil(row[1])
+              assert_nil(row[2])
+            elsif data.empty?
+              # '' is inserted to the long or long raw column as null.
+              assert_nil(row[1])
+              # '' is inserted to the clob or blob column as an empty clob.
+              # However it is fetched as nil.
+              assert_nil(row[2])
+            else
+              assert_equal(data, row[1])
+              assert_equal(data, row[2])
+              assert_equal(enc, row[1].encoding)
+              assert_equal(enc, row[2].encoding)
+            end
+          end
+          assert_nil(cursor.fetch)
+          cursor.close
+        ensure
+          OCI8::BindType::Mapping[:clob] = clob_bind_type
+          OCI8::BindType::Mapping[:blob] = blob_bind_type
+        end
+        drop_table('test_table')
+      end
+    ensure
+      OCI8::BindType::Base.initial_chunk_size = initial_cunk_size
     end
     drop_table('test_table')
   end
 
-  def test_long_type
-    @conn.long_read_len = 80000
-    drop_table('test_table')
-    @conn.exec('CREATE TABLE test_table (id number(38), lng long)')
-    test_data1 = 'a' * 70000
-    test_data2 = 'b' * 3000
-    test_data4 = 'c' * 70000
-    @conn.exec('insert into test_table values (:1, :2)', 1, test_data1)
-    @conn.exec('insert into test_table values (:1, :2)', 2, [test_data2, :long])
-    @conn.exec('insert into test_table values (:1, :2)', 3, [nil, :long])
-    @conn.exec('insert into test_table values (:1, :2)', 4, [test_data4, :long])
-
-    cursor = @conn.parse('SELECT lng from test_table order by id')
-    cursor.exec
-    assert_equal(test_data1, cursor.fetch[0])
-    assert_equal(test_data2, cursor.fetch[0])
-    assert_nil(cursor.fetch[0])
-    assert_equal(test_data4, cursor.fetch[0])
-    cursor.close
-    drop_table('test_table')
+  def test_bind_long_data
+    initial_cunk_size = OCI8::BindType::Base.initial_chunk_size
+    begin
+      OCI8::BindType::Base.initial_chunk_size = 5
+      cursor = @conn.parse("begin :1 := '<' || :2 || '>'; end;")
+      cursor.bind_param(1, nil, :long)
+      cursor.bind_param(2, nil, :long)
+      (LONG_TEST_DATA + ['z' * 4000]).each do |data|
+        cursor[2] = data
+        cursor.exec
+        assert_equal("<#{data}>", cursor[1])
+      end
+    ensure
+      OCI8::BindType::Base.initial_chunk_size = initial_cunk_size
+    end
   end
 
   def test_select
