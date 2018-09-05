@@ -169,7 +169,6 @@ class OCI8
   # @private
   def parse_internal(sql)
     cursor = OCI8::Cursor.new(self, sql)
-    cursor.prefetch_rows = @prefetch_rows if @prefetch_rows
     cursor
   end
 
@@ -305,6 +304,7 @@ class OCI8
   # @return [Array] an array of first row.
   def select_one(sql, *bindvars)
     cursor = self.parse(sql)
+    cursor.prefetch_rows = 1
     begin
       cursor.exec(*bindvars)
       row = cursor.fetch

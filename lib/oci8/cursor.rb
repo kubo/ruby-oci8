@@ -25,7 +25,11 @@ class OCI8
       @names = nil
       @con = conn
       @max_array_size = nil
+      @fetch_array_size = nil
+      @rowbuf_size = 0
+      @rowbuf_index = 0
       __initialize(conn, sql) # Initialize the internal C structure.
+      self.prefetch_rows = conn.instance_variable_get(:@prefetch_rows)
     end
 
     # explicitly indicate the date type of fetched value. run this
@@ -38,7 +42,7 @@ class OCI8
     #   cursor.define(2, Time)       # fetch the second column as Time.
     #   cursor.exec()
     def define(pos, type, length = nil)
-      bindobj = make_bind_object(:type => type, :length => length)
+      bindobj = make_bind_object({:type => type, :length => length}, @fetch_array_size || 1)
       __define(pos, bindobj)
       if old = @define_handles[pos - 1]
         old.send(:free)
@@ -126,6 +130,8 @@ class OCI8
       when :select_stmt
         __execute(0)
         define_columns() if @column_metadata.size == 0
+        @rowbuf_size = 0
+        @rowbuf_index = 0
         @column_metadata.size
       else
         __execute(1)
@@ -384,6 +390,7 @@ class OCI8
     # @param [Integer] rows The number of rows to be prefetched
     def prefetch_rows=(rows)
       attr_set_ub4(11, rows) # OCI_ATTR_PREFETCH_ROWS(11)
+      @prefetch_rows = rows
     end
 
     if OCI8::oracle_client_version >= ORAVER_12_1
@@ -468,7 +475,7 @@ class OCI8
 
     private
 
-    def make_bind_object(param)
+    def make_bind_object(param, fetch_array_size = nil)
       case param
       when Hash
         key = param[:type]
@@ -510,22 +517,42 @@ class OCI8
         OCI8::BindType::Mapping[key] = bindclass if bindclass
       end
       raise "unsupported datatype: #{key}" if bindclass.nil?
-      bindclass.create(@con, val, param, max_array_size)
+      bindclass.create(@con, val, param, fetch_array_size || max_array_size)
     end
+
+    @@use_array_fetch = false
 
     def define_columns
       # http://docs.oracle.com/cd/E11882_01/appdev.112/e10646/ociaahan.htm#sthref5494
       num_cols = attr_get_ub4(18) # OCI_ATTR_PARAM_COUNT(18)
-      1.upto(num_cols) do |i|
-        parm = __paramGet(i)
-        define_one_column(i, parm) unless @define_handles[i - 1]
-        @column_metadata[i - 1] = parm
+      @column_metadata = 1.upto(num_cols).collect do |i|
+        __paramGet(i)
+      end
+      if @define_handles.size == 0
+        use_array_fetch = @@use_array_fetch
+        @column_metadata.each do |md|
+          case md.data_type
+          when :clob, :blob, :bfile
+            # Rows prefetching doesn't work for CLOB, BLOB and BFILE.
+            # Use array fetching to get more than one row in a network round trip.
+            use_array_fetch = true
+          when :named_type
+            # Disable array fetching even when rows prefetching doesn't work.
+            # It causes SEGV now.
+            use_array_fetch = false
+            break
+          end
+        end
+        @fetch_array_size = @prefetch_rows if use_array_fetch
+      end
+      @column_metadata.each_with_index do |md, i|
+        define_one_column(i + 1, md) unless @define_handles[i]
       end
       num_cols
     end
 
     def define_one_column(pos, param)
-      bindobj = make_bind_object(param)
+      bindobj = make_bind_object(param, @fetch_array_size || 1)
       __define(pos, bindobj)
       @define_handles[pos - 1] = bindobj
     end
@@ -540,22 +567,33 @@ class OCI8
       end
     end
 
+    def fetch_row_internal
+      if @rowbuf_size && @rowbuf_size == @rowbuf_index
+        @rowbuf_size = __fetch(@con, @fetch_array_size || 1)
+        @rowbuf_index = 0
+      end
+      @rowbuf_size
+    end
+
     def fetch_one_row_as_array
-      if __fetch(@con)
-        @define_handles.collect do |handle|
-          handle.send(:get_data)
+      if fetch_row_internal
+        ret = @define_handles.collect do |handle|
+          handle.send(:get_data, @rowbuf_index)
         end
+        @rowbuf_index += 1
+        ret
       else
         nil
       end
     end
 
     def fetch_one_row_as_hash
-      if __fetch(@con)
+      if fetch_row_internal
         ret = {}
         get_col_names.each_with_index do |name, idx|
-          ret[name] = @define_handles[idx].send(:get_data)
+          ret[name] = @define_handles[idx].send(:get_data, @rowbuf_index)
         end
+        @rowbuf_index += 1
         ret
       else
         nil

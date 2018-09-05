@@ -539,6 +539,7 @@ EOS
     assert_nil(@conn.last_error)
     @conn.last_error = 'dummy'
     cursor = @conn.parse('select col1, max(col2) from (select 1 as col1, null as col2 from dual) group by col1')
+    cursor.prefetch_rows = 1
     assert_nil(@conn.last_error)
 
     # When an OCI function returns OCI_SUCCESS_WITH_INFO, OCI8#last_error is set.
@@ -598,5 +599,26 @@ EOS
             row['VERSION']
           end
     assert_equal(ver, @conn.oracle_server_version.to_s)
+  end
+
+  def test_array_fetch
+    drop_table('test_table')
+    @conn.exec("CREATE TABLE test_table (id number, val clob)")
+    cursor = @conn.parse("INSERT INTO test_table VALUES (:1, :2)")
+    1.upto(10) do |i|
+      cursor.exec(i, ('a'.ord + i).chr * i)
+    end
+    cursor.close
+    cursor = @conn.parse("select * from test_table where id <= :1 order by id")
+    cursor.prefetch_rows = 4
+    [1, 6, 2, 7, 3, 8, 4, 9, 5, 10].each do |i|
+      cursor.exec(i)
+      1.upto(i) do |j|
+        row = cursor.fetch
+        assert_equal(j, row[0])
+        assert_equal(('a'.ord + j).chr * j, row[1].read)
+      end
+      assert_nil(cursor.fetch)
+    end
   end
 end # TestOCI8

@@ -15,7 +15,8 @@ static VALUE cOCIStmt;
 typedef struct {
     oci8_base_t base;
     VALUE svc;
-    int use_stmt_release;
+    char use_stmt_release;
+    char end_of_fetch;
 } oci8_stmt_t;
 
 static void oci8_stmt_mark(oci8_base_t *base)
@@ -260,6 +261,7 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE iteration_count)
     oci8_stmt_t *stmt = TO_STMT(self);
     oci8_svcctx_t *svcctx = oci8_get_svcctx(stmt->svc);
 
+    stmt->end_of_fetch = 0;
     chker3(oci8_call_stmt_execute(svcctx, stmt, NUM2UINT(iteration_count),
                                   svcctx->is_autocommit ? OCI_COMMIT_ON_SUCCESS : OCI_DEFAULT),
            &stmt->base, stmt->base.hp.stmt);
@@ -267,7 +269,7 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE iteration_count)
 }
 
 /*
- * @overload __fetch(connection)
+ * @overload __fetch(connection, max_rows)
  *
  *  Fetches one row and set the result to <code>@define_handles</code>.
  *  This is called by private methods of OCI8::Cursor.
@@ -277,13 +279,18 @@ static VALUE oci8_stmt_execute(VALUE self, VALUE iteration_count)
  *
  *  @private
  */
-static VALUE oci8_stmt_fetch(VALUE self, VALUE svc)
+static VALUE oci8_stmt_fetch(VALUE self, VALUE svc, VALUE max_rows)
 {
     oci8_stmt_t *stmt = TO_STMT(self);
     oci8_svcctx_t *svcctx = oci8_get_svcctx(svc);
     sword rv;
     oci8_bind_t *obind;
     const oci8_bind_data_type_t *data_type;
+    ub4 nrows = NUM2UINT(max_rows);
+
+    if (stmt->end_of_fetch) {
+        return Qnil;
+    }
 
     if (stmt->base.children != NULL) {
         obind = (oci8_bind_t *)stmt->base.children;
@@ -293,16 +300,22 @@ static VALUE oci8_stmt_fetch(VALUE self, VALUE svc)
                 if (data_type->pre_fetch_hook != NULL) {
                     data_type->pre_fetch_hook(obind, stmt->svc);
                 }
+                if (nrows > 1 && nrows != obind->maxar_sz) {
+                    rb_raise(rb_eRuntimeError, "fetch size (%u) != define-handle size %u", nrows, obind->maxar_sz);
+                }
             }
             obind = (oci8_bind_t *)obind->base.next;
         } while (obind != (oci8_bind_t*)stmt->base.children);
     }
-    rv = OCIStmtFetch_nb(svcctx, stmt->base.hp.stmt, oci8_errhp, 1, OCI_FETCH_NEXT, OCI_DEFAULT);
+    rv = OCIStmtFetch_nb(svcctx, stmt->base.hp.stmt, oci8_errhp, nrows, OCI_FETCH_NEXT, OCI_DEFAULT);
     if (rv == OCI_NO_DATA) {
-        return Qfalse;
+        stmt->end_of_fetch = 1;
+    } else {
+        chker3(rv, &svcctx->base, stmt->base.hp.stmt);
     }
-    chker3(rv, &svcctx->base, stmt->base.hp.stmt);
-    return Qtrue;
+    chker2(OCIAttrGet(stmt->base.hp.stmt, OCI_HTYPE_STMT, &nrows, 0, OCI_ATTR_ROWS_FETCHED, oci8_errhp),
+           &svcctx->base);
+    return nrows ? UINT2NUM(nrows) : Qnil;
 }
 
 /*
@@ -427,7 +440,7 @@ void Init_oci8_stmt(VALUE cOCI8)
     rb_define_private_method(cOCIStmt, "__define", oci8_define_by_pos, 2);
     rb_define_private_method(cOCIStmt, "__bind", oci8_bind, 2);
     rb_define_private_method(cOCIStmt, "__execute", oci8_stmt_execute, 1);
-    rb_define_private_method(cOCIStmt, "__fetch", oci8_stmt_fetch, 1);
+    rb_define_private_method(cOCIStmt, "__fetch", oci8_stmt_fetch, 2);
     rb_define_private_method(cOCIStmt, "__paramGet", oci8_stmt_get_param, 1);
     rb_define_method(cOCIStmt, "rowid", oci8_stmt_get_rowid, 0);
 

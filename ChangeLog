@@ -1,3 +1,8 @@
+2018-09-05  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/bind.c, ext/oci8/stmt.c, lib/oci8/cursor.rb,
+	  lib/oci8/oci8.rb, test/test_oci8.rb: Use array fetching when
+	    LOB colums are in a query and no object types are in the query.
+
 2018-09-02  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/apiwrap.yml, ext/oci8/bind.c, ext/oci8/stmt.c,
 	  lib/oci8/bindtype.rb, test/test_oci8.rb: Rewrite OCI8::BindType::Long

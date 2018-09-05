@@ -634,11 +634,20 @@ static VALUE oci8_bind_get(VALUE self)
     return data_type->get(obind, (void*)((size_t)obind->valuep + obind->alloc_sz * idx), null_structp);
 }
 
-static VALUE oci8_bind_get_data(VALUE self)
+static VALUE oci8_bind_get_data(int argc, VALUE *argv, VALUE self)
 {
     oci8_bind_t *obind = TO_BIND(self);
+    VALUE index;
 
-    if (obind->maxar_sz == 0) {
+    rb_scan_args(argc, argv, "01", &index);
+    if (!NIL_P(index)) {
+        ub4 idx = NUM2UINT(index);
+        if (idx >= obind->maxar_sz) {
+            rb_raise(rb_eRuntimeError, "data index is too big. (%u for %u)", idx, obind->maxar_sz);
+        }
+        obind->curar_idx = idx;
+        return rb_funcall(self, oci8_id_get, 0);
+    } else if (obind->maxar_sz == 0) {
         obind->curar_idx = 0;
         return rb_funcall(self, oci8_id_get, 0);
     } else {
@@ -809,7 +818,7 @@ void Init_oci8_bind(VALUE klass)
     rb_define_method(cOCI8BindTypeBase, "initialize", oci8_bind_initialize, 4);
     rb_define_method(cOCI8BindTypeBase, "get", oci8_bind_get, 0);
     rb_define_method(cOCI8BindTypeBase, "set", oci8_bind_set, 1);
-    rb_define_private_method(cOCI8BindTypeBase, "get_data", oci8_bind_get_data, 0);
+    rb_define_private_method(cOCI8BindTypeBase, "get_data", oci8_bind_get_data, -1);
     rb_define_private_method(cOCI8BindTypeBase, "set_data", oci8_bind_set_data, 1);
 
     rb_define_singleton_method(klass, "initial_chunk_size", get_initial_chunk_size, 0);
