@@ -1,0 +1,29 @@
+# Ruby CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-ruby/ for more details
+#
+version: 2
+jobs:
+  build:
+    machine: true
+    environment:
+      ORACLE_FILE: 'oracle11g/xe/oracle-xe-11.2.0-1.0.x86_64.rpm.zip'
+      ORACLE_HOME: '/u01/app/oracle/product/11.2.0/xe'
+      NLS_LANG: 'AMERICAN_AMERICA.AL32UTF8'
+      ORACLE_BASE: '/u01/app/oracle'
+      LD_LIBRARY_PATH: '$ORACLE_HOME/lib'
+      #PATH: '$PATH:$ORACLE_HOME/jdbc/lib'
+      DATABASE_VERSION: '11.2.0.1'
+      ORACLE_SID: 'XE'
+      DATABASE_NAME: 'XE'
+      ORA_SDTZ: 'America/New_York'
+      TZ: 'America/New_York'
+    steps:
+      - checkout
+      - run:
+          name: Download and Install Oracle
+          command: |
+            cisetup/oracle/download.sh
+            cisetup/oracle/install.sh
+            cisetup/setup_accounts.sh
+      - run: echo 'export PATH=$ORACLE_HOME/jdbc/lib:$PATH' >> $BASH_ENV
