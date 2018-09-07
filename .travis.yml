@@ -18,14 +18,14 @@ env:
     - TZ='Europe/Riga'       #Needed as a DB Server parameter
 
 before_install:
-  - chmod +x cisetup/oracle/download.sh
-  - chmod +x cisetup/oracle/install.sh
-  - chmod +x cisetup/setup_accounts.sh
+  - chmod +x .travis/oracle/download.sh
+  - chmod +x .travis/oracle/install.sh
+  - chmod +x .travis/setup_accounts.sh
 
 install:
- - cisetup/oracle/download.sh
- - cisetup/oracle/install.sh
- - cisetup/setup_accounts.sh
+ - .travis/oracle/download.sh
+ - .travis/oracle/install.sh
+ - .travis/setup_accounts.sh
 
 script:
   - make check
