@@ -639,10 +639,9 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
 {
     oci8_lob_t *lob = TO_LOB(self);
     oci8_svcctx_t *svcctx = check_svcctx(lob);
-    ub8 lob_length;
-    ub8 read_len;
     ub8 pos = lob->pos;
-    long strbufsiz;
+    long strbufsiz = 512;
+    ub8 sz;
     ub8 byte_amt;
     ub8 char_amt;
     sword rv;
@@ -652,36 +651,21 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
     ub1 piece = OCI_FIRST_PIECE;
 
     rb_scan_args(argc, argv, "01", &size);
-    lob_length = oci8_lob_get_length(lob);
-    if (lob_length == 0 && NIL_P(size)) {
-        return rb_usascii_str_new("", 0);
-    }
-    if (lob_length <= pos) /* EOF */
-        return Qnil;
     if (NIL_P(size)) {
-        read_len = lob_length - pos;
+        sz = UB4MAXVAL;
     } else {
-        ub8 sz = NUM2ULL(size);
-        read_len = MIN(sz, lob_length - pos);
-    }
-    if (lob->lobtype == OCI_TEMP_CLOB) {
-        byte_amt = 0;
-        char_amt = read_len;
-        if (oci8_nls_ratio == 1) {
-            strbufsiz = MIN(read_len, ULONG_MAX);
-        } else {
-            strbufsiz = MIN(read_len + read_len / 8, ULONG_MAX);
-        }
-        if (strbufsiz <= 10) {
-            strbufsiz = 10;
-        }
-    } else {
-        byte_amt = read_len;
-        char_amt = 0;
-        strbufsiz = MIN(read_len, ULONG_MAX);
+        sz = NUM2ULL(size);
     }
     if (lob->state == S_BFILE_CLOSE) {
         open_bfile(svcctx, lob, errhp);
+    }
+read_more_data:
+    if (lob->lobtype == OCI_TEMP_CLOB) {
+        byte_amt = 0;
+        char_amt = sz;
+    } else {
+        byte_amt = sz;
+        char_amt = 0;
     }
     do {
         VALUE strbuf = rb_str_buf_new(strbufsiz);
@@ -711,15 +695,24 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
         }
         rb_str_set_len(strbuf, byte_amt);
         rb_ary_push(v, strbuf);
+        if (strbufsiz < 128 * 1024 * 1024) {
+            strbufsiz *= 2;
+        }
     } while (rv == OCI_NEED_DATA);
 
-    if (pos >= lob_length) {
-        bfile_close(lob);
+    if (NIL_P(size) && pos - lob->pos == sz) {
+        lob->pos = pos;
+        piece = OCI_FIRST_PIECE;
+        goto read_more_data;
     }
     lob->pos = pos;
     switch (RARRAY_LEN(v)) {
     case 0:
-        return Qnil;
+        if (NIL_P(size) && pos == 0) {
+            return rb_usascii_str_new("", 0);
+        } else {
+            return Qnil;
+        }
     case 1:
         v = RARRAY_AREF(v, 0);
         break;

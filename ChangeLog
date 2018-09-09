@@ -1,3 +1,7 @@
+2018-09-09  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/lob.c: Read lob data without checking readable size to
+	    reduce number of network round trips from two to one.
+
 2018-09-05  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/bind.c, ext/oci8/stmt.c, lib/oci8/cursor.rb,
 	  lib/oci8/oci8.rb, test/test_oci8.rb: Use array fetching when
