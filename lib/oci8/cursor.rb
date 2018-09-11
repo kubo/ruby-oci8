@@ -536,11 +536,6 @@ class OCI8
             # Rows prefetching doesn't work for CLOB, BLOB and BFILE.
             # Use array fetching to get more than one row in a network round trip.
             use_array_fetch = true
-          when :named_type
-            # Disable array fetching even when rows prefetching doesn't work.
-            # It causes SEGV now.
-            use_array_fetch = false
-            break
           end
         end
         @fetch_array_size = @prefetch_rows if use_array_fetch

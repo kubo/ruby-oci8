@@ -680,43 +680,53 @@ static VALUE oci8_named_collection_alloc(VALUE klass)
     return oci8_allocate_typeddata(klass, &oci8_named_collection_data_type);
 }
 
+typedef struct {
+    oci8_bind_t bind;
+    VALUE *obj;
+} bind_named_type_t;
+
 static void bind_named_type_mark(oci8_base_t *base)
 {
-    oci8_bind_t *obind = (oci8_bind_t *)base;
-    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)obind->valuep;
+    bind_named_type_t *bnt = (bind_named_type_t *)base;
 
-    if (oho != NULL) {
+    if (bnt->obj != NULL) {
         ub4 idx = 0;
 
         do {
-            rb_gc_mark(oho[idx].obj);
-        } while (++idx < obind->maxar_sz);
+            rb_gc_mark(bnt->obj[idx]);
+        } while (++idx < bnt->bind.maxar_sz);
     }
-    rb_gc_mark(obind->tdo);
+    rb_gc_mark(bnt->bind.tdo);
 }
 
 static void bind_named_type_free(oci8_base_t *base)
 {
-    oci8_bind_t *obind = (oci8_bind_t *)base;
-    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)obind->valuep;
+    bind_named_type_t *bnt = (bind_named_type_t *)base;
+    void **hp = (void **)bnt->bind.valuep;
 
-    if (oho != NULL) {
+    if (hp != NULL) {
         ub4 idx = 0;
 
         do {
-            if (oho[idx].hp != NULL) {
-                OCIObjectFree(oci8_envhp, oci8_errhp, oho[idx].hp, OCI_DEFAULT);
-                oho[idx].hp = NULL;
+            if (hp[idx] != NULL) {
+                OCIObjectFree(oci8_envhp, oci8_errhp, hp[idx], OCI_DEFAULT);
+                hp[idx] = NULL;
             }
-        } while (++idx < obind->maxar_sz);
+        } while (++idx < bnt->bind.maxar_sz);
+    }
+    if (bnt->obj != NULL) {
+        xfree(bnt->obj);
+        bnt->obj = NULL;
     }
     oci8_bind_free(base);
 }
 
 static VALUE bind_named_type_get(oci8_bind_t *obind, void *data, void *null_struct)
 {
-    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)data;
-    return oho->obj;
+    bind_named_type_t *bnt = (bind_named_type_t *)obind;
+    ub4 idx = obind->curar_idx;
+
+    return bnt->obj[idx];
 }
 
 static void bind_named_type_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
@@ -726,10 +736,12 @@ static void bind_named_type_set(oci8_bind_t *obind, void *data, void **null_stru
 
 static void bind_named_type_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
 {
+    bind_named_type_t *bnt = (bind_named_type_t *)obind;
     VALUE tdo_obj = length;
 
     obind->value_sz = sizeof(void*);
-    obind->alloc_sz = sizeof(oci8_hp_obj_t);
+    obind->alloc_sz = sizeof(void*);
+    bnt->obj = xcalloc(sizeof(VALUE), obind->maxar_sz ? obind->maxar_sz : 1);
 
     CHECK_TDO(tdo_obj);
     RB_OBJ_WRITE(obind->base.self, &obind->tdo, tdo_obj);
@@ -737,7 +749,8 @@ static void bind_named_type_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE
 
 static void bind_named_type_init_elem(oci8_bind_t *obind, VALUE svc)
 {
-    oci8_hp_obj_t *oho = (oci8_hp_obj_t *)obind->valuep;
+    bind_named_type_t *bnt = (bind_named_type_t *)obind;
+    void **hp = (void **)obind->valuep;
     oci8_base_t *tdo = DATA_PTR(obind->tdo);
     OCITypeCode tc = OCITypeTypeCode(oci8_envhp, oci8_errhp, tdo->hp.tdo);
     VALUE klass = Qnil;
@@ -755,14 +768,14 @@ static void bind_named_type_init_elem(oci8_bind_t *obind, VALUE svc)
     }
     svcctx = oci8_get_svcctx(svc);
     do {
-        oho[idx].obj = rb_class_new_instance(0, NULL, klass);
-        RB_OBJ_WRITTEN(obind->base.self, Qundef, oho[idx].obj);
-        obj = DATA_PTR(oho[idx].obj);
-        RB_OBJ_WRITE(oho[idx].obj, &obj->tdo, obind->tdo);
-        obj->instancep = (char**)&oho[idx].hp;
+        bnt->obj[idx] = rb_class_new_instance(0, NULL, klass);
+        RB_OBJ_WRITTEN(obind->base.self, Qundef, bnt->obj[idx]);
+        obj = DATA_PTR(bnt->obj[idx]);
+        RB_OBJ_WRITE(bnt->obj[idx], &obj->tdo, obind->tdo);
+        obj->instancep = (char**)&hp[idx];
         obj->null_structp = (char**)&obind->u.null_structs[idx];
         oci8_link_to_parent(&obj->base, &obind->base);
-        RB_OBJ_WRITTEN(oho[idx].obj, Qundef, obind->base.self);
+        RB_OBJ_WRITTEN(bnt->obj[idx], Qundef, obind->base.self);
 
         chker2(OCIObjectNew(oci8_envhp, oci8_errhp, svcctx->base.hp.svc, tc, tdo->hp.tdo, NULL, OCI_DURATION_SESSION, TRUE, (dvoid**)obj->instancep),
                &svcctx->base);
@@ -804,7 +817,7 @@ static const oci8_bind_data_type_t bind_named_type_data_type = {
 #endif
         },
         bind_named_type_free,
-        sizeof(oci8_bind_t)
+        sizeof(bind_named_type_t)
     },
     bind_named_type_get,
     bind_named_type_set,
