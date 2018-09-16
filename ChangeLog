@@ -1,3 +1,7 @@
+2018-09-16  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/hook_funcs.c: Fix "No shared library is found to hook." on macOS.
+	    (oracle-enhanced issue #1768)
+
 2018-09-11  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/object.c, lib/oci8/cursor.rb: Change the internal structure
 	    about object type binding to use array fetching for object types.

@@ -1,5 +1,13 @@
 # @markup markdown
 
+2.2.6.1
+=======
+
+Fixed issue
+-----------
+Fix "No shared library is found to hook." on macOS.
+(rsim/oracle-enhanced#1768)
+
 2.2.6
 =====
 
