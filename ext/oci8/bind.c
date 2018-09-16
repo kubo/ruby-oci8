@@ -26,8 +26,8 @@ typedef struct {
     ub1 csfrm;
 } oci8_bind_string_t;
 
-static ub4 initial_chunk_size = 32 * 1024;
-static ub4 max_chunk_size = 8 * 1024 * 1024;
+ub4 oci8_initial_chunk_size = 512;
+ub4 oci8_max_chunk_size = 128 * 1024 * 1024;
 
 typedef struct chunk {
     struct chunk *next;
@@ -716,7 +716,7 @@ static VALUE oci8_bind_set_data(VALUE self, VALUE val)
 
 static VALUE get_initial_chunk_size(VALUE klass)
 {
-    return UINT2NUM(initial_chunk_size);
+    return UINT2NUM(oci8_initial_chunk_size);
 }
 
 static VALUE set_initial_chunk_size(VALUE klass, VALUE arg)
@@ -725,13 +725,13 @@ static VALUE set_initial_chunk_size(VALUE klass, VALUE arg)
     if (size == 0) {
         rb_raise(rb_eArgError, "Could not set zero");
     }
-    initial_chunk_size = size;
+    oci8_initial_chunk_size = size;
     return arg;
 }
 
 static VALUE get_max_chunk_size(VALUE klass)
 {
-    return UINT2NUM(max_chunk_size);
+    return UINT2NUM(oci8_max_chunk_size);
 }
 
 static VALUE set_max_chunk_size(VALUE klass, VALUE arg)
@@ -740,7 +740,7 @@ static VALUE set_max_chunk_size(VALUE klass, VALUE arg)
     if (size == 0) {
         rb_raise(rb_eArgError, "Could not set zero");
     }
-    max_chunk_size = size;
+    oci8_max_chunk_size = size;
     return arg;
 }
 

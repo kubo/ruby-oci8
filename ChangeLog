@@ -1,4 +1,9 @@
 2018-09-16  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/bind.c, ext/oci8/lob.c, ext/oci8/oci8.h: Change the default values
+	    of OCI8::BindType::Base.initial_chunk_size and .initial_chunk_size
+	    and use the values also to customize chunk sizes for reading LOBs.
+
+2018-09-16  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/hook_funcs.c: Fix "No shared library is found to hook." on macOS.
 	    (oracle-enhanced issue #1768)
 

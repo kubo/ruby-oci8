@@ -640,7 +640,7 @@ static VALUE oci8_lob_read(int argc, VALUE *argv, VALUE self)
     oci8_lob_t *lob = TO_LOB(self);
     oci8_svcctx_t *svcctx = check_svcctx(lob);
     ub8 pos = lob->pos;
-    long strbufsiz = 512;
+    long strbufsiz = oci8_initial_chunk_size;
     ub8 sz;
     ub8 byte_amt;
     ub8 char_amt;
@@ -695,7 +695,7 @@ read_more_data:
         }
         rb_str_set_len(strbuf, byte_amt);
         rb_ary_push(v, strbuf);
-        if (strbufsiz < 128 * 1024 * 1024) {
+        if (strbufsiz < oci8_max_chunk_size) {
             strbufsiz *= 2;
         }
     } while (rv == OCI_NEED_DATA);

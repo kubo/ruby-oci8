@@ -457,6 +457,8 @@ typedef struct {
     void *hp;
     VALUE obj;
 } oci8_hp_obj_t;
+extern ub4 oci8_initial_chunk_size;
+extern ub4 oci8_max_chunk_size;
 extern const oci8_handle_data_type_t oci8_bind_data_type;
 void oci8_bind_free(oci8_base_t *base);
 void oci8_bind_hp_obj_mark(oci8_base_t *base);
