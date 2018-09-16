@@ -1,3 +1,7 @@
+2018-09-16  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/hook_funcs.c: Fix "No shared library is found to hook." on macOS.
+	    (oracle-enhanced issue #1768)
+
 2018-08-22  Kubo Takehiro <kubo@jiubao.org>
 	* NEWS: Add changes between 2.2.5.1 and 2.2.6
 	* lib/oci8/version.rb: Update to 2.2.6

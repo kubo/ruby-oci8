@@ -257,6 +257,12 @@ static void shutdown_socket(socket_entry_t *entry)
 #else
 static ssize_t hook_read(int fd, void *buf, size_t count);
 
+#ifdef __APPLE__
+#define SO_EXT "dylib"
+#else
+#define SO_EXT "so"
+#endif
+
 static hook_func_entry_t functions[] = {
     {"read", (void*)hook_read, NULL},
 #ifdef SUPPORT_TCP_KEEPALIVE_TIME
@@ -292,7 +298,7 @@ static void *ocifunc_addr(void *dlsym_handle, const char **file)
     if (dladdr(addr, &dli) == 0) {
         return NULL;
     }
-    if (strstr(dli.dli_fname, "/libclntsh.so") == 0) {
+    if (strstr(dli.dli_fname, "/libclntsh." SO_EXT) == 0) {
         return NULL;
     }
     *file = dli.dli_fname;
