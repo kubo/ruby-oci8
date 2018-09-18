@@ -1215,6 +1215,318 @@ static VALUE bind_bfile_alloc(VALUE klass)
     return oci8_allocate_typeddata(klass, &bind_bfile_data_type.bind.base);
 }
 
+/* bind_string_from_(clob|nclob|blob) */
+typedef struct {
+    OCILobLocator *loc;
+    chunk_buf_t buf;
+} string_from_lob_t;
+
+enum bind_string_from_lob_type {
+    BIND_STRING_FROM_CLOB,
+    BIND_STRING_FROM_NCLOB,
+    BIND_STRING_FROM_BLOB,
+    NO_BIND_STRING_FROM_LOB,
+};
+
+static enum bind_string_from_lob_type bind_string_from_lob_type(oci8_bind_t *obind);
+#define IS_BIND_CHAR_LOB(obind) (bind_string_from_lob_type(obind) != BIND_STRING_FROM_BLOB)
+
+static void bind_string_from_lob_free(oci8_base_t *base)
+{
+    oci8_bind_t *obind = (oci8_bind_t *)base;
+    string_from_lob_t *sfl = (string_from_lob_t *)obind->valuep;
+
+    if (sfl != NULL) {
+        ub4 idx = 0;
+        do {
+            if (sfl[idx].loc != NULL) {
+                OCIDescriptorFree(sfl[idx].loc, OCI_DTYPE_LOB);
+            }
+            oci8_chunk_buf_free(&sfl[idx].buf);
+        } while (++idx < obind->maxar_sz);
+    }
+    oci8_bind_free(base);
+}
+
+static VALUE bind_string_from_lob_get(oci8_bind_t *obind, void *data, void *null_struct)
+{
+    string_from_lob_t *sfl = (string_from_lob_t *)data;
+    VALUE str = oci8_chunk_buf_to_str(&sfl->buf, IS_BIND_CHAR_LOB(obind));
+
+    OBJ_TAINT(str);
+    return str;
+}
+
+static void bind_string_from_lob_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
+{
+    const char *type_name = obind->base.data_type->rb_data_type.wrap_struct_name;
+    rb_raise(rb_eRuntimeError, "Could not set any value to this bind type %s", type_name);
+}
+
+static void bind_string_from_lob_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE length)
+{
+    obind->value_sz = sizeof(void *);
+    obind->alloc_sz = sizeof(string_from_lob_t);
+}
+
+static void bind_string_from_lob_init_elem(oci8_bind_t *obind, VALUE svc)
+{
+    string_from_lob_t *sfl = (string_from_lob_t *)obind->valuep;
+    ub4 idx = 0;
+
+    do {
+        sword rv = OCIDescriptorAlloc(oci8_envhp, (dvoid**)&sfl->loc, OCI_DTYPE_LOB, 0, NULL);
+        if (rv != OCI_SUCCESS) {
+            oci8_env_raise(oci8_envhp, rv);
+        }
+        sfl->buf.head = NULL;
+        sfl->buf.tail = &sfl->buf.head;
+        sfl++;
+    } while (++idx < obind->maxar_sz);
+}
+
+static void bind_string_from_lob_post_bind_hook(oci8_bind_t *obind)
+{
+    if (obind->base.type != OCI_HTYPE_DEFINE) {
+        const char *type_name = obind->base.data_type->rb_data_type.wrap_struct_name;
+        rb_raise(rb_eRuntimeError, "Could not bind %s", type_name);
+    }
+    if (bind_string_from_lob_type(obind) == BIND_STRING_FROM_NCLOB) {
+        ub1 csfrm = SQLCS_NCHAR;
+
+        chker2(OCIAttrSet(obind->base.hp.ptr, obind->base.type, (void*)&csfrm, 0, OCI_ATTR_CHARSET_FORM, oci8_errhp),
+               &obind->base);
+    }
+}
+
+static const oci8_bind_data_type_t bind_string_from_clob_data_type = {
+    {
+        {
+            "OCI8::BindType::StringFromCLOB",
+            {
+                NULL,
+                oci8_handle_cleanup,
+                oci8_handle_size,
+            },
+            &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+            RUBY_TYPED_WB_PROTECTED,
+#endif
+        },
+        bind_string_from_lob_free,
+        sizeof(oci8_bind_t)
+    },
+    bind_string_from_lob_get,
+    bind_string_from_lob_set,
+    bind_string_from_lob_init,
+    bind_string_from_lob_init_elem,
+    NULL,
+    SQLT_CLOB,
+    bind_string_from_lob_post_bind_hook,
+};
+
+static VALUE bind_string_from_clob_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_string_from_clob_data_type.base);
+}
+static const oci8_bind_data_type_t bind_string_from_nclob_data_type = {
+    {
+        {
+            "OCI8::BindType::StringFromNCLOB",
+            {
+                NULL,
+                oci8_handle_cleanup,
+                oci8_handle_size,
+            },
+            &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+            RUBY_TYPED_WB_PROTECTED,
+#endif
+        },
+        bind_string_from_lob_free,
+        sizeof(oci8_bind_t)
+    },
+    bind_string_from_lob_get,
+    bind_string_from_lob_set,
+    bind_string_from_lob_init,
+    bind_string_from_lob_init_elem,
+    NULL,
+    SQLT_CLOB,
+    bind_string_from_lob_post_bind_hook,
+};
+
+static VALUE bind_string_from_nclob_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_string_from_nclob_data_type.base);
+}
+static const oci8_bind_data_type_t bind_string_from_blob_data_type = {
+    {
+        {
+            "OCI8::BindType::StringFromBLOB",
+            {
+                NULL,
+                oci8_handle_cleanup,
+                oci8_handle_size,
+            },
+            &oci8_bind_data_type.rb_data_type, NULL,
+#ifdef RUBY_TYPED_WB_PROTECTED
+            RUBY_TYPED_WB_PROTECTED,
+#endif
+        },
+        bind_string_from_lob_free,
+        sizeof(oci8_bind_t)
+    },
+    bind_string_from_lob_get,
+    bind_string_from_lob_set,
+    bind_string_from_lob_init,
+    bind_string_from_lob_init_elem,
+    NULL,
+    SQLT_BLOB,
+    bind_string_from_lob_post_bind_hook,
+};
+
+static VALUE bind_string_from_blob_alloc(VALUE klass)
+{
+    return oci8_allocate_typeddata(klass, &bind_string_from_blob_data_type.base);
+}
+
+static enum bind_string_from_lob_type bind_string_from_lob_type(oci8_bind_t *obind)
+{
+    oci8_bind_data_type_t *data_type = (oci8_bind_data_type_t *)obind->base.data_type;
+
+    if (data_type == &bind_string_from_clob_data_type) {
+        return BIND_STRING_FROM_CLOB;
+    }
+    if (data_type == &bind_string_from_nclob_data_type) {
+        return BIND_STRING_FROM_NCLOB;
+    }
+    if (data_type == &bind_string_from_blob_data_type) {
+        return BIND_STRING_FROM_BLOB;
+    }
+    return NO_BIND_STRING_FROM_LOB;
+}
+
+static void read_lobs_as_string(oci8_svcctx_t *svcctx, OCIError *errhp, ub4 num, OCILobLocator **lobp_arr, chunk_buf_t **cb, ub1 csfrm);
+static sb4 lob_array_read_cb(void *ctxp, ub4 array_iter, const void  *bufp, oraub8 len, ub1 piece, void  **changed_bufpp, oraub8 *changed_lenp);
+
+void oci8_read_lobs_as_string(oci8_svcctx_t *svcctx, oci8_base_t *stmt, ub4 nrows)
+{
+    oci8_bind_t *obind;
+    ub4 nums[3] = {0, 0, 0};
+    ub4 idx;
+    OCILobLocator **lobp_arr[3];
+    chunk_buf_t **cb[3];
+    OCIError *errhp = oci8_errhp;
+    int lob_type;
+
+    obind = (oci8_bind_t *)stmt->children;
+    do {
+        if (obind->base.type == OCI_HTYPE_DEFINE) {
+            lob_type = bind_string_from_lob_type(obind);
+            if (lob_type != NO_BIND_STRING_FROM_LOB) {
+                for (idx = 0; idx < nrows; idx++) {
+                    if (obind->u.inds[idx] == 0) {
+                        nums[lob_type]++;
+                    }
+                }
+            }
+        }
+        obind = (oci8_bind_t *)obind->base.next;
+    } while (obind != (oci8_bind_t *)stmt->children);
+
+    lobp_arr[0] = ALLOCA_N(OCILobLocator *, nums[0]);
+    lobp_arr[1] = ALLOCA_N(OCILobLocator *, nums[1]);
+    lobp_arr[2] = ALLOCA_N(OCILobLocator *, nums[2]);
+    cb[0] = ALLOCA_N(chunk_buf_t *, nums[0]);
+    cb[1] = ALLOCA_N(chunk_buf_t *, nums[1]);
+    cb[2] = ALLOCA_N(chunk_buf_t *, nums[2]);
+
+    nums[0] = nums[1] = nums[2] = 0;
+    obind = (oci8_bind_t *)stmt->children;
+    do {
+        if (obind->base.type == OCI_HTYPE_DEFINE) {
+            lob_type = bind_string_from_lob_type(obind);
+            if (lob_type != NO_BIND_STRING_FROM_LOB) {
+                string_from_lob_t *sfl = (string_from_lob_t *)obind->valuep;
+                for (idx = 0; idx < nrows; idx++) {
+                    if (obind->u.inds[idx] == 0) {
+                        ub4 n = nums[lob_type];
+                        lobp_arr[lob_type][n] = sfl[idx].loc;
+                        cb[lob_type][n] = &sfl[idx].buf;
+                        nums[lob_type]++;
+                    }
+                }
+            }
+        }
+        obind = (oci8_bind_t *)obind->base.next;
+    } while (obind != (oci8_bind_t *)stmt->children);
+
+    read_lobs_as_string(svcctx, errhp, nums[0], lobp_arr[0], cb[0], SQLCS_IMPLICIT);
+    read_lobs_as_string(svcctx, errhp, nums[1], lobp_arr[1], cb[1], SQLCS_NCHAR);
+    read_lobs_as_string(svcctx, errhp, nums[2], lobp_arr[2], cb[2], 0);
+}
+
+static void read_lobs_as_string(oci8_svcctx_t *svcctx, OCIError *errhp, ub4 num, OCILobLocator **lobp_arr, chunk_buf_t **cb, ub1 csfrm)
+{
+    oraub8 *byte_amt_arr = ALLOCA_N(oraub8, num);
+    oraub8 *char_amt_arr = ALLOCA_N(oraub8, num);
+    oraub8 *offset_arr = ALLOCA_N(oraub8, num);
+    void **bufp_arr = ALLOCA_N(void *, num);
+    oraub8 *bufl_arr = ALLOCA_N(oraub8, num);
+    ub4 idx, idx2;
+    const ub4 max_read_size = UB4MAXVAL;
+
+    if (num == 0) {
+        return;
+    }
+
+    for (idx = 0; idx < num; idx++) {
+        cb[idx]->tail = &cb[idx]->head;
+        offset_arr[idx] = 1;
+    }
+
+read_more_data:
+    for (idx = 0; idx < num; idx++) {
+        chunk_t *chunk = oci8_chunk_next(cb[idx]);
+
+        chunk->used_len = 0;
+        byte_amt_arr[idx] = csfrm ? 0 : max_read_size;
+        char_amt_arr[idx] = csfrm ? max_read_size : 0;
+        bufp_arr[idx] = chunk->buf;
+        bufl_arr[idx] = chunk->alloc_len;
+    }
+    chker2(OCILobArrayRead_nb(svcctx, svcctx->base.hp.svc, errhp, &num, lobp_arr, byte_amt_arr, char_amt_arr, offset_arr, bufp_arr, bufl_arr, OCI_FIRST_PIECE, cb, lob_array_read_cb, 0, csfrm ? csfrm : SQLCS_IMPLICIT), &svcctx->base);
+    for (idx = idx2 = 0; idx < num; idx++) {
+        ub4 nread = csfrm ? char_amt_arr[idx] : byte_amt_arr[idx];
+        if (nread == max_read_size) {
+            lobp_arr[idx2] = lobp_arr[idx];
+            offset_arr[idx2] += nread;
+            cb[idx2++] = cb[idx];
+        }
+    }
+    if (idx2 != 0) {
+        num = idx2;
+        goto read_more_data;
+    }
+}
+
+static sb4 lob_array_read_cb(void *ctxp, ub4 array_iter, const void *bufp, oraub8 len, ub1 piece, void **changed_bufpp, oraub8 *changed_lenp)
+{
+    {
+    chunk_buf_t *cb = ((chunk_buf_t **)ctxp)[array_iter - 1];
+    chunk_t *chunk = (chunk_t *)((size_t)bufp - offsetof(chunk_t, buf));
+    chunk->used_len = (ub4)len;
+
+    if (piece != OCI_LAST_PIECE) {
+        chunk = oci8_chunk_next(cb);
+        chunk->used_len = 0;
+        *changed_bufpp = chunk->buf;
+        *changed_lenp = chunk->alloc_len;
+    }
+    }
+    return OCI_CONTINUE;
+}
+
 void Init_oci8_lob(VALUE cOCI8)
 {
     id_plus = rb_intern("+");
@@ -1275,4 +1587,7 @@ void Init_oci8_lob(VALUE cOCI8)
     oci8_define_bind_class("NCLOB", &bind_nclob_data_type.bind, bind_nclob_alloc);
     oci8_define_bind_class("BLOB", &bind_blob_data_type.bind, bind_blob_alloc);
     oci8_define_bind_class("BFILE", &bind_bfile_data_type.bind, bind_bfile_alloc);
+    oci8_define_bind_class("StringFromCLOB", &bind_string_from_clob_data_type, bind_string_from_clob_alloc);
+    oci8_define_bind_class("StringFromNCLOB", &bind_string_from_nclob_data_type, bind_string_from_nclob_alloc);
+    oci8_define_bind_class("StringFromBLOB", &bind_string_from_blob_data_type, bind_string_from_blob_alloc);
 }

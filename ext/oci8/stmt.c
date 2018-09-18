@@ -315,7 +315,11 @@ static VALUE oci8_stmt_fetch(VALUE self, VALUE svc, VALUE max_rows)
     }
     chker2(OCIAttrGet(stmt->base.hp.stmt, OCI_HTYPE_STMT, &nrows, 0, OCI_ATTR_ROWS_FETCHED, oci8_errhp),
            &svcctx->base);
-    return nrows ? UINT2NUM(nrows) : Qnil;
+    if (nrows == 0) {
+        return Qnil;
+    }
+    oci8_read_lobs_as_string(svcctx, &stmt->base, nrows);
+    return UINT2NUM(nrows);
 }
 
 /*

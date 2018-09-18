@@ -1300,6 +1300,25 @@ OCIClientVersion:
             - sword *port_update_num
 
 # round trip: 1
+OCILobArrayRead_nb:
+  :version: 1020
+  :args:
+            - OCISvcCtx *svchp
+            - OCIError *errhp
+            - ub4 *array_iter
+            - OCILobLocator **lobp_arr
+            - oraub8 *byte_amt_arr
+            - oraub8 *char_amt_arr
+            - oraub8 *offset_arr
+            - void  **bufp_arr
+            - oraub8 *bufl_arr
+            - ub1 piece
+            - void  *ctxp
+            - OCICallbackLobArrayRead cbfp
+            - ub2 csid
+            - ub1 csfrm
+
+# round trip: 1
 OCIPing_nb:
   :version: 1020
   :args:

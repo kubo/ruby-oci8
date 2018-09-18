@@ -25,21 +25,6 @@ EOS
     drop_table('test_rename_table')
   end
 
-  # Set `OCI8::BindType::Base.initial_chunk_size = 5` to
-  # use the following test data.
-  LONG_TEST_DATA = [
-    # initial chunk size: 5 (total buffer size: 5)
-    'a' * 4, 'b' * 5, 'c' * 6, 'd' * 5, 'e' * 4,
-    # second chunk size: 10 (total buffer size: 15)
-    'f' * 14, 'g' * 15, 'h' * 16, 'i' * 15, 'j' * 14,
-    # third chunk size: 20 (total buffer size: 35)
-    'k' * 34, 'l' * 35, 'm' * 36, 'n' * 35, 'o' * 34,
-    # use data around initial chunk size again
-    'p' * 4, 'q' * 5, 'r' * 6, 's' * 5, 't' * 4,
-    # special data
-    '', nil,
-  ]
-
   def test_long_type
     clob_bind_type = OCI8::BindType::Mapping[:clob]
     blob_bind_type = OCI8::BindType::Mapping[:blob]

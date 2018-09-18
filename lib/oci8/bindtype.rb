@@ -181,6 +181,16 @@ class OCI8
         end
       end
     end
+
+    class StringFromCLOB
+      def self.create(con, val, param, max_array_size)
+        if param.is_a? OCI8::Metadata::Base and param.charset_form == :nchar
+          OCI8::BindType::StringFromNCLOB.new(con, val, nil, max_array_size)
+        else
+          OCI8::BindType::StringFromCLOB.new(con, val, nil, max_array_size)
+        end
+      end
+    end
   end # BindType
 end
 

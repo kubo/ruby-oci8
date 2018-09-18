@@ -496,6 +496,7 @@ void oci8_assign_clob(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest);
 void oci8_assign_nclob(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest);
 void oci8_assign_blob(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest);
 void oci8_assign_bfile(oci8_svcctx_t *svcctx, VALUE lob, OCILobLocator **dest);
+void oci8_read_lobs_as_string(oci8_svcctx_t *svcctx, oci8_base_t *stmt, ub4 nrows);
 
 /* oradate.c */
 void Init_ora_date(void);

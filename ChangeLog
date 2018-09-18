@@ -1,4 +1,13 @@
 2018-09-18  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/apiwrap.yml, ext/oci8/lob.c, ext/oci8/oci8.h, ext/oci8/stmt.c,
+	  lib/oci8/bindtype.rb: Add OCI8::BindType::StringFromCLOB,
+	    OCI8::BindType::StringFromNCLOB, and OCI8::BindType::StringFromBLOB.
+	    They read LOB data for more than one LOB locator in one round trip
+	    internally.
+	* test/config.rb, test/test_clob.rb, test/test_oci8.rb: Add tests about
+	    OCI8::BindType::StringFromCLOB, StringFromNCLOB and StringFromBLOB.
+
+2018-09-18  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/bind.c, ext/oci8/oci8.h: Move chunk_t, chunk_buf_t and related
 	    functions from bind.c to oci8.h.
 
