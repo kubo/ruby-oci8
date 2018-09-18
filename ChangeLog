@@ -1,3 +1,7 @@
+2018-09-18  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/bind.c, ext/oci8/oci8.h: Move chunk_t, chunk_buf_t and related
+	    functions from bind.c to oci8.h.
+
 2018-09-16  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/bind.c, ext/oci8/lob.c, ext/oci8/oci8.h: Change the default values
 	    of OCI8::BindType::Base.initial_chunk_size and .initial_chunk_size

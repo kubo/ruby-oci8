@@ -356,6 +356,19 @@ typedef struct {
     ub2 *alenp;
 } oci8_exec_sql_var_t;
 
+typedef struct chunk {
+    struct chunk *next;
+    ub4 alloc_len;
+    ub4 used_len;
+    char buf[1];
+} chunk_t;
+
+typedef struct {
+    chunk_t *head;
+    chunk_t **tail;
+    chunk_t **inpos;
+} chunk_buf_t;
+
 #define oci8_raise(err, status, stmt) oci8_do_raise(err, status, stmt, __FILE__, __LINE__)
 #define oci8_env_raise(env, status) oci8_do_env_raise(env, status, 0, __FILE__, __LINE__)
 #define oci8_env_free_and_raise(env, status) oci8_do_env_raise(env, status, 1, __FILE__, __LINE__)
@@ -462,6 +475,9 @@ extern ub4 oci8_max_chunk_size;
 extern const oci8_handle_data_type_t oci8_bind_data_type;
 void oci8_bind_free(oci8_base_t *base);
 void oci8_bind_hp_obj_mark(oci8_base_t *base);
+void oci8_chunk_buf_free(chunk_buf_t *cb);
+VALUE oci8_chunk_buf_to_str(chunk_buf_t *cb, int is_char);
+chunk_t *oci8_chunk_next(chunk_buf_t *cb);
 void Init_oci8_bind(VALUE cOCI8BindTypeBase);
 
 /* metadata.c */

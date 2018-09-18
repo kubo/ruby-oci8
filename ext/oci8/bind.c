@@ -29,19 +29,6 @@ typedef struct {
 ub4 oci8_initial_chunk_size = 512;
 ub4 oci8_max_chunk_size = 128 * 1024 * 1024;
 
-typedef struct chunk {
-    struct chunk *next;
-    ub4 alloc_len;
-    ub4 used_len;
-    char buf[1];
-} chunk_t;
-
-typedef struct {
-    chunk_t *head;
-    chunk_t **tail;
-    chunk_t **inpos;
-} chunk_buf_t;
-
 typedef struct {
     oci8_bind_t obind;
     ub1 csfrm;
@@ -333,31 +320,6 @@ static VALUE bind_boolean_alloc(VALUE klass)
 /*
  * bind_long
  */
-static chunk_t *next_chunk(chunk_buf_t *cb)
-{
-   chunk_t *chunk;
-
-   if (*cb->tail != NULL) {
-       chunk = *cb->tail;
-   } else {
-       ub4 alloc_len;
-       if (cb->head == NULL) {
-           alloc_len = initial_chunk_size;
-       } else {
-           alloc_len = ((chunk_t*)((size_t)cb->tail - offsetof(chunk_t, next)))->alloc_len * 2;
-           if (alloc_len > max_chunk_size) {
-               alloc_len = max_chunk_size;
-           }
-       }
-       chunk = xmalloc(offsetof(chunk_t, buf) + alloc_len);
-       chunk->next = NULL;
-       chunk->alloc_len = alloc_len;
-       *cb->tail = chunk;
-   }
-   cb->tail = &chunk->next;
-   return chunk;
-}
-
 static sb4 define_callback(void *octxp, OCIDefine *defnp, ub4 iter, void **bufpp, ub4 **alenp, ub1 *piecep, void **indp, ub2 **rcodep)
 {
     oci8_bind_t *obind = (oci8_bind_t *)octxp;
@@ -367,7 +329,7 @@ static sb4 define_callback(void *octxp, OCIDefine *defnp, ub4 iter, void **bufpp
     if (*piecep == OCI_FIRST_PIECE) {
         cb->tail = &cb->head;
     }
-    chunk = next_chunk(cb);
+    chunk = oci8_chunk_next(cb);
     chunk->used_len = chunk->alloc_len;
     *bufpp = chunk->buf;
     *alenp = &chunk->used_len;
@@ -417,7 +379,7 @@ static sb4 out_bind_callback(void *octxp, OCIBind *bindp, ub4 iter, ub4 index, v
         *piecep = OCI_FIRST_PIECE;
         cb->tail = &cb->head;
     }
-    chunk = next_chunk(cb);
+    chunk = oci8_chunk_next(cb);
     chunk->used_len = chunk->alloc_len;
     *bufpp = chunk->buf;
     *alenp = &chunk->used_len;
@@ -434,11 +396,7 @@ static void bind_long_free(oci8_base_t *base)
     if (cb != NULL) {
         ub4 idx = 0;
         do {
-            chunk_t *chunk, *chunk_next;
-            for (chunk = cb[idx].head; chunk != NULL; chunk = chunk_next) {
-                chunk_next = chunk->next;
-                xfree(chunk);
-            }
+            oci8_chunk_buf_free(&cb[idx]);
         } while (++idx < obind->maxar_sz);
     }
     oci8_bind_free(base);
@@ -446,30 +404,8 @@ static void bind_long_free(oci8_base_t *base)
 
 static VALUE bind_long_get(oci8_bind_t *obind, void *data, void *null_struct)
 {
-    chunk_buf_t *cb = (chunk_buf_t *)data;
-    chunk_t *chunk;
-    long len = 0;
-    VALUE str;
-    char *buf;
+    VALUE str = oci8_chunk_buf_to_str((chunk_buf_t *)data, IS_BIND_LONG(obind));
 
-    for (chunk = cb->head; chunk != *cb->tail; chunk = chunk->next) {
-        len += chunk->used_len;
-    }
-    str = rb_str_buf_new(len);
-    buf = RSTRING_PTR(str);
-    for (chunk = cb->head; chunk != *cb->tail; chunk = chunk->next) {
-        memcpy(buf, chunk->buf, chunk->used_len);
-        buf += chunk->used_len;
-    }
-    rb_str_set_len(str, len);
-    if (IS_BIND_LONG(obind)) {
-        rb_encoding *enc = rb_default_internal_encoding();
-
-        rb_enc_associate(str, oci8_encoding);
-        if (enc != NULL) {
-            str = rb_str_conv_enc(str, oci8_encoding, enc);
-        }
-    }
     OBJ_TAINT(str);
     return str;
 }
@@ -489,7 +425,7 @@ static void bind_long_set(oci8_bind_t *obind, void *data, void **null_structp, V
     buf = RSTRING_PTR(val);
     cb->tail = &cb->head;
     while (1) {
-        chunk_t *chunk = next_chunk(cb);
+        chunk_t *chunk = oci8_chunk_next(cb);
         if (len <= chunk->alloc_len) {
             memcpy(chunk->buf, buf, len);
             chunk->used_len = len;
@@ -803,6 +739,69 @@ void oci8_bind_hp_obj_mark(oci8_base_t *base)
             rb_gc_mark(oho[idx].obj);
         } while (++idx < obind->maxar_sz);
     }
+}
+
+void oci8_chunk_buf_free(chunk_buf_t *cb)
+{
+    chunk_t *chunk = cb->head;
+    while (chunk != NULL) {
+        chunk_t *chunk_next = chunk->next;
+        xfree(chunk);
+        chunk = chunk_next;
+    }
+}
+
+VALUE oci8_chunk_buf_to_str(chunk_buf_t *cb, int is_char)
+{
+    chunk_t *chunk;
+    long len = 0;
+    VALUE str;
+    char *buf;
+
+    for (chunk = cb->head; chunk != *cb->tail; chunk = chunk->next) {
+        len += chunk->used_len;
+    }
+    str = rb_str_buf_new(len);
+    buf = RSTRING_PTR(str);
+    for (chunk = cb->head; chunk != *cb->tail; chunk = chunk->next) {
+        memcpy(buf, chunk->buf, chunk->used_len);
+        buf += chunk->used_len;
+    }
+    rb_str_set_len(str, len);
+    if (is_char) {
+        rb_encoding *enc = rb_default_internal_encoding();
+
+        rb_enc_associate(str, oci8_encoding);
+        if (enc != NULL) {
+            str = rb_str_conv_enc(str, oci8_encoding, enc);
+        }
+    }
+    return str;
+}
+
+chunk_t *oci8_chunk_next(chunk_buf_t *cb)
+{
+   chunk_t *chunk;
+
+   if (*cb->tail != NULL) {
+       chunk = *cb->tail;
+   } else {
+       ub4 alloc_len;
+       if (cb->head == NULL) {
+           alloc_len = oci8_initial_chunk_size;
+       } else {
+           alloc_len = ((chunk_t*)((size_t)cb->tail - offsetof(chunk_t, next)))->alloc_len * 2;
+           if (alloc_len > oci8_max_chunk_size) {
+               alloc_len = oci8_max_chunk_size;
+           }
+       }
+       chunk = xmalloc(offsetof(chunk_t, buf) + alloc_len);
+       chunk->next = NULL;
+       chunk->alloc_len = alloc_len;
+       *cb->tail = chunk;
+   }
+   cb->tail = &chunk->next;
+   return chunk;
 }
 
 void Init_oci8_bind(VALUE klass)
