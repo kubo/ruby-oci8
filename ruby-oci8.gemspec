@@ -34,7 +34,6 @@ spec = Gem::Specification.new do |s|
   s.description = <<EOS
 ruby-oci8 is a ruby interface for Oracle using OCI8 API. It is available with Oracle 10g or later including Oracle Instant Client.
 EOS
-  s.has_rdoc = 'yard'
   s.authors = ['Kubo Takehiro']
   s.platform = gem_platform
   s.license = 'BSD-2-Clause'
