@@ -134,7 +134,7 @@ class Minitest::Test
 
   def get_oci8_connection()
     OCI8.new($dbuser, $dbpass, $dbname)
-      rescue OCIError
+  rescue OCIError
     raise if $!.code != 12516 && $!.code != 12520
     # sleep a few second and try again if
     # the error code is ORA-12516 or ORA-12520.
