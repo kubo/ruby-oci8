@@ -1,4 +1,9 @@
 2018-12-23  Kubo Takehiro <kubo@jiubao.org>
+	* lib/oci8/check_load_error.rb: Check OCI.DLL archtecture
+	  when load error. It worked for ruby installer but not
+	  for ruby installer2.
+
+2018-12-23  Kubo Takehiro <kubo@jiubao.org>
 	* docs/install-instant-client.md: Add information about
 	  the MSVC redistributable package required by Oracle 18.3 client.
 
