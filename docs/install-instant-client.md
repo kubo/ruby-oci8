@@ -110,6 +110,7 @@ Package" or copy a runtime library to the directory where `ruby.exe` resides.
 
 | Oracle Version | Package | Runtime Library|
 |---|---|---|
+| 18.3     | [Microsoft Visual C++ 2013 Redistributable Package][2013] | MSVCR120.DLL |
 | 12.2.0.x | [Microsoft Visual C++ 2013 Redistributable Package][2013] | MSVCR120.DLL |
 | 12.1.0.x | [Microsoft Visual C++ 2010 Redistributable Package][2010] | MSVCR100.DLL |
 | 11.2.0.x | Microsoft Visual C++ 2005 SP1 Redistributable Package ([x86][2005SP1_x86], [x64][2005SP1_x64]) | MSVCR80.DLL(The file version must be 8.0.50727.762.) |
