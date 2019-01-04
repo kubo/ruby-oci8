@@ -6,13 +6,23 @@ class OCI8
     case RUBY_PLATFORM
     when /mswin32|cygwin|mingw32|bccwin32/
 
-      require 'Win32API'
+      require 'fiddle/import'
+      require 'fiddle/types'
+
+      extend Fiddle::Importer
+      dlload 'kernel32.dll'
+      include Fiddle::BasicTypes
+      include Fiddle::Win32Types
+
+      typealias "HANDLE", "void*"
+      typealias "HMODULE", "void*"
+      extern "DWORD GetModuleFileNameA(HMODULE, LPSTR, DWORD)"
+      extern "UINT GetSystemDirectoryA(LPCSTR, UINT)"
+      extern "UINT GetWindowsDirectoryA(LPCSTR, UINT)"
+      extern "HMODULE LoadLibraryExA(LPCSTR, HANDLE, DWORD)"
+      extern "BOOL FreeLibrary(HMODULE)"
+
       MAX_PATH = 260
-      GetModuleFileNameA = Win32API.new('kernel32.dll', 'GetModuleFileNameA', 'PPL', 'L')
-      GetSystemDirectoryA = Win32API.new('kernel32.dll', 'GetSystemDirectoryA', 'PL', 'L')
-      GetWindowsDirectoryA = Win32API.new('kernel32.dll', 'GetWindowsDirectoryA', 'PL', 'L')
-      LoadLibraryExA = Win32API.new('kernel32.dll', 'LoadLibraryExA', 'PPL', 'P')
-      FreeLibrary = Win32API.new('kernel32.dll', 'FreeLibrary', 'P', 'L')
       DONT_RESOLVE_DLL_REFERENCES = 0x00000001
 
       def self.check_os_specific_load_error(exc)
@@ -44,9 +54,9 @@ class OCI8
               valid_arch = false
             end
             if valid_arch
-              handle = LoadLibraryExA.call(file, nil, DONT_RESOLVE_DLL_REFERENCES)
+              handle = LoadLibraryExA(file, nil, DONT_RESOLVE_DLL_REFERENCES)
               unless handle.null?
-                FreeLibrary.call(handle)
+                FreeLibrary(handle)
                 raise LoadError, <<EOS
 Cannot find DLLs depended by #{file}.
 See http://www.rubydoc.info/github/kubo/ruby-oci8/file/docs/install-instant-client.md#Windows
@@ -62,9 +72,9 @@ EOS
       def self.dll_load_path_list
         buf = "\0" * MAX_PATH
         paths = []
-        paths << buf[0, GetModuleFileNameA.call(nil, buf, MAX_PATH)].force_encoding("locale").gsub(/\\[^\\]*$/, '')
-        paths << buf[0, GetSystemDirectoryA.call(buf, MAX_PATH)].force_encoding("locale")
-        paths << buf[0, GetWindowsDirectoryA.call(buf, MAX_PATH)].force_encoding("locale")
+        paths << buf[0, GetModuleFileNameA(nil, buf, MAX_PATH)].force_encoding("locale").gsub(/\\[^\\]*$/, '')
+        paths << buf[0, GetSystemDirectoryA(buf, MAX_PATH)].force_encoding("locale")
+        paths << buf[0, GetWindowsDirectoryA(buf, MAX_PATH)].force_encoding("locale")
         paths << "."
         paths + (ENV['PATH'].split(';').reject {|path| path.empty?})
       end # self.dll_load_path_list

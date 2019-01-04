@@ -1,4 +1,8 @@
 2019-01-03  Kubo Takehiro <kubo@jiubao.org>
+	* lib/oci8/check_load_error.rb: Use fiddle instead of Win32API
+	    to call WIN32 functions.
+
+2019-01-03  Kubo Takehiro <kubo@jiubao.org>
 	* lib/oci8/check_load_error.rb: Add more error diagnostics
 	    when 'require "oci8"' fails with "OCI.DLL: 126(The specified
 	    module could not be found.)".
