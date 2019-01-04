@@ -55,7 +55,7 @@ EOS
         paths << buf[0, GetSystemDirectoryA.call(buf, MAX_PATH)].force_encoding("locale")
         paths << buf[0, GetWindowsDirectoryA.call(buf, MAX_PATH)].force_encoding("locale")
         paths << "."
-        paths + ENV['PATH'].split(';')
+        paths + (ENV['PATH'].split(';').reject {|path| path.empty?})
       end # self.dll_load_path_list
 
       def self.check_win32_pe_arch(filename, package)

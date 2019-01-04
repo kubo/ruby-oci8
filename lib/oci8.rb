@@ -95,7 +95,7 @@ begin
 
   ruby_arch = [nil].pack('P').size == 8 ? :x64 : :x86
   ENV['PATH'].split(File::PATH_SEPARATOR).each do |path|
-    if dll_arch.call(File.join(path, 'OCI.DLL')) == ruby_arch
+    if !path.empty? && dll_arch.call(File.join(path, 'OCI.DLL')) == ruby_arch
       dll_dir = RubyInstaller::Runtime.add_dll_directory(path)
       break
     end

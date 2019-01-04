@@ -1,3 +1,7 @@
+2019-01-03  Kubo Takehiro <kubo@jiubao.org>
+	* lib/oci8.rb, lib/oci8/check_load_error.rb: Exclude empty
+	    parts of PATH on Windows.
+
 2018-12-23  Kubo Takehiro <kubo@jiubao.org>
 	* lib/oci8/check_load_error.rb: Check OCI.DLL archtecture
 	  when load error. It worked for ruby installer but not
