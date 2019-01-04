@@ -15,15 +15,6 @@ class OCI8
       FreeLibrary = Win32API.new('kernel32.dll', 'FreeLibrary', 'P', 'L')
       DONT_RESOLVE_DLL_REFERENCES = 0x00000001
 
-      @@ruby_installer_uses_add_dll_dir = false
-      if defined? RubyInstaller
-        begin
-          Win32API.new('kernel32.dll', 'AddDllDirectory', 'P', 'P')
-          @@ruby_installer_uses_add_dll_dir = true
-        rescue
-        end
-      end
-
       def self.check_os_specific_load_error(exc)
         case exc.message
         when /^OCI\.DLL: 193\(/, /^193: / # "OCI.DLL: 193(%1 is not a valid Win32 application.)" in English
@@ -32,19 +23,39 @@ class OCI8
             check_win32_pe_arch(File.join(path, '\OCI.DLL'), "Oracle client")
           end
         when /^OCI.DLL: 126\(/, /^126: / # "OCI.DLL: 126(The specified module could not be found.)" in English
-          handle = LoadLibraryExA.call('OCI.DLL', nil, DONT_RESOLVE_DLL_REFERENCES)
-          unless handle.null?
-            FreeLibrary.call(handle)
-            raise LoadError, <<EOS
-OCI.DLL is in the PATH but its dependent modules are not found.
+          oci_dll_files = dll_load_path_list.inject([]) do |files, path|
+            file = File.join(path, '\OCI.DLL')
+            files << file if File.exist?(file)
+            files
+          end
+          if oci_dll_files.empty?
+            raise LoadError, "Cannot find OCI.DLL in PATH."
+          end
+          if oci_dll_files.none? {|file| open(file, 'rb') {true} rescue false}
+            raise LoadError, "OCI.DLL in PATH isn't readable."
+          end
+          first_error = nil
+          oci_dll_files.each do |file|
+            begin
+              check_win32_pe_arch(file, "Oracle client")
+              valid_arch = true
+            rescue LoadError
+              first_error ||= $!
+              valid_arch = false
+            end
+            if valid_arch
+              handle = LoadLibraryExA.call(file, nil, DONT_RESOLVE_DLL_REFERENCES)
+              unless handle.null?
+                FreeLibrary.call(handle)
+                raise LoadError, <<EOS
+Cannot find DLLs depended by #{file}.
 See http://www.rubydoc.info/github/kubo/ruby-oci8/file/docs/install-instant-client.md#Windows
 EOS
-          end
-          if @@ruby_installer_uses_add_dll_dir
-            dll_load_path_list.each do |path|
-              check_win32_pe_arch(File.join(path, '\OCI.DLL'), "Oracle client")
+              end
+              break
             end
           end
+          raise first_error if first_error
         end
       end # self.check_os_specific_load_error
 
