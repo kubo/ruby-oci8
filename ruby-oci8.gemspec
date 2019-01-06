@@ -78,7 +78,7 @@ EOS
     end
     files << 'lib/oci8.rb'
   end
-  s.require_paths = ['lib', 'ext/oci8']
+  s.require_paths = ['lib']
   s.files = files
   s.test_files = 'test/test_all.rb'
   s.extra_rdoc_files = ['README.md']

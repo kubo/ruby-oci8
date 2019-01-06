@@ -18,6 +18,7 @@ when '32'
      'c:\ruby\ruby-2.3.0-i386-mingw32',
      'c:\ruby\rubyinstaller-2.4.1-1-x86',
      'c:\ruby\rubyinstaller-2.5.0-1-x86',
+     'c:\ruby\rubyinstaller-2.6.0-1-x86',
     ]
 
   $oracle_path = 'c:\oracle\instantclient_12_1-win32'
@@ -34,6 +35,7 @@ when '32'
      ['c:\ruby\ruby-2.3.0-i386-mingw32', $devkit_mingw64_setup],
      ['c:\ruby\rubyinstaller-2.4.1-1-x86', $ridk_setup],
      ['c:\ruby\rubyinstaller-2.5.0-1-x86', $ridk_setup],
+     ['c:\ruby\rubyinstaller-2.6.0-1-x86', $ridk_setup],
     ]
 
   $cygwin_dir = 'c:\cygwin'
@@ -49,6 +51,7 @@ when '64'
      'c:\ruby\ruby-2.3.0-x64-mingw32',
      'c:\ruby\rubyinstaller-2.4.1-1-x64',
      'c:\ruby\rubyinstaller-2.5.0-1-x64',
+     'c:\ruby\rubyinstaller-2.6.0-1-x64',
     ]
 
   $oracle_path = 'c:\oracle\instantclient_12_1-win64'
@@ -62,6 +65,7 @@ when '64'
      ['c:\ruby\ruby-2.3.0-x64-mingw32', $devkit_mingw64_setup],
      ['c:\ruby\rubyinstaller-2.4.1-1-x64', $ridk_setup],
      ['c:\ruby\rubyinstaller-2.5.0-1-x64', $ridk_setup],
+     ['c:\ruby\rubyinstaller-2.6.0-1-x64', $ridk_setup],
     ]
 
   $cygwin_dir = 'c:\cygwin64'
@@ -138,7 +142,7 @@ def install_and_test
           raise "ruby-oci8 gem in #{base_dir} could not be uninstalled."
         end
       end
-      run_cmd("gem install ./#{$gem_package} --no-rdoc --no-ri --local")
+      run_cmd("gem install ./#{$gem_package} --local")
       run_cmd("ruby -I. test/test_all.rb", false)
     end
   end

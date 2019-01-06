@@ -1,4 +1,8 @@
 2019-01-06  Kubo Takehiro <kubo@jiubao.org>
+	* mkpkg-win32.rb, ruby-oci8.gemspec: Build binary gems for ruby 2.6
+	    on Windows.
+
+2019-01-06  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/oci8.c: Updata doc comments for OCI8#long_read_len
 	    and OCI8#long_read_len=. These are deprecated.
 
