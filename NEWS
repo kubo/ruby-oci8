@@ -1,5 +1,57 @@
 # @markup markdown
 
+2.2.7 (2019-01-06)
+==================
+
+Incompatible Changes
+--------------------
+
+### `OCI8#long_read_len` and `OCI8#long_read_len=` do nothing.
+
+When `LONG`, `LONG RAW` or `XMLTYPE` data were fetched, the data were
+truncated at `OCI8#long_read_len`. The maximum size of data had
+been 4 gigabytes since this release.
+
+`OCI8#long_read_len` and `OCI8#long_read_len=` remain for code-compatibility
+but do nothing.
+
+Improvement
+-----------
+
+### The number of network round trips was reduced when LOB data are read.
+
+When LOB data are read, ruby-oci8 before 2.2.7 does the followings:
+
+1. Gets the size of the LOB.
+2. Allocate buffer to hold the data.
+3. Read the LOB contents.
+
+This requires two round trips.
+
+It now does the followings:
+
+1. Request the server to get LOB contents up to 4 gigabytes.
+2. Read the LOB contents and allocate buffer when the size is insufficient.
+3. If the total length of received data is less than 4 gigabytes, all data
+   are read. If not, go to the first step to read next 4 gigabytes.
+
+This requires only one round trip if the size is less than 4 gigabytes.
+
+### Use array fetching instead of prefetching when LOB columns are in queries 
+
+When LOB columns are in queries, prefetching doesn't seem to work. Rows
+are fetched one by one according to data captured by network packet sniffer.
+So array fetching is used instead of prefetching to reduce the number of
+network round trips.
+
+### Add error diagnostics when `'require "oci8"'` fails on Windows.
+
+When `'require "oci8"'` fails with "OCI.DLL: 126(The specified module could not be found.)"
+on Windows, the cause is not always that OCI.DLL is not found. It may
+be incorrect architecture, missing dependent DLLs and so on.
+Ruby-oci8 checks PATH and DLL files when the error is raised and change
+the error message to reasonable one as possible.
+
 2.2.6.1 (2018-09-16)
 ====================
 

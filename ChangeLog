@@ -1,4 +1,8 @@
 2019-01-06  Kubo Takehiro <kubo@jiubao.org>
+	* NEWS: Add changes between 2.2.6.1 and 2.2.7.
+	* lib/oci8/version.rb: Update to 2.2.7
+
+2019-01-06  Kubo Takehiro <kubo@jiubao.org>
 	* mkpkg-win32.rb, ruby-oci8.gemspec: Build binary gems for ruby 2.6
 	    on Windows.
 
