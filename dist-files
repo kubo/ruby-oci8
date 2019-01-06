@@ -80,7 +80,7 @@ lib/oci8/oracle_version.rb
 lib/oci8/properties.rb
 lib/oci8/version.rb
 lib/ruby-oci8.rb
-test/README
+test/README.md
 test/config.rb
 test/setup_test_object.sql
 test/setup_test_package.sql
