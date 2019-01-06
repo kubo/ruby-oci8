@@ -1,3 +1,7 @@
+2019-01-06  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/oci8.c: Updata doc comments for OCI8#long_read_len
+	    and OCI8#long_read_len=. These are deprecated.
+
 2019-01-03  Kubo Takehiro <kubo@jiubao.org>
 	* lib/oci8/check_load_error.rb: Use fiddle instead of Win32API
 	    to call WIN32 functions.

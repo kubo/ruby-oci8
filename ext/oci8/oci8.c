@@ -2,7 +2,7 @@
 /*
  * oci8.c - part of ruby-oci8
  *
- * Copyright (C) 2002-2015 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright (C) 2002-2019 Kubo Takehiro <kubo@jiubao.org>
  *
  */
 #include "oci8.h"
@@ -734,14 +734,9 @@ static VALUE oci8_set_autocommit(VALUE self, VALUE val)
 /*
  * @overload long_read_len
  *
- *  Gets the maximum length in bytes to fetch a LONG or LONG RAW
- *  column. The default value is 65535.
- *
- *  If the actual data length is longer than long_read_len,
- *  the fetched valud is truncated and the value of {OCI8#last_error}
- *  become {OCISuccessWithInfo} whose message is "ORA-01406: fetched column value was truncated".
- *
- *  Note: long_read_len is also used for maximum length of XMLTYPE data type.
+ *  @deprecated This has no effect since ruby-oci8 2.2.7.
+ *    LONG, LONG RAW and XMLTYPE columns are fetched up to 4 gigabytes
+ *    without this parameter.
  *
  *  @return [Integer]
  *  @see #long_read_len=
@@ -749,14 +744,16 @@ static VALUE oci8_set_autocommit(VALUE self, VALUE val)
 static VALUE oci8_long_read_len(VALUE self)
 {
     oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
+    rb_warning("OCI8.long_read_len has no effect since ruby-oci8 2.2.7");
     return svcctx->long_read_len;
 }
 
 /*
  * @overload long_read_len=(length)
  *
- *  Sets the maximum length in bytes to fetch a LONG or LONG RAW
- *  column.
+ *  @deprecated This has no effect since ruby-oci8 2.2.7.
+ *    LONG, LONG RAW and XMLTYPE columns are fetched up to 4 gigabytes
+ *    without this parameter.
  *
  *  @param [Integer] length
  *  @see #long_read_len
@@ -766,6 +763,7 @@ static VALUE oci8_set_long_read_len(VALUE self, VALUE val)
     oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
     Check_Type(val, T_FIXNUM);
     RB_OBJ_WRITE(self, &svcctx->long_read_len, val);
+    rb_warning("OCI8.long_read_len= has no effect since ruby-oci8 2.2.7");
     return val;
 }
 
