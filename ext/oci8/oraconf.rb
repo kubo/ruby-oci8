@@ -584,7 +584,7 @@ EOS
     if try_run("int main() { return 0; }")
       puts "ok"
     else
-      puts "ng"
+      puts "failed"
       raise "C compiler doesn't work correctly."
     end
   end # check_cc
@@ -630,7 +630,7 @@ EOS
     STDOUT.flush
     rubyhdrdir = RbConfig::CONFIG["rubyhdrdir"] || RbConfig::CONFIG['archdir']
     unless File.exist?(rubyhdrdir + '/ruby.h')
-      puts "ng"
+      puts "failed"
       if RUBY_PLATFORM =~ /darwin/ and File.exist?("#{RbConfig::CONFIG['archdir']}/../universal-darwin8.0/ruby.h")
         raise <<EOS
 #{RbConfig::CONFIG['archdir']}/ruby.h doesn't exist.
