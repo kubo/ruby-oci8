@@ -189,7 +189,16 @@ class ConfigTable
                      'the make program to compile ruby extentions' ] ],
     [ 'without-ext', [ 'no',
                        'yes/no',
-                       'does not compile/install ruby extentions' ] ]
+                       'does not compile/install ruby extentions' ] ],
+    [ 'with-instant-client-dir', ['',
+                                  'path',
+                                  'path to the Oracle instant client directory'] ],
+    [ 'with-instant-client-lib', ['',
+                                  'path',
+                                  'path to the Oracle instant client libraries'] ],
+    [ 'with-instant-client-include', ['',
+                                      'path',
+                                      'path to the Oracle instant client header files'] ]
   ]
   multipackage_descripters = [
     [ 'with',      [ '',
