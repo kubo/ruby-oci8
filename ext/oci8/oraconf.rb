@@ -250,7 +250,6 @@ class OraConf
   def self.get
     original_CFLAGS = $CFLAGS
     original_defs = $defs
-    ic_dir = nil
     begin
       # check Oracle instant client
       if with_config('instant-client')
@@ -267,7 +266,7 @@ EOS
         OraConfIC.new(inc, lib)
       else
 	base = guess_ic_dir
-        inc, lib = guess_dirs_from_ic_base(ic_dir)
+        inc, lib = guess_dirs_from_ic_base(base)
         OraConfIC.new(inc, lib)
       end
     rescue
