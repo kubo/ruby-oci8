@@ -250,7 +250,6 @@ class OraConf
   def self.get
     original_CFLAGS = $CFLAGS
     original_defs = $defs
-    ic_dir = nil
     begin
       # check Oracle instant client
       if with_config('instant-client')
@@ -262,11 +261,17 @@ class OraConf
 =======================================================
 EOS
       end
-      ic_dir = check_ic_dir
-      if ic_dir
-        OraConfIC.new(ic_dir)
+      inc, lib = dir_config('instant-client')
+      if inc && lib
+        OraConfIC.new(inc, lib)
       else
-        OraConfFC.new()
+	base = guess_ic_dir
+	if base
+          inc, lib = guess_dirs_from_ic_base(base)
+          OraConfIC.new(inc, lib)
+	else
+	  OraConfFC.new
+	end
       end
     rescue
       case ENV['LANG']
@@ -298,6 +303,44 @@ EOS
     end
   end
 
+  # Guess the include and directory paths from 
+  def self.guess_dirs_from_ic_base(ic_dir)
+    if ic_dir =~ /^\/usr\/lib(?:64)?\/oracle\/(\d+(?:\.\d+)*)\/client(64)?\/lib(?:64)?/
+      # rpm package
+      #   x86 rpms after 11.1.0.7.0:
+      #    library: /usr/lib/oracle/X.X/client/lib/
+      #    include: /usr/include/oracle/X.X/client/
+      #
+      #   x86_64 rpms after 11.1.0.7.0:
+      #    library: /usr/lib/oracle/X.X/client64/lib/
+      #    include: /usr/include/oracle/X.X/client64/
+      #
+      #   x86 rpms before 11.1.0.6.0:
+      #    library: /usr/lib/oracle/X.X.X.X/client/lib/
+      #    include: /usr/include/oracle/X.X.X.X/client/
+      #
+      #   x86_64 rpms before 11.1.0.6.0:
+      #    library: /usr/lib/oracle/X.X.X.X/client64/lib/
+      #    include: /usr/include/oracle/X.X.X.X/client64/
+      #
+      #   third-party x86_64 rpms(*1):
+      #    library: /usr/lib64/oracle/X.X.X.X/client/lib/
+      #          or /usr/lib64/oracle/X.X.X.X/client/lib64/
+      #    include: /usr/include/oracle/X.X.X.X/client/
+      #
+      #   *1 These had been used before Oracle released official x86_64 rpms.
+      #
+      lib_dir = ic_dir
+      inc_dir = "/usr/include/oracle/#{$1}/client#{$2}"
+    else
+      # zip package
+      lib_dir = ic_dir
+      inc_dir = "#{ic_dir}/sdk/include"
+    end
+
+    [inc_dir, lib_dir]
+  end
+
   def self.ld_envs
     @@ld_envs
   end
@@ -316,8 +359,9 @@ EOS
     end
   end
 
-  def self.check_ic_dir
-    puts "checking for load library path... "
+  def self.guess_ic_dir
+    puts "attempting to locate oracle-instantclient..."
+    puts "checking load library path... "
     STDOUT.flush
 
     # get library load path names
@@ -947,41 +991,8 @@ end
 
 # OraConf for Instant Client
 class OraConfIC < OraConf
-  def initialize(ic_dir)
+  def initialize(inc_dir, lib_dir)
     init
-
-    if ic_dir =~ /^\/usr\/lib(?:64)?\/oracle\/(\d+(?:\.\d+)*)\/client(64)?\/lib(?:64)?/
-      # rpm package
-      #   x86 rpms after 11.1.0.7.0:
-      #    library: /usr/lib/oracle/X.X/client/lib/
-      #    include: /usr/include/oracle/X.X/client/
-      #
-      #   x86_64 rpms after 11.1.0.7.0:
-      #    library: /usr/lib/oracle/X.X/client64/lib/
-      #    include: /usr/include/oracle/X.X/client64/
-      #
-      #   x86 rpms before 11.1.0.6.0:
-      #    library: /usr/lib/oracle/X.X.X.X/client/lib/
-      #    include: /usr/include/oracle/X.X.X.X/client/
-      #
-      #   x86_64 rpms before 11.1.0.6.0:
-      #    library: /usr/lib/oracle/X.X.X.X/client64/lib/
-      #    include: /usr/include/oracle/X.X.X.X/client64/
-      #
-      #   third-party x86_64 rpms(*1):
-      #    library: /usr/lib64/oracle/X.X.X.X/client/lib/
-      #          or /usr/lib64/oracle/X.X.X.X/client/lib64/
-      #    include: /usr/include/oracle/X.X.X.X/client/
-      #
-      #   *1 These had been used before Oracle released official x86_64 rpms.
-      #
-      lib_dir = ic_dir
-      inc_dir = "/usr/include/oracle/#{$1}/client#{$2}"
-    else
-      # zip package
-      lib_dir = ic_dir
-      inc_dir = "#{ic_dir}/sdk/include"
-    end
 
     if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw32|bccwin32/ # when Windows
       unless File.exist?("#{ic_dir}/sdk/lib/msvc/oci.lib")
