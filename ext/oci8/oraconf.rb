@@ -266,8 +266,12 @@ EOS
         OraConfIC.new(inc, lib)
       else
 	base = guess_ic_dir
-        inc, lib = guess_dirs_from_ic_base(base)
-        OraConfIC.new(inc, lib)
+	if base
+          inc, lib = guess_dirs_from_ic_base(base)
+          OraConfIC.new(inc, lib)
+	else
+	  OraConfFC.new
+	end
       end
     rescue
       case ENV['LANG']
