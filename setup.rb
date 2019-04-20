@@ -286,7 +286,7 @@ class ConfigTable
 
   def initialize_from_table
     @table = {}
-    DESCRIPTER.each do |k, (default, vname, desc, default2)|
+    DESCRIPTER.each do |k, (default, *)|
       @table[k] = default
     end
   end
