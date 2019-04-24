@@ -995,16 +995,16 @@ class OraConfIC < OraConf
     init
 
     if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw32|bccwin32/ # when Windows
-      unless File.exist?("#{ic_dir}/sdk/lib/msvc/oci.lib")
+      unless File.exist?("#{lib_dir}/sdk/lib/msvc/oci.lib")
         raise <<EOS
 Could not compile with Oracle instant client.
-#{ic_dir}/sdk/lib/msvc/oci.lib could not be found.
+#{lib_dir}/sdk/lib/msvc/oci.lib could not be found.
 EOS
         raise 'failed'
       end
       @cflags = " \"-I#{inc_dir}\""
       @cflags += " -D_int64=\"long long\"" if RUBY_PLATFORM =~ /cygwin|mingw32/
-      @libs = get_libs("#{ic_dir}/sdk/lib")
+      @libs = get_libs("#{lib_dir}/sdk/lib")
       ld_path = nil
     else
       @cflags = " -I#{inc_dir}"

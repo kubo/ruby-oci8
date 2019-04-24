@@ -424,6 +424,7 @@ void *oci8_check_typeddata(VALUE obj, const oci8_handle_data_type_t *data_type, 
 extern VALUE eOCIException;
 extern VALUE eOCIBreak;
 void Init_oci8_error(void);
+NORETURN(void oci8_do_raise(OCIError *errhp, sword status, OCIStmt *stmthp, const char *file, int line));
 NORETURN(void oci8_do_env_raise(OCIEnv *envhp, sword status, int free_envhp, const char *file, int line));
 NORETURN(void oci8_do_raise_init_error(const char *file, int line));
 sb4 oci8_get_error_code(OCIError *errhp);

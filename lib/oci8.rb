@@ -11,8 +11,11 @@ if RUBY_PLATFORM =~ /cygwin/
   # Cygwin manages environment variables by itself.
   # They don't synchroize with Win32's ones.
   # This set some Oracle's environment variables to win32's enviroment.
-  require 'Win32API'
-  win32setenv = Win32API.new('Kernel32.dll', 'SetEnvironmentVariableA', 'PP', 'I')
+  require 'fiddle'
+  win32setenv = Fiddle::Function.new( Fiddle.dlopen('Kernel32.dll')['SetEnvironmentVariableA'],
+                                        [Fiddle::TYPE_VOIDP,Fiddle::TYPE_VOIDP],
+                                        Fiddle::TYPE_INT )
+
   ['NLS_LANG', 'TNS_ADMIN', 'LOCAL'].each do |name|
     val = ENV[name]
     win32setenv.call(name, val && val.dup)

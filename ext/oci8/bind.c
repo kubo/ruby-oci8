@@ -383,7 +383,7 @@ static sb4 in_bind_callback(void *ictxp, OCIBind *bindp, ub4 iter, ub4 index, vo
 
     if (cb->tail == &cb->head) {
         /* empty string */
-        *bufpp = "";
+        *bufpp = (void *)"";
         *alenp = 0;
         *piecep = OCI_ONE_PIECE;
     } else {
