@@ -515,6 +515,10 @@ VALUE oci8_make_interval_ds(OCIInterval *s);
 /* object.c */
 void Init_oci_object(VALUE mOCI);
 
+/* transaction.c */
+void Init_oci8_transaction(VALUE cOCI8);
+extern const oci8_handle_data_type_t oci8_trans_data_type;
+
 /* attr.c */
 VALUE oci8_get_rowid_attr(oci8_base_t *base, ub4 attrtype, OCIStmt *stmtp);
 
