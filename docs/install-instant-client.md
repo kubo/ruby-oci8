@@ -18,7 +18,7 @@ Look at {file:docs/install-on-osx.md} for OS X.
 Install Oracle Instant Client Packages
 --------------------------------------
 
-### Donwload Instant Client Packages
+### Download Instant Client Packages
 
 Download the following packages from [Oracle Technology Network](http://www.oracle.com/technetwork/database/features/instant-client/index-097480.html).
 
