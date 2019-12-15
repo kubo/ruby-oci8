@@ -15,8 +15,9 @@ typedef struct {
     OCIRowid *ridp;
 } rowid_arg_t;
 
-static VALUE get_rowid_attr(rowid_arg_t *arg)
+static VALUE get_rowid_attr(VALUE varg)
 {
+    rowid_arg_t *arg = (rowid_arg_t *)varg;
     oci8_base_t *base = arg->base;
     ub4 attrtype = arg->attrtype;
     char buf[MAX_ROWID_LEN];
@@ -36,8 +37,9 @@ static VALUE get_rowid_attr(rowid_arg_t *arg)
     return rb_external_str_new_with_enc(buf, buflen, rb_usascii_encoding());
 }
 
-static VALUE rowid_ensure(rowid_arg_t *arg)
+static VALUE rowid_ensure(VALUE varg)
 {
+    rowid_arg_t *arg = (rowid_arg_t *)varg;
     if (arg->ridp != NULL) {
         OCIDescriptorFree(arg->ridp, OCI_DTYPE_ROWID);
     }

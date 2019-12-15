@@ -481,8 +481,8 @@ typedef struct {
     OCIStmt *stmtp;
 } cb_arg_t;
 
-static VALUE exec_sql(cb_arg_t *arg);
-static VALUE ensure_func(cb_arg_t *arg);
+static VALUE exec_sql(VALUE varg);
+static VALUE ensure_func(VALUE varg);
 
 /*
  * utility function to execute a single SQL statement
@@ -503,8 +503,9 @@ sword oci8_exec_sql(oci8_svcctx_t *svcctx, const char *sql_text, ub4 num_define_
     return (sword)rb_ensure(exec_sql, (VALUE)&arg, ensure_func, (VALUE)&arg);
 }
 
-static VALUE exec_sql(cb_arg_t *arg)
+static VALUE exec_sql(VALUE varg)
 {
+    cb_arg_t *arg = (cb_arg_t *)varg;
     ub4 pos;
     sword rv;
 
@@ -546,8 +547,9 @@ static VALUE exec_sql(cb_arg_t *arg)
     return (VALUE)rv;
 }
 
-static VALUE ensure_func(cb_arg_t *arg)
+static VALUE ensure_func(VALUE varg)
 {
+    cb_arg_t *arg = (cb_arg_t *)varg;
     if (arg->stmtp != NULL) {
         OCIStmtRelease(arg->stmtp, oci8_errhp, NULL, 0, OCI_DEFAULT);
     }
