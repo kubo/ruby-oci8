@@ -198,7 +198,7 @@ static VALUE ora_date_initialize_copy(VALUE lhs, VALUE rhs)
  *
  *  @return [OraDate]
  */
-static VALUE ora_date_s_now(int argc, VALUE *argv, VALUE klass)
+static VALUE ora_date_s_now(VALUE klass)
 {
     VALUE obj = ora_date_s_allocate(klass);
     ora_date_t *od = check_oradate(obj);
