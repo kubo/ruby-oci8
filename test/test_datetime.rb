@@ -1,6 +1,5 @@
 require 'oci8'
 require File.dirname(__FILE__) + '/config'
-require 'scanf'
 
 class TestDateTime < Minitest::Test
 
@@ -28,6 +27,12 @@ class TestDateTime < Minitest::Test
     convert_to_datetime($1.to_i, $2.to_i, $3.to_i, $4.to_i, $5.to_i, $6.to_i, subsec, $8)
   end
 
+  # 'YYYY-MM-DD HH24:MI:SS' or 'YYYY-MM-DD HH24:MI:SS.FF6' to array
+  def string_to_array(str)
+    /(\d+)-(\d+)-(\d+) (\d+):(\d+):(\d+)(?:\.(\d+))?/ =~ str
+    [$1.to_i, $2.to_i, $3.to_i, $4.to_i, $5.to_i, $6.to_i, $7 ? $7.to_i / 1000 : 0]
+  end
+
   def setup
     @conn = get_oci8_connection
   end
@@ -43,7 +48,7 @@ class TestDateTime < Minitest::Test
       @conn.exec(<<-EOS) do |row|
 SELECT TO_DATE('#{date}', 'YYYY-MM-DD HH24:MI:SS') FROM dual
 EOS
-        assert_equal(Time.local(*date.scanf("%d-%d-%d %d:%d:%d.%06d")), row[0])
+        assert_equal(Time.local(*string_to_array(date)), row[0])
       end
     end
   end
@@ -94,7 +99,7 @@ EOS
       @conn.exec(<<-EOS) do |row|
 SELECT TO_TIMESTAMP('#{date}', 'YYYY-MM-DD HH24:MI:SS.FF') FROM dual
 EOS
-        assert_equal(Time.local(*date.scanf("%d-%d-%d %d:%d:%d.%06d")), row[0])
+        assert_equal(Time.local(*string_to_array(date)), row[0])
       end
     end
   end
