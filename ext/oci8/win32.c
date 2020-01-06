@@ -26,8 +26,9 @@ typedef struct {
     HKEY hSubKey;
 } enum_homes_arg_t;
 
-static VALUE enum_homes_real(enum_homes_arg_t *arg)
+static VALUE enum_homes_real(VALUE varg)
 {
+    enum_homes_arg_t *arg = (enum_homes_arg_t *)varg;
     LONG rv;
     DWORD type;
     DWORD idx;
@@ -77,8 +78,9 @@ static VALUE enum_homes_real(enum_homes_arg_t *arg)
     return Qnil;
 }
 
-static VALUE enum_homes_ensure(enum_homes_arg_t *arg)
+static VALUE enum_homes_ensure(VALUE varg)
 {
+    enum_homes_arg_t *arg = (enum_homes_arg_t *)varg;
     if (arg->hKey != NULL) {
         RegCloseKey(arg->hKey);
         arg->hKey = NULL;
