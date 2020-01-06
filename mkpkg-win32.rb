@@ -19,6 +19,7 @@ when '32'
      'c:\ruby\rubyinstaller-2.4.1-1-x86',
      'c:\ruby\rubyinstaller-2.5.0-1-x86',
      'c:\ruby\rubyinstaller-2.6.0-1-x86',
+     'c:\ruby\rubyinstaller-2.7.0-1-x86',
     ]
 
   $oracle_path = 'c:\oracle\instantclient_12_1-win32'
@@ -33,9 +34,10 @@ when '32'
      ['c:\ruby\ruby-2.1.3-i386-mingw32', $devkit_mingw64_setup],
      ['c:\ruby\ruby-2.2.1-i386-mingw32', $devkit_mingw64_setup],
      ['c:\ruby\ruby-2.3.0-i386-mingw32', $devkit_mingw64_setup],
-     ['c:\ruby\rubyinstaller-2.4.1-1-x86', $ridk_setup],
-     ['c:\ruby\rubyinstaller-2.5.0-1-x86', $ridk_setup],
+     ['c:\ruby\rubyinstaller-2.4.1-1-x86', $ridk_setup, :disable_fortify_source],
+     ['c:\ruby\rubyinstaller-2.5.0-1-x86', $ridk_setup, :disable_fortify_source],
      ['c:\ruby\rubyinstaller-2.6.0-1-x86', $ridk_setup],
+     ['c:\ruby\rubyinstaller-2.7.0-1-x86', $ridk_setup],
     ]
 
   $cygwin_dir = 'c:\cygwin'
@@ -52,6 +54,7 @@ when '64'
      'c:\ruby\rubyinstaller-2.4.1-1-x64',
      'c:\ruby\rubyinstaller-2.5.0-1-x64',
      'c:\ruby\rubyinstaller-2.6.0-1-x64',
+     'c:\ruby\rubyinstaller-2.7.0-1-x64',
     ]
 
   $oracle_path = 'c:\oracle\instantclient_12_1-win64'
@@ -63,9 +66,10 @@ when '64'
      ['c:\ruby\ruby-2.1.3-x64-mingw32', $devkit_mingw64_setup],
      ['c:\ruby\ruby-2.2.1-x64-mingw32', $devkit_mingw64_setup],
      ['c:\ruby\ruby-2.3.0-x64-mingw32', $devkit_mingw64_setup],
-     ['c:\ruby\rubyinstaller-2.4.1-1-x64', $ridk_setup],
-     ['c:\ruby\rubyinstaller-2.5.0-1-x64', $ridk_setup],
+     ['c:\ruby\rubyinstaller-2.4.1-1-x64', $ridk_setup, :disable_fortify_source],
+     ['c:\ruby\rubyinstaller-2.5.0-1-x64', $ridk_setup, :disable_fortify_source],
      ['c:\ruby\rubyinstaller-2.6.0-1-x64', $ridk_setup],
+     ['c:\ruby\rubyinstaller-2.7.0-1-x64', $ridk_setup],
     ]
 
   $cygwin_dir = 'c:\cygwin64'
@@ -117,9 +121,13 @@ def make_gem
     File.delete file
   end
 
-  $build_ruby_dirs.each do |ruby, dev_setup|
+  $build_ruby_dirs.each do |ruby, dev_setup, disable_fortify_source|
     prepend_path(ruby) do
-      run_cmd("#{dev_setup} && ruby setup.rb config -- --with-runtime-check && ruby setup.rb setup")
+      fix_makefile = ''
+      if disable_fortify_source
+        fix_makefile += ' && sed -i "s/-D_FORTIFY_SOURCE=2/-D_FORTIFY_SOURCE=0/" ext\oci8\Makefile'
+      end
+      run_cmd("#{dev_setup} && ruby setup.rb config -- --with-runtime-check #{fix_makefile} && ruby setup.rb setup")
     end
   end
 
