@@ -1,4 +1,8 @@
 2020-01-11  Kubo Takehiro <kubo@jiubao.org>
+	* NEWS: Add changes between 2.2.7 and 2.2.8.
+	* lib/oci8/version.rb: Update to 2.2.8.
+
+2020-01-11  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/bind.c: Fix warning: comparison between signed and
 	    unsigned integer expressions
 

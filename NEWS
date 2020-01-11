@@ -1,5 +1,30 @@
 # @markup markdown
 
+2.2.8 (2020-01-11)
+==================
+
+New features
+------------
+
+* Add support to specify include and lib directories of Oracle library on installation. (GH-210)
+
+  The following three flags are added.
+  
+  * --with-instant-client-dir
+  * --with-instant-client-include
+  * --with-instant-client-lib
+
+Fixed issue
+-----------
+
+- Suppress warnings compiling oci8lib.so (GH-212 and others)
+
+- Fix compilation and tests on Windows.
+
+- Fix spelling in install-instant-client.md (GH-217)
+
+- Use fiddler instead obsolete Win32API on Windows (GH-212)
+
 2.2.7 (2019-01-06)
 ==================
 
