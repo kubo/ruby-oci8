@@ -7,12 +7,8 @@ Before running unit test:
    ```
 2. Create user ruby
    ```sql
-   SQL> CREATE USER ruby IDENTIFIED BY oci8;
-   ```
-   or
-   ```sql
-   SQL> CREATE USER ruby IDENTIFIED BY oci8
-      2 DEFAULT TABLESPACE users TEMPORARY TABLESPACE temp;
+   SQL> CREATE USER ruby IDENTIFIED BY oci8 DEFAULT TABLESPACE users TEMPORARY TABLESPACE temp;
+   SQL> alter user ruby quota unlimited on users;
    ```
 3. Grant the privilege to connect and execute.
    ```sql
@@ -27,6 +23,7 @@ Before running unit test:
 5. Create object types
    ```sql
    SQL> @test/setup_test_object.sql
+   SQL> @test/setup_test_package.sql
    ```
 6. change $dbname in test/config.rb.
 
