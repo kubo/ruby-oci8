@@ -22,9 +22,8 @@ class TestBreak < Minitest::Test
   @@server_is_runing_on_windows = nil
   def server_is_runing_on_windows?
     if @@server_is_runing_on_windows.nil?
-      @@server_is_runing_on_windows = false
-      @conn.exec('select banner from v$version') do |row|
-        @@server_is_runing_on_windows = true if row[0].include? 'Windows'
+      @conn.exec('select dbms_utility.port_string from dual') do |row|
+        @@server_is_runing_on_windows = row[0].include? '/WIN'
       end
     end
     @@server_is_runing_on_windows

@@ -1,3 +1,8 @@
+2020-01-11  Kubo Takehiro <kubo@jiubao.org>
+	* test/test_break.rb: Check Oracle server OS where tests run
+	    using dbms_utility.port_string. Tests in test_break.rb
+	    failed on Windows.
+
 2020-01-07  Kubo Takehiro <kubo@jiubao.org>
 	* mkpkg-win32.rb: Workarounds for compilation using ruby 2.4 and 2.6 with
 	    latest msys2 to avoid 'undefined reference to __chk_fail'
