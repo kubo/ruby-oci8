@@ -1,3 +1,77 @@
+2020-01-07  Kubo Takehiro <kubo@jiubao.org>
+	* mkpkg-win32.rb: Workarounds for compilation using ruby 2.4 and 2.6 with
+	    latest msys2 to avoid 'undefined reference to __chk_fail'
+
+2020-01-06  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/win32.c: Fix warnings caused by the change of rb_ensure()'s
+	    arguments in ruby 2.7.
+
+2019-12-16  Kubo Takehiro <kubo@jiubao.org>
+	* test/test_datetime.rb: Remove "require 'scanf'" to run tests with Ruby 2.7.
+	    The 'scanf' library was removed. https://bugs.ruby-lang.org/issues/16170
+
+2019-12-15  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/oradate.c: Fix bug of OraDate.now introduced 15 years ago.
+
+2019-12-15  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/attr.c, ext/oci8/oci8lib.c: Fix warnings caused by the
+	    change of rb_ensure()'s arguments in ruby 2.7.
+
+2019-06-19  Kubo Takehiro <kubo@jiubao.org>
+	* Merge pull request #217 from nathanbwright/patch-1
+	  Fix spelling in install-instant-client.md
+	  (GH-217)
+
+2019-06-18  Nathan Wright <nathanbwright@users.noreply.github.com>
+	* docs/install-instant-client.md: Fix spelling in install-instant-client.md
+	    (GH-217)
+
+2019-04-24  Kubo Takehiro <kubo@jiubao.org>
+	* Merge pull request #212 from tomasjura/master
+	  Compilation fix for Windows ( and some small cleanups )
+	  (GH-212)
+
+2019-04-23  Tomas Jura <tomas.jura1@gmail.com>
+	* ext/oci8/oci8.h: eliminate compiler warning
+	    (GH-212)
+
+2019-04-20  Tomas Jura <tomas.jura1@gmail.com>
+	* ext/oci8/bind.c: compiler warning eliminated
+	    (GH-212)
+
+2019-04-20  Tomas Jura <tomas.jura1@gmail.com>
+	* setup.rb: use splat operator instead dummy variables
+	    (GH-212)
+
+2019-04-20  Tomas Jura <tomas.jura1@gmail.com>
+	* lib/oci8.rb: use fiddler instead obsolete Win32API
+	    (GH-212)
+
+2019-04-20 Tomas Jura <tomas.jura1@gmail.com>
+	* ext/oci8/oraconf.rb: fix typo in windows compilation
+	    (GH-212)
+
+2019-03-23 Kubo Takehiro <kubo@jiubao.org>
+	* Merge pull request #210 from dminuoso/allow-custom
+	  (Nix) Allow for specifying include/library paths
+	  (GH-210)
+
+2019-03-23 Victor Nawothnig <Victor.Nawothnig@gmail.com>
+	* ext/oci8/oraconf.rb: Fix missing support for full client
+	    (GH-210)
+
+2019-03-22  Victor Nawothnig <Victor.Nawothnig@gmail.com>
+	* ext/oci8/oraconf.rb: fixup! Allow overriding library/include paths
+	    (GH-210)
+
+2019-03-21  Victor Nawothnig <Victor.Nawothnig@gmail.com>
+	* setup.rb: Add documentation for new flags
+	    (GH-210)
+
+2019-03-21  Victor Nawothnig <Victor.Nawothnig@gmail.com>
+	* ext/oci8/oraconf.rb: Allow overriding library/include paths
+	    (GH-210)
+
 2019-01-06  Kubo Takehiro <kubo@jiubao.org>
 	* NEWS: Add changes between 2.2.6.1 and 2.2.7.
 	* lib/oci8/version.rb: Update to 2.2.7
