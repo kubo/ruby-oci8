@@ -477,7 +477,7 @@ static VALUE bind_long_get(oci8_bind_t *obind, void *data, void *null_struct)
 static void bind_long_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {
     chunk_buf_t *cb = (chunk_buf_t *)data;
-    long len;
+    ub4 len;
     const char *buf;
 
     if (IS_BIND_LONG(obind)) {
@@ -485,7 +485,7 @@ static void bind_long_set(oci8_bind_t *obind, void *data, void **null_structp, V
     } else {
         StringValue(val);
     }
-    len = RSTRING_LEN(val);
+    len = (ub4)RSTRING_LEN(val);
     buf = RSTRING_PTR(val);
     cb->tail = &cb->head;
     while (1) {

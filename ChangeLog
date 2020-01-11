@@ -1,4 +1,8 @@
 2020-01-11  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/bind.c: Fix warning: comparison between signed and
+	    unsigned integer expressions
+
+2020-01-11  Kubo Takehiro <kubo@jiubao.org>
 	* test/README.md: Update preparation SQL statements for running tests.
 
 2020-01-11  Kubo Takehiro <kubo@jiubao.org>
