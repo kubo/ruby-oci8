@@ -66,6 +66,8 @@ when 'rbx'
   so_basename += 'rbx'
 when 'jruby'
   raise "Ruby-oci8 doesn't support jruby because its C extension support is in development in jruby 1.6 and deprecated in jruby 1.7."
+when 'truffleruby'
+  so_basename += 'truffleruby'
 else
   raise 'unsupported ruby engine: ' + RUBY_ENGINE
 end
