@@ -155,8 +155,9 @@ when /darwin/
 else
   plthook_src = "plthook_elf.c"
 end
-if xsystem(cc_command("").gsub(CONFTEST_C, File.dirname(__FILE__) + "/" + plthook_src))
-  File.delete(plthook_src.gsub(/\.c$/, '.' + RbConfig::CONFIG["OBJEXT"]))
+FileUtils.copy(File.dirname(__FILE__) + "/" + plthook_src, CONFTEST_C)
+if xsystem(cc_command(""))
+  FileUtils.rm_f("#{CONFTEST}.#{$OBJEXT}")
   puts plthook_src
   $objs << plthook_src.gsub(/\.c$/, '.o')
   $objs << "hook_funcs.o"
