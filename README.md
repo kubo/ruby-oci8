@@ -19,7 +19,7 @@ Use ruby-oci8 2.1.8 for ruby 1.8.
 What's new
 ----------
 
-See {file:NEWS}.
+See [NEWS](NEWS).
 
 Sample one-liner
 ----------------
@@ -38,29 +38,29 @@ Homepage
 Installation
 ------------
 
-* {file:docs/install-full-client.md Install for Oracle Full Client}
-* {file:docs/install-instant-client.md Install for Oracle Instant Client}
-* {file:docs/install-binary-package.md Install Binary Package}
-* {file:docs/install-on-osx.md Install on OS X}
+* [Install for Oracle Full Client](docs/install-full-client.md)
+* [Install for Oracle Instant Client](docs/install-instant-client.md)
+* [Install Binary Package](docs/install-binary-package.md)
+* [Install on OS X](docs/install-on-osx.md)
 
 Report issues
 -------------
 
-* {file:docs/report-installation-issue.md Report Installation Issues}
+* [Report Installation Issues](docs/report-installation-issue.md)
 * [The issues page on github](https://github.com/kubo/ruby-oci8/issues)
 
 Other documents
 ---------------
 
-* {file:docs/number-type-mapping.md Number Type Mapping between Oracle and Ruby}
-* {file:docs/timeout-parameters.md Timeout Parameters}
-* {file:docs/conflicts-local-connections-and-processes.md Conflicts between Local Connections and Child Process Handling on Unix}
-* {file:docs/hanging-after-inactivity.md Hanging After a Long Period of Inactivity}
-* {file:docs/bind-array-to-in_cond.md Bind an Array to IN-condition}
-* {file:docs/ldap-auth-and-function-interposition.md LDAP Authentication and Function Interposition}
+* [Number Type Mapping between Oracle and Ruby](docs/number-type-mapping.md)
+* [Timeout Parameters](docs/timeout-parameters.md)
+* [Conflicts between Local Connections and Child Process Handling on Unix](docs/conflicts-local-connections-and-processes.md)
+* [Hanging After a Long Period of Inactivity](docs/hanging-after-inactivity.md)
+* [Bind an Array to IN-condition](docs/bind-array-to-in_cond.md)
+* [LDAP Authentication and Function Interposition](docs/ldap-auth-and-function-interposition.md)
 
 License
 -------
 
-* {file:COPYING 2-clause BSD-style license} from ruby-oci8 2.1.3
-* {file:COPYING_old old Ruby license} until 2.1.2
+* [2-clause BSD-style license from ruby-oci8 2.1.3](COPYING)
+* [old Ruby license until 2.1.2](COPYING_old)
