@@ -1,4 +1,7 @@
 2020-12-28  Kubo Takehiro <kubo@jiubao.org>
+	* mkpkg-win32.rb: Build binary gems for ruby 3.0 on Windows.
+
+2020-12-28  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/ocinumber.c: Suppress C compiler warning: enumeration value ‘RUBY_T_NONE’ not handled in switch
 
 2020-09-10  Kubo Takehiro <kubo@jiubao.org>

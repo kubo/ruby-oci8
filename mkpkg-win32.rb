@@ -20,9 +20,10 @@ when '32'
      'c:\ruby\rubyinstaller-2.5.0-1-x86',
      'c:\ruby\rubyinstaller-2.6.0-1-x86',
      'c:\ruby\rubyinstaller-2.7.0-1-x86',
+     'c:\ruby\rubyinstaller-3.0.0-1-x86',
     ]
 
-  $oracle_path = 'c:\oracle\instantclient_12_1-win32'
+  $oracle_path = 'c:\oracle\instantclient_19_9-win32'
   $devkit_tdm_setup = 'c:\ruby\devkit-tdm-32\devkitvars.bat'
   $devkit_mingw64_setup = 'c:\ruby\devkit-mingw64-32\devkitvars.bat'
   $ridk_setup = 'ridk enable'
@@ -38,6 +39,7 @@ when '32'
      ['c:\ruby\rubyinstaller-2.5.0-1-x86', $ridk_setup, :disable_fortify_source],
      ['c:\ruby\rubyinstaller-2.6.0-1-x86', $ridk_setup],
      ['c:\ruby\rubyinstaller-2.7.0-1-x86', $ridk_setup],
+     ['c:\ruby\rubyinstaller-3.0.0-1-x86', $ridk_setup],
     ]
 
   $cygwin_dir = 'c:\cygwin'
@@ -55,9 +57,10 @@ when '64'
      'c:\ruby\rubyinstaller-2.5.0-1-x64',
      'c:\ruby\rubyinstaller-2.6.0-1-x64',
      'c:\ruby\rubyinstaller-2.7.0-1-x64',
+     'c:\ruby\rubyinstaller-3.0.0-1-x64',
     ]
 
-  $oracle_path = 'c:\oracle\instantclient_12_1-win64'
+  $oracle_path = 'c:\oracle\instantclient_19_9-win64'
   $devkit_mingw64_setup = 'c:\ruby\devkit-mingw64-64\devkitvars.bat'
   $ridk_setup = 'ridk enable'
   $build_ruby_dirs =
@@ -70,6 +73,7 @@ when '64'
      ['c:\ruby\rubyinstaller-2.5.0-1-x64', $ridk_setup, :disable_fortify_source],
      ['c:\ruby\rubyinstaller-2.6.0-1-x64', $ridk_setup],
      ['c:\ruby\rubyinstaller-2.7.0-1-x64', $ridk_setup],
+     ['c:\ruby\rubyinstaller-3.0.0-1-x64', $ridk_setup],
     ]
 
   $cygwin_dir = 'c:\cygwin64'
@@ -88,7 +92,7 @@ else
 end
 
 $gem_package = "ruby-oci8-#{$ruby_oci8_version}-#{$platform}-mingw32.gem"
-ENV['PATH'] = $oracle_path + ';' + ENV['PATH']
+ENV['PATH'] = $oracle_path + ';c:\Windows\System32'
 
 def prepend_path(basedir, others = [])
   orig_env = ENV['PATH']
@@ -165,7 +169,7 @@ def test_on_cygwin
 end
 
 make_gem
-ENV['TNS_ADMIN'] = 'c:\oraclexe\app\oracle\product\11.2.0\server\network\admin'
-ENV['LOCAL'] = 'XE'
+ENV['LOCAL'] ||= '//172.17.0.2/ORCLPDB1'
+ENV['NLS_LANG'] ||= 'American_America.AL32UTF8'
 install_and_test
 test_on_cygwin
