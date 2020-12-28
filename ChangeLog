@@ -1,3 +1,12 @@
+2020-12-28  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/ocinumber.c: Suppress C compiler warning: enumeration value ‘RUBY_T_NONE’ not handled in switch
+
+2020-09-10  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/extconf.rb: Fix for TruffleRuby 20.2 or before.
+
+2020-09-08  Brandon Fish <brandon.j.fish@oracle.com>
+	* ext/oci8/extconf.rb, lib/oci8.rb: Handle truffleruby RUBY_ENGINE in case statements
+
 2020-01-11  Kubo Takehiro <kubo@jiubao.org>
 	* NEWS: Add changes between 2.2.7 and 2.2.8.
 	* lib/oci8/version.rb: Update to 2.2.8.

@@ -216,6 +216,8 @@ static int set_oci_number_from_num(OCINumber *result, VALUE num, int force, OCIE
         num = rb_big2str(num, 10);
         set_oci_number_from_str(result, num, Qnil, Qnil, errhp);
         return 1;
+    default:
+        break;
     }
     if (RTEST(rb_obj_is_instance_of(num, cOCINumber))) {
         /* OCI::Number */
