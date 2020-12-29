@@ -62,7 +62,7 @@ class TestBreak < Minitest::Test
     expect = []
     expect[PLSQL_DONE] = TIME_IN_PLSQL
     expect[OCIBREAK]   = "Invalid status"
-    if defined? Rubinius and Rubinius::VERSION >= "2.0"
+    if (defined? Rubinius and Rubinius::VERSION >= "2.0") || (defined? RUBY_ENGINE and RUBY_ENGINE == "truffleruby")
       # Rubinius 2.0.0.
       # DBMS_LOCK.SLEEP blocks ruby threads which try to call C-API.
       expect[SEND_BREAK] = TIME_TO_BREAK
