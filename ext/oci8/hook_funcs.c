@@ -298,12 +298,27 @@ static void *ocifunc_addr(void *dlsym_handle, const char **file)
     if (dladdr(addr, &dli) == 0) {
         return NULL;
     }
-    if (strstr(dli.dli_fname, "/libclntsh." SO_EXT) == 0) {
+    if (strstr(dli.dli_fname, "/libclntsh." SO_EXT) == NULL) {
         return NULL;
     }
     *file = dli.dli_fname;
     return addr;
 }
+
+#ifdef __linux__
+#include <link.h>
+static void *ocifunc_addr_linux(const char **file)
+{
+    struct link_map *lm;
+    for (lm = _r_debug.r_map; lm != NULL; lm = lm->l_next) {
+        if (strstr(lm->l_name, "/libclntsh." SO_EXT) != NULL) {
+            *file = lm->l_name;
+            return (void*)lm->l_addr;
+        }
+    }
+    return NULL;
+}
+#endif
 
 void oci8_install_hook_functions(void)
 {
@@ -319,6 +334,11 @@ void oci8_install_hook_functions(void)
         /* OCI symbols may be hooked by LD_PRELOAD. */
         addr = ocifunc_addr(RTLD_NEXT, &file);
     }
+#ifdef __linux__
+    if (addr == NULL) {
+        addr = ocifunc_addr_linux(&file);
+    }
+#endif
     if (addr == NULL) {
         rb_raise(rb_eRuntimeError, "No shared library is found to hook.");
     }
