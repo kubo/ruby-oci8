@@ -994,20 +994,22 @@ class OraConfIC < OraConf
   def initialize(inc_dir, lib_dir)
     init
 
+    # check lib_dir
+    lib_dirs = lib_dir.split(File::PATH_SEPARATOR)
     if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw32|bccwin32/ # when Windows
-      unless File.exist?("#{lib_dir}/sdk/lib/msvc/oci.lib")
+      ocilib = lib_dirs.find do |dir|
+        File.exist?("#{dir}/sdk/lib/msvc/oci.lib")
+      end
+      unless ocilib
         raise <<EOS
 Could not compile with Oracle instant client.
-#{lib_dir}/sdk/lib/msvc/oci.lib could not be found.
+"sdk/lib/msvc/oci.lib" could not be found in: #{lib_dirs.join(' ')}
+Did you install instantclient-basic?
 EOS
-        raise 'failed'
       end
-      @cflags = " \"-I#{inc_dir}\""
-      @cflags += " -D_int64=\"long long\"" if RUBY_PLATFORM =~ /cygwin|mingw32/
-      @libs = get_libs("#{lib_dir}/sdk/lib")
+      @libs = get_libs("#{ocilib}/sdk/lib")
       ld_path = nil
     else
-      @cflags = " -I#{inc_dir}"
       # set ld_path and so_ext
       case RUBY_PLATFORM
       when /aix/
@@ -1028,34 +1030,53 @@ EOS
         so_ext = 'so'
       end
       # check Oracle client library.
-      unless File.exist?("#{lib_dir}/libclntsh.#{so_ext}")
-        files = Dir.glob("#{lib_dir}/libclntsh.#{so_ext}.*")
+      ocilib = lib_dirs.find do |dir|
+        File.exist?("#{dir}/libclntsh.#{so_ext}")
+      end
+      unless ocilib
+        files = lib_dirs.map do |dir|
+          Dir.glob("#{dir}/libclntsh.#{so_ext}.*")
+        end.flatten
         if files.empty?
           raise <<EOS
 Could not compile with Oracle instant client.
-'#{lib_dir}/libclntsh.#{so_ext}' could not be found.
+"libclntsh.#{so_ext}" could not be found in: #{lib_dirs.join(' ')}
 Did you install instantclient-basic?
 EOS
         else
-          file = File.basename(files.sort[-1])
+          file = files.sort[-1]
           raise <<EOS
 Could not compile with Oracle instant client.
-#{lib_dir}/libclntsh.#{so_ext} could not be found.
+"libclntsh.#{so_ext}" could not be found in: #{lib_dirs.join(' ')}
 You may need to make a symbolic link.
-   cd #{lib_dir}
-   ln -s #{file} libclntsh.#{so_ext}
+   cd #{File.dirname(file)}
+   ln -s #{File.basename(file)} libclntsh.#{so_ext}
 EOS
         end
         raise 'failed'
       end
       @libs = get_libs(lib_dir)
     end
-    unless File.exist?("#{inc_dir}/oci.h")
+
+    # check inc_dir
+    inc_dirs = inc_dir.split(File::PATH_SEPARATOR)
+    ociinc = inc_dirs.find do |dir|
+      File.exists?("#{dir}/oci.h")
+    end
+    unless ociinc
           raise <<EOS
-'#{inc_dir}/oci.h' does not exist.
+"oci.h" could not be found in: #{inc_dirs.join(' ')}
 Install 'Instant Client SDK'.
 EOS
     end
+    if ociinc.include?(' ')
+      @cflags = " \"-I#{ociinc}\""
+    else
+      @cflags = " -I#{ociinc}"
+    end
+    @cflags += " -D_int64=\"long long\"" if RUBY_PLATFORM =~ /cygwin|mingw32/
+
+    # check link
     $CFLAGS += @cflags
     if try_link_oci()
       major = try_constant("OCI_MAJOR_VERSION", "oci.h")

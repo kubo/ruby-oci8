@@ -1,4 +1,8 @@
 2020-12-29  Kubo Takehiro <kubo@jiubao.org>
+	* ext/oci8/oraconf.rb: Support --with-instant-client-dir along with --with-instant-client-lib/include.
+	  (GH-223)
+
+2020-12-29  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/hook_funcs.c: Fix hooking failure with truffleruby.
 	* test/test_break.rb: Fix to pass tests with truffleruby.
 
