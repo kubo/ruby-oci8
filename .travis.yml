@@ -1,4 +1,4 @@
-dist: trusty
+dist: bionic
 sudo: required
 cache: bundler
 
@@ -32,7 +32,8 @@ script:
 
 language: ruby
 rvm:
-  - 2.5.1
+  - ruby-3.0
+  - truffleruby-20.3.0
 
 notifications:
     email: false
