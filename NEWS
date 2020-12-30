@@ -1,5 +1,21 @@
 # @markup markdown
 
+2.2.9 (2020-12-30)
+==================
+
+- Support [TruffleRuby](https://github.com/oracle/truffleruby).  (GH-225)
+
+  (contributed by Brandon Fish)
+
+- Remove extension libraries for unmaintained ruby versions from binary gems.
+
+Fixed issue
+-----------
+
+- Allow --with-instant-client-dir along with --with-instant-client-lib/include. (GH-223)
+
+  (reported by Victor Nawothnig)
+
 2.2.8 (2020-01-11)
 ==================
 

@@ -11,12 +11,6 @@ when '32'
 
   $ruby_base_dirs =
     [
-     'c:\ruby\ruby-1.9.1-p430-i386-mingw32',
-     'c:\ruby\ruby-2.0.0-p0-i386-mingw32',
-     'c:\ruby\ruby-2.1.3-i386-mingw32',
-     'c:\ruby\ruby-2.2.1-i386-mingw32',
-     'c:\ruby\ruby-2.3.0-i386-mingw32',
-     'c:\ruby\rubyinstaller-2.4.1-1-x86',
      'c:\ruby\rubyinstaller-2.5.0-1-x86',
      'c:\ruby\rubyinstaller-2.6.0-1-x86',
      'c:\ruby\rubyinstaller-2.7.0-1-x86',
@@ -30,12 +24,6 @@ when '32'
 
   $build_ruby_dirs =
     [
-     ['c:\ruby\ruby-1.9.1-p430-i386-mingw32', $devkit_tdm_setup],
-     ['c:\ruby\ruby-2.0.0-p0-i386-mingw32', $devkit_mingw64_setup],
-     ['c:\ruby\ruby-2.1.3-i386-mingw32', $devkit_mingw64_setup],
-     ['c:\ruby\ruby-2.2.1-i386-mingw32', $devkit_mingw64_setup],
-     ['c:\ruby\ruby-2.3.0-i386-mingw32', $devkit_mingw64_setup],
-     ['c:\ruby\rubyinstaller-2.4.1-1-x86', $ridk_setup, :disable_fortify_source],
      ['c:\ruby\rubyinstaller-2.5.0-1-x86', $ridk_setup, :disable_fortify_source],
      ['c:\ruby\rubyinstaller-2.6.0-1-x86', $ridk_setup],
      ['c:\ruby\rubyinstaller-2.7.0-1-x86', $ridk_setup],
@@ -49,11 +37,6 @@ when '64'
   $ruby_base_dirs =
     [
      # RubyInstaller <URL:http://rubyinstaller.org>
-     'c:\ruby\ruby-2.0.0-p0-x64-mingw32',
-     'c:\ruby\ruby-2.1.3-x64-mingw32',
-     'c:\ruby\ruby-2.2.1-x64-mingw32',
-     'c:\ruby\ruby-2.3.0-x64-mingw32',
-     'c:\ruby\rubyinstaller-2.4.1-1-x64',
      'c:\ruby\rubyinstaller-2.5.0-1-x64',
      'c:\ruby\rubyinstaller-2.6.0-1-x64',
      'c:\ruby\rubyinstaller-2.7.0-1-x64',
@@ -65,11 +48,6 @@ when '64'
   $ridk_setup = 'ridk enable'
   $build_ruby_dirs =
     [
-     ['c:\ruby\ruby-2.0.0-p0-x64-mingw32', $devkit_mingw64_setup],
-     ['c:\ruby\ruby-2.1.3-x64-mingw32', $devkit_mingw64_setup],
-     ['c:\ruby\ruby-2.2.1-x64-mingw32', $devkit_mingw64_setup],
-     ['c:\ruby\ruby-2.3.0-x64-mingw32', $devkit_mingw64_setup],
-     ['c:\ruby\rubyinstaller-2.4.1-1-x64', $ridk_setup, :disable_fortify_source],
      ['c:\ruby\rubyinstaller-2.5.0-1-x64', $ridk_setup, :disable_fortify_source],
      ['c:\ruby\rubyinstaller-2.6.0-1-x64', $ridk_setup],
      ['c:\ruby\rubyinstaller-2.7.0-1-x64', $ridk_setup],
@@ -87,7 +65,7 @@ when 'all'
     system('ruby mkpkg-win32.rb 32')
   end
 else
-  puts "#{ARGV[0]} (32|64)"
+  puts "#{ARGV[0]} (32|64|all)"
   exit 0
 end
 

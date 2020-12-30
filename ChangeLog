@@ -1,3 +1,8 @@
+2020-12-30  Kubo Takehiro <kubo@jiubao.org>
+	* NEWS: Add changes between 2.2.8 and 2.2.9.
+	* lib/oci8/version.rb: Update to 2.2.9.
+	* mkpkg-win32.rb: remove unmaintained ruby versions from binary gems.
+
 2020-12-29  Kubo Takehiro <kubo@jiubao.org>
 	* ext/oci8/oraconf.rb: Support --with-instant-client-dir along with --with-instant-client-lib/include.
 	  (GH-223)
