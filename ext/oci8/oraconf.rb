@@ -535,7 +535,7 @@ EOS
                   # No need to check the real path.
                   # The current instant client doesn't use @rpath or @loader_path.
                 when /\/libclntsh\.dylib/, /\/libnnz\d\d.dylib/
-                  raise <<EOS unless File.exists?(libname)
+                  raise <<EOS unless File.exist?(libname)
 The output of "otool -L #{file}" is:
   | #{IO.readlines("|otool -L #{file}").join('  | ')}
 Ruby-oci8 doesn't work without DYLD_LIBRARY_PATH or DYLD_FALLBACK_LIBRARY_PATH
@@ -1061,7 +1061,7 @@ EOS
     # check inc_dir
     inc_dirs = inc_dir.split(File::PATH_SEPARATOR)
     ociinc = inc_dirs.find do |dir|
-      File.exists?("#{dir}/oci.h")
+      File.exist?("#{dir}/oci.h")
     end
     unless ociinc
           raise <<EOS

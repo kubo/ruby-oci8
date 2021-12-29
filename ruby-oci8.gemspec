@@ -50,7 +50,7 @@ EOS
     # add map files to analyze a core (minidump) file.
     so_vers.each do |ver|
       map_file = 'ext/oci8/oci8lib_#{ver}.map'
-      so_files << map_file if File.exists? map_file
+      so_files << map_file if File.exist? map_file
     end
 
     # least version in so_vers
