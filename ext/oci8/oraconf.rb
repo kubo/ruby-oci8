@@ -71,7 +71,7 @@ class MiniSOReader
         read_mach_o_universal(f)
       else
         # AIX and Tru64
-        raise format("unknown file header: %02x %02x", file_header[0].to_i, file_header[1].to_i)
+        raise format("unknown file header: %02x %02x (%s)", file_header[0].ord, file_header[1].ord, filename)
       end
     ensure
       f.close
@@ -415,7 +415,7 @@ EOS
       end
       so_ext = 'sl'
     when /darwin/
-      @@ld_envs = %w[DYLD_LIBRARY_PATH]
+      @@ld_envs = %w[OCI_DIR]
       so_ext = 'dylib'
       if is_32bit
         this_cpu = :i386   # 32-bit little-endian
@@ -495,49 +495,6 @@ EOS
           end
         end
       when /darwin/
-        fallback_path = ENV['DYLD_FALLBACK_LIBRARY_PATH']
-        if fallback_path.nil?
-          puts "  DYLD_FALLBACK_LIBRARY_PATH is not set."
-        else
-          puts "  checking DYLD_FALLBACK_LIBRARY_PATH..."
-          ld_path, file = check_lib_in_path(fallback_path, glob_name, check_proc)
-        end
-        if ld_path.nil?
-          puts "  checking OCI_DIR..."
-          ld_path, file = check_lib_in_path(ENV['OCI_DIR'], glob_name, check_proc)
-          if ld_path
-            puts "  checking dependent shared libraries in #{file}..."
-            open("|otool -L #{file}") do |f|
-              f.gets # discard the first line
-              while line = f.gets
-                line =~ /^\s+(\S+)/
-                libname = $1
-                case libname
-                when /^@rpath\/libclntsh\.dylib/, /^@rpath\/libnnz\d\d\.dylib/, /^@loader_path\/libnnz\d\d\.dylib/
-                  # No need to check the real path.
-                  # The current instant client doesn't use @rpath or @loader_path.
-                when /\/libclntsh\.dylib/, /\/libnnz\d\d.dylib/
-                  raise <<EOS unless File.exist?(libname)
-The output of "otool -L #{file}" is:
-  | #{IO.readlines("|otool -L #{file}").join('  | ')}
-Ruby-oci8 doesn't work without DYLD_LIBRARY_PATH or DYLD_FALLBACK_LIBRARY_PATH
-because the dependent file "#{libname}" doesn't exist.
-
-If you need to use ruby-oci8 without DYLD_LIBRARY_PATH or DYLD_FALLBACK_LIBRARY_PATH,
-download "fix_oralib.rb" in https://github.com/kubo/fix_oralib_osx
-and execute it in the directory "#{File.dirname(file)}" as follows to fix the path.
-
-  cd #{File.dirname(file)}
-  curl -O https://raw.githubusercontent.com/kubo/fix_oralib_osx/master/fix_oralib.rb
-  ruby fix_oralib.rb
-
-Note: DYLD_* environment variables are unavailable for security reasons on OS X 10.11 El Capitan.
-EOS
-                end
-              end
-            end
-          end
-        end
         if ld_path.nil?
           fallback_path = ENV['DYLD_FALLBACK_LIBRARY_PATH']
           if fallback_path.nil?
@@ -548,17 +505,8 @@ EOS
         end
         if ld_path.nil?
           raise <<EOS
-Set the environment variable DYLD_LIBRARY_PATH, DYLD_FALLBACK_LIBRARY_PATH or
-OCI_DIR to point to the Instant client directory.
-
-If DYLD_LIBRARY_PATH or DYLD_FALLBACK_LIBRARY_PATH is set, the environment
-variable must be set at runtime also.
-
-If OCI_DIR is set, dependent shared library paths are checked. If the checking
-is passed, ruby-oci8 works without DYLD_LIBRARY_PATH or DYLD_FALLBACK_LIBRARY_PATH.
-
-Note: OCI_DIR should be absolute path.
-Note: DYLD_* environment variables are unavailable for security reasons on OS X 10.11 El Capitan.
+Oracle instant client is not found.
+You need to install Oracle instant client.
 EOS
         end
       end
@@ -583,7 +531,7 @@ EOS
       next if path.nil? or path == ''
       print "    checking #{path}... "
       path.gsub!(/\\/, '/') if /mswin32|mswin64|cygwin|mingw32|bccwin32/ =~ RUBY_PLATFORM
-      files = Dir.glob(File.join(path, glob_name))
+      files = Dir.glob(File.join(path, glob_name)).sort.reverse
       if files.empty?
         puts "no"
         next
@@ -657,20 +605,10 @@ EOS
     rubyhdrdir = RbConfig::CONFIG["rubyhdrdir"] || RbConfig::CONFIG['archdir']
     unless File.exist?(rubyhdrdir + '/ruby.h')
       puts "failed"
-      if RUBY_PLATFORM =~ /darwin/ and File.exist?("#{RbConfig::CONFIG['archdir']}/../universal-darwin8.0/ruby.h")
-        raise <<EOS
-#{RbConfig::CONFIG['archdir']}/ruby.h doesn't exist.
-Run the following commands to fix the problem.
-
-  cd #{RbConfig::CONFIG['archdir']}
-  sudo ln -s ../universal-darwin8.0/* ./
-EOS
-      else
-        raise <<EOS
+      raise <<EOS
 #{RbConfig::CONFIG['archdir']}/ruby.h doesn't exist.
 Install the ruby development library.
 EOS
-      end
     end
     puts "ok"
     $stdout.flush
@@ -1068,71 +1006,8 @@ EOS
       else
         # 10.1.0 doesn't have OCI_MAJOR_VERSION and OCI_MINOR_VERSION in oci.h.
         @version = "1010"
-        if RUBY_PLATFORM =~ /darwin/ and 1.size == 8 and `sw_vers -productVersion`.chomp == "10.7"
-          $stderr.print <<EOS
-WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN!
-
-64-bit Oracle instant client doesn't work on OS X Lion.
-See: https://forums.oracle.com/forums/thread.jspa?threadID=2187558
-
-The compilation is continued because the issue may be fixed in future.
-
-WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN! WARN!
-EOS
-        end
       end
       return
-    end
-
-    if RUBY_PLATFORM =~ /darwin/
-      open('mkmf.log', 'r') do |f|
-        while line = f.gets
-          if line.include? '/libclntsh.dylib load command 8 unknown cmd field'
-            raise <<EOS
-Intel mac instant client is for Mac OS X 10.5.
-It doesn't work on Mac OS X 10.4 or before.
-
-You have three workarounds.
-  1. Compile ruby as ppc binary and use it with ppc instant client.
-  2. Use JRuby and JDBC
-  3. Use a third-party ODBC driver and ruby-odbc.
-EOS
-            # '
-          end
-
-          case line
-          when /cputype \(\d+, architecture \w+\) does not match cputype \(\d+\) for specified -arch flag: (\w+)/
-            missing_arch = $1
-          when /Undefined symbols for architecture (\w+)/
-            missing_arch = $1
-          when /missing required architecture (\w+) in file/
-            missing_arch = $1
-          end
-
-          if missing_arch
-            if [nil].pack('p').size == 8
-              my_arch = 'x86_64'
-            elsif "\x01\x02".unpack('s')[0] == 0x0201
-              my_arch = 'i386'
-            else
-              my_arch = 'ppc'
-            end
-            raise <<EOS
-Could not compile with Oracle instant client.
-You may need to set the environment variable RC_ARCHS or ARCHFLAGS as follows:
-
-    RC_ARCHS=#{my_arch}
-    export RC_ARCHS
-or
-    ARCHFLAGS='-arch #{my_arch}'
-    export RC_ARCHS
-
-If it does not fix the problem, delete all '-arch #{missing_arch}'
-in '#{RbConfig::CONFIG['archdir']}/rbconfig.rb'.
-EOS
-          end
-        end
-      end
     end
 
     unless ld_path.nil?
