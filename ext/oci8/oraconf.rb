@@ -43,6 +43,10 @@ class MiniSOReader
   attr_reader :endian
   attr_reader :bits
 
+  MACH_O_CPU_TYPE_I386 = 7
+  MACH_O_CPU_TYPE_X86_64 = 7 + 0x01000000
+  MACH_O_CPU_TYPE_ARM64 = 12 + 0x01000000
+
   def initialize(filename)
     f = open(filename, 'rb')
     begin
@@ -56,9 +60,6 @@ class MiniSOReader
       when "\x02\x10"
         # HP-UX PA-RISC1.1
         read_parisc(f)
-      when "\xfe\xed"
-        # Big-endian Mach-O File
-        read_mach_o_be(f)
       when "\xce\xfa"
         # 32-bit Little-endian Mach-O File
         read_mach_o_le(f, 32)
@@ -67,7 +68,7 @@ class MiniSOReader
         read_mach_o_le(f, 64)
       when "\xca\xfe"
         # Universal binary
-        read_mach_o_unversal(f)
+        read_mach_o_universal(f)
       else
         # AIX and Tru64
         raise format("unknown file header: %02x %02x", file_header[0].to_i, file_header[1].to_i)
@@ -174,22 +175,6 @@ class MiniSOReader
     @cpu = :parisc
   end
 
-  # Big-endian Mach-O File
-  def read_mach_o_be(f)
-    @file_format = :mach_o
-    @endian = :big
-    case f.read(2)
-    when "\xfa\xce" # feedface
-      @cpu = :ppc
-      @bits = 32
-    when "\xfa\xcf" # feedfacf
-      @cpu = :ppc64
-      @bits = 64
-    else
-      raise "unknown file format"
-    end
-  end
-
   def read_mach_o_le(f, bits)
     @file_format = :mach_o
     @endian = :little
@@ -199,12 +184,20 @@ class MiniSOReader
       @cpu = :i386
       @bits = 32
     when 64
-      @cpu = :x86_64
+      cputype = f.read(4).unpack('V')[0]
+      case cputype
+      when MACH_O_CPU_TYPE_X86_64
+        @cpu = :x86_64
+      when MACH_O_CPU_TYPE_ARM64
+        @cpu = :arm64
+      else
+        raise "unknown mach-o cpu type: #{cputype}"
+      end
       @bits = 64
     end
   end
 
-  def read_mach_o_unversal(f)
+  def read_mach_o_universal(f)
     raise 'unknown file format' if f.read(2) != "\xba\xbe" # cafebabe
     @file_format = :universal
     nfat_arch = f.read(4).unpack('N')[0]
@@ -213,21 +206,17 @@ class MiniSOReader
     @bits = []
     nfat_arch.times do
       case cputype = f.read(4).unpack('N')[0]
-      when 7
+      when MACH_O_CPU_TYPE_I386
         @cpu    << :i386
         @endian << :little
         @bits   << 32
-      when 7 + 0x01000000
+      when MACH_O_CPU_TYPE_X86_64
         @cpu    << :x86_64
         @endian << :little
         @bits   << 64
-      when 18
-        @cpu    << :ppc
-        @endian << :big
-        @bits   << 32
-      when 18 + 0x01000000
-        @cpu    << :ppc64
-        @endian << :big
+      when MACH_O_CPU_TYPE_ARM64
+        @cpu    << :arm64
+        @endian << :little
         @bits   << 64
       else
         raise "Unknown mach-o cputype: #{cputype}"
@@ -429,17 +418,10 @@ EOS
       @@ld_envs = %w[DYLD_LIBRARY_PATH]
       so_ext = 'dylib'
       if is_32bit
-        if is_big_endian
-          this_cpu = :ppc    # 32-bit big-endian
-        else
-          this_cpu = :i386   # 32-bit little-endian
-        end
+        this_cpu = :i386   # 32-bit little-endian
       else
-        if is_big_endian
-          this_cpu = :ppc64  # 64-bit big-endian
-        else
-          this_cpu = :x86_64 # 64-bit little-endian
-        end
+        require 'etc'
+        this_cpu = Etc.uname[:machine].to_sym
       end
       check_proc = Proc.new do |file|
         so = MiniSOReader.new(file)
