@@ -73,10 +73,10 @@ struct plthook {
 };
 
 static int plthook_open_real(plthook_t **plthook_out, const struct mach_header *mh);
-static unsigned int get_bind_addr(plthook_t *plthook, const uint8_t *base, uint32_t lazy_bind_off, uint32_t lazy_bind_size, struct segment_command_ **segments, int addrdiff);
+static unsigned int get_bind_addr(plthook_t *plthook, const uint8_t *base, uint32_t lazy_bind_off, uint32_t lazy_bind_size, struct segment_command_ **segments, ptrdiff_t addrdiff);
 
 static void set_errmsg(const char *fmt, ...) __attribute__((__format__ (__printf__, 1, 2)));
-static void set_bind_addr(unsigned int *idx, plthook_t *plthook, const uint8_t *base, const char *sym_name, int seg_index, int seg_offset, struct segment_command_ **segments);
+static void set_bind_addr(unsigned int *idx, plthook_t *plthook, const uint8_t *base, const char *sym_name, int seg_index, uint64_t seg_offset, struct segment_command_ **segments);
 
 static uint64_t uleb128(const uint8_t **p)
 {
@@ -148,7 +148,7 @@ int plthook_open_by_handle(plthook_t **plthook_out, void *hndl)
         RTLD_LAZY | RTLD_NOLOAD,
         RTLD_LAZY | RTLD_NOLOAD | RTLD_FIRST,
     };
-    int flag_idx;
+    size_t flag_idx;
 #define NUM_FLAGS (sizeof(flags) / sizeof(flags[0]))
 
     if (hndl == NULL) {
@@ -196,8 +196,8 @@ static int plthook_open_real(plthook_t **plthook_out, const struct mach_header *
     struct segment_command_ *segments[NUM_SEGMENTS];
     int segment_idx = 0;
     unsigned int nbind;
-    int addrdiff = 0;
-    int i;
+    ptrdiff_t addrdiff = 0;
+    uint32_t i;
 
     memset(segments, 0, sizeof(segments));
 #ifdef __LP64__
@@ -320,14 +320,14 @@ static int plthook_open_real(plthook_t **plthook_out, const struct mach_header *
     return 0;
 }
 
-static unsigned int get_bind_addr(plthook_t *plthook, const uint8_t *base, uint32_t lazy_bind_off, uint32_t lazy_bind_size, struct segment_command_ **segments, int addrdiff)
+static unsigned int get_bind_addr(plthook_t *plthook, const uint8_t *base, uint32_t lazy_bind_off, uint32_t lazy_bind_size, struct segment_command_ **segments, ptrdiff_t addrdiff)
 {
     const uint8_t *ptr = base + lazy_bind_off + addrdiff;
     const uint8_t *end = ptr + lazy_bind_size;
     const char *sym_name;
     int seg_index = 0;
     uint64_t seg_offset = 0;
-    int count, skip;
+    uint64_t count, skip;
     unsigned int idx;
     DEBUG_BIND("get_bind_addr(%p, 0x%x, 0x%x", base, lazy_bind_off, lazy_bind_size);
     for (idx = 0; segments[idx] != NULL; idx++) {
@@ -341,7 +341,7 @@ static unsigned int get_bind_addr(plthook_t *plthook, const uint8_t *base, uint3
         uint8_t imm = *ptr & BIND_IMMEDIATE_MASK;
         uint64_t ulebval;
         int64_t slebval;
-        int i;
+        uint64_t i;
 
         DEBUG_BIND("0x%02x: ", *ptr);
         ptr++;
@@ -410,10 +410,10 @@ static unsigned int get_bind_addr(plthook_t *plthook, const uint8_t *base, uint3
     return idx;
 }
 
-static void set_bind_addr(unsigned int *idx, plthook_t *plthook, const uint8_t *base, const char *sym_name, int seg_index, int seg_offset, struct segment_command_ **segments)
+static void set_bind_addr(unsigned int *idx, plthook_t *plthook, const uint8_t *base, const char *sym_name, int seg_index, uint64_t seg_offset, struct segment_command_ **segments)
 {
     if (plthook != NULL) {
-        uint32_t vmaddr = segments[seg_index]->vmaddr;
+        uint64_t vmaddr = segments[seg_index]->vmaddr;
         plthook->entries[*idx].name = sym_name;
         plthook->entries[*idx].addr = (void**)(base + vmaddr + seg_offset);
     }

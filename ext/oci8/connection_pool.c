@@ -144,13 +144,13 @@ static VALUE oci8_cpool_initialize(int argc, VALUE *argv, VALUE self)
     chker2(OCIConnectionPoolCreate(oci8_envhp, oci8_errhp, cpool->base.hp.poolhp,
                                    &pool_name, &pool_name_len,
                                    NIL_P(dbname) ? NULL : RSTRING_ORATEXT(dbname),
-                                   NIL_P(dbname) ? 0 : RSTRING_LEN(dbname),
+                                   NIL_P(dbname) ? 0 : RSTRING_LENINT(dbname),
                                    FIX2UINT(conn_min), FIX2UINT(conn_max),
                                    FIX2UINT(conn_incr),
                                    NIL_P(username) ? NULL : RSTRING_ORATEXT(username),
-                                   NIL_P(username) ? 0 : RSTRING_LEN(username),
+                                   NIL_P(username) ? 0 : RSTRING_LENINT(username),
                                    NIL_P(password) ? NULL : RSTRING_ORATEXT(password),
-                                   NIL_P(password) ? 0 : RSTRING_LEN(password),
+                                   NIL_P(password) ? 0 : RSTRING_LENINT(password),
                                    OCI_DEFAULT),
            &cpool->base);
     RB_OBJ_WRITE(cpool->base.self, &cpool->pool_name, rb_str_new(TO_CHARPTR(pool_name), pool_name_len));

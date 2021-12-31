@@ -719,7 +719,6 @@ read_more_data:
     default:
         v = rb_ary_join(v, Qnil);
     }
-    OBJ_TAINT(v);
     if (lob->lobtype == OCI_TEMP_CLOB) {
         /* set encoding */
         rb_enc_associate(v, oci8_encoding);
@@ -766,10 +765,10 @@ static VALUE oci8_lob_write(VALUE self, VALUE data)
     RB_GC_GUARD(str);
     if (lob->lobtype == OCI_TEMP_CLOB) {
         lob->pos += char_amt;
-        return UINT2NUM(char_amt);
+        return ULL2NUM(char_amt);
     } else {
         lob->pos += byte_amt;
-        return UINT2NUM(byte_amt);
+        return ULL2NUM(byte_amt);
     }
 }
 

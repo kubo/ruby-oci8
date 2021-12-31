@@ -556,7 +556,7 @@ static VALUE oci8_server_attach(VALUE self, VALUE dbname, VALUE attach_mode)
     /* attach to the server */
     chker2(OCIServerAttach_nb(svcctx, svcctx->srvhp, oci8_errhp,
                               NIL_P(dbname) ? NULL : RSTRING_ORATEXT(dbname),
-                              NIL_P(dbname) ? 0 : RSTRING_LEN(dbname),
+                              NIL_P(dbname) ? 0 : RSTRING_LENINT(dbname),
                               mode),
            &svcctx->base);
     chker2(OCIAttrSet(svcctx->base.hp.ptr, OCI_HTYPE_SVCCTX,
@@ -864,7 +864,7 @@ static VALUE oci8_set_client_identifier(VALUE self, VALUE val)
     if (!NIL_P(val)) {
         OCI8SafeStringValue(val);
         ptr = RSTRING_PTR(val);
-        size = RSTRING_LEN(val);
+        size = RSTRING_LENINT(val);
     } else {
         ptr = "";
         size = 0;
@@ -899,7 +899,7 @@ static VALUE oci8_set_module(VALUE self, VALUE val)
     if (!NIL_P(val)) {
         OCI8SafeStringValue(val);
         ptr = RSTRING_PTR(val);
-        size = RSTRING_LEN(val);
+        size = RSTRING_LENINT(val);
     } else {
         ptr = "";
         size = 0;
@@ -933,7 +933,7 @@ static VALUE oci8_set_action(VALUE self, VALUE val)
     if (!NIL_P(val)) {
         OCI8SafeStringValue(val);
         ptr = RSTRING_PTR(val);
-        size = RSTRING_LEN(val);
+        size = RSTRING_LENINT(val);
     } else {
         ptr = "";
         size = 0;
@@ -964,7 +964,7 @@ static VALUE oci8_set_client_info(VALUE self, VALUE val)
     if (!NIL_P(val)) {
         OCI8SafeStringValue(val);
         ptr = RSTRING_PTR(val);
-        size = RSTRING_LEN(val);
+        size = RSTRING_LENINT(val);
     } else {
         ptr = "";
         size = 0;

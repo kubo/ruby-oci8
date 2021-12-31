@@ -510,7 +510,7 @@ static VALUE exec_sql(VALUE varg)
     sword rv;
 
     chker2(OCIStmtPrepare2(arg->svcctx->base.hp.svc, &arg->stmtp, oci8_errhp, 
-                           (text*)arg->sql_text, strlen(arg->sql_text), NULL, 0,
+                           (text*)arg->sql_text, (ub4)strlen(arg->sql_text), NULL, 0,
                            OCI_NTV_SYNTAX, OCI_DEFAULT),
            &arg->svcctx->base);
     for (pos = 0; pos < arg->num_define_vars; pos++) {

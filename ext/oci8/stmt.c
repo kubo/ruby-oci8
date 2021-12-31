@@ -78,7 +78,7 @@ static VALUE oci8_stmt_initialize(VALUE self, VALUE svc, VALUE sql)
     if (!NIL_P(sql)) {
         OCI8SafeStringValue(sql);
 
-        rv = OCIStmtPrepare2(svcctx->base.hp.svc, &stmt->base.hp.stmt, oci8_errhp, RSTRING_ORATEXT(sql), RSTRING_LEN(sql), NULL, 0, OCI_NTV_SYNTAX, OCI_DEFAULT);
+        rv = OCIStmtPrepare2(svcctx->base.hp.svc, &stmt->base.hp.stmt, oci8_errhp, RSTRING_ORATEXT(sql), RSTRING_LENINT(sql), NULL, 0, OCI_NTV_SYNTAX, OCI_DEFAULT);
         if (IS_OCI_ERROR(rv)) {
             chker2(rv, &svcctx->base);
         }
@@ -178,10 +178,10 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
          */
         VALUE symval = rb_sym2str(vplaceholder);
         const char *symname = RSTRING_PTR(symval);
-        size_t len = RSTRING_LEN(symval);
+        ub4 len = RSTRING_LENINT(symval);
 #else
         const char *symname = rb_id2name(SYM2ID(vplaceholder));
-        size_t len = strlen(symname);
+        ub4 len = (ub4)strlen(symname);
 #endif
         placeholder_ptr = ALLOCA_N(char, len + 1);
         placeholder_len = len + 1;
@@ -192,7 +192,7 @@ static VALUE oci8_bind(VALUE self, VALUE vplaceholder, VALUE vbindobj)
     } else {
         OCI8StringValue(vplaceholder);
         placeholder_ptr = RSTRING_PTR(vplaceholder);
-        placeholder_len = RSTRING_LEN(vplaceholder);
+        placeholder_len = RSTRING_LENINT(vplaceholder);
     }
     obind = TO_BIND(vbindobj); /* 2 */
     if (obind->base.hp.bnd != NULL) {

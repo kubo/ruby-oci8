@@ -485,7 +485,7 @@ static VALUE set_coll_element_func(set_coll_element_cb_data_t *cb_data)
 
     chkerr(OCICollSize(oci8_envhp, oci8_errhp, coll, &size));
     if (RARRAY_LEN(val) < size) {
-        chkerr(OCICollTrim(oci8_envhp, oci8_errhp, size - RARRAY_LEN(val), coll));
+        chkerr(OCICollTrim(oci8_envhp, oci8_errhp, (sb4)(size - RARRAY_LEN(val)), coll));
     }
     for (idx = 0; idx < RARRAY_LEN(val); idx++) {
         switch (FIX2INT(datatype)) {
@@ -559,13 +559,13 @@ static void set_attribute(VALUE self, VALUE datatype, VALUE typeinfo, void *data
     case ATTR_STRING:
         OCI8StringValue(val);
         chkerr(OCIStringAssignText(oci8_envhp, oci8_errhp,
-                                   RSTRING_ORATEXT(val), RSTRING_LEN(val),
+                                   RSTRING_ORATEXT(val), RSTRING_LENINT(val),
                                    (OCIString **)data));
         break;
     case ATTR_RAW:
         StringValue(val);
         chkerr(OCIRawAssignBytes(oci8_envhp, oci8_errhp,
-                                 RSTRING_ORATEXT(val), RSTRING_LEN(val),
+                                 RSTRING_ORATEXT(val), RSTRING_LENINT(val),
                                  (OCIRaw **)data));
         break;
     case ATTR_OCINUMBER:
@@ -728,6 +728,8 @@ static VALUE bind_named_type_get(oci8_bind_t *obind, void *data, void *null_stru
 
     return bnt->obj[idx];
 }
+
+NORETURN(static void bind_named_type_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val));
 
 static void bind_named_type_set(oci8_bind_t *obind, void *data, void **null_structp, VALUE val)
 {

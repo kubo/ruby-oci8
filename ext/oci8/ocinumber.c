@@ -154,7 +154,7 @@ static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VAL
     StringValue(str);
     /* set from string. */
     if (NIL_P(fmt)) {
-        int rv = oranumber_from_str(result, RSTRING_PTR(str), RSTRING_LEN(str));
+        int rv = oranumber_from_str(result, RSTRING_PTR(str), RSTRING_LENINT(str));
         if (rv == ORANUMBER_SUCCESS) {
             return; /* success */
         } else {
@@ -172,17 +172,17 @@ static void set_oci_number_from_str(OCINumber *result, VALUE str, VALUE fmt, VAL
     }
     StringValue(fmt);
     fmt_ptr = RSTRING_ORATEXT(fmt);
-    fmt_len = RSTRING_LEN(fmt);
+    fmt_len = RSTRING_LENINT(fmt);
     if (NIL_P(nls_params)) {
         nls_params_ptr = NULL;
         nls_params_len = 0;
     } else {
         StringValue(nls_params);
         nls_params_ptr = RSTRING_ORATEXT(nls_params);
-        nls_params_len = RSTRING_LEN(nls_params);
+        nls_params_len = RSTRING_LENINT(nls_params);
     }
     chkerr(OCINumberFromText(errhp,
-                             RSTRING_ORATEXT(str), RSTRING_LEN(str),
+                             RSTRING_ORATEXT(str), RSTRING_LENINT(str),
                              fmt_ptr, fmt_len, nls_params_ptr, nls_params_len,
                              result));
 }
@@ -249,7 +249,7 @@ static int set_oci_number_from_num(OCINumber *result, VALUE num, int force, OCIE
             if (TYPE(ary[1]) != T_STRING) {
                 goto is_not_big_decimal;
             }
-            digits_len = RSTRING_LEN(ary[1]);
+            digits_len = RSTRING_LENINT(ary[1]);
             set_oci_number_from_str(&digits, ary[1], Qnil, Qnil, errhp);
             /* check base */
             if (TYPE(ary[2]) != T_FIXNUM || FIX2LONG(ary[2]) != 10) {
@@ -365,7 +365,7 @@ OCINumber *oci8_dbl_to_onum(OCINumber *result, double dbl, OCIError *errhp)
         sword rv;
 
         str = rb_obj_as_string(rb_float_new(dbl));
-        rv = oranumber_from_str(result, RSTRING_PTR(str), RSTRING_LEN(str));
+        rv = oranumber_from_str(result, RSTRING_PTR(str), RSTRING_LENINT(str));
         if (rv != 0) {
             oci8_raise_by_msgno(rv, NULL);
         }
@@ -1309,14 +1309,14 @@ static VALUE onum_to_char(int argc, VALUE *argv, VALUE self)
     }
     StringValue(fmt);
     fmt_ptr = RSTRING_ORATEXT(fmt);
-    fmt_len = RSTRING_LEN(fmt);
+    fmt_len = RSTRING_LENINT(fmt);
     if (NIL_P(nls_params)) {
         nls_params_ptr = NULL;
         nls_params_len = 0;
     } else {
         StringValue(nls_params);
         nls_params_ptr = RSTRING_ORATEXT(nls_params);
-        nls_params_len = RSTRING_LEN(nls_params);
+        nls_params_len = RSTRING_LENINT(nls_params);
     }
     rv = OCINumberToText(errhp, _NUMBER(self),
                          fmt_ptr, fmt_len, nls_params_ptr, nls_params_len,
@@ -1437,7 +1437,7 @@ static VALUE onum_to_d_real(OCINumber *num, OCIError *errhp)
         rb_require("bigdecimal");
         cBigDecimal = rb_const_get(rb_cObject, id_BigDecimal);
     }
-    chkerr(OCINumberToText(errhp, num, (const oratext *)fmt, strlen(fmt),
+    chkerr(OCINumberToText(errhp, num, (const oratext *)fmt, (ub4)strlen(fmt),
                            NULL, 0, &buf_size, TO_ORATEXT(buf)));
     return rb_funcall(rb_cObject, id_BigDecimal, 1, rb_usascii_str_new(buf, buf_size));
 }

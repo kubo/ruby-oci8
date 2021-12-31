@@ -195,7 +195,7 @@ VALUE oci8_do_describe(VALUE self, void *objptr, ub4 objlen, ub1 objtype, VALUE 
 static VALUE oci8_describe(VALUE self, VALUE name, VALUE klass, VALUE check_public)
 {
     char *str;
-    size_t idx, len;
+    int idx, len;
     VALUE metadata;
     VALUE obj_link = Qnil;
 
@@ -204,7 +204,7 @@ static VALUE oci8_describe(VALUE self, VALUE name, VALUE klass, VALUE check_publ
         rb_raise(rb_eArgError, "empty string is set.");
     }
     str = RSTRING_PTR(name);
-    len = RSTRING_LEN(name);
+    len = RSTRING_LENINT(name);
     for (idx = 0; idx < len; idx++) {
         if (str[idx] == '@') {
             obj_link = rb_enc_str_new(str + idx + 1, len - idx - 1, oci8_encoding);

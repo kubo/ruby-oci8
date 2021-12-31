@@ -85,7 +85,7 @@ static void bind_string_set(oci8_bind_t *obind, void *data, void **null_structp,
         rb_raise(rb_eArgError, "too long String to set. (%ld for %d)", RSTRING_LEN(val), obs->bytelen);
     }
     memcpy(vstr->buf, RSTRING_PTR(val), RSTRING_LEN(val));
-    vstr->size = RSTRING_LEN(val);
+    vstr->size = RSTRING_LENINT(val);
 }
 
 static void bind_string_init(oci8_bind_t *obind, VALUE svc, VALUE val, VALUE param)
@@ -195,7 +195,7 @@ static void bind_raw_set(oci8_bind_t *obind, void *data, void **null_structp, VA
         rb_raise(rb_eArgError, "too long String to set. (%ld for %d)", RSTRING_LEN(val), obs->bytelen);
     }
     memcpy(vstr->buf, RSTRING_PTR(val), RSTRING_LEN(val));
-    vstr->size = RSTRING_LEN(val);
+    vstr->size = RSTRING_LENINT(val);
 }
 
 static const oci8_bind_data_type_t bind_raw_data_type = {
@@ -470,7 +470,6 @@ static VALUE bind_long_get(oci8_bind_t *obind, void *data, void *null_struct)
             str = rb_str_conv_enc(str, oci8_encoding, enc);
         }
     }
-    OBJ_TAINT(str);
     return str;
 }
 
@@ -701,7 +700,7 @@ static VALUE oci8_bind_set_data(VALUE self, VALUE val)
         ub4 idx;
         Check_Type(val, T_ARRAY);
 
-        size = RARRAY_LEN(val);
+        size = RARRAY_LENINT(val);
         if (size > obind->maxar_sz) {
             rb_raise(rb_eRuntimeError, "over the max array size");
         }

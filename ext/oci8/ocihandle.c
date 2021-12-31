@@ -752,7 +752,7 @@ static VALUE attr_set_string(VALUE self, VALUE attr_type, VALUE val)
     Check_Type(attr_type, T_FIXNUM);
     OCI8SafeStringValue(val);
     /* set attribute */
-    chker2(OCIAttrSet(base->hp.ptr, base->type, RSTRING_PTR(val), RSTRING_LEN(val), FIX2INT(attr_type), oci8_errhp), base);
+    chker2(OCIAttrSet(base->hp.ptr, base->type, RSTRING_PTR(val), RSTRING_LENINT(val), FIX2INT(attr_type), oci8_errhp), base);
     return self;
 }
 
@@ -776,7 +776,7 @@ static VALUE attr_set_binary(VALUE self, VALUE attr_type, VALUE val)
     Check_Type(attr_type, T_FIXNUM);
     SafeStringValue(val);
     /* set attribute */
-    chker2(OCIAttrSet(base->hp.ptr, base->type, RSTRING_PTR(val), RSTRING_LEN(val), FIX2INT(attr_type), oci8_errhp), base);
+    chker2(OCIAttrSet(base->hp.ptr, base->type, RSTRING_PTR(val), RSTRING_LENINT(val), FIX2INT(attr_type), oci8_errhp), base);
     return self;
 }
 
