@@ -71,7 +71,7 @@ static VALUE bind_base_alloc(VALUE klass)
     rb_raise(rb_eNameError, "private method `new' called for %s:Class", rb_class2name(klass));
 }
 
-#if defined(HAVE_PLTHOOK) && !defined(WIN32) && !defined(__CYGWIN__)
+#if defined(HAVE_PLTHOOK) && !defined(WIN32) && !defined(__CYGWIN__) && !defined(TRUFFLERUBY)
 static const char *find_libclntsh(void *handle)
 {
     void *symaddr = dlsym(handle, "OCIEnvCreate");
@@ -226,7 +226,7 @@ Init_oci8lib()
         oracle_client_version = ORAVERNUM(major, minor, update, patch, port_update);
     }
 #endif
-#if defined(HAVE_PLTHOOK) && !defined(WIN32) && !defined(__CYGWIN__)
+#if defined(HAVE_PLTHOOK) && !defined(WIN32) && !defined(__CYGWIN__) && !defined(TRUFFLERUBY)
     rebind_internal_symbols();
 #endif
 
@@ -461,6 +461,7 @@ sword oci8_call_without_gvl(oci8_svcctx_t *svcctx, void *(*func)(void *), void *
         parg.func = func;
         parg.data = data;
         rv = (sword)rb_protect(protected_call, (VALUE)&parg, &state);
+        RB_OBJ_WRITE(svcctx->base.self, &svcctx->executing_thread, Qnil);
         if (state) {
             rb_jump_tag(state);
         }

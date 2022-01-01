@@ -4,7 +4,6 @@
 %>
 #define API_WRAP_C 1
 #include "apiwrap.h"
-#define BLOCKING_FUNCTION_EPILOGUE(svcctx) do { (svcctx)->executing_thread = Qnil; } while (0)
 
 <%
 prev_name = ''
@@ -59,11 +58,9 @@ static void *oci8_<%=f.name%>_cb(void *user_data)
 %>    data->rv = <%=f.name%>(<%= f.args.collect do |a| 'data->' + a.name; end.join(', ') %>);
 <% end %>
 <% if f.ret == 'sword'
-%>    BLOCKING_FUNCTION_EPILOGUE(data->svcctx);
-    return (void*)(VALUE)data->rv;
+%>    return (void*)(VALUE)data->rv;
 <% else
-%>    BLOCKING_FUNCTION_EPILOGUE(data->svcctx);
-    return NULL;
+%>    return NULL;
 <% end %>
 }
 #else

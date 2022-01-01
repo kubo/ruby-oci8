@@ -110,7 +110,7 @@ end
 
 begin
   require so_basename
-rescue LoadError, OCIError
+rescue LoadError
   require 'oci8/check_load_error'
   OCI8::Util::check_load_error($!)
   raise
