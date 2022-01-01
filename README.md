@@ -2,7 +2,7 @@ Ruby-oci8
 =========
 
 [![Gem Version](https://badge.fury.io/rb/ruby-oci8.svg)](http://badge.fury.io/rb/ruby-oci8)
-[![Build Status](https://travis-ci.com/kubo/ruby-oci8.svg?branch=master)](https://travis-ci.com/kubo/ruby-oci8)
+[![Tests](https://github.com/kubo/ruby-oci8/actions/workflows/tests.yml/badge.svg)](https://github.com/kubo/ruby-oci8/actions/workflows/tests.yml)
 
 What is ruby-oci8
 -----------------
