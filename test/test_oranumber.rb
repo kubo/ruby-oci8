@@ -215,9 +215,15 @@ EOS
   end
 
   def test_yaml
+    # Use the permitted_classes keyword parameter if it is supported by YAML.load
+    keyword_params = if YAML.method(:load).parameters.any? { |key, value| value == :permitted_symbols }
+                       {permitted_classes: [OraNumber]}
+                     else
+                       {}
+                     end
     (LARGE_RANGE_VALUES + ['~', '-~']).each do |x|
       n = OraNumber.new(x)
-      assert_equal(n, YAML.load(YAML.dump(n)))
+      assert_equal(n, YAML.load(YAML.dump(n), **keyword_params))
     end
   end
 
