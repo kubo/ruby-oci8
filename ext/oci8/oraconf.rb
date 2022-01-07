@@ -4,7 +4,7 @@ require 'mkmf'
 # compatibility for ruby-1.9
 RbConfig = Config unless defined? RbConfig
 
-if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw32|bccwin32/
+if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw/
   # Windows
   require 'win32/registry'
   module Registry
@@ -372,7 +372,7 @@ EOS
     is_32bit = size_of_pointer == 4
     is_big_endian = "\x01\x02".unpack('s')[0] == 0x0102
     case RUBY_PLATFORM
-    when /mswin32|mswin64|cygwin|mingw32|bccwin32/
+    when /mswin32|mswin64|cygwin|mingw/
       oci_basename = 'oci'
       oci_glob_postfix = ''
       nls_data_basename = ['oraociei*', 'oraociicus*']
@@ -530,7 +530,7 @@ EOS
     paths.split(File::PATH_SEPARATOR).each do |path|
       next if path.nil? or path == ''
       print "    checking #{path}... "
-      path.gsub!(/\\/, '/') if /mswin32|mswin64|cygwin|mingw32|bccwin32/ =~ RUBY_PLATFORM
+      path.gsub!(/\\/, '/') if /mswin32|mswin64|cygwin|mingw/ =~ RUBY_PLATFORM
       files = Dir.glob(File.join(path, glob_name)).sort.reverse
       if files.empty?
         puts "no"
@@ -624,11 +624,11 @@ EOS
     end
   end
 
-  if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw32|bccwin32/ # when Windows
+  if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw/ # when Windows
 
     def get_libs(lib_dir)
       case RUBY_PLATFORM
-      when /cygwin|x64-mingw32/
+      when /cygwin/
         regex = ([nil].pack('P').size == 8) ? / T (OCI\w+)/ : / T _(OCI\w+)/
         oci_funcs = YAML.load(open(File.dirname(__FILE__) + '/apiwrap.yml')).keys.collect do |func|
           func =~ /_nb$/ ? $` : func
@@ -647,22 +647,6 @@ EOS
         system(command)
         puts("done")
         "-L. -lOCI"
-      when /bccwin32/
-        # replace '/' to '\\' because bcc linker misunderstands
-        # 'C:/foo/bar/OCI.LIB' as unknown option.
-        lib = "#{lib_dir}/BORLAND/OCI.LIB"
-        return lib.tr('/', '\\') if File.exist?(lib)
-        raise <<EOS
-#{lib} does not exist.
-
-Your Oracle may not support Borland C++.
-If you want to run this module, run the following command at your own risk.
-  cd #{lib_dir.tr('/', '\\')}
-  mkdir Borland
-  cd Borland
-  coff2omf ..\\MSVC\\OCI.LIB OCI.LIB
-EOS
-        exit 1
       else
         "\"#{lib_dir}/MSVC/OCI.LIB\""
       end
@@ -706,7 +690,7 @@ class OraConfFC < OraConf
       use_lib32 = false
     end
 
-    if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw32|bccwin32/
+    if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw/
       lib_dir = "#{@oracle_home}/oci/lib"
     elsif use_lib32
       lib_dir = "#{@oracle_home}/lib32"
@@ -725,7 +709,7 @@ class OraConfFC < OraConf
     print("Get the version of Oracle from SQL*Plus... ")
     STDOUT.flush
     version = nil
-    dev_null = RUBY_PLATFORM =~ /mswin32|mswin64|mingw32|bccwin32/ ? "nul" : "/dev/null"
+    dev_null = RUBY_PLATFORM =~ /mswin32|mswin64|mingw/ ? "nul" : "/dev/null"
     if File.exist?("#{@oracle_home}/bin/plus80.exe")
       sqlplus = "plus80.exe"
     else
@@ -750,7 +734,7 @@ class OraConfFC < OraConf
     version
   end # get_version
 
-  if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw32|bccwin32/ # when Windows
+  if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw/ # when Windows
 
     def is_valid_home?(oracle_home)
       return false if oracle_home.nil?
@@ -832,7 +816,7 @@ EOS
       unless File.exist?("#{@oracle_home}/OCI/INCLUDE/OCI.H")
         raise "'#{@oracle_home}/OCI/INCLUDE/OCI.H' does not exists. Please install 'Oracle Call Interface'."
       end
-      if RUBY_PLATFORM =~ /cygwin|mingw32/
+      if RUBY_PLATFORM =~ /cygwin|mingw/
         " \"-I#{@oracle_home}/OCI/INCLUDE\" -D_int64=\"long long\""
       else
         " \"-I#{@oracle_home}/OCI/INCLUDE\""
@@ -916,7 +900,7 @@ class OraConfIC < OraConf
 
     # check lib_dir
     lib_dirs = lib_dir.split(File::PATH_SEPARATOR)
-    if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw32|bccwin32/ # when Windows
+    if RUBY_PLATFORM =~ /mswin32|mswin64|cygwin|mingw/ # when Windows
       ocilib = lib_dirs.find do |dir|
         File.exist?("#{dir}/sdk/lib/msvc/oci.lib")
       end
@@ -994,7 +978,7 @@ EOS
     else
       @cflags = " -I#{ociinc}"
     end
-    @cflags += " -D_int64=\"long long\"" if RUBY_PLATFORM =~ /cygwin|mingw32/
+    @cflags += " -D_int64=\"long long\"" if RUBY_PLATFORM =~ /cygwin|mingw/
 
     # check link
     $CFLAGS += @cflags
