@@ -4,9 +4,15 @@ $ruby_oci8_version = open('lib/oci8/version.rb').readlines.collect do |line|
   (line =~ /VERSION = "([^"]*)"/) && $1
 end.compact[0]
 
-case ARGV[0]
-when '32'
-  $platform = 'x86'
+$platform = ARGV[0]
+
+def run_cmd(cmd, raise_on_error = true)
+  system(cmd)
+  raise $?.to_s if raise_on_error && $?.to_i != 0
+end
+
+case $platform
+when 'x86-mingw32'
   $ruby_base_dirs = []
 
   $ruby_base_dirs =
@@ -15,11 +21,10 @@ when '32'
      'c:\ruby\rubyinstaller-2.6.0-1-x86',
      'c:\ruby\rubyinstaller-2.7.0-1-x86',
      'c:\ruby\rubyinstaller-3.0.0-1-x86',
+     'c:\ruby\rubyinstaller-3.1.0-1-x86',
     ]
 
   $oracle_path = 'c:\oracle\instantclient_19_9-win32'
-  $devkit_tdm_setup = 'c:\ruby\devkit-tdm-32\devkitvars.bat'
-  $devkit_mingw64_setup = 'c:\ruby\devkit-mingw64-32\devkitvars.bat'
   $ridk_setup = 'ridk enable'
 
   $build_ruby_dirs =
@@ -28,12 +33,10 @@ when '32'
      ['c:\ruby\rubyinstaller-2.6.0-1-x86', $ridk_setup],
      ['c:\ruby\rubyinstaller-2.7.0-1-x86', $ridk_setup],
      ['c:\ruby\rubyinstaller-3.0.0-1-x86', $ridk_setup],
+     ['c:\ruby\rubyinstaller-3.1.0-1-x86', $ridk_setup],
     ]
 
-  $cygwin_dir = 'c:\cygwin'
-
-when '64'
-  $platform = 'x64'
+when 'x64-mingw32'
   $ruby_base_dirs =
     [
      # RubyInstaller <URL:http://rubyinstaller.org>
@@ -41,10 +44,10 @@ when '64'
      'c:\ruby\rubyinstaller-2.6.0-1-x64',
      'c:\ruby\rubyinstaller-2.7.0-1-x64',
      'c:\ruby\rubyinstaller-3.0.0-1-x64',
+     'c:\ruby\rubyinstaller-3.1.0-1-x64',
     ]
 
   $oracle_path = 'c:\oracle\instantclient_19_9-win64'
-  $devkit_mingw64_setup = 'c:\ruby\devkit-mingw64-64\devkitvars.bat'
   $ridk_setup = 'ridk enable'
   $build_ruby_dirs =
     [
@@ -52,24 +55,43 @@ when '64'
      ['c:\ruby\rubyinstaller-2.6.0-1-x64', $ridk_setup],
      ['c:\ruby\rubyinstaller-2.7.0-1-x64', $ridk_setup],
      ['c:\ruby\rubyinstaller-3.0.0-1-x64', $ridk_setup],
+     ['c:\ruby\rubyinstaller-3.1.0-1-x64', $ridk_setup],
     ]
 
-  $cygwin_dir = 'c:\cygwin64'
+when 'x64-mingw-ucrt'
+  $ruby_base_dirs =
+    [
+     # RubyInstaller <URL:http://rubyinstaller.org>
+     'c:\ruby\rubyinstaller-3.1.0-1-x64',
+    ]
+
+  $oracle_path = 'c:\oracle\instantclient_19_9-win64'
+  $ridk_setup = 'ridk enable'
+  $build_ruby_dirs =
+    [
+     ['c:\ruby\rubyinstaller-3.1.0-1-x64', $ridk_setup],
+    ]
+
 when 'all'
-  FileUtils.cp_r('.', 'c:\build\ruby-oci8-build-64')
-  FileUtils.cp_r('.', 'c:\build\ruby-oci8-build-32')
-  Dir.chdir('c:\build\ruby-oci8-build-64') do
-    system('ruby mkpkg-win32.rb 64')
+  files = File.read('dist-files').split("\n")
+  ['x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt'].each do |platform|
+    FileUtils.rm_rf platform
+    files.each do |file|
+      dest = File.join(platform, file)
+      FileUtils.mkdir_p File.dirname(dest)
+      FileUtils.copy(file, dest)
+    end
+    Dir.chdir platform do
+      run_cmd("#{RbConfig.ruby} ../mkpkg-win32.rb #{platform}")
+    end
   end
-  Dir.chdir('c:\build\ruby-oci8-build-32') do
-    system('ruby mkpkg-win32.rb 32')
-  end
+  exit 0
 else
-  puts "#{ARGV[0]} (32|64|all)"
+  puts "#{ARGV[0]} (x86-mingw32|x64-mingw32|x64-mingw-ucrt|all)"
   exit 0
 end
 
-$gem_package = "ruby-oci8-#{$ruby_oci8_version}-#{$platform}-mingw32.gem"
+$gem_package = "ruby-oci8-#{$ruby_oci8_version}-#{$platform}.gem"
 ENV['PATH'] = $oracle_path + ';c:\Windows\System32'
 
 def prepend_path(basedir, others = [])
@@ -91,11 +113,6 @@ def ruby_oci8_gem_is_installed?
     end
   end
   false
-end
-
-def run_cmd(cmd, raise_on_error = true)
-  system(cmd)
-  raise $?.to_s if raise_on_error && $?.to_i != 0
 end
 
 def make_gem
@@ -132,17 +149,13 @@ def install_and_test
           raise "ruby-oci8 gem in #{base_dir} could not be uninstalled."
         end
       end
-      run_cmd("gem install ./#{$gem_package} --local")
-      run_cmd("ruby -I. test/test_all.rb", false)
+      begin
+        run_cmd("gem install ./#{$gem_package} --local")
+        run_cmd("ruby -I. test/test_all.rb", false)
+      ensure
+        run_cmd("gem uninstall ruby-oci8 --platform #{$platform}")
+      end
     end
-  end
-end
-
-def test_on_cygwin
-  prepend_path($cygwin_dir) do
-    run_cmd("ruby setup.rb config")
-    run_cmd("ruby setup.rb setup")
-    run_cmd("ruby -Iext/oci8 -Ilib -I. test/test_all.rb", false)
   end
 end
 
@@ -150,4 +163,3 @@ make_gem
 ENV['LOCAL'] ||= '//172.17.0.2/ORCLPDB1'
 ENV['NLS_LANG'] ||= 'American_America.AL32UTF8'
 install_and_test
-test_on_cygwin

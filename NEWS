@@ -1,5 +1,20 @@
 # @markup markdown
 
+2.2.10 (2022-01-12)
+===================
+
+- Use `File.exist?` instead of removed `File.exists?` in Ruby 3.2 (GH-242)
+
+  (contributed by Yasuo Honda)
+
+- Support ruby 3.1 distributed by rubyinstaller.org
+
+- Remove code for obsolete platforms
+  - Ruby compiled by Borland C++
+  - macOS released several years ago
+
+- Detect arm64 macOS shared library in oraconf.rb in preparation for Instant Client for Apple Silicon release.
+
 2.2.9 (2020-12-30)
 ==================
 
