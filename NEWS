@@ -1,5 +1,14 @@
 # @markup markdown
 
+2.2.11 (2022-02-21)
+===================
+
+- Fix "No DLL is not foud to hook" when `OCI8.properties[:tcp_keepalive_time]` is set and Oracle client is 21c on Windows.
+
+  (reported at rsim/oracle-enhanced#2262)
+
+- Fix "OCI8.properties[:tcp_keepalive_time] isn't available" error when ruby version is 3.1 on Windows.
+
 2.2.10 (2022-01-12)
 ===================
 
