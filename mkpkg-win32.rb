@@ -151,6 +151,7 @@ def install_and_test
       end
       begin
         run_cmd("gem install ./#{$gem_package} --local")
+        run_cmd('ruby -roci8 -e "OCI8.properties[:tcp_keepalive_time] = 300"')
         run_cmd("ruby -I. test/test_all.rb", false)
       ensure
         run_cmd("gem uninstall ruby-oci8 --platform #{$platform}")

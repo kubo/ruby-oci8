@@ -170,6 +170,38 @@ static int WSAAPI hook_WSARecv(SOCKET s, LPWSABUF lpBuffers, DWORD dwBufferCount
     return rv;
 }
 
+static int is_target_dll(MODULEENTRY32 *me)
+{
+    static const char *basenames[] = {
+        "orantcp", // ORACLE_HOME-based client
+        "oraociei", // instant client basic
+        "oraociicus", // instant client basic lite
+        NULL,
+    };
+    const char **basename = basenames;
+    while (*basename != NULL) {
+        if (strnicmp(me->szModule, *basename, strlen(*basename)) == 0) {
+            break;
+        }
+        basename++;
+    }
+    if (*basename == NULL) {
+        return 0;
+    }
+    // basename{zero_or_more_digits}.dll
+    const char *p = me->szModule + strlen(*basename);
+    while ('0' <= *p && *p <= '9') {
+        p++;
+    }
+    if (stricmp(p, ".dll") != 0) {
+        return 0;
+    }
+    if (GetProcAddress((HMODULE)me->modBaseAddr, "nttini") == NULL) {
+        return 0;
+    }
+    return 1;
+}
+
 void oci8_install_hook_functions()
 {
     static int hook_functions_installed = 0;
@@ -217,22 +249,11 @@ void oci8_install_hook_functions()
     me.dwSize = sizeof(me);
     if (Module32First(hSnapshot, &me)) {
         do {
-            const char *p = NULL;
-            if (strnicmp(me.szModule, "orantcp", 7) == 0) { // ORACLE_HOME-based client
-                p = me.szModule + 7;
-            } else if (strnicmp(me.szModule, "oraociei", 8) == 0) { // instant client basic
-                p = me.szModule + 8;
-            } else if (strnicmp(me.szModule, "oraociicus", 10) == 0) { // instant client basic lite
-                p = me.szModule + 10;
-            }
-            if (p != NULL && ('1' <= *p && *p <= '9') && ('0' <= *(p + 1) && *(p + 1) <= '9')
-                && stricmp(p + 2, ".dll") == 0) {
-                if (GetProcAddress((HMODULE)me.modBaseAddr, "nttini") != NULL) {
-                    module_found = TRUE;
-                    if (replace_functions(me.modBaseAddr, me.szExePath, tcp_functions) != 0) {
-                        CloseHandle(hSnapshot);
-                        rb_raise(rb_eRuntimeError, "Hook error: %s", hook_errmsg);
-                    }
+            if (is_target_dll(&me)) {
+                module_found = TRUE;
+                if (replace_functions(me.modBaseAddr, me.szExePath, tcp_functions) != 0) {
+                    CloseHandle(hSnapshot);
+                    rb_raise(rb_eRuntimeError, "Hook error: %s", hook_errmsg);
                 }
             }
         } while (Module32Next(hSnapshot, &me));
