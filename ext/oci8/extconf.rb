@@ -72,7 +72,7 @@ $objs = ["oci8lib.o", "env.o", "error.o", "oci8.o", "ocihandle.o",
          "ocinumber.o", "ocidatetime.o", "object.o", "apiwrap.o",
          "encoding.o", "oranumber_util.o", "thread_util.o", "util.o"]
 
-if RUBY_PLATFORM =~ /mswin32|cygwin|mingw32|bccwin32/
+if RUBY_PLATFORM =~ /mswin32|cygwin|mingw/
   $defs << "-DUSE_WIN32_C"
   $objs << "win32.o"
 end
@@ -148,7 +148,7 @@ end
 print "checking for plthook... "
 STDOUT.flush
 case RUBY_PLATFORM
-when /mswin32|cygwin|mingw32|bccwin32/
+when /mswin32|cygwin|mingw/
   plthook_src = "plthook_win32.c"
 when /darwin/
   plthook_src = "plthook_osx.c"

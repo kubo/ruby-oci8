@@ -4,7 +4,7 @@ class OCI8
   module Util
 
     case RUBY_PLATFORM
-    when /mswin32|cygwin|mingw32|bccwin32/
+    when /mswin32|cygwin|mingw/
 
       require 'fiddle/import'
       require 'fiddle/types'
