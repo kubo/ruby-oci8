@@ -1,12 +1,6 @@
 require 'oci8'
 require File.dirname(__FILE__) + '/config'
 
-class Time
-  def inspect
-    self.strftime("%Y-%m-%d %H:%M:%S.%N %:z")
-  end
-end
-
 conn = OCI8.new($dbuser, $dbpass, $dbname)
 error_message = nil
 begin
