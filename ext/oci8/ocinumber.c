@@ -1795,6 +1795,7 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
     id_BigDecimal = rb_intern("BigDecimal");
 
     cOCINumber = rb_define_class("OraNumber", rb_cNumeric);
+    rb_define_alloc_func(cOCINumber, onum_s_alloc);
     mMath = rb_define_module_under(cOCI8, "Math");
 
     /* constants for internal use. */
@@ -1843,8 +1844,6 @@ Init_oci_number(VALUE cOCI8, OCIError *errhp)
     rb_define_module_function(mMath, "log", omath_log, -1);
     rb_define_module_function(mMath, "log10", omath_log10, 1);
     rb_define_module_function(mMath, "sqrt", omath_sqrt, 1);
-
-    rb_define_alloc_func(cOCINumber, onum_s_alloc);
 
     /* methods of OCI::Number */
     rb_define_global_function("OraNumber", onum_f_new, -1);
