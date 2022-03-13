@@ -217,7 +217,7 @@ static VALUE attr_get_common(int argc, VALUE *argv, VALUE self, enum datatype da
         }
         return rb_external_str_new_with_enc(v.charptr, size, oci8_encoding);
     case DATATYPE_BINARY:
-        return rb_tainted_str_new(v.charptr, size);
+        return rb_str_new(v.charptr, size);
     case DATATYPE_INTEGER:
         if (size > sizeof(onum.OCINumberPart) - 1) {
             rb_raise(rb_eRuntimeError, "Too long size %u", size);

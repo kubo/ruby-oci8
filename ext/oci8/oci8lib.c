@@ -191,7 +191,7 @@ static void rebind_internal_symbols(void)
 __declspec(dllexport)
 #endif
 void
-Init_oci8lib()
+Init_oci8lib(void)
 {
     VALUE cOCI8;
     OCIEnv *envhp = NULL;

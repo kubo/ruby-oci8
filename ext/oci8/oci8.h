@@ -382,7 +382,7 @@ OCIEnv *oci8_make_envhp(void);
 extern oci8_tls_key_t oci8_tls_key; /* native thread key */
 OCIError *oci8_make_errhp(void);
 
-static inline OCIError *oci8_get_errhp()
+static inline OCIError *oci8_get_errhp(void)
 {
     OCIError *errhp = (OCIError *)oci8_tls_get(oci8_tls_key);
     return LIKELY(errhp != NULL) ? errhp : oci8_make_errhp();
