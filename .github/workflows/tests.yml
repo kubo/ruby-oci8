@@ -2,10 +2,15 @@ name: Tests
 on: [push, pull_request]
 jobs:
   tests:
+    continue-on-error: ${{ matrix.experimental }}
     strategy:
       fail-fast: false
       matrix:
         ruby: [2.5, 2.6, 2.7, '3.0', 3.1]
+        experimental: [false]
+        include:
+          - ruby: 'truffleruby-head'
+            experimental: true
 
     runs-on: ubuntu-latest
 
