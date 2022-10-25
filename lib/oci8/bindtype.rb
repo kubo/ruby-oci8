@@ -118,7 +118,7 @@ class OCI8
                 if OCI8.encoding != val.encoding
                   # If the string encoding is different with NLS_LANG character set,
                   # convert it to get the length.
-                  val = val.encode(OCI8.encoding)
+                  val = OCI8.properties[:force_string_encoding] ? val.force_encoding(OCI8.encoding) : val.encode(OCI8.encoding)
                 end
                 param[:length] = val.bytesize
               end

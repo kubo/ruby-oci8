@@ -19,6 +19,7 @@ class OCI8
     :recv_timeout => nil,
     :tcp_keepalive => false,
     :tcp_keepalive_time => nil,
+    :force_string_encoding => false,
   }
 
   # @private
@@ -72,6 +73,8 @@ class OCI8
         raise ArgumentError, "The property value for :#{name} must be nil or a positive integer." if val <= 0
       end
       OCI8.__set_prop(4, val)
+    when :force_string_encoding
+      val = val ? true : false
     end
     super(name, val)
   end
@@ -186,6 +189,12 @@ class OCI8
   #     See {file:docs/hanging-after-inactivity.md}
   #
   #     *Since:* 2.2.4
+  #
+  # [:force_string_encoding]
+  #
+  #     See {file:docs/working-with-legacy-encodings.md}
+  #
+  #     *Since:* 2.2.12
   #
   # @return [a customized Hash]
   # @since 2.0.5
