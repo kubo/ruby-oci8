@@ -1,5 +1,12 @@
 # @markup markdown
 
+2.2.12 (2022-12-30)
+===================
+
+- Fix warning: undefining the allocator of T_DATA class OraNumber against Ruby 3.2.0dev. (GH-243)
+- Fix warnings on tests and on compile.
+- Remove code for old ruby versions.
+
 2.2.11 (2022-02-22)
 ===================
 

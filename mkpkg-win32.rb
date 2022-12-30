@@ -17,11 +17,11 @@ when 'x86-mingw32'
 
   $ruby_base_dirs =
     [
-     'c:\ruby\rubyinstaller-2.5.0-1-x86',
      'c:\ruby\rubyinstaller-2.6.0-1-x86',
      'c:\ruby\rubyinstaller-2.7.0-1-x86',
      'c:\ruby\rubyinstaller-3.0.0-1-x86',
      'c:\ruby\rubyinstaller-3.1.0-1-x86',
+     'c:\ruby\rubyinstaller-3.2.0-1-x86',
     ]
 
   $oracle_path = 'c:\oracle\instantclient_19_9-win32'
@@ -29,18 +29,17 @@ when 'x86-mingw32'
 
   $build_ruby_dirs =
     [
-     ['c:\ruby\rubyinstaller-2.5.0-1-x86', $ridk_setup, :disable_fortify_source],
      ['c:\ruby\rubyinstaller-2.6.0-1-x86', $ridk_setup],
      ['c:\ruby\rubyinstaller-2.7.0-1-x86', $ridk_setup],
      ['c:\ruby\rubyinstaller-3.0.0-1-x86', $ridk_setup],
      ['c:\ruby\rubyinstaller-3.1.0-1-x86', $ridk_setup],
+     ['c:\ruby\rubyinstaller-3.2.0-1-x86', $ridk_setup],
     ]
 
 when 'x64-mingw32'
   $ruby_base_dirs =
     [
      # RubyInstaller <URL:http://rubyinstaller.org>
-     'c:\ruby\rubyinstaller-2.5.0-1-x64',
      'c:\ruby\rubyinstaller-2.6.0-1-x64',
      'c:\ruby\rubyinstaller-2.7.0-1-x64',
      'c:\ruby\rubyinstaller-3.0.0-1-x64',
@@ -51,7 +50,6 @@ when 'x64-mingw32'
   $ridk_setup = 'ridk enable'
   $build_ruby_dirs =
     [
-     ['c:\ruby\rubyinstaller-2.5.0-1-x64', $ridk_setup, :disable_fortify_source],
      ['c:\ruby\rubyinstaller-2.6.0-1-x64', $ridk_setup],
      ['c:\ruby\rubyinstaller-2.7.0-1-x64', $ridk_setup],
      ['c:\ruby\rubyinstaller-3.0.0-1-x64', $ridk_setup],
@@ -63,6 +61,7 @@ when 'x64-mingw-ucrt'
     [
      # RubyInstaller <URL:http://rubyinstaller.org>
      'c:\ruby\rubyinstaller-3.1.0-1-x64',
+     'c:\ruby\rubyinstaller-3.2.0-1-x64',
     ]
 
   $oracle_path = 'c:\oracle\instantclient_19_9-win64'
@@ -70,10 +69,12 @@ when 'x64-mingw-ucrt'
   $build_ruby_dirs =
     [
      ['c:\ruby\rubyinstaller-3.1.0-1-x64', $ridk_setup],
+     ['c:\ruby\rubyinstaller-3.2.0-1-x64', $ridk_setup],
     ]
 
 when 'all'
   files = File.read('dist-files').split("\n")
+  mkpkg_rb = File.absolute_path?($0) ? $0 : File.join('..', $0)
   ['x86-mingw32', 'x64-mingw32', 'x64-mingw-ucrt'].each do |platform|
     FileUtils.rm_rf platform
     files.each do |file|
@@ -82,7 +83,7 @@ when 'all'
       FileUtils.copy(file, dest)
     end
     Dir.chdir platform do
-      run_cmd("#{RbConfig.ruby} ../mkpkg-win32.rb #{platform}")
+      run_cmd("#{RbConfig.ruby} #{mkpkg_rb} #{platform}")
     end
   end
   exit 0
