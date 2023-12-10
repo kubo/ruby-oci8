@@ -130,6 +130,8 @@ class MiniSOReader
       @cpu = :ia64
     when 62
       @cpu = :x86_64
+    when 183
+      @cpu = :aarch64
     else
       raise "Invalid ELF archtype: #{archtype}"
     end
@@ -379,6 +381,8 @@ EOS
       @@ld_envs = %w[PATH]
       so_ext = 'dll'
       check_proc = make_proc_to_check_cpu(is_32bit ? :i386 : :x86_64)
+    when /aarch64-linux/
+      check_proc = make_proc_to_check_cpu(:aarch64)
     when /i.86-linux/
       check_proc = make_proc_to_check_cpu(:i386)
     when /ia64-linux/
