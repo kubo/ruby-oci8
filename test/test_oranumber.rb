@@ -697,7 +697,9 @@ EOS
         OraNumber.new(str)
         flunk("exception expected but none was thrown. test data: " + str)
       rescue
-        assert_equal(oraerr.to_s, $!.to_s, "test data: " + str)
+        expected_errhead = oraerr.to_s.gsub(/:.*/m, '') # strip chars after ':'
+        actual_errhead = $!.to_s.gsub(/:.*/m, '')
+        assert_equal(expected_errhead, actual_errhead, "test data: " + str)
       end
     end
     if onum

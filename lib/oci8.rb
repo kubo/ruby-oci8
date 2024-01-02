@@ -147,6 +147,8 @@ class OCI8
   ORAVER_12_1 = OCI8::OracleVersion.new(12, 1)
   # @private
   ORAVER_18 = OCI8::OracleVersion.new(18)
+  # @private
+  ORAVER_23 = OCI8::OracleVersion.new(23)
 
   # @private
   @@oracle_client_version = OCI8::OracleVersion.new(self.oracle_client_vernum)

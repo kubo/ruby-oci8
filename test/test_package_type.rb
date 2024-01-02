@@ -47,6 +47,12 @@ class TestPackageType < Minitest::Test
   end
 
   def test_describe_package
+    if $oracle_server_version >= OCI8::ORAVER_23
+      boolean_type_name = 'BOOLEAN'
+    else
+      boolean_type_name = 'PL/SQL BOOLEAN'
+    end
+
     integer_type_attrs = {
       :class => OCI8::Metadata::Type,
       #:typecode => nil,
@@ -127,7 +133,7 @@ class TestPackageType < Minitest::Test
       #:map_method => nil,
       #:order_method => nil,
       :is_invoker_rights? => false,
-      :name => 'PL/SQL BOOLEAN',
+      :name => boolean_type_name,
       :schema_name => 'SYS',
       :is_final_type? => true,
       :is_instantiable_type? => true,
@@ -137,7 +143,7 @@ class TestPackageType < Minitest::Test
       :package_name => nil,
       :type_attrs => [],
       #:type_methods => [],
-      :inspect => '#<OCI8::Metadata::Type:(0) SYS.PL/SQL BOOLEAN>', # TODO: change to "BOOLEAN"
+      :inspect => "#<OCI8::Metadata::Type:(0) SYS.#{boolean_type_name}>",
     }
 
     varchar2_type_attrs = {
@@ -277,7 +283,7 @@ class TestPackageType < Minitest::Test
         :num_elems => 0,
         :precision => 0,
         :scale => 0,
-        :type_name => 'PL/SQL BOOLEAN',
+        :type_name => boolean_type_name,
         :schema_name => 'SYS',
         :type_metadata => boolean_type_attrs,
         :inspect => '#<OCI8::Metadata::Collection: BOOLEAN>',
@@ -444,7 +450,7 @@ class TestPackageType < Minitest::Test
           :name => 'B',
           :precision => 0,
           :scale => 0,
-          :type_name => 'PL/SQL BOOLEAN',
+          :type_name => boolean_type_name,
           :schema_name => 'SYS',
           :fsprecision => 0,
           :lfprecision => 0,
