@@ -61,18 +61,7 @@ typedef struct ora_date ora_date_t;
     if (sec < 0 || 59 < sec) \
         rb_raise(rb_eRangeError, "Out of range for second %d (expect 0 .. 59)", sec)
 
-#ifdef HAVE_RB_DATA_TYPE_T_FUNCTION
 #define check_oradate(obj) ((ora_date_t*)Check_TypedStruct((obj), &odate_data_type))
-#else
-static ora_date_t *check_oradate(VALUE obj)
-{
-    if (!rb_obj_is_kind_of(obj, cOraDate)) {
-        rb_raise(rb_eTypeError, "wrong argument type %s (expected %s)",
-                 rb_obj_classname(obj), rb_class2name(cOraDate));
-    }
-    return DATA_PTR(obj);
-}
-#endif
 
 static size_t odate_memsize(const void *ptr)
 {
