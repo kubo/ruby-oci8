@@ -19,7 +19,7 @@ jobs:
 
     services:
       oracle:
-        image: gvenzl/oracle-xe:21
+        image: gvenzl/oracle-free:latest
         env:
           ORACLE_PASSWORD: sys_passwd
         ports:
@@ -55,13 +55,13 @@ jobs:
               docker inspect $ORACLE_SERVICE_ID
               exit 1
           fi
-          echo TWO_TASK=//$ORACLE_IP_ADDRESS:1521/XEPDB1 >> $GITHUB_ENV
+          echo TWO_TASK=//$ORACLE_IP_ADDRESS:1521/FREEPDB1 >> $GITHUB_ENV
 
       - name: Enable OOB
         env:
           ORACLE_SERVICE_ID: ${{ job.services.oracle.id }}
         run: |
-          docker exec $ORACLE_SERVICE_ID sed -i 's/^DISABLE_OOB/#DISABLE_OOB/; s/^BREAK_POLL_SKIP=1000/#BREAK_POLL_SKIP=1000/' /opt/oracle/oradata/dbconfig/XE/sqlnet.ora
+          docker exec $ORACLE_SERVICE_ID bash -c 'sed -i "s/^DISABLE_OOB/#DISABLE_OOB/; s/^BREAK_POLL_SKIP=1000/#BREAK_POLL_SKIP=1000/" "${ORACLE_BASE_HOME}/network/admin/sqlnet.ora"'
           docker exec $ORACLE_SERVICE_ID lsnrctl reload
 
       - name: Set up ruby
