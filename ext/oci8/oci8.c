@@ -45,6 +45,54 @@ static VALUE cEnvironment;
 static VALUE cProcess;
 static ID id_at_session_handle;
 static ID id_at_server_handle;
+static ID id_at_trans_handle;
+
+typedef struct {
+    const char *name;
+    ub4 val;
+} ub4_flag_def_t;
+
+static ub4 check_ub4_flags(int argc, VALUE *argv, const ub4_flag_def_t *flag_defs, const char *flag_name)
+{
+    ub4 flags = 0;
+    int i;
+
+    for (i = 0; i < argc; i++) {
+        VALUE val = argv[i];
+        const char *name;
+        size_t len;
+        int j;
+
+        if (SYMBOL_P(val)) {
+#ifdef HAVE_RB_SYM2STR
+            VALUE symstr = rb_sym2str(val);
+            name = RSTRING_PTR(symstr);
+            len = RSTRING_LEN(symstr);
+#else
+            name = rb_id2name(SYM2ID(val));
+            len = strlen(symname);
+#endif
+        } else {
+            SafeStringValue(val);
+            name = RSTRING_PTR(val);
+            len = RSTRING_LEN(val);
+        }
+        for (j = 0; flag_defs[j].name != NULL; j++) {
+            if (strncmp(name, flag_defs[j].name, len) != 0) {
+                continue;
+            }
+            if (flag_defs[j].name[len] != '\0') {
+                continue;
+            }
+            flags |= flag_defs[j].val;
+            break;
+        }
+        if (flag_defs[j].name == NULL) {
+            rb_raise(rb_eArgError, "Unknown %s flag: %.*s", flag_name, (int)len, name);
+        }
+    }
+    return flags;
+}
 
 static VALUE dummy_env_method_missing(int argc, VALUE *argv, VALUE self)
 {
@@ -644,14 +692,27 @@ static VALUE oci8_svcctx_logoff(VALUE self)
 }
 
 /*
- * @overload commit
+ * @overload commit(*flags)
  *
  *  Commits the transaction.
+ *
+ *  @param []
  */
-static VALUE oci8_commit(VALUE self)
+static VALUE oci8_commit(int argc, VALUE *argv, VALUE self)
 {
+    static const ub4_flag_def_t flag_defs[] = {
+        {"two_phase", OCI_TRANS_TWOPHASE},
+        {"write_immediate", OCI_TRANS_WRITEIMMED},
+        {"write_batch", OCI_TRANS_WRITEBATCH},
+        {"write_wait", OCI_TRANS_WRITEWAIT},
+        {"write_no_wait", OCI_TRANS_WRITENOWAIT},
+        {NULL, 0},
+    };
     oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
-    chker2(OCITransCommit_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT), &svcctx->base);
+    ub4 flags = check_ub4_flags(argc, argv, flag_defs, "commit");
+
+    chker2(OCITransCommit_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, flags),
+           &svcctx->base);
     return self;
 }
 
@@ -975,6 +1036,70 @@ static VALUE oci8_set_client_info(VALUE self, VALUE val)
     return val;
 }
 
+static VALUE oci8_get_trans_handle(VALUE self)
+{
+    return rb_ivar_get(self, id_at_trans_handle);
+}
+
+static VALUE oci8_set_trans_handle(VALUE self, VALUE obj)
+{
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
+    oci8_base_t *trans = oci8_check_typeddata(obj, &oci8_trans_data_type, 1);
+    chker2(OCIAttrSet(svcctx->base.hp.svc, OCI_HTYPE_SVCCTX, trans->hp.ptr, 0, OCI_ATTR_TRANS, oci8_errhp),
+           &svcctx->base);
+    rb_ivar_set(self, id_at_trans_handle, obj);
+    return obj;
+}
+
+static VALUE oci8_trans_start(int argc, VALUE *argv, VALUE self)
+{
+    static const ub4_flag_def_t flag_defs[] = {
+        {"new", OCI_TRANS_NEW},
+        {"tight", OCI_TRANS_TIGHT},
+        {"loose", OCI_TRANS_LOOSE},
+        {"resume", OCI_TRANS_RESUME},
+        {"readonly", OCI_TRANS_READONLY},
+        {"serializable", OCI_TRANS_SERIALIZABLE},
+        {NULL, 0},
+    };
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
+    uword timeout;
+    ub4 flags;
+
+    if (argc == 0) {
+        rb_raise(rb_eArgError, "wrong number of arguments (given 0, expected 1+)");
+    }
+    timeout = NUM2UINT(argv[0]);
+    flags = check_ub4_flags(argc - 1, argv + 1, flag_defs, "trans_start");
+    chker2(OCITransStart_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, timeout, flags),
+           &svcctx->base);
+    return self;
+}
+
+static VALUE oci8_trans_detach(VALUE self)
+{
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
+    chker2(OCITransDetach_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT),
+           &svcctx->base);
+    return self;
+}
+
+static VALUE oci8_trans_prepare(VALUE self)
+{
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
+    sword rv = OCITransPrepare_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT);
+    chker2(rv, &svcctx->base);
+    return rv == OCI_SUCCESS ? Qtrue : Qfalse;
+}
+
+static VALUE oci8_trans_forget(VALUE self)
+{
+    oci8_svcctx_t *svcctx = oci8_get_svcctx(self);
+    chker2(OCITransForget_nb(svcctx, svcctx->base.hp.svc, oci8_errhp, OCI_DEFAULT),
+           &svcctx->base);
+    return self;
+}
+
 void Init_oci8(VALUE *out)
 {
     VALUE obj;
@@ -990,6 +1115,7 @@ void Init_oci8(VALUE *out)
     cProcess = oci8_define_class_under(cOCI8, "Process", &oci8_process_data_type, oci8_process_alloc);
     id_at_session_handle = rb_intern("@session_handle");
     id_at_server_handle = rb_intern("@server_handle");
+    id_at_trans_handle = rb_intern("@trans_handle");
 
     /* setup a dummy environment handle to lazily initialize the environment handle */
     obj = rb_obj_alloc(rb_cObject);
@@ -1020,7 +1146,7 @@ void Init_oci8(VALUE *out)
     rb_define_private_method(cOCI8, "server_attach", oci8_server_attach, 2);
     rb_define_private_method(cOCI8, "session_begin", oci8_session_begin, 2);
     rb_define_method(cOCI8, "logoff", oci8_svcctx_logoff, 0);
-    rb_define_method(cOCI8, "commit", oci8_commit, 0);
+    rb_define_method(cOCI8, "commit", oci8_commit, -1);
     rb_define_method(cOCI8, "rollback", oci8_rollback, 0);
     rb_define_method(cOCI8, "non_blocking?", oci8_non_blocking_p, 0);
     rb_define_method(cOCI8, "non_blocking=", oci8_set_non_blocking, 1);
@@ -1035,6 +1161,12 @@ void Init_oci8(VALUE *out)
     rb_define_method(cOCI8, "module=", oci8_set_module, 1);
     rb_define_method(cOCI8, "action=", oci8_set_action, 1);
     rb_define_method(cOCI8, "client_info=", oci8_set_client_info, 1);
+    rb_define_method(cOCI8, "trans_handle", oci8_get_trans_handle, 0);
+    rb_define_method(cOCI8, "trans_handle=", oci8_set_trans_handle, 1);
+    rb_define_method(cOCI8, "trans_start", oci8_trans_start, -1);
+    rb_define_method(cOCI8, "trans_detach", oci8_trans_detach, 0);
+    rb_define_method(cOCI8, "trans_prepare", oci8_trans_prepare, 0);
+    rb_define_method(cOCI8, "trans_forget", oci8_trans_forget, 0);
     *out = cOCI8;
 }
 

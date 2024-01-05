@@ -868,6 +868,30 @@ OCITransCommit_nb:
             - ub4 flags
 
 # round trip: 1
+OCITransDetach_nb:
+  :version: 800
+  :args:
+            - OCISvcCtx *svchp
+            - OCIError *errhp
+            - ub4 flags
+
+# round trip: 1
+OCITransForget_nb:
+  :version: 800
+  :args:
+            - OCISvcCtx *svchp
+            - OCIError *errhp
+            - ub4 flags
+
+# round trip: 1
+OCITransPrepare_nb:
+  :version: 800
+  :args:
+            - OCISvcCtx *svchp
+            - OCIError *errhp
+            - ub4 flags
+
+# round trip: 1
 OCITransRollback:
   :version: 800
   :args:
@@ -881,6 +905,15 @@ OCITransRollback_nb:
   :args:
             - OCISvcCtx *svchp
             - OCIError *errhp
+            - ub4 flags
+
+# round trip: 1
+OCITransStart_nb:
+  :version: 800
+  :args:
+            - OCISvcCtx *svchp
+            - OCIError *errhp
+            - uword timeout
             - ub4 flags
 
 # round trip: 0 ?

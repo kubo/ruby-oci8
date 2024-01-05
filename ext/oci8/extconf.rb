@@ -70,7 +70,9 @@ $objs = ["oci8lib.o", "env.o", "error.o", "oci8.o", "ocihandle.o",
          "stmt.o", "bind.o", "metadata.o", "attr.o",
          "lob.o", "oradate.o",
          "ocinumber.o", "ocidatetime.o", "object.o", "apiwrap.o",
-         "encoding.o", "oranumber_util.o", "thread_util.o", "util.o"]
+         "encoding.o", "oranumber_util.o", "thread_util.o",
+         "transaction.o",
+         "util.o"]
 
 if RUBY_PLATFORM =~ /mswin32|cygwin|mingw/
   $defs << "-DUSE_WIN32_C"

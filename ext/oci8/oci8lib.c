@@ -292,6 +292,7 @@ Init_oci8lib(void)
     Init_ora_date();
     Init_oci_datetime();
     Init_oci_object(cOCI8);
+    Init_oci8_transaction(cOCI8);
 
 #ifdef USE_WIN32_C
     Init_oci8_win32(cOCI8);
