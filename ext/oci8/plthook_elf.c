@@ -1,12 +1,12 @@
 /* -*- indent-tabs-mode: nil -*-
  *
- * plthook_elf.c -- implemention of plthook for ELF format
+ * plthook_elf.c -- implementation of plthook for ELF format
  *
  * URL: https://github.com/kubo/plthook
  *
  * ------------------------------------------------------
  *
- * Copyright 2013-2016 Kubo Takehiro <kubo@jiubao.org>
+ * Copyright 2013-2019 Kubo Takehiro <kubo@jiubao.org>
  *
  * Redistribution and use in source and binary forms, with or without modification, are
  * permitted provided that the following conditions are met:
@@ -50,6 +50,7 @@
 #include <dlfcn.h>
 #ifdef __sun
 #include <sys/auxv.h>
+#include <procfs.h>
 #define ELF_TARGET_ALL
 #endif /* __sun */
 #ifdef __FreeBSD__
@@ -60,6 +61,10 @@
 #include <elf.h>
 #include <link.h>
 #include "plthook.h"
+
+#if defined __UCLIBC__ && !defined RTLD_NOLOAD
+#define RTLD_NOLOAD 0
+#endif
 
 #ifndef __GNUC__
 #define __attribute__(arg)
@@ -75,37 +80,53 @@
 
 #if defined __x86_64__ || defined __x86_64
 #define R_JUMP_SLOT   R_X86_64_JUMP_SLOT
-#define Elf_Plt_Rel   Elf_Rela
-#define PLT_DT_REL    DT_RELA
 #define R_GLOBAL_DATA R_X86_64_GLOB_DAT
 #elif defined __i386__ || defined __i386
 #define R_JUMP_SLOT   R_386_JMP_SLOT
-#define Elf_Plt_Rel   Elf_Rel
-#define PLT_DT_REL    DT_REL
 #define R_GLOBAL_DATA R_386_GLOB_DAT
+#define USE_REL
 #elif defined __arm__ || defined __arm
 #define R_JUMP_SLOT   R_ARM_JUMP_SLOT
-#define Elf_Plt_Rel   Elf_Rel
+#define R_GLOBAL_DATA R_ARM_GLOB_DAT
+#define USE_REL
 #elif defined __aarch64__ || defined __aarch64 /* ARM64 */
 #define R_JUMP_SLOT   R_AARCH64_JUMP_SLOT
-#define Elf_Plt_Rel   Elf_Rela
+#define R_GLOBAL_DATA R_AARCH64_GLOB_DAT
 #elif defined __powerpc64__
 #define R_JUMP_SLOT   R_PPC64_JMP_SLOT
-#define Elf_Plt_Rel   Elf_Rela
+#define R_GLOBAL_DATA R_PPC64_GLOB_DAT
 #elif defined __powerpc__
 #define R_JUMP_SLOT   R_PPC_JMP_SLOT
-#define Elf_Plt_Rel   Elf_Rela
+#define R_GLOBAL_DATA R_PPC_GLOB_DAT
+#elif defined __riscv
+#define R_JUMP_SLOT   R_RISCV_JUMP_SLOT
+#if __riscv_xlen == 32
+#define R_GLOBAL_DATA R_RISCV_32
+#elif __riscv_xlen == 64
+#define R_GLOBAL_DATA R_RISCV_64
+#else
+#error unsupported RISCV implementation
+#endif
 #elif 0 /* disabled because not tested */ && (defined __sparcv9 || defined __sparc_v9__)
 #define R_JUMP_SLOT   R_SPARC_JMP_SLOT
-#define Elf_Plt_Rel   Elf_Rela
 #elif 0 /* disabled because not tested */ && (defined __sparc || defined __sparc__)
 #define R_JUMP_SLOT   R_SPARC_JMP_SLOT
-#define Elf_Plt_Rel   Elf_Rela
 #elif 0 /* disabled because not tested */ && (defined __ia64 || defined __ia64__)
 #define R_JUMP_SLOT   R_IA64_IPLTMSB
-#define Elf_Plt_Rel   Elf_Rela
 #else
 #error unsupported OS
+#endif
+
+#ifdef USE_REL
+#define Elf_Plt_Rel   Elf_Rel
+#define PLT_DT_REL    DT_REL
+#define PLT_DT_RELSZ  DT_RELSZ
+#define PLT_DT_RELENT DT_RELENT
+#else
+#define Elf_Plt_Rel   Elf_Rela
+#define PLT_DT_REL    DT_RELA
+#define PLT_DT_RELSZ  DT_RELASZ
+#define PLT_DT_RELENT DT_RELAENT
 #endif
 
 #if defined __LP64__
@@ -114,7 +135,11 @@
 #endif
 #define SIZE_T_FMT "lu"
 #define ELF_WORD_FMT "u"
+#ifdef __ANDROID__
+#define ELF_XWORD_FMT "llu"
+#else
 #define ELF_XWORD_FMT "lu"
+#endif
 #define ELF_SXWORD_FMT "ld"
 #define Elf_Half Elf64_Half
 #define Elf_Xword Elf64_Xword
@@ -162,42 +187,64 @@
 #endif
 #endif /* __LP64__ */
 
-#if defined(PT_GNU_RELRO) && !defined(__sun)
-#define SUPPORT_RELRO /* RELRO (RELocation Read-Only) */
-#if !defined(DF_1_NOW) && defined(DF_1_BIND_NOW)
-#define DF_1_NOW DF_1_BIND_NOW
-#endif
-#endif
-
 struct plthook {
     const Elf_Sym *dynsym;
     const char *dynstr;
     size_t dynstr_size;
     const char *plt_addr_base;
-    const Elf_Plt_Rel *plt;
-    size_t plt_cnt;
-    Elf_Xword r_type;
-#ifdef SUPPORT_RELRO
-    const char *relro_start;
-    const char *relro_end;
+    const Elf_Plt_Rel *rela_plt;
+    size_t rela_plt_cnt;
+#ifdef R_GLOBAL_DATA
+    const Elf_Plt_Rel *rela_dyn;
+    size_t rela_dyn_cnt;
 #endif
 };
 
 static char errmsg[512];
-
-#ifdef SUPPORT_RELRO
 static size_t page_size;
-#endif
+#define ALIGN_ADDR(addr) ((void*)((size_t)(addr) & ~(page_size - 1)))
 
 static int plthook_open_executable(plthook_t **plthook_out);
 static int plthook_open_shared_library(plthook_t **plthook_out, const char *filename);
 static const Elf_Dyn *find_dyn_by_tag(const Elf_Dyn *dyn, Elf_Sxword tag);
-#ifdef SUPPORT_RELRO
-static int set_relro_members(plthook_t *plthook, struct link_map *lmap);
-#endif
 static int plthook_open_real(plthook_t **plthook_out, struct link_map *lmap);
+#if defined __FreeBSD__ || defined __sun
 static int check_elf_header(const Elf_Ehdr *ehdr);
+#endif
 static void set_errmsg(const char *fmt, ...) __attribute__((__format__ (__printf__, 1, 2)));
+
+#if defined __ANDROID__ || defined __UCLIBC__
+struct dl_iterate_data {
+    char* addr;
+    struct link_map lmap;
+};
+
+static int dl_iterate_cb(struct dl_phdr_info *info, size_t size, void *cb_data)
+{
+    struct dl_iterate_data *data = (struct dl_iterate_data*)cb_data;
+    Elf_Half idx = 0;
+
+    for (idx = 0; idx < info->dlpi_phnum; ++idx) {
+        const Elf_Phdr *phdr = &info->dlpi_phdr[idx];
+        char* base = (char*)info->dlpi_addr + phdr->p_vaddr;
+        if (base <= data->addr && data->addr < base + phdr->p_memsz) {
+            break;
+        }
+    }
+    if (idx == info->dlpi_phnum) {
+        return 0;
+    }
+    for (idx = 0; idx < info->dlpi_phnum; ++idx) {
+        const Elf_Phdr *phdr = &info->dlpi_phdr[idx];
+        if (phdr->p_type == PT_DYNAMIC) {
+            data->lmap.l_addr = info->dlpi_addr;
+            data->lmap.l_ld = (Elf_Dyn*)(info->dlpi_addr + phdr->p_vaddr);
+            return 1;
+        }
+    }
+    return 0;
+}
+#endif
 
 int plthook_open(plthook_t **plthook_out, const char *filename)
 {
@@ -211,6 +258,27 @@ int plthook_open(plthook_t **plthook_out, const char *filename)
 
 int plthook_open_by_handle(plthook_t **plthook_out, void *hndl)
 {
+#if defined __ANDROID__ || defined __UCLIBC__
+    const static char *symbols[] = {
+        "__INIT_ARRAY__",
+        "_end",
+        "_start"
+    };
+    size_t i;
+
+    if (hndl == NULL) {
+        set_errmsg("NULL handle");
+        return PLTHOOK_FILE_NOT_FOUND;
+    }
+    for (i = 0; i < sizeof(symbols)/sizeof(symbols[0]); i++) {
+        char *addr = dlsym(hndl, symbols[i]);
+        if (addr != NULL) {
+            return plthook_open_by_address(plthook_out, addr - 1);
+        }
+    }
+    set_errmsg("Could not find an address in the specified handle.");
+    return PLTHOOK_INTERNAL_ERROR;
+#else
     struct link_map *lmap = NULL;
 
     if (hndl == NULL) {
@@ -222,12 +290,22 @@ int plthook_open_by_handle(plthook_t **plthook_out, void *hndl)
         return PLTHOOK_FILE_NOT_FOUND;
     }
     return plthook_open_real(plthook_out, lmap);
+#endif
 }
 
 int plthook_open_by_address(plthook_t **plthook_out, void *address)
 {
 #if defined __FreeBSD__
     return PLTHOOK_NOT_IMPLEMENTED;
+#elif defined __ANDROID__ || defined __UCLIBC__
+    struct dl_iterate_data data = {0,};
+    data.addr = address;
+    dl_iterate_phdr(dl_iterate_cb, &data);
+    if (data.lmap.l_ld == NULL) {
+        set_errmsg("Could not find memory region containing address %p", address);
+        return PLTHOOK_INTERNAL_ERROR;
+    }
+    return plthook_open_real(plthook_out, &data.lmap);
 #else
     Dl_info info;
     struct link_map *lmap = NULL;
@@ -243,7 +321,9 @@ int plthook_open_by_address(plthook_t **plthook_out, void *address)
 
 static int plthook_open_executable(plthook_t **plthook_out)
 {
-#if defined __linux__
+#if defined __ANDROID__ || defined __UCLIBC__
+    return plthook_open_shared_library(plthook_out, NULL);
+#elif defined __linux__
     return plthook_open_real(plthook_out, _r_debug.r_map);
 #elif defined __sun
     const char *auxv_file = "/proc/self/auxv";
@@ -280,12 +360,21 @@ static int plthook_open_executable(plthook_t **plthook_out)
 static int plthook_open_shared_library(plthook_t **plthook_out, const char *filename)
 {
     void *hndl = dlopen(filename, RTLD_LAZY | RTLD_NOLOAD);
+#if defined __ANDROID__ || defined __UCLIBC__
+    int rv;
+#else
     struct link_map *lmap = NULL;
+#endif
 
     if (hndl == NULL) {
         set_errmsg("dlopen error: %s", dlerror());
         return PLTHOOK_FILE_NOT_FOUND;
     }
+#if defined __ANDROID__ || defined __UCLIBC__
+    rv = plthook_open_by_handle(plthook_out, hndl);
+    dlclose(hndl);
+    return rv;
+#else
     if (dlinfo(hndl, RTLD_DI_LINKMAP, &lmap) != 0) {
         set_errmsg("dlinfo error");
         dlclose(hndl);
@@ -293,6 +382,7 @@ static int plthook_open_shared_library(plthook_t **plthook_out, const char *file
     }
     dlclose(hndl);
     return plthook_open_real(plthook_out, lmap);
+#endif
 }
 
 static const Elf_Dyn *find_dyn_by_tag(const Elf_Dyn *dyn, Elf_Sxword tag)
@@ -306,47 +396,79 @@ static const Elf_Dyn *find_dyn_by_tag(const Elf_Dyn *dyn, Elf_Sxword tag)
     return NULL;
 }
 
-#ifdef SUPPORT_RELRO
-#if defined __linux__
-static const char *get_mapped_file(const void *address, char *buf, int *err)
+#ifdef __linux__
+static int get_memory_permission(void *address)
 {
     unsigned long addr = (unsigned long)address;
     FILE *fp;
+    char buf[PATH_MAX];
+    char perms[5];
+    int bol = 1;
 
     fp = fopen("/proc/self/maps", "r");
     if (fp == NULL) {
         set_errmsg("failed to open /proc/self/maps");
-        *err = PLTHOOK_INTERNAL_ERROR;
-        return NULL;
+        return 0;
     }
     while (fgets(buf, PATH_MAX, fp) != NULL) {
         unsigned long start, end;
-        int offset = 0;
-
-        sscanf(buf, "%lx-%lx %*s %*x %*x:%*x %*u %n", &start, &end, &offset);
-        if (offset == 0) {
+        int eol = (strchr(buf, '\n') != NULL);
+        if (bol) {
+            /* The fgets reads from the beginning of a line. */
+            if (!eol) {
+                /* The next fgets reads from the middle of the same line. */
+                bol = 0;
+            }
+        } else {
+            /* The fgets reads from the middle of a line. */
+            if (eol) {
+                /* The next fgets reads from the beginning of a line. */
+                bol = 1;
+            }
             continue;
         }
-        if (start < addr && addr < end) {
-            char *p = buf + offset;
-            while (*p == ' ') {
-                p++;
+
+        if (sscanf(buf, "%lx-%lx %4s", &start, &end, perms) != 3) {
+            continue;
+        }
+        if (start <= addr && addr < end) {
+            int prot = 0;
+            if (perms[0] == 'r') {
+                prot |= PROT_READ;
+            } else if (perms[0] != '-') {
+                goto unknown_perms;
             }
-            if (*p != '/') {
-                continue;
+            if (perms[1] == 'w') {
+                prot |= PROT_WRITE;
+            } else if (perms[1] != '-') {
+                goto unknown_perms;
             }
-            p[strlen(p) - 1] = '\0'; /* remove '\n' */
+            if (perms[2] == 'x') {
+                prot |= PROT_EXEC;
+            } else if (perms[2] != '-') {
+                goto unknown_perms;
+            }
+            if (perms[3] != 'p') {
+                goto unknown_perms;
+            }
+            if (perms[4] != '\0') {
+                perms[4] = '\0';
+                goto unknown_perms;
+            }
             fclose(fp);
-            return p;
+            return prot;
         }
     }
     fclose(fp);
-    set_errmsg("Could not find a mapped file reagion containing %p", address);
-    *err = PLTHOOK_INTERNAL_ERROR;
-    return NULL;
+    set_errmsg("Could not find memory region containing %p", (void*)addr);
+    return 0;
+unknown_perms:
+    fclose(fp);
+    set_errmsg("Unexcepted memory permission %s at %p", perms, (void*)addr);
+    return 0;
 }
 #elif defined __FreeBSD__
-static const char *get_mapped_file(const void *address, char *buf, int *err)
+static int get_memory_permission(void *address)
 {
     uint64_t addr = (uint64_t)address;
     struct kinfo_vmentry *top;
@@ -354,87 +476,78 @@ static const char *get_mapped_file(const void *address, char *buf, int *err)
 
     top = kinfo_getvmmap(getpid(), &cnt);
     if (top == NULL) {
-        fprintf(stderr, "failed to call kinfo_getvmmap()\n");
-        *err = PLTHOOK_INTERNAL_ERROR;
-        return NULL;
+         set_errmsg("failed to call kinfo_getvmmap()\n");
+         return 0;
     }
     for (i = 0; i < cnt; i++) {
         struct kinfo_vmentry *kve = top + i;
 
-        if (kve->kve_start < addr && addr < kve->kve_end) {
-            strncpy(buf, kve->kve_path, PATH_MAX);
+        if (kve->kve_start <= addr && addr < kve->kve_end) {
+            int prot = 0;
+            if (kve->kve_protection & KVME_PROT_READ) {
+                prot |= PROT_READ;
+            }
+            if (kve->kve_protection & KVME_PROT_WRITE) {
+                prot |= PROT_WRITE;
+            }
+            if (kve->kve_protection & KVME_PROT_EXEC) {
+                prot |= PROT_EXEC;
+            }
+            if (prot == 0) {
+                set_errmsg("Unknown kve_protection 0x%x at %p", kve->kve_protection, (void*)addr);
+            }
             free(top);
-            return buf;
+            return prot;
         }
     }
     free(top);
-    set_errmsg("Could not find a mapped file reagion containing %p", address);
-    *err = PLTHOOK_INTERNAL_ERROR;
-    return NULL;
+    set_errmsg("Could not find memory region containing %p", (void*)addr);
+    return 0;
 }
-#else
-static const char *get_mapped_file(const void *address, char *buf, int *err)
+#elif defined(__sun)
+#define NUM_MAPS 20
+static int get_memory_permission(void *address)
 {
-    set_errmsg("Could not find a mapped file reagion containing %p", address);
-    *err = PLTHOOK_INTERNAL_ERROR;
-    return NULL;
-}
-#endif
-
-static int set_relro_members(plthook_t *plthook, struct link_map *lmap)
-{
-    char fnamebuf[PATH_MAX];
-    const char *fname;
+    unsigned long addr = (unsigned long)address;
     FILE *fp;
-    Elf_Ehdr ehdr;
-    Elf_Half idx;
-    int rv;
+    prmap_t maps[NUM_MAPS];
+    size_t num;
 
-    if (lmap->l_name[0] == '/') {
-        fname = lmap->l_name;
-    } else {
-        int err;
-
-        fname = get_mapped_file(plthook->dynstr, fnamebuf, &err);
-        if (fname == NULL) {
-            return err;
-        }
-    }
-    fp = fopen(fname, "r");
+    fp = fopen("/proc/self/map", "r");
     if (fp == NULL) {
-        set_errmsg("failed to open %s", fname);
-        return PLTHOOK_INTERNAL_ERROR;
+        set_errmsg("failed to open /proc/self/map");
+        return 0;
     }
-    if (fread(&ehdr, sizeof(ehdr), 1, fp) != 1) {
-        set_errmsg("failed to read the ELF header.");
-        fclose(fp);
-        return PLTHOOK_INVALID_FILE_FORMAT;
-    }
-    rv = check_elf_header(&ehdr);
-    if (rv != 0) {
-        fclose(fp);
-        return rv;
-    }
+    while ((num = fread(maps, sizeof(prmap_t), NUM_MAPS, fp)) > 0) {
+        size_t i;
+        for (i = 0; i < num; i++) {
+            prmap_t *map = &maps[i];
 
-    fseek(fp, ehdr.e_phoff, SEEK_SET);
-
-    for (idx = 0; idx < ehdr.e_phnum; idx++) {
-        Elf_Phdr phdr;
-
-        if (fread(&phdr, sizeof(phdr), 1, fp) != 1) {
-            set_errmsg("failed to read the program header table.");
-            fclose(fp);
-            return PLTHOOK_INVALID_FILE_FORMAT;
-        }
-        if (phdr.p_type == PT_GNU_RELRO) {
-            plthook->relro_start = plthook->plt_addr_base + phdr.p_vaddr;
-            plthook->relro_end = plthook->relro_start + phdr.p_memsz;
-            break;
+            if (map->pr_vaddr <= addr && addr < map->pr_vaddr + map->pr_size) {
+                int prot = 0;
+                if (map->pr_mflags & MA_READ) {
+                    prot |= PROT_READ;
+                }
+                if (map->pr_mflags & MA_WRITE) {
+                    prot |= PROT_WRITE;
+                }
+                if (map->pr_mflags & MA_EXEC) {
+                    prot |= PROT_EXEC;
+                }
+                if (prot == 0) {
+                    set_errmsg("Unknown pr_mflags 0x%x at %p", map->pr_mflags, (void*)addr);
+                }
+                fclose(fp);
+                return prot;
+            }
         }
     }
     fclose(fp);
+    set_errmsg("Could not find memory region containing %p", (void*)addr);
     return 0;
 }
+#else
+#error Unsupported platform
 #endif
 
 static int plthook_open_real(plthook_t **plthook_out, struct link_map *lmap)
@@ -443,13 +556,26 @@ static int plthook_open_real(plthook_t **plthook_out, struct link_map *lmap)
     const Elf_Dyn *dyn;
     const char *dyn_addr_base = NULL;
 
+    if (page_size == 0) {
+        page_size = sysconf(_SC_PAGESIZE);
+    }
+
 #if defined __linux__
     plthook.plt_addr_base = (char*)lmap->l_addr;
+#if defined __riscv
+    const Elf_Ehdr *ehdr = (const Elf_Ehdr*)lmap->l_addr;
+    if (ehdr->e_type == ET_DYN) {
+        dyn_addr_base = (const char*)lmap->l_addr;
+    }
+#endif
+#if defined __ANDROID__ || defined __UCLIBC__
+    dyn_addr_base = (const char*)lmap->l_addr;
+#endif
 #elif defined __FreeBSD__ || defined __sun
     const Elf_Ehdr *ehdr = (const Elf_Ehdr*)lmap->l_addr;
-    int rv = check_elf_header(ehdr);
-    if (rv != 0) {
-        return rv;
+    int rv_ = check_elf_header(ehdr);
+    if (rv_ != 0) {
+        return rv_;
     }
     if (ehdr->e_type == ET_DYN) {
         dyn_addr_base = (const char*)lmap->l_addr;
@@ -496,62 +622,48 @@ static int plthook_open_real(plthook_t **plthook_out, struct link_map *lmap)
 
     /* get .rela.plt or .rel.plt section */
     dyn = find_dyn_by_tag(lmap->l_ld, DT_JMPREL);
-    plthook.r_type = R_JUMP_SLOT;
-#ifdef PLT_DT_REL
-    if (dyn == NULL) {
-        /* get .rela.dyn or .rel.dyn section */
-        dyn = find_dyn_by_tag(lmap->l_ld, PLT_DT_REL);
-        plthook.r_type = R_GLOBAL_DATA;
-    }
-#endif
-    if (dyn == NULL) {
-        set_errmsg("failed to find DT_JMPREL");
-        return PLTHOOK_INTERNAL_ERROR;
-    }
-    plthook.plt = (const Elf_Plt_Rel *)(dyn_addr_base + dyn->d_un.d_ptr);
-
-    if (plthook.r_type == R_JUMP_SLOT) {
-        /* get total size of .rela.plt or .rel.plt */
+    if (dyn != NULL) {
+        plthook.rela_plt = (const Elf_Plt_Rel *)(dyn_addr_base + dyn->d_un.d_ptr);
         dyn = find_dyn_by_tag(lmap->l_ld, DT_PLTRELSZ);
         if (dyn == NULL) {
             set_errmsg("failed to find DT_PLTRELSZ");
             return PLTHOOK_INTERNAL_ERROR;
         }
-
-        plthook.plt_cnt = dyn->d_un.d_val / sizeof(Elf_Plt_Rel);
-#ifdef PLT_DT_REL
-    } else {
-        int total_size_tag = PLT_DT_REL == DT_RELA ? DT_RELASZ : DT_RELSZ;
-        int elem_size_tag = PLT_DT_REL == DT_RELA ? DT_RELAENT : DT_RELENT;
+        plthook.rela_plt_cnt = dyn->d_un.d_val / sizeof(Elf_Plt_Rel);
+    }
+#ifdef R_GLOBAL_DATA
+    /* get .rela.dyn or .rel.dyn section */
+    dyn = find_dyn_by_tag(lmap->l_ld, PLT_DT_REL);
+    if (dyn != NULL) {
         size_t total_size, elem_size;
 
-        dyn = find_dyn_by_tag(lmap->l_ld, total_size_tag);
+        plthook.rela_dyn = (const Elf_Plt_Rel *)(dyn_addr_base + dyn->d_un.d_ptr);
+        dyn = find_dyn_by_tag(lmap->l_ld, PLT_DT_RELSZ);
         if (dyn == NULL) {
-            set_errmsg("failed to find 0x%x", total_size_tag);
+            set_errmsg("failed to find PLT_DT_RELSZ");
             return PLTHOOK_INTERNAL_ERROR;
         }
         total_size = dyn->d_un.d_ptr;
 
-        dyn = find_dyn_by_tag(lmap->l_ld, elem_size_tag);
+        dyn = find_dyn_by_tag(lmap->l_ld, PLT_DT_RELENT);
         if (dyn == NULL) {
-            set_errmsg("failed to find 0x%x", elem_size_tag);
+            set_errmsg("failed to find PLT_DT_RELENT");
             return PLTHOOK_INTERNAL_ERROR;
         }
         elem_size = dyn->d_un.d_ptr;
-        plthook.plt_cnt = total_size / elem_size;
-#endif
+        plthook.rela_dyn_cnt = total_size / elem_size;
     }
+#endif
 
-#ifdef SUPPORT_RELRO
-    dyn = find_dyn_by_tag(lmap->l_ld, DT_FLAGS_1);
-    if (dyn != NULL && (dyn->d_un.d_val & DF_1_NOW)) {
-        int rv = set_relro_members(&plthook, lmap);
-        if (rv != 0) {
-            return rv;
-        }
-        if (page_size == 0) {
-            page_size = sysconf(_SC_PAGESIZE);
-        }
+#ifdef R_GLOBAL_DATA
+    if (plthook.rela_plt == NULL && plthook.rela_dyn == NULL) {
+        set_errmsg("failed to find either of DT_JMPREL and DT_REL");
+        return PLTHOOK_INTERNAL_ERROR;
+    }
+#else
+    if (plthook.rela_plt == NULL) {
+        set_errmsg("failed to find DT_JMPREL");
+        return PLTHOOK_INTERNAL_ERROR;
     }
 #endif
 
@@ -564,6 +676,7 @@ static int plthook_open_real(plthook_t **plthook_out, struct link_map *lmap)
     return 0;
 }
 
+#if defined __FreeBSD__ || defined __sun
 static int check_elf_header(const Elf_Ehdr *ehdr)
 {
     static const unsigned short s = 1;
@@ -610,26 +723,44 @@ static int check_elf_header(const Elf_Ehdr *ehdr)
     }
     return 0;
 }
+#endif
+
+static int check_rel(const plthook_t *plthook, const Elf_Plt_Rel *plt, Elf_Xword r_type, const char **name_out, void ***addr_out)
+{
+    if (ELF_R_TYPE(plt->r_info) == r_type) {
+        size_t idx = ELF_R_SYM(plt->r_info);
+        idx = plthook->dynsym[idx].st_name;
+        if (idx + 1 > plthook->dynstr_size) {
+            set_errmsg("too big section header string table index: %" SIZE_T_FMT, idx);
+            return PLTHOOK_INVALID_FILE_FORMAT;
+        }
+        *name_out = plthook->dynstr + idx;
+        *addr_out = (void**)(plthook->plt_addr_base + plt->r_offset);
+        return 0;
+    }
+    return -1;
+}
 
 int plthook_enum(plthook_t *plthook, unsigned int *pos, const char **name_out, void ***addr_out)
 {
-    while (*pos < plthook->plt_cnt) {
-        const Elf_Plt_Rel *plt = plthook->plt + *pos;
-        if (ELF_R_TYPE(plt->r_info) == plthook->r_type) {
-            size_t idx = ELF_R_SYM(plt->r_info);
-
-            idx = plthook->dynsym[idx].st_name;
-            if (idx + 1 > plthook->dynstr_size) {
-                set_errmsg("too big section header string table index: %" SIZE_T_FMT, idx);
-                return PLTHOOK_INVALID_FILE_FORMAT;
-            }
-            *name_out = plthook->dynstr + idx;
-            *addr_out = (void**)(plthook->plt_addr_base + plt->r_offset);
-            (*pos)++;
-            return 0;
-        }
+    while (*pos < plthook->rela_plt_cnt) {
+        const Elf_Plt_Rel *plt = plthook->rela_plt + *pos;
+        int rv = check_rel(plthook, plt, R_JUMP_SLOT, name_out, addr_out);
         (*pos)++;
+        if (rv >= 0) {
+            return rv;
+        }
     }
+#ifdef R_GLOBAL_DATA
+    while (*pos < plthook->rela_plt_cnt + plthook->rela_dyn_cnt) {
+        const Elf_Plt_Rel *plt = plthook->rela_dyn + (*pos - plthook->rela_plt_cnt);
+        int rv = check_rel(plthook, plt, R_GLOBAL_DATA, name_out, addr_out);
+        (*pos)++;
+        if (rv >= 0) {
+            return rv;
+        }
+    }
+#endif
     *name_out = NULL;
     *addr_out = NULL;
     return EOF;
@@ -650,26 +781,24 @@ int plthook_replace(plthook_t *plthook, const char *funcname, void *funcaddr, vo
     while ((rv = plthook_enum(plthook, &pos, &name, &addr)) == 0) {
         if (strncmp(name, funcname, funcnamelen) == 0) {
             if (name[funcnamelen] == '\0' || name[funcnamelen] == '@') {
-#ifdef SUPPORT_RELRO
-                void *maddr = NULL;
-                if (plthook->relro_start <= (char*)addr && (char*)addr < plthook->relro_end) {
-                    maddr = (void*)((size_t)addr & ~(page_size - 1));
-                    if (mprotect(maddr, page_size, PROT_READ | PROT_WRITE) != 0) {
-                        set_errmsg("Could not change the process memory protection at %p: %s",
-                                   maddr, strerror(errno));
+                int prot = get_memory_permission(addr);
+                if (prot == 0) {
+                    return PLTHOOK_INTERNAL_ERROR;
+                }
+                if (!(prot & PROT_WRITE)) {
+                    if (mprotect(ALIGN_ADDR(addr), page_size, PROT_READ | PROT_WRITE) != 0) {
+                        set_errmsg("Could not change the process memory permission at %p: %s",
+                                   ALIGN_ADDR(addr), strerror(errno));
                         return PLTHOOK_INTERNAL_ERROR;
                     }
                 }
-#endif
                 if (oldfunc) {
                     *oldfunc = *addr;
                 }
                 *addr = funcaddr;
-#ifdef SUPPORT_RELRO
-                if (maddr != NULL) {
-                    mprotect(maddr, page_size, PROT_READ);
+                if (!(prot & PROT_WRITE)) {
+                    mprotect(ALIGN_ADDR(addr), page_size, prot);
                 }
-#endif
                 return 0;
             }
         }
