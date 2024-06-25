@@ -150,22 +150,29 @@ STDOUT.flush
 case RUBY_PLATFORM
 when /mswin32|cygwin|mingw/
   plthook_src = "plthook_win32.c"
-when /darwin/
+when /x86_64-darwin/
   plthook_src = "plthook_osx.c"
+when /darwin/
+  # macOS arm64
+  plthook_src = nil
+  puts "skip"
 else
   plthook_src = "plthook_elf.c"
 end
-FileUtils.copy(File.dirname(__FILE__) + "/" + plthook_src, CONFTEST_C)
-if xsystem(cc_command(""))
-  FileUtils.rm_f("#{CONFTEST}.#{$OBJEXT}")
-  puts plthook_src
-  $objs << plthook_src.gsub(/\.c$/, '.o')
-  $objs << "hook_funcs.o"
-  $defs << "-DHAVE_PLTHOOK"
-  have_library('dbghelp', 'ImageDirectoryEntryToData', ['windows.h', 'dbghelp.h']) if RUBY_PLATFORM =~ /cygwin/
-  $libs += ' -lws2_32' if RUBY_PLATFORM =~ /cygwin/
-else
-  puts "no"
+
+if plthook_src
+  FileUtils.copy(File.dirname(__FILE__) + "/" + plthook_src, CONFTEST_C)
+  if xsystem(cc_command(""))
+    FileUtils.rm_f("#{CONFTEST}.#{$OBJEXT}")
+    puts plthook_src
+    $objs << plthook_src.gsub(/\.c$/, '.o')
+    $objs << "hook_funcs.o"
+    $defs << "-DHAVE_PLTHOOK"
+    have_library('dbghelp', 'ImageDirectoryEntryToData', ['windows.h', 'dbghelp.h']) if RUBY_PLATFORM =~ /cygwin/
+    $libs += ' -lws2_32' if RUBY_PLATFORM =~ /cygwin/
+  else
+    puts "no"
+  end
 end
 
 $defs << "-DInit_oci8lib=Init_#{so_basename}"

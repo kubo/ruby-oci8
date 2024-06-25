@@ -39,7 +39,7 @@ by the `tcp_keepalive_time` property.
 It is supported on the following platforms since ruby-oci8 2.2.4.
 
 * Linux i386 and x86_64
-* macOS
+* macOS x86_64
 * Windows x86 and x64
 * Solaris x86_64
 
