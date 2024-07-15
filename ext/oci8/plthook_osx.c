@@ -46,6 +46,10 @@
 #include <mach-o/fixup-chains.h>
 #include "plthook.h"
 
+#if !defined(__x86_64__)
+#error Not on macOS intel
+#endif
+
 // #define PLTHOOK_DEBUG_CMD 1
 // #define PLTHOOK_DEBUG_BIND 1
 // #define PLTHOOK_DEBUG_FIXUPS 1
