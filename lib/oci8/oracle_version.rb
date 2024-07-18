@@ -127,7 +127,15 @@ class OCI8
     #
     # @return [String]
     def to_s
-      format('%d.%d.%d.%d.%d', @major, @minor, @update, @patch, @port_update)
+      version_format =
+        if @major >= 23 && @patch != 0 && @port_update != 0
+          # The fifth numeral is the release month (01 through 12) since Oracle 23ai
+          # See https://docs.oracle.com/en/database/oracle/oracle-database/23/upgrd/oracle-database-release-numbers.html#GUID-1E2F3945-C0EE-4EB2-A933-8D1862D8ECE2__GUID-704EC7BB-4EEA-4A92-96FC-579B216DCA97
+          '%d.%d.%d.%d.%02d'
+        else
+          '%d.%d.%d.%d.%d'
+        end
+      format(version_format, @major, @minor, @update, @patch, @port_update)
     end
 
     # Returns true if +self+ and +other+ are the same type and have
