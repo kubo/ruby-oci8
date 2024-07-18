@@ -17,11 +17,11 @@ when 'x86-mingw32'
 
   $ruby_base_dirs =
     [
-     'c:\ruby\rubyinstaller-2.6.0-1-x86',
      'c:\ruby\rubyinstaller-2.7.0-1-x86',
      'c:\ruby\rubyinstaller-3.0.0-1-x86',
      'c:\ruby\rubyinstaller-3.1.0-1-x86',
      'c:\ruby\rubyinstaller-3.2.0-1-x86',
+     'c:\ruby\rubyinstaller-3.3.0-1-x86',
     ]
 
   $oracle_path = 'c:\oracle\instantclient_19_9-win32'
@@ -29,18 +29,17 @@ when 'x86-mingw32'
 
   $build_ruby_dirs =
     [
-     ['c:\ruby\rubyinstaller-2.6.0-1-x86', $ridk_setup],
      ['c:\ruby\rubyinstaller-2.7.0-1-x86', $ridk_setup],
      ['c:\ruby\rubyinstaller-3.0.0-1-x86', $ridk_setup],
      ['c:\ruby\rubyinstaller-3.1.0-1-x86', $ridk_setup],
      ['c:\ruby\rubyinstaller-3.2.0-1-x86', $ridk_setup],
+     ['c:\ruby\rubyinstaller-3.3.0-1-x86', $ridk_setup],
     ]
 
 when 'x64-mingw32'
   $ruby_base_dirs =
     [
      # RubyInstaller <URL:http://rubyinstaller.org>
-     'c:\ruby\rubyinstaller-2.6.0-1-x64',
      'c:\ruby\rubyinstaller-2.7.0-1-x64',
      'c:\ruby\rubyinstaller-3.0.0-1-x64',
      'c:\ruby\rubyinstaller-3.1.0-1-x64',
@@ -50,7 +49,6 @@ when 'x64-mingw32'
   $ridk_setup = 'ridk enable'
   $build_ruby_dirs =
     [
-     ['c:\ruby\rubyinstaller-2.6.0-1-x64', $ridk_setup],
      ['c:\ruby\rubyinstaller-2.7.0-1-x64', $ridk_setup],
      ['c:\ruby\rubyinstaller-3.0.0-1-x64', $ridk_setup],
      ['c:\ruby\rubyinstaller-3.1.0-1-x64', $ridk_setup],
@@ -62,6 +60,7 @@ when 'x64-mingw-ucrt'
      # RubyInstaller <URL:http://rubyinstaller.org>
      'c:\ruby\rubyinstaller-3.1.0-1-x64',
      'c:\ruby\rubyinstaller-3.2.0-1-x64',
+     'c:\ruby\rubyinstaller-3.3.0-1-x64',
     ]
 
   $oracle_path = 'c:\oracle\instantclient_19_9-win64'
@@ -70,6 +69,7 @@ when 'x64-mingw-ucrt'
     [
      ['c:\ruby\rubyinstaller-3.1.0-1-x64', $ridk_setup],
      ['c:\ruby\rubyinstaller-3.2.0-1-x64', $ridk_setup],
+     ['c:\ruby\rubyinstaller-3.3.0-1-x64', $ridk_setup],
     ]
 
 when 'all'
@@ -94,6 +94,7 @@ end
 
 $gem_package = "ruby-oci8-#{$ruby_oci8_version}-#{$platform}.gem"
 ENV['PATH'] = $oracle_path + ';c:\Windows\System32'
+ENV.delete('MSYSTEM')
 
 def prepend_path(basedir, others = [])
   orig_env = ENV['PATH']
