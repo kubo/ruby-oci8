@@ -61,7 +61,7 @@ class OCI8
     #   oraver.port_update # =>  0
     #
     # @return [OCI8::OracleVersion]
-    def initialize(arg, minor = nil, update = nil, patch = nil, port_update = nil, is_server_version: false)
+    def initialize(arg, minor = nil, update = nil, patch = nil, port_update = nil)
       if arg.is_a? String
         major, minor, update, patch, port_update = arg.split('.').collect do |v|
           v.to_i
@@ -91,7 +91,6 @@ class OCI8
                 else
                   (@major << 24) | (@minor << 20) | (@update << 12) | (@patch << 8) | @port_update
                 end
-      @is_server_version = is_server_version
     end
 
     # Compares +self+ and +other+.
@@ -128,11 +127,7 @@ class OCI8
     #
     # @return [String]
     def to_s
-      if @is_server_version && @major >= 23
-        format('%d.%d.%d.%d.%02d', @major, @minor, @update, @patch, @port_update)
-      else
-        format('%d.%d.%d.%d.%d', @major, @minor, @update, @patch, @port_update)
-      end
+      format('%d.%d.%d.%d.%d', @major, @minor, @update, @patch, @port_update)
     end
 
     # Returns true if +self+ and +other+ are the same type and have

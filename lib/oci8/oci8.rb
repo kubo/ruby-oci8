@@ -349,7 +349,7 @@ class OCI8
   # @see OCI8.oracle_client_version
   # @return [OCI8::OracleVersion]
   def oracle_server_version
-    @oracle_server_version ||= OCI8::OracleVersion.new(oracle_server_vernum, is_server_version: true)
+    @oracle_server_version ||= OCI8::OracleVersion.new(oracle_server_vernum)
   end
 
   # Returns the Oracle database character set name such as AL32UTF8.
