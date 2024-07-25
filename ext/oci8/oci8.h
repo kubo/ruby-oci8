@@ -29,11 +29,12 @@ extern "C"
  * hexadecimal ->  dotted version number    hexadecimal ->  dotted version number
  *  0c102304   ->  12.1.2.3.4                12012034   ->  18.1.2.3.4
  *                 ^  ^ ^ ^ ^                               ^  ^ ^ ^ ^
- *  0c ------------'  | | | |  2 bytes       12 ------------'  | | | |  2 bytes
- *    1 --------------' | | |  1 byte          01 -------------' | | |  2 bytes
- *     02 --------------' | |  2 bytes           2 --------------' | |  1 byte
- *       3 ---------------' |  1 byte             03 --------------' |  2 bytes
- *        04 ---------------'  2 bytes              4 ---------------'  1 byte
+ *  0c ------------'  | | | |  8 bits        12 ------------'  | | | |  8 bits
+ *    1 --------------' | | |  4 bits          01 -------------' | | |  8 bits
+ *     02 --------------' | |  8 bits            2 --------------' | |  4 bits
+ *       3 ---------------' |  4 bits             03 --------------' |  8 bits
+ *        04 ---------------'  8 bits               4 ---------------'  4 bits
+ *                      total 32 bits                            total 32 bits
  */
 #define ORAVERNUM(major, minor, update, patch, port_update) \
     (((major) >= 18) ? (((major) << 24) | ((minor) << 16) | ((update) << 12) | ((patch) << 4) | (port_update)) \
