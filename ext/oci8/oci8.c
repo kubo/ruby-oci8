@@ -437,7 +437,7 @@ typedef struct {
 
 static void *complex_logoff_prepare(oci8_svcctx_t *svcctx)
 {
-    complex_logoff_arg_t *cla = xmalloc(sizeof(complex_logoff_arg_t));
+    complex_logoff_arg_t *cla = malloc(sizeof(complex_logoff_arg_t));
     cla->svchp = svcctx->base.hp.svc;
     cla->usrhp = svcctx->usrhp;
     cla->srvhp = svcctx->srvhp;
@@ -479,7 +479,7 @@ static void *complex_logoff_execute(void *arg)
     if (cla->svchp != NULL) {
         OCIHandleFree(cla->svchp, OCI_HTYPE_SVCCTX);
     }
-    xfree(cla);
+    free(cla);
     return (void*)(VALUE)rv;
 }
 
