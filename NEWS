@@ -1,5 +1,23 @@
 # @markup markdown
 
+2.2.13 (2024-07-27)
+===================
+
+- Binary gems for Windows x64 and x86 supports ruby 2.7 - 3.3 inclusive.
+
+Fixed issues
+------------
+
+- Fix various issues about `OCI8.properties[:tcp_keepalive_time]` on macOS arm64. The feature was removed on the platform
+  and it raises `NotImplementedError` instead now.
+- Fix SIGSEGV when using truffleruby. It seems to be caused by `xfree()` outside of ruby threads.
+
+Changes
+-------
+
+- Change the format of fifth numeral of Oracle version number as two digit zero-padding number
+  when the Oracle version is 23 or upper. For example "23.4.0.24.05".
+
 2.2.12 (2022-12-30)
 ===================
 
