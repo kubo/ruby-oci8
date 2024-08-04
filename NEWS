@@ -1,5 +1,13 @@
 # @markup markdown
 
+2.2.14 (2024-08-XX)
+===================
+
+Fixed issues
+------------
+
+- Fix SIGSEGV when nokogiri is loaded before oci8 (GH-263 - Linux only)
+
 2.2.13 (2024-07-27)
 ===================
 

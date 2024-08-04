@@ -9,6 +9,7 @@
 #endif
 #if defined(HAVE_PLTHOOK) && !defined(WIN32)
 #include <dlfcn.h>
+#include <sys/mman.h>
 #include "plthook.h"
 #endif
 
@@ -135,6 +136,8 @@ static void rebind_internal_symbols(void)
     void **addr;
     const char *prefix;
     size_t prefix_len;
+    int prot;
+    size_t page_size = sysconf(_SC_PAGESIZE);
 
 #ifdef RTLD_FIRST
     flags |= RTLD_FIRST; /* for macOS */
@@ -161,7 +164,7 @@ static void rebind_internal_symbols(void)
         plthook_close(ph);
         return;
     }
-    while (plthook_enum(ph, &pos, &name, &addr) == 0) {
+    while (plthook_enum_with_prot(ph, &pos, &name, &addr, &prot) == 0) {
         void *funcaddr;
         if (prefix_len != 0) {
             if (strncmp(name, prefix, prefix_len) != 0) {
@@ -179,7 +182,17 @@ static void rebind_internal_symbols(void)
              * PLT entries are forcedly modified to point to itself not
              * to use functions in other libraries.
              */
+#define ALIGN_ADDR(addr) ((void*)((size_t)(addr) & ~(page_size - 1)))
+            if ((prot & PROT_WRITE) == 0) {
+                /* when the region containing addr isn't writable, make it writable temporarily */
+                if (mprotect(ALIGN_ADDR(addr), page_size, PROT_READ | PROT_WRITE) != 0) {
+                    continue;
+                }
+            }
             *addr = funcaddr;
+            if ((prot & PROT_WRITE) == 0) {
+                mprotect(ALIGN_ADDR(addr), page_size, prot);
+            }
         }
     }
     plthook_close(ph);
