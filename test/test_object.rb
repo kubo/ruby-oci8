@@ -59,10 +59,14 @@ class TestObj1 < Minitest::Test
 
   def setup
     @conn = get_oci8_connection
+    # This test needs LOB locators for read operations on object attributes
+    OCI8.lob_fetch_mode = :locator
     RbTestObj.default_connection = @conn
   end
 
   def teardown
+    # Restore default mode
+    OCI8.lob_fetch_mode = :long_as_string
     @conn.logoff
   end
 

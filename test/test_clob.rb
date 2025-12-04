@@ -6,8 +6,15 @@ class TestCLob < Minitest::Test
 
   def setup
     @conn = get_oci8_connection
+    # This test needs LOB locators for read/write operations
+    OCI8.lob_fetch_mode = :locator
     drop_table('test_table')
     @conn.exec('CREATE TABLE test_table (filename VARCHAR2(40), content CLOB)')
+  end
+
+  def teardown
+    # Restore default mode
+    OCI8.lob_fetch_mode = :long_as_string if @conn
   end
 
   def test_insert

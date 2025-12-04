@@ -152,6 +152,7 @@ class OCI8
     end
 
     @prefetch_rows = 100
+    @lob_prefetch_size = 0  # 0 means use Oracle default (disabled)
     @username = nil
   end
 
@@ -169,6 +170,7 @@ class OCI8
   # @private
   def parse_internal(sql)
     cursor = OCI8::Cursor.new(self, sql)
+    cursor.prefetch_rows = @prefetch_rows if @prefetch_rows
     cursor
   end
 
@@ -304,7 +306,6 @@ class OCI8
   # @return [Array] an array of first row.
   def select_one(sql, *bindvars)
     cursor = self.parse(sql)
-    cursor.prefetch_rows = 1
     begin
       cursor.exec(*bindvars)
       row = cursor.fetch
@@ -331,6 +332,27 @@ class OCI8
   # Note: The default value had been 1 before ruby-oci8 2.2.0.
   def prefetch_rows=(num)
     @prefetch_rows = num
+  end
+
+  # Sets the LOB prefetch size in bytes. Only used when lob_fetch_mode is :locator.
+  # i.e. sets OCI_ATTR_DEFAULT_LOBPREFETCH_SIZE on the session handle.
+  # The default value is 0 (disabled).
+  #
+  # When set to a non-zero value (e.g., 65536 for 64KB), Oracle prefetches
+  # LOB data along with the row if the LOB size is <= this value.
+  # This reduces network round trips when fetching small to medium LOBs.
+  #
+  # This is a session-wide setting that applies to all LOB columns fetched
+  # from this connection.
+  #
+  # It has no effect when lob_fetch_mode is :long_as_string (the default).
+  #
+  # @param [Integer] size prefetch size in bytes (0 to disable)
+  # @see OCI8::lob_fetch_mode=
+  # @note Requires Oracle 11g or later
+  def lob_prefetch_size=(size)
+    @lob_prefetch_size = size
+    @session_handle.send(:attr_set_ub4, 438, size)
   end
 
   # @private
@@ -368,6 +390,48 @@ class OCI8
   # @see OCI8.encoding
   def self.client_charset_name
     @@client_charset_name
+  end
+
+  # Returns the current LOB fetch mode.
+  #
+  # @return [Symbol] :long_as_string or :locator
+  # @see lob_fetch_mode=
+  def self.lob_fetch_mode
+    @@lob_fetch_mode ||= :long_as_string
+  end
+
+  # Sets the LOB fetch mode.
+  #
+  # - +:long_as_string+ (default): Fetch LOBs as Strings using
+  #   Runtime Data Allocation and Piecewise Operations in OCI.
+  #   Fastest and most efficient fetch but limited to 2GB LOBs.
+  #
+  # - +:locator+: Fetch LOB locators (OCI8::CLOB/BLOB objects).
+  #   Calls OCILobRead2() on the lob fields individually.
+  #   Required for LOBs > 2GB, random access, or read/write operations.
+  #   @conn.lob_prefetch_size may reduce network roundtrips but my
+  #   unscientific testing only showed performance degradation.
+  #
+  # @param [Symbol] mode :long_as_string or :locator
+  # @return [Symbol] the mode that was set
+  # @see https://github.com/oracle/odpi/issues/163
+  def self.lob_fetch_mode=(mode)
+    unless [:long_as_string, :locator].include?(mode)
+      raise ArgumentError, "lob_fetch_mode must be :long_as_string or :locator"
+    end
+
+    case mode
+    when :long_as_string
+      OCI8::BindType::Mapping[:clob] = OCI8::BindType::Long
+      OCI8::BindType::Mapping[:nclob] = OCI8::BindType::Long
+      OCI8::BindType::Mapping[:blob] = OCI8::BindType::LongRaw
+    when :locator
+      OCI8::BindType::Mapping[:clob] = OCI8::BindType::CLOB
+      OCI8::BindType::Mapping[:nclob] = OCI8::BindType::NCLOB
+      OCI8::BindType::Mapping[:blob] = OCI8::BindType::BLOB
+    end
+
+    @@lob_fetch_mode = mode
   end
 
   if OCI8.oracle_client_version >= OCI8::ORAVER_11_1

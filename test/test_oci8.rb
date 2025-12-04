@@ -41,8 +41,6 @@ EOS
   ]
 
   def test_long_type
-    clob_bind_type = OCI8::BindType::Mapping[:clob]
-    blob_bind_type = OCI8::BindType::Mapping[:blob]
     initial_cunk_size = OCI8::BindType::Base.initial_chunk_size
     begin
       OCI8::BindType::Base.initial_chunk_size = 5
@@ -50,6 +48,8 @@ EOS
       drop_table('test_table')
       ascii_enc = Encoding.find('US-ASCII')
       0.upto(1) do |i|
+        # First part of test uses LOB locators
+        OCI8.lob_fetch_mode = :locator
         if i == 0
           @conn.exec("CREATE TABLE test_table (id number(38), long_column long, clob_column clob)")
           cursor = @conn.parse('insert into test_table values (:1, :2, :3)')
@@ -108,39 +108,35 @@ EOS
         assert_nil(cursor.fetch)
         cursor.close
 
-        begin
-          OCI8::BindType::Mapping[:clob] = OCI8::BindType::Long
-          OCI8::BindType::Mapping[:blob] = OCI8::BindType::LongRaw
-          cursor = @conn.parse('SELECT * from test_table order by id')
-          cursor.exec
-          LONG_TEST_DATA.each_with_index do |data, index|
-            row = cursor.fetch
-            assert_equal(index, row[0])
-            if data.nil?
-              assert_nil(row[1])
-              assert_nil(row[2])
-            elsif data.empty?
-              # '' is inserted to the long or long raw column as null.
-              assert_nil(row[1])
-              # '' is inserted to the clob or blob column as an empty clob.
-              # However it is fetched as nil.
-              assert_nil(row[2])
-            else
-              assert_equal(data, row[1])
-              assert_equal(data, row[2])
-              assert_equal(enc, row[1].encoding)
-              assert_equal(enc, row[2].encoding)
-            end
+        # Second part of test uses Long bind type (fetch as strings)
+        OCI8.lob_fetch_mode = :long_as_string
+        cursor = @conn.parse('SELECT * from test_table order by id')
+        cursor.exec
+        LONG_TEST_DATA.each_with_index do |data, index|
+          row = cursor.fetch
+          assert_equal(index, row[0])
+          if data.nil?
+            assert_nil(row[1])
+            assert_nil(row[2])
+          elsif data.empty?
+            # '' is inserted to the long or long raw column as null.
+            assert_nil(row[1])
+            # '' is inserted to the clob or blob column as an empty clob.
+            # However it is fetched as nil.
+            assert_nil(row[2])
+          else
+            assert_equal(data, row[1])
+            assert_equal(data, row[2])
+            assert_equal(enc, row[1].encoding)
+            assert_equal(enc, row[2].encoding)
           end
-          assert_nil(cursor.fetch)
-          cursor.close
-        ensure
-          OCI8::BindType::Mapping[:clob] = clob_bind_type
-          OCI8::BindType::Mapping[:blob] = blob_bind_type
         end
+        assert_nil(cursor.fetch)
+        cursor.close
         drop_table('test_table')
       end
     ensure
+      OCI8.lob_fetch_mode = :long_as_string
       OCI8::BindType::Base.initial_chunk_size = initial_cunk_size
     end
     drop_table('test_table')
@@ -396,6 +392,8 @@ EOS
   def test_clob_nclob_and_blob
     return if OCI8::oracle_client_version < OCI8::ORAVER_8_1
 
+    # This test needs LOB locators
+    OCI8.lob_fetch_mode = :locator
     drop_table('test_table')
     sql = <<-EOS
 CREATE TABLE test_table (id number(5), C CLOB, NC NCLOB, B BLOB)
@@ -435,6 +433,8 @@ EOS
     assert_nil(cursor.fetch)
     cursor.close
     drop_table('test_table')
+  ensure
+    OCI8.lob_fetch_mode = :long_as_string
   end
 
   def test_select_number
@@ -539,7 +539,6 @@ EOS
     assert_nil(@conn.last_error)
     @conn.last_error = 'dummy'
     cursor = @conn.parse('select col1, max(col2) from (select 1 as col1, null as col2 from dual) group by col1')
-    cursor.prefetch_rows = 1
     assert_nil(@conn.last_error)
 
     # When an OCI function returns OCI_SUCCESS_WITH_INFO, OCI8#last_error is set.

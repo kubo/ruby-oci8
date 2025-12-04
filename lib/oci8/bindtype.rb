@@ -245,13 +245,18 @@ OCI8::BindType::Mapping[:long_raw] = OCI8::BindType::LongRaw
 # datatype        type     size prec scale
 # -------------------------------------------------
 # CLOB          SQLT_CLOB  4000    0    0
-OCI8::BindType::Mapping[:clob] = OCI8::BindType::CLOB
-OCI8::BindType::Mapping[:nclob] = OCI8::BindType::NCLOB
+# NCLOB         SQLT_CLOB  4000    0    0
+# Default: Fetch as String using SQLT_CHR (fast, max 2GB)
+# See: OCI8::lob_fetch_mode
+OCI8::BindType::Mapping[:clob] = OCI8::BindType::Long
+OCI8::BindType::Mapping[:nclob] = OCI8::BindType::Long
 
 # datatype        type     size prec scale
 # -------------------------------------------------
 # BLOB          SQLT_BLOB  4000    0    0
-OCI8::BindType::Mapping[:blob] = OCI8::BindType::BLOB
+# Default: Fetch as binary String using SQLT_CHR (fast, max 2GB)
+# See: OCI8::lob_fetch_mode
+OCI8::BindType::Mapping[:blob] = OCI8::BindType::LongRaw
 
 # datatype        type     size prec scale
 # -------------------------------------------------
