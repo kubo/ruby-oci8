@@ -313,8 +313,6 @@ Init_oci8lib(void)
 #ifdef USE_WIN32_C
     Init_oci8_win32(cOCI8);
 #endif
-
-    Init_oci8_dump_bindings(cOCI8);
 }
 
 VALUE oci8_define_class(const char *name, const oci8_handle_data_type_t *data_type, VALUE (*alloc_func)(VALUE))

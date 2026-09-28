@@ -3,32 +3,44 @@
 Install ruby-oci8 on macOS
 =========================
 
-**Note: Ruby-oci8 doesn't run on Apple Silicon because Oracle instant client
-for Apple Silicon has not been released yet.**
-
 Prerequisite
 ------------
 
 * Command line tools for Xcode or Xcode (by executing `xcode-select --install`) or [Xcode]
 
-Install Oracle Instant Client Packages
---------------------------------------
 
-If you have installed [Homebrew], use the following command:
+Download Oracle Instant Client Packages
+---------------------------------------
 
-```shell
-$ brew tap InstantClientTap/instantclient
-$ brew install instantclient-basic   # or instantclient-basiclite
-$ brew install instantclient-sdk
-$ brew install instantclient-sqlplus # (optionally)
+Go [oracle site](https://www.oracle.com/database/technologies/instant-client/macos-arm64-downloads.html) and download:
+
+* instantclient-basiclite-macos.arm64-23.3.0.23.09.dmg
+* instantclient-sdk-macos.arm64-23.3.0.23.09.dmg
+* instantclient-sqlplus-macos.arm64-23.3.0.23.09.dmg
+
+Mount DMG package and prepare folder
+------------------------------------
+
+```bash
+hdiutil mount ~/Downloads/instantclient-basiclite-macos.arm64-23.3.0.23.09.dmg
+cd /Volumes/instantclient-basiclite-macos.arm64-23.3.0.23.09
+sh ./install_ic.sh
 ```
 
-Otherwise, look at this [page][OTN] and set the environment variable
-`OCI_DIR` to point the the directory where instant client is installed.
-Ruby-oci8 installation script checks the directory.
+```bash
+hdiutil mount ~/Downloads/instantclient-sdk-macos.arm64-23.3.0.23.09.dmg
+cd /Volumes/instantclient-sdk-macos.arm64-23.3.0.23.09
+sh ./install_ic.sh
+```
 
-```shell
-export OCI_DIR=$HOME/Downloads/instantclient_19_8  # for example
+```bash
+hdiutil mount ~/Downloads/instantclient-sqlplus-macos.arm64-23.3.0.23.09.dmg
+cd /Volumes/instantclient-sqlplus-macos.arm64-23.3.0.23.09
+sh ./install_ic.sh
+```
+
+```bash
+sudo mv ~/Downloads/instantclient_23_3 /opt
 ```
 
 Install ruby-oci8
@@ -36,11 +48,21 @@ Install ruby-oci8
 
 Note that `/usr/bin/ruby` isn't available. You need to use [`rbenv`] or so.
 
-```shell
-$ gem install ruby-oci8
+```bash
+cd /usr/local/bin
+sudo ln -s /opt/instantclient_23_3/sqlplus sqlplus
+export OCI_DIR=/opt/instantclient_23_3
+gem install ruby-oci8
 ```
 
-[Homebrew]: http://brew.sh/
-[OTN]: https://www.oracle.com/database/technologies/instant-client/macos-intel-x86-downloads.html#ic_osx_inst
+
+Put tnsnames.ora
+----------------
+
+```bash
+export TNS_ADMIN=/opt/instantclient_23_3/network/admin/
+export NLS_LANG=AMERICAN_AMERICA.AL32UTF8 # avoid warning, optional
+```
+
 [Xcode]: https://apps.apple.com/us/app/xcode/id497799835
 [`rbenv`]: https://github.com/rbenv/rbenv
