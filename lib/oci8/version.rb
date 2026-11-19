@@ -1,3 +1,3 @@
 class OCI8
-  VERSION = "2.2.14"
+  VERSION = "2.2.14.sscc"
 end
