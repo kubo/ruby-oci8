@@ -468,7 +468,7 @@ EOS
     if ld_path.nil?
       case RUBY_PLATFORM
       when /linux/
-        open("|/sbin/ldconfig -p") do |f|
+        IO.popen(["/sbin/ldconfig", "-p"]) do |f|
           print "  checking ld.so.conf... "
           STDOUT.flush
           while line = f.gets
